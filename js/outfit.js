@@ -13,7 +13,7 @@ window.ValdoraOutfit = (() => {
   const load = (src) => imgs[src] || (imgs[src] = new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }));
   const path = (name, suf, anim) => (window.assetV || String)(anim ? `assets/flow/anim3d/${name}${suf}.png` : `assets/flow/${name}${suf}.png`); // rodada 105: com a versão da arte
   const base = { anim: {}, spr: {} };
-  let token = 0, doll = null;
+  let token = 0, doll = null, face = null;
 
   function paint(g, img, w, h, rgb, smooth) { // desenha a camada no tamanho da folha do corpo, tingida (multiplica) se pedir
     if (!img) return;
@@ -55,8 +55,11 @@ window.ValdoraOutfit = (() => {
     if (my !== token) return false;
     const A = ANIMS[hero], R = A && A.rows.idle_down; // retrato do boneco: primeiro quadro parado, de frente
     if (R) { const c = document.createElement("canvas"); c.width = A.cw; c.height = A.ch;
-      c.getContext("2d").drawImage(A.c, 0, R.row * A.ch, A.cw, A.ch, 0, 0, A.cw, A.ch); doll = c.toDataURL(); }
+      c.getContext("2d").drawImage(A.c, 0, R.row * A.ch, A.cw, A.ch, 0, 0, A.cw, A.ch); doll = c.toDataURL();
+      // rodada 105: retrato do cartão do HUD — só a caixa do personagem (a célula tem 1,6x de folga; pés a 12,5% da base)
+      const s = Math.round(A.cw / 1.6), x0 = Math.round((A.cw - s) / 2), y0 = Math.round(A.ch * 0.875 - s), f = document.createElement("canvas");
+      f.width = s; f.height = s; f.getContext("2d").drawImage(c, x0, y0, s, s, 0, 0, s, s); face = f.toDataURL(); }
     return true;
   }
-  return { apply, ORDER, doll: () => doll };
+  return { apply, ORDER, doll: () => doll, face: () => face };
 })();

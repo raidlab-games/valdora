@@ -122,13 +122,14 @@
   // opções: volume de efeitos e música, tremor de tela (guardadas em localStorage pelo módulo de áudio)
   $("opt-sfx").value = ValdoraAudio.opts.sfx; $("opt-music").value = ValdoraAudio.opts.music; $("opt-shake").checked = ValdoraAudio.opts.shake;
   $("opt-btn").onclick = () => { $("options").hidden = !$("options").hidden; };
+  $("me-face").onclick = () => { if (running) shortcut("p"); }; // rodada 105: o retrato abre a ficha
   $("opt-sfx").oninput = (e) => { ValdoraAudio.setOpt("sfx", +e.target.value); ValdoraAudio.play("coin"); };
   $("opt-music").oninput = (e) => ValdoraAudio.setOpt("music", +e.target.value);
   $("opt-shake").onchange = (e) => ValdoraAudio.setOpt("shake", e.target.checked);
   $("opt-zoom").value = ValdoraAudio.opts.zoom || "auto"; $("opt-ui").value = (() => { const u = ValdoraAudio.opts.ui; return !u || u === "auto" ? "auto" : +u >= 1.5 ? "2" : "1"; })(); // rodada 80: 1,15/1,3 antigos viram 1×
   $("opt-zoom").onchange = (e) => { ValdoraAudio.setOpt("zoom", e.target.value); resize(); };
   $("opt-ui").onchange = (e) => { ValdoraAudio.setOpt("ui", e.target.value === "auto" ? "auto" : +e.target.value); applyUi(); };
-  $("exit").onclick = () => { save(); running = false; closeDlg(); $("game").hidden = true; $("lobby").hidden = false; document.dispatchEvent(new Event("valdora:lobby")); };
+  $("exit").onclick = () => { $("options").hidden = true; save(); running = false; closeDlg(); $("game").hidden = true; $("lobby").hidden = false; document.dispatchEvent(new Event("valdora:lobby")); };
 
   // ---------- Mundo ----------
   let map, occ, objects, resources, mobs, lakes, ground, groundItems, corpses, npc = {};

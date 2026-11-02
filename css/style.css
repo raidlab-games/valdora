@@ -173,7 +173,19 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 #log .warn { color: #ff9a7a; }
 #log .dim { opacity: .65; }
 @keyframes logIn { from { opacity: 0; transform: translateX(-8px); } }
-#exit { position: absolute; top: 10px; left: 10px; width: auto; margin: 0; font-size: 12px; padding: 6px 10px; letter-spacing: 1px; }
+/* rodada 105: no lugar do "Salvar e sair" (o jogo salva sozinho), o cartão do personagem: retrato com o equipamento atual,
+   nível embaixo e ouro do lado; a engrenagem das opções fica na ponta. "Voltar ao menu" foi para dentro das opções. */
+#me-card { position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 5px;
+  background: var(--wood); border: 3px solid var(--edge); box-shadow: 0 0 0 3px #000, 0 4px 0 3px #0006; }
+#me-face { position: relative; width: 66px; height: 80px; padding: 0; margin: 0; cursor: pointer; overflow: hidden;
+  background: radial-gradient(ellipse at 50% 35%, #4a3a26 0%, #241a10 75%); border: 2px solid #000; box-shadow: inset 0 0 0 2px var(--edge); }
+#me-face:hover, #me-face:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); outline: none; }
+#me-img { position: absolute; left: 50%; bottom: 14px; height: 90px; transform: translateX(-50%); image-rendering: auto; pointer-events: none; }
+#me-lvl { position: absolute; left: 0; right: 0; bottom: 0; padding: 1px 0; font-size: 12px; font-weight: bold; text-align: center;
+  color: var(--gold); background: #000c; text-shadow: 1px 1px 0 #000; letter-spacing: 1px; }
+#me-gold { display: flex; align-items: center; gap: 5px; font-size: 16px; font-weight: bold; color: var(--gold); text-shadow: 2px 2px 0 #000; min-width: 54px; }
+#me-gold img { width: 20px; height: 20px; image-rendering: pixelated; }
+#options #exit { position: static; width: 100%; margin: 4px 0 0; padding: 6px 10px; font-size: 12px; letter-spacing: 1px; }
 
 #banner { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; opacity: 0;
   font-size: 24px; font-weight: bold; letter-spacing: 3px; color: var(--gold); text-shadow: 3px 3px 0 #000, 0 0 12px #000; white-space: nowrap; }
@@ -276,9 +288,9 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 }
 
 /* ---------- Rodada 3: opções e efeitos ativos ---------- */
-#opt-btn { position: absolute; top: 10px; left: 150px; padding: 4px 9px; font-size: 12px; background: #c97a1a; color: #1b0f00;
+#opt-btn { align-self: center; padding: 4px 9px; font-size: 12px; background: #c97a1a; color: #1b0f00;
   border: 3px solid #000; box-shadow: inset -3px -3px 0 #8a4f0a; cursor: pointer; }
-#options { position: absolute; top: 50px; left: 150px; width: 220px; background: var(--wood); border: 3px solid var(--edge);
+#options { position: absolute; top: 112px; left: 10px; width: 220px; background: var(--wood); border: 3px solid var(--edge);
   box-shadow: 0 0 0 3px #000; padding: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; z-index: 5; }
 #options b { color: var(--gold); }
 #options label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; opacity: 1; }
@@ -288,7 +300,7 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 #options small { opacity: .55; font-size: 12px; }
 .buffs { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
 .buffs span { font-size: 12px; border: 1px solid; padding: 0 4px; background: #0008; }
-@media (max-width: 480px) { #opt-btn { left: auto; right: 150px; } #options { left: 10px; } }
+@media (max-width: 480px) { #me-face { width: 52px; height: 64px; } #me-img { height: 72px; bottom: 12px; } #options { top: 96px; } }
 
 /* ---------- Rodada 4: sensação de jogo ---------- */
 #xpdrop { position: absolute; right: 10px; bottom: 10px; transform: translateY(20px); width: 220px; background: #1b1610ee; border: 2px solid var(--edge);
@@ -327,7 +339,7 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 .journal-h small { opacity: .6; font-weight: normal; }
 
 /* ---------- Rodada 5: interface escalável, boneco de equipamento, relógio ---------- */
-#hud, #log, #dlg, #xpdrop, #toasts, #options, #bossbar, #exit, #opt-btn, #levelup, #banner { zoom: var(--ui, 1); }
+#hud, #log, #dlg, #xpdrop, #toasts, #options, #bossbar, #me-card, #levelup, #banner { zoom: var(--ui, 1); }
 #options select { background: var(--wood-2); color: var(--text); border: 2px solid var(--edge); font: inherit; font-size: 12px; padding: 2px; }
 .clock { font-size: 12px !important; color: #cfe3ff; }
 /* rodada 104: boneco com 9 espaços: coluna da esquerda (5), herói no meio, coluna da direita (4) */

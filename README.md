@@ -11,7 +11,7 @@ Histórico de cada rodada de desenvolvimento: [`CHANGELOG.md`](CHANGELOG.md).
 python -m http.server 8080 -d valdora
 ```
 Abra http://localhost:8080. O progresso fica salvo no navegador (localStorage, chave `valdora.save.v2`):
-salvamento automático a cada 10 s, ao subir de nível, ao negociar, ao morrer, ao sair da página e em **Salvar e sair**.
+salvamento automático a cada 10 s, ao subir de nível, ao negociar, ao morrer, ao sair da página e em **Voltar ao menu** (nas opções ⚙).
 
 ## Como jogar
 - **Tutorial:** fale com o **Guarda Ivo** (com "!" na praça). São 9 tarefas curtas com recompensa
@@ -156,7 +156,8 @@ salvamento automático a cada 10 s, ao subir de nível, ao negociar, ao morrer, 
 - **Opções (⚙):** volume, tremor de tela, **zoom do mundo** (automático: ~14 tiles na altura, para telas grandes não deixarem o mundo em miniatura) e **tamanho da interface** (automático pela altura da janela).
 - **Eventos de mundo** (a cada ~4–6 min): **Invasão goblin** na estrada leste (derrote os 5 em 3 min: +100 moedas e poção de força)
   e **Cardume dourado** num lago fundo (6 peixes dourados de 60 moedas, por 90 s).
-- **Som e opções:** botão ⚙ ao lado de "Salvar e sair" — volume de efeitos, de música e tremor de tela (guardado no navegador).
+- **Cartão do personagem (canto de cima):** retrato com o equipamento vestido, nível total embaixo e ouro ao lado; clicar abre a ficha.
+- **Som e opções:** botão ⚙ no cartão do personagem — volume de efeitos, de música, tremor de tela, zoom e **Voltar ao menu** (guardado no navegador).
   Todos os sons e a música são **sintetizados pelo próprio jogo** (WebAudio), sem arquivos de áudio e sem licenças de terceiros;
   a música muda de clima conforme a região (cada uma com modo, progressão de acordes, baixo, pad, arpejo, melodia e percussão próprios).
 - **Habilidades:** Corte, Mineração, Pesca, Culinária, Ferraria, Combate e Vitalidade (vida máx. = 18 + 2 × nível). Cada ponto de dano dá

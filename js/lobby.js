@@ -19,6 +19,7 @@
       "Segure o botão esquerdo do mouse no chão: o herói vai andando atrás do cursor e, ao soltar, segue até o ponto onde você soltou",
       "Plantas de coleta redesenhadas para combinar com cada região",
       "Os peixes dos cardumes saltam de frente (antes saltavam de costas)",
+      "No canto de cima, o retrato do seu personagem com o que ele veste, o nível e o ouro (o jogo salva sozinho; voltar ao menu fica nas opções ⚙)",
       "Fogueira, braseiro e tocha: só a chama se mexe"]],
     ["v1.03", "Arqueiro, equipamento de verdade e plantas", ["Novo herói: o Arqueiro (no lugar do Marinheiro) atira flechas de longe; com arco equipado, qualquer herói atira",
       "Todos começam só de roupa de baixo; o que você veste aparece no personagem (camisa, placas, calça, botas, capuz, elmo, capa, aljava e arma)",

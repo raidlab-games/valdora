@@ -33,6 +33,10 @@ window.ValdoraHud = (() => {
       const PR = api.rank && api.rank(); // rodada 49: título do santuário
       const PT = api.petView && api.petView(); // rodada 96: ícone, nome e vida do filhote (clique abre a janela dele)
       const vm = player.votiveT > 0 ? Math.ceil(player.votiveT / 60) : 0; // rodada 53: minutos da chama votiva (na ponta da barra de vida); nome longo usa "Nv." para caber
+      const face = $("me-img"); // rodada 105: cartão do personagem (retrato vestido, nível e ouro)
+      if (face) { const src = ValdoraOutfit.face() || ASSETS[player.hero]; if (face.getAttribute("src") !== src) face.src = src;
+        $("me-lvl").textContent = "Nv. " + totalLevel(); $("me-gold-n").textContent = player.coins.toLocaleString("pt-BR");
+        if (!$("me-coin").getAttribute("src")) $("me-coin").src = ASSETS.coin; }
       $("player-info").innerHTML = `<div class="who"><b${PR ? ` style="color:${PR.color}" title="${esc(PR.title)}"` : ""}>${PR && ValdoraShrine.badge(PR) ? `<img class="tbadge" src="${ValdoraShrine.badge(PR)}" alt="">` : ""}${esc(player.name)}</b><span class="lvl" title="Nível total (soma das habilidades)">${player.name.length + (PR ? 2 : 0) > 13 ? "Nv." : "Nível total"} ${totalLevel()}</span></div>
         <div class="bar hp"><i style="width:${Math.min(100, (hp / mh) * 100)}%"></i><em>${hp} / ${mh}</em>${vm ? `<span class="votive" title="Chama votiva: mais ${vm} min">${ASSETS.icon_votive_hud ? `<img src="${ASSETS.icon_votive_hud_32 || ASSETS.icon_votive_hud}" alt="">` : "✦"}<span class="vm">${vm} min</span></span>` : ""}</div>
         ${PT ? `<button type="button" class="petline${PT.down ? " down" : ""}" title="${esc(PT.tip)}">${ASSETS.icon_pet ? `<img src="${ASSETS.icon_pet}" alt="">` : ""}<span class="pn">${esc(PT.name)}</span><span class="bar pethp"><i style="width:${PT.pct}%"></i><em>${esc(PT.label)}</em></span></button>` : ""}

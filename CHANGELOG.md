@@ -41,6 +41,8 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   contorno vermelho; Ctrl + botão direito ataca esse monstro (`nearestMob`). Ctrl + botão esquerdo é um clique comum.
 - **Luta por clique:** um clique no monstro basta — o herói segue batendo até ele morrer, o herói morrer ou o jogador andar.
   Saiu o "revida sozinho": depois de matar, não puxa outro monstro sem um novo clique.
+- **Cartão do personagem no lugar do "Salvar e sair":** retrato com o equipamento atual (recorte do `ValdoraOutfit.face()`), nível
+  total embaixo e ouro ao lado; clicar abre a ficha (P). O jogo já salva sozinho; "Voltar ao menu" ficou dentro das opções (⚙).
 - **Itens no chão:** passar por cima já pega (no meio do passo), não só parando no tile.
 - **Segurar para andar com o mouse:** botão esquerdo pressionado no chão (mais de 0,26 s) faz o herói seguir o cursor; ao soltar,
   anda até o tile onde soltou e o clique é engolido. Mesmo esquema do toque no celular, que também passou a ir até o ponto final.

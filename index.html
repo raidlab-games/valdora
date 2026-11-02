@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Valdora — RPG em pixel art</title>
   <meta name="description" content="Valdora: um RPG 2D original em pixel art para navegador. Colete, forje, cozinhe, enfrente chefes e defenda Lumeira." />
-  <link rel="stylesheet" href="css/style.css?v=202611020852" />
+  <link rel="stylesheet" href="css/style.css?v=202611020900" />
 </head>
 <body>
   <!-- Lobby / site -->
@@ -87,11 +87,10 @@
       <div id="dlg-tabs" class="tabs"></div>
       <div id="dlg-body"></div>
     </div>
-    <button id="exit">Salvar e sair</button>
+    <div id="me-card" title="Seu personagem (P abre a ficha)"><button type="button" id="me-face" aria-label="Abrir a ficha do personagem"><img id="me-img" alt=""><span id="me-lvl">Nv. 1</span></button><span id="me-gold"><img id="me-coin" alt=""><b id="me-gold-n">0</b></span><button id="opt-btn" title="Opções (som, zoom, voltar ao menu)">⚙</button></div>
     <div id="skillbar"></div>
     <div id="fhint" hidden></div>
     <div id="touch-btns" hidden><button id="touch-help" title="Dica do Ivo">?</button><button id="touch-eat" title="Comer (1)">✚</button><button id="touch-attack" title="Atacar o mais próximo (Espaço)">⚔</button></div>
-    <button id="opt-btn" title="Opções (som, tremor de tela)">⚙</button>
     <div id="options" hidden>
       <b>Opções</b>
       <label>Efeitos <input id="opt-sfx" type="range" min="0" max="1" step="0.05"></label>
@@ -102,47 +101,48 @@
       <small id="opt-keys">Teclado: Tab vai para botões, abas e a mochila (setas andam entre os espaços, Enter usa) · Esc fecha janelas.</small>
       <small>Atalhos: I mochila · K níveis · C equipamento · J/M diário e missões · P ficha · O artesanato · 1 comida · 2-4 poções · Espaço ataca o monstro mais próximo · Q/E/R habilidades · F usar/conversar com o que está perto · G o filhote fica/segue</small>
       <small>Sons e música são sintetizados pelo próprio jogo.</small>
+      <button id="exit" type="button">Voltar ao menu</button>
     </div>
   </section>
 
-  <script src="js/assets.js?v=202611020852"></script>
-  <script src="js/data.js?v=202611020852"></script>
-  <script src="js/terrain.js?v=202611020852"></script>
-  <script src="js/audio.js?v=202611020852"></script>
-  <script src="js/path.js?v=202611020852"></script>
-  <script src="js/fx.js?v=202611020852"></script>
-  <script src="js/ambient.js?v=202611020852"></script>
-  <script src="js/lighting.js?v=202611020852"></script>
-  <script src="js/rules.js?v=202611020852"></script>
-  <script src="js/anim_data.js?v=202611020852"></script>
-  <script src="js/anim3d_data.js?v=202611020852"></script>
-  <script src="js/version.js?v=202611020852"></script>
-  <script src="js/ui.js?v=202611020852"></script>
-  <script src="js/quests.js?v=202611020852"></script>
-  <script src="js/dialogs.js?v=202611020852"></script>
-  <script src="js/render.js?v=202611020852"></script>
-  <script src="js/hud.js?v=202611020852"></script>
-  <script src="js/mobs.js?v=202611020852"></script>
-  <script src="js/world.js?v=202611020852"></script>
-  <script src="js/crafting.js?v=202611020852"></script>
-  <script src="js/gather.js?v=202611020852"></script>
-  <script src="js/shop.js?v=202611020852"></script>
-  <script src="js/input.js?v=202611020852"></script>
-  <script src="js/pointer.js?v=202611020852"></script>
-  <script src="js/camera.js?v=202611020852"></script>
-  <script src="js/actors.js?v=202611020852"></script>
-  <script src="js/outfit.js?v=202611020852"></script>
-  <script src="js/hero.js?v=202611020852"></script>
-  <script src="js/scenery.js?v=202611020852"></script>
-  <script src="js/overlay.js?v=202611020852"></script>
-  <script src="js/events.js?v=202611020852"></script>
-  <script src="js/shrine.js?v=202611020852"></script>
-  <script src="js/dlgactions.js?v=202611020852"></script>
-  <script src="js/daily.js?v=202611020852"></script>
-  <script src="js/home.js?v=202611020852"></script>
-  <script src="js/scene.js?v=202611020852"></script>
-  <script src="js/campaign.js?v=202611020852"></script>
-  <script src="js/game.js?v=202611020852"></script>
-  <script src="js/lobby.js?v=202611020852"></script>
+  <script src="js/assets.js?v=202611020900"></script>
+  <script src="js/data.js?v=202611020900"></script>
+  <script src="js/terrain.js?v=202611020900"></script>
+  <script src="js/audio.js?v=202611020900"></script>
+  <script src="js/path.js?v=202611020900"></script>
+  <script src="js/fx.js?v=202611020900"></script>
+  <script src="js/ambient.js?v=202611020900"></script>
+  <script src="js/lighting.js?v=202611020900"></script>
+  <script src="js/rules.js?v=202611020900"></script>
+  <script src="js/anim_data.js?v=202611020900"></script>
+  <script src="js/anim3d_data.js?v=202611020900"></script>
+  <script src="js/version.js?v=202611020900"></script>
+  <script src="js/ui.js?v=202611020900"></script>
+  <script src="js/quests.js?v=202611020900"></script>
+  <script src="js/dialogs.js?v=202611020900"></script>
+  <script src="js/render.js?v=202611020900"></script>
+  <script src="js/hud.js?v=202611020900"></script>
+  <script src="js/mobs.js?v=202611020900"></script>
+  <script src="js/world.js?v=202611020900"></script>
+  <script src="js/crafting.js?v=202611020900"></script>
+  <script src="js/gather.js?v=202611020900"></script>
+  <script src="js/shop.js?v=202611020900"></script>
+  <script src="js/input.js?v=202611020900"></script>
+  <script src="js/pointer.js?v=202611020900"></script>
+  <script src="js/camera.js?v=202611020900"></script>
+  <script src="js/actors.js?v=202611020900"></script>
+  <script src="js/outfit.js?v=202611020900"></script>
+  <script src="js/hero.js?v=202611020900"></script>
+  <script src="js/scenery.js?v=202611020900"></script>
+  <script src="js/overlay.js?v=202611020900"></script>
+  <script src="js/events.js?v=202611020900"></script>
+  <script src="js/shrine.js?v=202611020900"></script>
+  <script src="js/dlgactions.js?v=202611020900"></script>
+  <script src="js/daily.js?v=202611020900"></script>
+  <script src="js/home.js?v=202611020900"></script>
+  <script src="js/scene.js?v=202611020900"></script>
+  <script src="js/campaign.js?v=202611020900"></script>
+  <script src="js/game.js?v=202611020900"></script>
+  <script src="js/lobby.js?v=202611020900"></script>
 </body>
 </html>
