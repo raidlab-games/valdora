@@ -28,6 +28,9 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
 - **Coleta encostada:** clicar num recurso leva o herói para o lado/frente dele (`touchRect`, sem a quina) se isso custar até
   2 passos a mais; o atalho F só oferece recurso a 1 tile (antes aparecia a 2).
 - **Espinho só no contato:** `thorns` só fere quando o herói anda contra o próprio cacto; passar ou parar ao lado não fere.
+- **Correção na mesma versão:** a guarda da vinheta (tela 0×0) entrou com um `//` no meio da linha e engoliu o `}` de
+  `ambient.js`; sem `ValdoraAmbient` o `game.js` não carregava e o ENTRAR não fazia nada. Teste novo: todo script do
+  `index.html` precisa compilar.
 
 ## Rodada 110 (v1.09) — montanhas e minérios ligados ao ambiente, espinho do cacto
 - **Paredão:** `tools/b3d/cliff_faces.py` (grade deslocada por voronoi lido num espaço esticado na altura → colunas de rocha;

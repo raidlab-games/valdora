@@ -7,6 +7,12 @@
   const miss = (list) => list.length ? "faltando: " + list.join(", ") : true;
 
   // ---------- integridade dos dados ----------
+  // rodada 111: todo script do jogo precisa compilar (um comentário "//" no meio de uma linha já engoliu um "}" e o jogo não abria)
+  test("todos os scripts do index.html compilam", () => {
+    const get = (u) => { const x = new XMLHttpRequest(); x.open("GET", u + "?t=" + Date.now(), false); x.send(); return x.responseText; };
+    const srcs = [...get("index.html").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]).filter((s) => !/^https?:/.test(s));
+    return miss(srcs.filter((s) => { try { new Function(get(s)); return false; } catch (e) { return true; } }));
+  });
   test("todo item tem ícone registrado em ASSETS", () => miss(Object.entries(ITEMS).filter(([, it]) => !ASSETS[it.icon]).map(([n]) => n)));
   test("drops de monstros usam itens existentes", () => miss(Object.values(MOBS).flatMap((d) => d.drops.map(([i]) => i)).filter((i) => !ITEMS[i])));
   test("monstros têm arte registrada", () => miss(Object.values(MOBS).map((d) => d.spr).filter((k) => !ASSETS[k])));

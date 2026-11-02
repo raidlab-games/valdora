@@ -153,7 +153,7 @@ window.ValdoraAmbient = (() => {
       }
       ctx.globalAlpha = 1;
     }
-    function drawVignette(ctx, w, h, k = 1) { if (k <= 0 || w < 1 || h < 1) return; // rodada 111: painel escondido (tela 0×0) ctx.globalAlpha = k; ctx.drawImage(vignette(w, h), 0, 0); ctx.globalAlpha = 1; }
+    function drawVignette(ctx, w, h, k = 1) { if (k <= 0 || w < 1 || h < 1) return; ctx.globalAlpha = k; ctx.drawImage(vignette(w, h), 0, 0); ctx.globalAlpha = 1; } // rodada 111: sem desenho com a tela 0×0 (painel escondido)
     const live = () => P.filter((p) => p.on).length;
     // setRain(k): força a chuva (0..1) ou devolve ao sorteio (null) — testes e medições
     return { update, draw, drawVignette, live, kind: () => kindKey, rain: () => rainK, setRain: (k) => { rainForce = k; }, drawGround, setPuddles: (list) => { puddles = list || []; }, wet: () => wet };
