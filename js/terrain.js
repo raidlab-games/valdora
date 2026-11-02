@@ -20,7 +20,7 @@ window.ValdoraTerrain = (() => {
   }
   const noise = (x, y, scale, seed = 0) => noise1(x, y, scale, seed) * 0.7 + noise1(x, y, scale / 2.3, seed + 99) * 0.3;
 
-  function create({ map, W, H, TILE, spr, decal }) {
+  function create({ map, W, H, TILE, spr, decal, mtn }) {
     const N = Math.ceil(TILE / BLOCK);
     // ---------- máscaras de borda (pixeladas, com contorno ondulado e franja pontilhada) ----------
     // dir: 0=N 1=L 2=S 3=O (bordas); 4=NE 5=SE 6=SO 7=NO (cantos externos)
@@ -166,6 +166,51 @@ window.ValdoraTerrain = (() => {
     }
     const put = (d, i, c) => { if (c) { d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = c[3]; } else d[i + 3] = 0; };
     const C_WETSAND = [70, 52, 24, 52], C_FOAM = [238, 251, 255, 210], C_FOAM2 = [220, 244, 255, 80], C_DEEP = [4, 22, 44, 46];
+    // ---------- rodada 106: montanhas com contorno natural ----------
+    // mtn.mask: 1 nos tiles do platô (topo + borda). Um campo suave (como a margem dos lagos) dá a curva; em blocos de 3 px:
+    // dentro = topo mais claro com beirada iluminada; logo abaixo da borda sul = face de rocha (textura do tema) com ~1,7 tile
+    // de altura; depois da face, a sombra; nos outros lados, só um contorno escuro de rocha.
+    const MF = mtn ? makeField(W, H, (x, y) => mtn.mask[y * W + x] === 1, 61) : null, FACE_H = 1.7;
+    const MTN_THEMES = ["gray", "green", "dark", "sand", "snow"], faceTex = {};
+    function faceData(th) { // textura da face do tema (2 tiles de altura) em pixels, lida das artes já carregadas
+      if (faceTex[th] !== undefined) return faceTex[th];
+      const a = spr["mtn_face_t_" + th], b = spr["mtn_face_b_" + th];
+      if (!a || !b) return (faceTex[th] = null);
+      const c = document.createElement("canvas"); c.width = TILE; c.height = TILE * 2; const cg = c.getContext("2d");
+      cg.drawImage(a, 0, 0, TILE, TILE); cg.drawImage(b, 0, TILE, TILE, TILE);
+      return (faceTex[th] = cg.getImageData(0, 0, TILE, TILE * 2).data);
+    }
+    const nearMtn = mtn ? new Uint8Array(W * H) : null;
+    if (mtn) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mtn.mask[y * W + x])
+      for (let dy = -2; dy <= 3; dy++) for (let dx = -2; dx <= 2; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W && Y < H) nearMtn[Y * W + X] = 1; }
+    function themeNear(x, y) { for (let r = 0; r < 4; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W && Y < H && mtn.mask[Y * W + X]) return MTN_THEMES[mtn.theme[Y * W + X]] || "gray"; } return "gray"; }
+    function mountainTile(g, x, y, ox, oy) {
+      const th = themeNear(x, y), fd = faceData(th); let any = false;
+      for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
+        const fx = x + (bx + 0.5) / N, fy = y + (by + 0.5) / N, v = MF.at(fx, fy), i = (by * N + bx) * 4; let c = null;
+        if (v >= 0.5) { // topo: mais claro; beirada clara perto da borda
+          c = v < 0.56 ? [255, 250, 230, 120] : [255, 255, 240, 34];
+          if (MF.at(fx, fy + 0.2) < 0.5) c = [255, 248, 225, 150];
+        } else {
+          let s = -1; for (let k = 1; k <= 18; k++) { const d = k * FACE_H / 18; if (MF.at(fx, fy - d) >= 0.5) { s = d; break; } }
+          if (s > 0 && fd) { // face de rocha: amostra a textura pela coluna (x) e pela profundidade abaixo da borda
+            const px = Math.floor(((fx % 1) + 1) % 1 * TILE), py = Math.min(TILE * 2 - 1, Math.floor(s / FACE_H * TILE * 2)), j = (py * TILE + px) * 4;
+            c = [fd[j], fd[j + 1], fd[j + 2], 255];
+          } else if (s > 0) c = [96, 92, 88, 255];
+          else { // sombra logo abaixo da face; contorno de rocha nos lados
+            let sh = -1; for (let k = 1; k <= 8; k++) { const d = FACE_H + k * 0.1; if (MF.at(fx, fy - d) >= 0.5) { sh = d - FACE_H; break; } }
+            if (sh >= 0) c = [10, 8, 6, Math.round(110 * (1 - sh / 0.8))];
+            else if (v > 0.44) c = [40, 36, 34, 230];
+            else if (v > 0.38) c = [20, 18, 16, 70];
+          }
+        }
+        put(oImg.data, i, c); any = any || !!c;
+      }
+      if (any) { og.putImageData(oImg, 0, 0); g.drawImage(ov16, 0, 0, N, N, ox, oy, TILE, TILE); }
+      const st = mtn.stairs.get(y * W + x); // escada talhada (2 tiles: o de cima e o de baixo da face)
+      if (st && spr[`mtn_stairs_${st.part}_${st.theme}`]) g.drawImage(spr[`mtn_stairs_${st.part}_${st.theme}`], ox, oy, TILE, TILE);
+    }
+
     const C_WAVE = [240, 252, 255, 150], C_SHADOW = [12, 22, 8, 105], C_RIM = [10, 30, 8, 60];
     function shoreTile(g, x, y, ox, oy, waves, wx, wy) {
       const water = map[y][x] === "water"; let land = null;
@@ -218,6 +263,7 @@ window.ValdoraTerrain = (() => {
         drawTransitions(g, x, y, ox, oy);
         if (wet[y * W + x]) shoreTile(g, x, y, ox, oy, waves, tx * N, ty * N);
         if (plaza[y * W + x]) plazaTile(g, x, y, ox, oy);
+        if (nearMtn && nearMtn[y * W + x]) mountainTile(g, x, y, ox, oy); // rodada 106
         const d = decal && decal(x, y);
         if (d) { if (spr[d]) { const s = spr[d]; g.drawImage(s, ox + (TILE - s.width) / 2, oy + TILE - s.height); } else drawDecal(g, d, ox, oy, hash(x, y, 77)); }
       }

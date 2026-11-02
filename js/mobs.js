@@ -73,7 +73,7 @@ window.ValdoraMobs = (() => {
         if (player.hp <= 0) playerDied();
       } else addFloat(player.px + 0.5, player.py - 0.6, "esquivou!", "#9fe08a", 1, 14);
     }
-    const mobCan = (m, x, y) => { const player = api.player(); return walkable(x, y) && !(x === player.x && y === player.y) && regionAt(x, y) !== "town" && !(api.petAt && api.petAt(x, y)); }; // rodada 96: nem no tile do filhote
+    const mobCan = (m, x, y) => { const player = api.player(); return walkable(x, y) && (!api.elevAt || api.elevAt(x, y) === (m.elev || 0)) && !(x === player.x && y === player.y) && regionAt(x, y) !== "town" && !(api.petAt && api.petAt(x, y)); }; // rodada 96: nem no tile do filhote; rodada 106: monstro não sobe nem desce montanha
     function mobMove(m, x, y) {
       if (!mobCan(m, x, y)) return false;
       if (x !== m.x && y !== m.y && !canStep(m.x, m.y, x, y)) return false; // diagonal sem cortar quina

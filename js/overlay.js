@@ -30,7 +30,8 @@ window.ValdoraOverlay = (() => {
       if (big) { // um tile = S x S pixels da mesma cor (com a tinta de manchas do chão)
         const tintOk = T && T.tintAt;
         for (let ty = 0; ty < H; ty++) { const row = map[ty]; for (let tx = 0; tx < W; tx++) {
-          const k = row[tx], c = COL[k] || (k.startsWith("cliff") || k.startsWith("stairs") ? [96, 92, 88] : [0, 0, 0]), tn = tintOk && k !== "void" && k !== "water" ? T.tintAt(tx, ty) * 10 : 0;
+          const mb = api.mtn && api.mtn(), mi = ty * W + tx, k = row[tx];
+          const c = mb && mb.block[mi] ? [84, 80, 76] : COL[k] || [0, 0, 0], tn = (tintOk && k !== "void" && k !== "water" ? T.tintAt(tx, ty) * 10 : 0) + (mb && mb.elev[mi] === 1 ? 26 : 0); // rodada 106: montanhas
           const r = Math.max(0, Math.min(255, c[0] + tn)), gg = Math.max(0, Math.min(255, c[1] + tn)), b = Math.max(0, Math.min(255, c[2] + tn * 0.6));
           for (let sy = 0; sy < S; sy++) { let i = ((ty * S + sy) * W * S + tx * S) * 4; for (let sx = 0; sx < S; sx++, i += 4) { d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; } } } }
       } else for (let py = 0; py < H * S; py++) for (let px = 0; px < W * S; px++) {

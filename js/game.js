@@ -320,7 +320,7 @@
   // recursos e enfeites por região (chance por tile livre); as do Campo são as da tabela antiga
   const TABLE_NEW = {
     darkwood: [["tree_dark", 0.07], ["tree_cedar", 0.012], ["rock_obsidian", 0.014], ["rock_iron", 0.006], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
-    desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.012], ["rock", 0.005], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
+    desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.012], ["rock", 0.005], ["boulder_sand", 0.008], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
     mountains: [["tree_pine", 0.034], ["rock_mithril", 0.014], ["rock_iron", 0.01], ["boulder", 0.022], ["res_rockmoss", 0.008], ["bushv:deco_bush_mountain", 0.006], ["rare:rock_adamant", 0.004], ["rare:res_edelweiss", 0.004]],
     snow: [["tree_snowpine", 0.05], ["rock_frost", 0.014], ["rock_lumita", 0.004], ["res_frostbloom", 0.009], ["boulder_snow", 0.01], ["bushv:deco_bush_snow", 0.006], ["rare:rock_starice", 0.003], ["rare:res_aurora", 0.003]],
   };
@@ -344,7 +344,7 @@
   const POI = { darkwood: ["ruins", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp", "ruins"], desert: ["ruins", "bones", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp"],
     mountains: ["camp", "ruins", "rubble", "camp", "ruins", "rubble", "camp", "bones", "ruins", "camp"], snow: ["camp", "bones", "ruins", "camp", "bones", "ruins", "camp", "bones", "camp", "ruins"] };
   function placePOIs(rnd, deco) {
-    const G = WORLD_G, free = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path/.test(map[y][x]) && !nearTown(x, y, 8) && !G.inOld(x, y);
+    const G = WORLD_G, free = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path/.test(map[y][x]) && !nearTown(x, y, 8) && !G.inOld(x, y) && !MTN.block[y * W + x] && !MTN.elev[y * W + x];
     for (const B of G.BIOMES.slice(1)) for (const kind of POI[B.key]) {
       let p = null;
       for (let k = 0; k < 300 && !p; k++) { const a = rnd() * 6.283, r = Math.sqrt(rnd()) * B.c[2] * 1.2, x = Math.round(B.c[0] + Math.cos(a) * r), y = Math.round(B.c[1] + Math.sin(a) * r);
@@ -357,6 +357,73 @@
         near(2, (x, y) => deco("barrel", "barrel", x, y)); near(1, (x, y) => SPR.deco_crates && deco("prop", "deco_crates", x, y)); near(1, (x, y) => SPR.deco_campfire_log && deco("bench", "deco_campfire_log", x, y)); }
       else if (kind === "bones") near(5, (x, y) => place({ type: "bones", spr: ["deco_bones_1", "deco_bones_2", "deco_bones_3"][Math.floor(rnd() * 3)], x, y, w: 1, h: 1, solid: false }));
       else if (kind === "rubble") near(7, (x, y) => place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false }));
+    }
+  }
+
+  // ================= rodada 106: montanhas de verdade =================
+  // Platô com contorno natural (mancha de ruído), borda de rocha e face sul (2 tiles) que não se atravessam; uma escada talhada
+  // na face é o único caminho. No topo: um bando de monstros (que não descem), um minério (às vezes raro) ou nada — refúgio:
+  // monstro não sobe montanha. Pequenas em todos os biomas; muitas e maiores nas Montanhas de Ferro.
+  let MTN = null;
+  const elevAt = (x, y) => (MTN && !inCrypt && inside(x, y) ? MTN.elev[y * W + x] : 0); // 0 chão, 1 topo, 2 escada
+  const MTN_CFG = { 1: [9, 3, 6, 1], 2: [12, 3, 7, 2], 3: [46, 4, 9, 0], 4: [12, 3, 7, 3], 5: [14, 3, 8, 4] }; // bioma: quantas, raio mín/máx, tema
+  const MTN_ORE = { 1: ["rock_iron", "rock_lumita"], 2: ["rock_obsidian", "rock_amethyst"], 3: ["rock_mithril", "rock_adamant"], 4: ["rock_sun", "rock_ruby"], 5: ["rock_frost", "rock_starice"] };
+  function placeMountains(rnd) {
+    const G = WORLD_G, n = W * H;
+    MTN = { mask: new Uint8Array(n), theme: new Uint8Array(n), block: new Uint8Array(n), elev: new Uint8Array(n), stairs: new Map(), list: [] };
+    const used = new Uint8Array(n), key = (x, y) => y * W + x;
+    for (const [bs, [count, rmin, rmax, theme]] of Object.entries(MTN_CFG)) {
+      const b = +bs, B = G.BIOMES[b - 1];
+      for (let made = 0, tries = 0; made < count && tries < count * 60; tries++) {
+        const a = rnd() * 6.283, rr = Math.sqrt(rnd()) * B.c[2] * 1.25, cx = Math.round(B.c[0] + Math.cos(a) * rr), cy = Math.round(B.c[1] + Math.sin(a) * rr);
+        if (G.biomeAt(cx, cy) !== b || G.inOld(cx, cy)) continue;
+        const R = rmin + rnd() * (rmax - rmin), ex = 0.75 + rnd() * 0.7, ang = rnd() * 3.14, ca = Math.cos(ang), sa = Math.sin(ang), seed = 300 + tries + b * 1000;
+        const M = new Set(), span = Math.ceil(R * Math.max(1, ex) + 2);
+        for (let y = cy - span; y <= cy + span; y++) for (let x = cx - span; x <= cx + span; x++) {
+          const dx = x - cx, dy = y - cy, u = (dx * ca + dy * sa) / (R * ex), v = (-dx * sa + dy * ca) / R;
+          if (Math.hypot(u, v) + (noise(x, y, 3.5, seed) - 0.5) * 0.6 < 1) M.add(key(x, y));
+        }
+        if (M.size < 14) continue;
+        const F = new Set(); // face: os 2 tiles abaixo de cada tile da borda sul
+        for (const k of M) { const x = k % W, y = (k / W) | 0; if (!M.has(key(x, y + 1))) { F.add(key(x, y + 1)); if (!M.has(key(x, y + 2))) F.add(key(x, y + 2)); } }
+        let ok = true;
+        for (const k of [...M, ...F]) { const x = k % W, y = (k / W) | 0;
+          for (let dy = -2; dy <= 2 && ok; dy++) for (let dx = -2; dx <= 2 && ok; dx++) { const X = x + dx, Y = y + dy;
+            if (!inside(X, Y) || used[key(X, Y)] || G.biomeAt(X, Y) !== b || G.inOld(X, Y) || /water|path/.test(map[Y][X]) || occ[key(X, Y)] || nearTown(X, Y, 3)) ok = false; }
+          if (!ok) break; }
+        if (!ok || G.DG_ENTRIES.some((E) => Math.abs(E.x - cx) < span + 5 && Math.abs(E.y - cy) < span + 5)) continue;
+        const T = [...M].filter((k) => { const x = k % W, y = (k / W) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!M.has(key(x + dx, y + dy))) return false; return true; });
+        if (T.length < 6) continue;
+        // escada: coluna com borda (topo logo acima), as 2 de face e chão livre embaixo
+        const cand = [];
+        for (const k of M) { const x = k % W, y = (k / W) | 0;
+          if (!M.has(key(x, y + 1)) && F.has(key(x, y + 1)) && F.has(key(x, y + 2)) && T.includes(key(x, y - 1)) && !M.has(key(x - 1, y + 1)) && !M.has(key(x + 1, y + 1)) && !used[key(x, y + 3)]) cand.push([x, y]); }
+        if (!cand.length) continue;
+        const [sx, sy] = cand[Math.floor(rnd() * cand.length)], th = ["gray", "green", "dark", "sand", "snow"][theme];
+        for (const k of M) { MTN.mask[k] = 1; MTN.theme[k] = theme; MTN.block[k] = 1; }
+        for (const k of F) MTN.block[k] = 1;
+        for (const k of T) { MTN.block[k] = 0; MTN.elev[k] = 1; }
+        for (const k of [...M, ...F]) { const x = k % W, y = (k / W) | 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inside(x + dx, y + dy)) used[key(x + dx, y + dy)] = 1; }
+        for (const [x, y] of [[sx, sy], [sx, sy + 1], [sx, sy + 2]]) { MTN.block[key(x, y)] = 0; MTN.elev[key(x, y)] = 2; }
+        MTN.stairs.set(key(sx, sy + 1), { part: "t", theme: th }); MTN.stairs.set(key(sx, sy + 2), { part: "b", theme: th });
+        const r = rnd(); MTN.list.push({ b, top: T.map((k) => [k % W, (k / W) | 0]), kind: r < 0.38 ? "hunt" : r < 0.7 ? "ore" : "empty", stairs: { x: sx, y: sy + 3 } });
+        made++;
+      }
+    }
+  }
+  function fillMountains(rnd) { // depois dos recursos: o que cada topo guarda
+    const G = WORLD_G;
+    for (const m of MTN.list) {
+      const free = m.top.filter(([x, y]) => !occ[y * W + x]);
+      if (m.kind === "ore") { const [base, rare] = MTN_ORE[m.b], k = 2 + Math.floor(rnd() * 2);
+        for (let i = 0; i < k && free.length; i++) { const [x, y] = free.splice(Math.floor(rnd() * free.length), 1)[0], kind = i === 0 && rnd() < 0.5 && RES[rare] && SPR[rare] ? rare : base; if (RES[kind] && SPR[kind]) addResource(kind, x, y); } }
+      else if (m.kind === "hunt") {
+        const reg = G.regionShape(m.top[0][0], m.top[0][1]), pool = m.b === 1 ? (WORLD_G.CAMPO_EXTRA[reg] || []).map((s) => s[0]) : G.BIOME_SPAWNS[G.BKEY[m.b]].map((s) => s[0]);
+        const types = [...new Set(pool)].filter((ty) => MOBS[ty] && !MOBS[ty].boss); if (!types.length) continue;
+        const type = types[Math.min(types.length - 1, Math.floor(types.length * (0.4 + rnd() * 0.6)))]; // do meio para o alto da faixa
+        const c = m.top[Math.floor(m.top.length / 2)], home = { x: c[0], y: c[1], r: 3, elev: 1 }, n = 3 + Math.floor(rnd() * 3);
+        for (let i = 0; i < n; i++) spawnMob(type, reg, home);
+      }
     }
   }
   function genContinent() {
@@ -428,13 +495,14 @@
       map[E.y][E.x] = "dirt"; map[E.y + 1][E.x] = "dirt";
       E.obj = deco("dungeon", SPR[spr] ? spr : "deco_crypt", E.x, E.y, 1, 1, { dungeon: E.key, label: E.name });
     }
+    placeMountains(rnd);
     placePOIs(rnd, deco);
-    // recursos e enfeites (fora do quadro antigo); montanhas ganham paredões de rocha onde o ruído é alto
+    // recursos e enfeites (fora do quadro antigo)
     for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
-      if (G.inOld(x, y) || occ[y * W + x] || nearTown(x, y, 3) || /water|path|sand/.test(map[y][x]) && G.biomeAt(x, y) !== 4) continue; // no deserto, areia recebe recurso
+      if (G.inOld(x, y) || occ[y * W + x] || MTN.block[y * W + x] || MTN.elev[y * W + x] === 2 || nearTown(x, y, 3) || /water|path|sand/.test(map[y][x]) && G.biomeAt(x, y) !== 4) continue; // no deserto, areia recebe recurso
       if (map[y][x] === "water" || map[y][x] === "path") continue;
       const b = G.biomeAt(x, y), reg = G.regionShape(x, y);
-      if (b === 3 && G.fbm(x / 9, y / 9, 41) > 0.66 && !G.DG_ENTRIES.some((E) => Math.abs(E.x - x) < 4 && Math.abs(E.y - y) < 4)) { deco("rock_wall", SPR.boulder ? "boulder" : "rubble", x, y); continue; }
+      if (b === 3 && G.fbm(x / 9, y / 9, 41) > 0.7 && rnd() < 0.5) { place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false }); continue; } // rodada 106: cascalho no pé das montanhas (os paredões de pedregulho saíram)
       const tab = b === 1 ? TABLE_CAMPO[reg] : TABLE_NEW[reg]; if (!tab) continue;
       if (map[y][x] === "stone" && reg !== "ruins" && b === 1) continue;
       let n = rnd(); const dens = noise(x, y, 8, 99 + b), grove = dens > 0.56 ? 2.6 : dens < 0.36 ? 0.2 : 0.9; // bosques e clareiras
@@ -446,7 +514,7 @@
           else if (kind.startsWith("rare:")) { const k2 = kind.slice(5); if (G.depthAt(x, y) >= 0.55 && RES[k2] && SPR[k2]) addResource(k2, x, y); } // raros: só no fundo do bioma
           else if (kind.startsWith("bushv:")) { const s = kind.slice(6); if (SPR[s]) deco("bush", s, x, y); }
           else if (kind.startsWith("deco:")) { const s = kind.slice(5); if (SPR[s]) place({ type: "bones", spr: s, x, y, w: 1, h: 1, solid: false }); }
-          else if (kind === "boulder" || kind === "boulder_snow") { if (SPR[kind]) deco("rock_wall", kind, x, y); }
+          else if (kind === "boulder" || kind === "boulder_snow" || kind === "boulder_sand") { if (SPR[kind]) deco("rock_wall", kind, x, y); }
           else if (RES[kind] && SPR[kind]) addResource(kind, x, y);
           break;
         }
@@ -458,6 +526,7 @@
       Lk.shore = Lk.tiles.filter(([x, y]) => DIRS.some(([dx, dy]) => inside(x + dx, y + dy) && map[y + dy][x + dx] !== "water"));
       if (Lk.shore.length) for (let i = 0; i < Lk.n; i++) { const o = addResource(Lk.kind, 0, 0, { lake: Lk }); relocateSpot(o, true); }
     }
+    fillMountains(rnd);
     // monstros: Campo crescido (fora do quadro antigo) e os biomas novos (bandos com casa)
     const outside = (m) => { if (m && G.inOld(m.x, m.y)) { m.dead = true; mobs.splice(mobs.indexOf(m), 1); } };
     for (const [reg, list] of Object.entries(G.CAMPO_EXTRA)) for (const [type, n] of list) for (let i = 0; i < n; i++) outside(spawnMob(type, reg, null));
@@ -482,7 +551,7 @@
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
     // rodada 78: marcos da campanha, depois de todo o sorteio
     CAMPAIGN_RT.place(deco, (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path|sand/.test(map[y][x]) && regionAt(x, y) !== "town", npc);
-    ground = ValdoraTerrain.create({ map, W, H, TILE, spr: SPR, decal: decalAt });
+    ground = ValdoraTerrain.create({ map, W, H, TILE, spr: SPR, decal: decalAt, mtn: MTN });
     buildMinimap();
   }
   function decalAt(x, y) { // decorações do chão (não bloqueiam): canteiros, tufos, pedrinhas...
@@ -692,7 +761,7 @@
   // home: ponto de origem (renascimento perto dele); old: monstro morto que será substituído
   const spawnOk = (x, y, reg) => inside(x, y) && regionAt(x, y) === reg && !nearTown(x, y, 6) && walkable(x, y) && !(player && x === player.x && y === player.y);
   function spawnSpot(reg, home) { // lugar onde um monstro pode nascer (o mesmo sorteio do spawnMob)
-    for (let t = 0; t < 400; t++) { const x = home ? home.x + ri(-(home.r || 4), home.r || 4) : ri(2, W - 3), y = home ? home.y + ri(-(home.r || 4), home.r || 4) : ri(2, H - 3); if (spawnOk(x, y, reg)) return { x, y }; }
+    for (let t = 0; t < 400; t++) { const x = home ? home.x + ri(-(home.r || 4), home.r || 4) : ri(2, W - 3), y = home ? home.y + ri(-(home.r || 4), home.r || 4) : ri(2, H - 3); if (spawnOk(x, y, reg) && elevAt(x, y) === (home && home.elev ? 1 : 0)) return { x, y }; }
     return null;
   }
   // rodada 62: algum tile dos Campos ou da vila a até r tiles (Chebyshev) de (x, y)?
@@ -708,18 +777,18 @@
   function spawnRule(type, reg, x, y) { // devolve outra posição válida, sorteada por um gerador local (não mexe no aleatório do jogo)
     if (!spawnBad(type, reg, x, y)) return null;
     const g = mulberry32((x * 374761393 + y * 668265263) | 0);
-    for (let k = 0; k < 400; k++) { const nx = 2 + Math.floor(g() * (W - 4)), ny = 2 + Math.floor(g() * (H - 4)); if (spawnOk(nx, ny, reg) && !spawnBad(type, reg, nx, ny)) return { x: nx, y: ny }; }
+    for (let k = 0; k < 400; k++) { const nx = 2 + Math.floor(g() * (W - 4)), ny = 2 + Math.floor(g() * (H - 4)); if (spawnOk(nx, ny, reg) && !elevAt(nx, ny) && !spawnBad(type, reg, nx, ny)) return { x: nx, y: ny }; }
     return null; // sem lugar válido: fica onde caiu (nunca trava a criação do mundo)
   }
   function spawnMob(type, reg, home, old, extra) {
     for (let t = 0; t < 400; t++) {
       const fixed = extra && extra.at && t === 0 && spawnOk(extra.at.x, extra.at.y, reg) ? extra.at : null;
       let x = fixed ? fixed.x : home ? home.x + ri(-(home.r || 4), home.r || 4) : ri(2, W - 3), y = fixed ? fixed.y : home ? home.y + ri(-(home.r || 4), home.r || 4) : ri(2, H - 3);
-      if (!fixed && !spawnOk(x, y, reg)) continue;
+      if (!fixed && (!spawnOk(x, y, reg) || elevAt(x, y) !== (home && home.elev ? 1 : 0))) continue; // rodada 106: topo x chão
       if (!fixed && !home) { const q = spawnRule(type, reg, x, y); if (q) { x = q.x; y = q.y; } } // rodada 62/63: lobos longe dos Campos, javalis longe do acampamento
       const d = MOBS[type];
       const m = { type, d, x, y, fx: x, fy: y, prog: 1, px: x, py: y, hx: home ? home.x : x, hy: home ? home.y : y, reg, home,
-        hp: d.hp, aggro: false, atkT: 0, flash: 0, face: -1, dead: false, respawnT: 0, lunge: 0, kb: 0, prep: 0, dist: 0, phase: rand() * 6, swings: 0, windup: 0, ...extra };
+        hp: d.hp, elev: home && home.elev ? 1 : 0, aggro: false, atkT: 0, flash: 0, face: -1, dead: false, respawnT: 0, lunge: 0, kb: 0, prep: 0, dist: 0, phase: rand() * 6, swings: 0, windup: 0, ...extra };
       const i = old ? mobs.indexOf(old) : -1;
       if (i >= 0) mobs[i] = m; else mobs.push(m);
       mobIdx.set(y * W + x, m);
@@ -735,7 +804,7 @@
   const mobIdx = new Map();
   function indexMobs() { mobIdx.clear(); for (const m of mobs) if (!m.dead) mobIdx.set(m.y * W + m.x, m); }
   const mobAt = (x, y) => { const m = mobIdx.get(y * W + x); return m && !m.dead && m.x === x && m.y === y ? m : undefined; };
-  const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]) && !mobAt(x, y);
+  const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !(MTN && !inCrypt && MTN.block[y * W + x]) && !isBlockingObj(occ[y * W + x]) && !mobAt(x, y);
   // rodada 105: encostar vale nas 8 direções. Na diagonal, pelo menos um dos dois tiles do meio precisa estar livre de parede/água
   // (não se golpeia através de uma quina fechada); monstros e o herói no meio não atrapalham.
   const open = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]);
@@ -1166,7 +1235,7 @@
     if (shoot && goal(player.x, player.y)) { player.path = []; return; } // já na mira: atira daqui
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
-  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mobs: () => mobs, setTarget, shots: () => shots,
+  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mtn: () => MTN, walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
@@ -1529,7 +1598,7 @@
   // para as outras pagando STONE_COST moedas e marcar onde renascer (uma de cada vez).
   const STONE_COST = 30;
   // rodada 105: mapa do continente (M): quase a tela inteira, redesenhado junto com o minimapa enquanto estiver aberto
-  function toggleMap(force) { const el = $("worldmap"), on = force ?? el.hidden; el.hidden = !on; if (on) { closeDlg(); drawMap(); } }
+  function toggleMap(force) { const el = $("worldmap"), on = force ?? el.hidden; el.hidden = !on; $("game").classList.toggle("map-open", on); if (on) { closeDlg(); drawMap(); } } // rodada 106: só o mapa na tela
   function drawMap() {
     const el = $("worldmap"); if (el.hidden) return;
     const cv = $("wm-canvas"), r = cv.getBoundingClientRect(), w = Math.max(200, Math.round(r.width)), h = Math.max(160, Math.round(r.height));
@@ -2188,7 +2257,7 @@
 
   // ---------- Minimapa ----------
   // minimapa e luzes (js/overlay.js)
-  const OVERLAY = ValdoraOverlay.create({ canvas, cam, ctx, TILE, W, H, LIGHT, isSpecial, state: () => ({ map, objects, mobs, npc, player, groundItems, inCrypt, goals: CAMPAIGN_RT.objectives() }) });
+  const OVERLAY = ValdoraOverlay.create({ mtn: () => (inCrypt ? null : MTN), canvas, cam, ctx, TILE, W, H, LIGHT, isSpecial, state: () => ({ map, objects, mobs, npc, player, groundItems, inCrypt, goals: CAMPAIGN_RT.objectives() }) });
   const { buildMinimap, drawMinimap, drawLights } = OVERLAY;
   // rodada 78: campanha no mundo (js/campaign.js) e cenas de diálogo (js/scene.js)
   const VR = { t: -1e9, v: 0 };
@@ -2451,7 +2520,7 @@
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },

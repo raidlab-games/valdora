@@ -20,6 +20,16 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 107 (v1.06) — montanhas de verdade
+- **Montanhas:** platôs com contorno de ruído (nada quadrado), desenhados no chão por um campo suave como a margem dos lagos:
+  topo mais claro com beirada iluminada, face sul de rocha (tools/cliffs.py, 5 temas por bioma) e sombra. A borda e a face
+  bloqueiam; uma escada talhada na face é o único acesso (`MTN.block`, `MTN.elev`: 0 chão, 1 topo, 2 escada).
+- **Conteúdo do topo:** caça (bando do bioma com casa `elev: 1`, que não desce), minério (do bioma, às vezes o raro) ou vazio
+  (refúgio: `mobCan` exige a mesma altura, então monstro do chão não sobe). 9–26 por bioma; mais nas Montanhas de Ferro.
+- Saíram os paredões de pedregulho das Montanhas (agora cascalho). **Rochas de obstáculo** novas (tools/boulders.py):
+  lascas de rocha saindo de um monte de terra com capim/neve/areia — não lembram mais os veios de minério; arenito no deserto.
+- **Mapa (M):** tela inteira, interface escondida enquanto aberto; montanhas aparecem no mapa e no minimapa.
+
 ## Rodada 106 (v1.05) — o continente
 - **Continente de 520 x 400** (`js/world.js`): uma massa de terra só, com mar ao norte e a leste, baías e ilhas; o mapa antigo
   (96 x 72) é gerado como sempre no quadro local e encaixado no oeste (OX 34, OY 236), então missões, casa, masmorras e saves

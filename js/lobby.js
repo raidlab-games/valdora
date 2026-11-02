@@ -11,6 +11,11 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.06", "Montanhas de verdade", ["Montanhas com contorno natural, paredão de rocha e uma escada talhada para subir",
+      "No topo: um bando de monstros para caçar, um minério (às vezes raro) ou nada — refúgio, porque monstro não sobe montanha",
+      "Montanhas pequenas em todos os biomas e muitas nas Montanhas de Ferro",
+      "Rochas de obstáculo novas, saindo da terra (não se confundem mais com os veios de minério)",
+      "Tecla M: só o mapa na tela, sem a interface por cima"]],
     ["v1.05", "O continente", ["O mapa virou um continente com mar, baías e ilhas — tecla M abre o mapa inteiro",
       "Cinco biomas: Campo (nível 5–30), Floresta Sombria (31–65), Montanhas de Ferro (66–101), Deserto Rubro (102–140) e Geleira do Norte (141–180)",
       "Cada bioma tem vila, monstros próprios, masmorra com chefe, minérios, madeiras e ervas — e um raro de nível maior no fundo",
