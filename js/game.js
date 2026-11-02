@@ -876,6 +876,15 @@
   const STATIONS = { merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
+  // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
+  function nearestMob(px, py, r = 4) {
+    const fx = (px + cam.x) / TILE, fy = (py + cam.y) / TILE; let best = null, bd = r;
+    for (const m of mobs) {
+      if (m.dead || m.pet || m.appear != null) continue;
+      const d = Math.hypot(m.px + 0.5 - fx, m.py + 0.5 - fy); if (d < bd) { bd = d; best = m; }
+    }
+    return best;
+  }
   function pick(px, py) {
     const fx = (px + cam.x) / TILE, fy = (py + cam.y) / TILE;
     let best = null;
@@ -959,11 +968,12 @@
   }
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
-    tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS) }; // rodada 104: inspeção pelo console (só com ?debug)
+    tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
+    drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
-    clickFx: (...a) => clickFx(...a), setTarget: (p) => setTarget(p), walkable: (x, y) => walkable(x, y), inside: (x, y) => inside(x, y) });
+    clickFx: (...a) => clickFx(...a), setTarget: (p) => setTarget(p), nearestMob: (x, y) => nearestMob(x, y), walkable: (x, y) => walkable(x, y), inside: (x, y) => inside(x, y) });
   const PST = POINTER.st, updateTouch = POINTER.updateTouch;
 
   // ---------- Ações (executadas em ticks) ----------
@@ -1546,8 +1556,7 @@
       if (pe.heavy && SND.opts.shake) shake = 0.3;
       if (player.hp <= 0) return playerDied();
     } else addFloat(player.px + 0.5, player.py - 0.3, "bloqueou", "#9fd0ff", 0.8, 12);
-    // revida sozinho se estiver parado
-    if (!player.target && !player.path.length && !player.job) player.target = { kind: "mob", ref: m };
+    // rodada 105: não revida sozinho — o herói só luta com o monstro que o jogador escolheu (clique, Ctrl + clique ou Espaço)
   }
   function playerDied() { // toca a animação de morte e só então volta à vila
     if (player.deadT > 0) return;
@@ -2040,7 +2049,11 @@
     }
     if (!player.dash) { player.px = player.fx + (player.x - player.fx) * player.prog; player.py = player.fy + (player.y - player.fy) * player.prog; }
     const moving = player.prog < 1 && !player.dash;
-    if (wasMoving && !moving && groundItems.some((g) => g.x === player.x && g.y === player.y)) pickupAt(player.x, player.y, false);
+    // rodada 105: pega o que estiver no chão ao passar por cima (no meio do passo), não só ao parar no tile
+    const tileKey = player.x + "," + player.y;
+    if ((moving ? player.prog >= 0.5 : wasMoving) && player.pickTile !== tileKey && groundItems.some((g) => g.x === player.x && g.y === player.y)) {
+      player.pickTile = tileKey; pickupAt(player.x, player.y, false);
+    } else if (player.pickTile && player.pickTile !== tileKey && !moving) player.pickTile = null;
     player.flash = Math.max(0, player.flash - dt); player.hitT = Math.max(0, (player.hitT || 0) - dt); player.blockT = Math.max(0, (player.blockT || 0) - dt); player.cancelT = Math.max(0, (player.cancelT || 0) - dt); player.cheerT = Math.max(0, (player.cheerT || 0) - dt); player.eatT = Math.max(0, (player.eatT || 0) - dt);
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
@@ -2238,10 +2251,11 @@
     drawPathDots(t);
     if (player.target) outlineTarget(player.target, "#f1c40f", t);
     if (PST.mouse) {
-      const hover = PST.hover = pick(PST.mouse.x, PST.mouse.y);
+      const am = PST.attack && nearestMob(PST.mouse.x, PST.mouse.y); // rodada 105: modo de ataque (Ctrl): mira no monstro mais perto
+      const hover = PST.hover = am ? { kind: "mob", ref: am } : pick(PST.mouse.x, PST.mouse.y);
       const interactive = hover && hover.kind !== "tile";
-      canvas.style.cursor = interactive ? "pointer" : "default";
-      if (interactive && (!player.target || player.target.ref !== hover.ref)) outlineTarget(hover, "#ffffff88", t);
+      canvas.style.cursor = PST.attack ? "crosshair" : interactive ? "pointer" : "default";
+      if (interactive && (!player.target || player.target.ref !== hover.ref)) outlineTarget(hover, am ? "#ff5a4acc" : "#ffffff88", t);
     }
     for (const m of mobs) if (!m.dead && m.px > x0 - 3 && m.px < x1 + 2 && m.py > y0 - 2 && m.py < y1 + 3) ents.push({ y: m.py, m });
     if (pet && player.pet && !(pet.down && inCrypt)) ents.push({ y: (pet.down || pet.napping ? pet.y : pet.py) + 0.01, m: pet }); // rodada 100: por cima da cama // rodada 95; rodada 96: descansando na vila
