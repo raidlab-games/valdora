@@ -33,7 +33,9 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   diagonal dura √2; moradores passeiam na diagonal. Saiu a espera da "dança da diagonal" (rodadas 48/83).
 - **Peixes saltando de frente:** o salto que fica tocando nos cardumes (`fx_fishspot`, `fx_fishspot_deep`) usava o ícone virado para a
   esquerda num arco para a direita (saltava de costas); agora espelha o peixe e o nariz segue a tangente do arco, como o `fish_jump`.
-- **Publicação:** `tools/publicar.ps1` põe `?v=<data>` nos scripts e no estilo das páginas, para o navegador não misturar versões.
+- **Publicação:** `tools/publicar.ps1` põe `?v=<data>` nos scripts e no estilo das páginas e grava a mesma data em `js/version.js`
+  (`ASSET_V`), que acrescenta `?v=` a toda arte (`ASSETS`, `ANIM_SHEETS`, peças do `outfit.js`): quem joga recebe a arte nova na hora,
+  sem os 10 min de cache do site (foi por isso que o peixe novo ainda aparecia de costas).
 - **Fogo:** fogueira, braseiro e tocha deixam pedras, lenha e ferro iguais à arte parada; só a chama e as fagulhas mudam (`fire_only`).
 - **Ctrl + botão direito (modo de ataque):** segurando Ctrl o cursor vira mira e o monstro mais perto do ponto (até 4 tiles) ganha
   contorno vermelho; Ctrl + botão direito ataca esse monstro (`nearestMob`). Ctrl + botão esquerdo é um clique comum.
