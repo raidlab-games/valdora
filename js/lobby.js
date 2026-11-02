@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.19", "Um mundo maior", ["Biomas 50% maiores e mar em volta de todo o continente", "Vilas com o dobro do tamanho", "10 cais com mestres do porto (os barcos vêm depois)", "Raposas, cervos e ursos, e mais monstros espalhados"]],
     ["v1.18", "Movimento mais preciso", ["As teclas agora são seguidas na ordem em que você aperta: 3× A e 1× W anda para a esquerda e depois sobe", "Toques rápidos não se perdem mais"]],
     ["v1.17", "Ajuste na Casa de Leilões", ["A Celeste agora olha para a frente do balcão, para o lado da praça"]],
     ["v1.16", "Feiticeira, Alquimia e cofre que cresce", ["Nova habilidade: Alquimia. A Feiticeira Morgana, na bancada abaixo da casa azul, ensina poções da vida simples até a da aurora",

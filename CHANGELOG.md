@@ -20,6 +20,23 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 120 (v1.19) — mapa maior, mar em volta, cais e espécies novas
+- **Biomas 50% maiores:** o desenho do continente cresce 22% em cada lado (miolo de 634 x 488 tiles); o mapa todo tem 700 x 548.
+- **Mar nos 4 lados:** margem de mar a oeste e ao sul (antes a terra saía do mapa), litoral recortado e pontas de terra que entram no
+  mar a oeste e a leste, mais ilhas nas margens.
+- **Vilas com o dobro do tamanho:** as quatro vilas novas passam de 17 x 16 para 34 x 32 (cinco casas, dois poços, ruas em cruz,
+  postes, canteiros, bancos). A Lumeira vai de 16 x 15 para 32 x 30: o quadro antigo ganha 16 colunas e 15 linhas costuradas em
+  volta das estradas (`RX`/`RY` em world.js), então os campos em volta só se alargam e as missões, marcos e a casa do herói seguem
+  no mesmo lugar em relação a eles. A praça foi redesenhada em quatro bairros (Leilões, Feiticeira e mercado, fogueira, forja).
+- **10 cais** para o futuro sistema de barcos: píer de madeira de 2 x 6 tiles (tools/pier_art.py, madeira das casas), largo de
+  terra com o mestre do cais (NPC novo, Blender), poste, caixotes, barril e placa, e uma estradinha até a estrada mais perto.
+  No mapa (M) cada cais tem uma âncora. Monstros não nascem a menos de 10 tiles de um cais.
+- **Mais monstros:** bandos 50% maiores, monstros avulsos espalhados pela faixa de nível de cada tipo e 60% a mais no Campo crescido.
+- **Espécies novas (modelos 3D próprios):** raposa, cervo (com galhada) e urso, com variações nos biomas (cervo sombrio, urso da
+  mata negra, raposa das rochas, urso das montanhas, raposa do deserto, raposa ártica, alce do gelo, urso polar). Itens novos:
+  pele de raposa, pele de urso, galhada de cervo e carne de caça.
+- Saves de antes desta versão voltam para a praça da Lumeira (o mapa mudou de tamanho).
+
 ## Rodada 119 (v1.18) — teclas na ordem em que foram apertadas
 - Parado no meio do tile, apertar outra direção (ex.: 3× A e depois W) só terminava o meio passo antigo e a tecla nova se perdia,
   então o herói andava mais um para o lado antigo. Agora ele sai do meio do tile direto para o vizinho da direção apertada.

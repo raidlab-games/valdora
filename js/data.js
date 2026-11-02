@@ -34,6 +34,11 @@ window.VD = (() => {
     "Gosma": { icon: "item_gel", price: 3 },
     "Couro de javali": { icon: "item_leather", price: 9 },
     "Pele de lobo": { icon: "item_pelt", price: 18 },
+    // rodada 120: caça das espécies novas (raposa, cervo e urso)
+    "Pele de raposa": { icon: "item_pelt", price: 14 },
+    "Pele de urso": { icon: "item_pelt", price: 34 },
+    "Galhada de cervo": { icon: "item_fang", price: 26 },
+    "Carne de caça": { icon: "item_meat", price: 4, cook: "Carne assada", cookLvl: 1, cookXp: 14 },
     "Núcleo de slime": { icon: "item_core", price: 60, rare: true },
     "Âmbar antigo": { icon: "item_amber", price: 140, rare: true },
     "Presa lunar": { icon: "item_fang", price: 220, rare: true },
@@ -722,6 +727,15 @@ window.VD = (() => {
     return { ...B, name, lvl, ...mobStats(lvl, o.k || 1), tint, where, scale: o.scale || B.scale, coins: [Math.round(lvl * 1.4 * (o.k || 1)), Math.round(lvl * 2.6 * (o.k || 1))],
       drops: o.drops || [], color: o.color || B.color, respawn: o.respawn || B.respawn, ...(o.extra || {}) };
   }
+  // rodada 120: espécies novas (modelos 3D próprios: raposa, cervo e urso), primeiro as do Campo, depois as variações dos biomas
+  Object.assign(MOBS, {
+    fox: { name: "Raposa", spr: "mob_fox", lvl: 7, hp: 15, atk: 6, def: 4, maxHit: 3, speed: 3, aggro: 0, coins: [4, 10], where: "Campos e Bosque dos Carvalhos",
+      drops: [["Pele de raposa", 0.6], ["Carne de caça", 0.35]], color: "#d2702e" },
+    deer: { name: "Cervo", spr: "mob_deer", lvl: 10, hp: 26, atk: 9, def: 7, maxHit: 4, speed: 4, aggro: 0, coins: [7, 16], where: "Bosque dos Carvalhos e Mata Sombria",
+      drops: [["Carne de caça", 0.7], ["Galhada de cervo", 0.35]], color: "#96643e" },
+    bear: { name: "Urso pardo", spr: "mob_bear", lvl: 16, hp: 52, atk: 16, def: 12, maxHit: 7, speed: 3, aggro: 3, coins: [16, 34], where: "Mata Sombria", scale: 1,
+      drops: [["Pele de urso", 0.6], ["Carne de caça", 0.6]], color: "#68462e" },
+  });
   const SH = "sepia(0.5) hue-rotate(220deg) brightness(0.55) saturate(1.6)", SAND = "sepia(0.85) saturate(1.3) brightness(1.08)", ROCK = "grayscale(0.85) brightness(0.8) contrast(1.1)", ICE = "sepia(0.4) hue-rotate(165deg) saturate(1.7) brightness(1.3)";
   const DW = [["Obsidiana", 0.18], ["Cogumelo-sombra", 0.1], ["Poção de vida", 0.06]], DS = [["Ouro solar", 0.18], ["Rosa-do-deserto", 0.1], ["Poção de vida", 0.06]];
   const MT = [["Mitril", 0.18], ["Musgo-de-rocha", 0.1], ["Poção de força", 0.06]], SN = [["Gelo eterno", 0.18], ["Flor-de-gelo", 0.1], ["Poção de pedra", 0.06]];
@@ -757,6 +771,15 @@ window.VD = (() => {
     glacial_sentinel: bmob("crystal_sentinel", "Sentinela glacial", 168, ICE, "Geleira do Norte", { drops: SN }),
     frozen_skeleton: bmob("skeleton", "Esqueleto congelado", 174, ICE, "Geleira do Norte", { drops: SN }),
     blizzard_alpha: bmob("wolf_moon", "Alfa da nevasca", 179, ICE, "Geleira do Norte", { k: 1.8, drops: [["Barra glacial", 0.35], ...SN] }),
+    // rodada 120: raposas, cervos e ursos nos biomas novos
+    dark_deer: bmob("deer", "Cervo sombrio", 35, SH, "Floresta Sombria", { drops: [["Galhada de cervo", 0.4], ["Carne de caça", 0.5], ...DW] }),
+    dark_bear: bmob("bear", "Urso da mata negra", 58, SH, "Floresta Sombria", { k: 1.3, drops: [["Pele de urso", 0.5], ...DW] }),
+    rock_fox: bmob("fox", "Raposa das rochas", 70, ROCK, "Montanhas de Ferro", { drops: [["Pele de raposa", 0.5], ...MT] }),
+    mountain_bear: bmob("bear", "Urso das montanhas", 88, "sepia(0.4) brightness(0.85) contrast(1.1)", "Montanhas de Ferro", { k: 1.3, drops: [["Pele de urso", 0.5], ...MT] }),
+    sand_fox: bmob("fox", "Raposa do deserto", 106, SAND, "Deserto Rubro", { drops: [["Pele de raposa", 0.5], ...DS] }),
+    arctic_fox: bmob("fox", "Raposa ártica", 145, "grayscale(1) brightness(1.7) contrast(0.9)", "Geleira do Norte", { drops: [["Pele de raposa", 0.5], ...SN] }),
+    ice_elk: bmob("deer", "Alce do gelo", 152, ICE, "Geleira do Norte", { k: 1.2, scale: 1.15, drops: [["Galhada de cervo", 0.4], ...SN] }),
+    polar_bear: bmob("bear", "Urso polar", 165, "grayscale(1) brightness(1.75) contrast(0.95)", "Geleira do Norte", { k: 1.3, drops: [["Pele de urso", 0.5], ...SN] }),
     frost_serpent: bmob("boss_serpent", "Serpente do Gelo Eterno", 185, ICE, "Gruta do Gelo Eterno (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra glacial", 1, 2, 4], ["Lâmina glacial", 0.2], ["Armadura glacial", 0.15]] }),
   });
 
@@ -1084,7 +1107,8 @@ window.VD = (() => {
   // As três classes aparecem: escudo (javali, esqueleto), flechas (goblin, aranha), orbe (slime) e códice (espectro).
   const FAMILY = [[/slime/, "slime", ["orbe", "anel"]], [/wolf/, "wolf", ["capa", "botas"]], [/boar/, "boar", ["calca", "escudo"]], [/goblin/, "goblin", ["flecha", "bracelete"]],
     [/skeleton/, "skeleton", ["capacete", "escudo"]], [/golem|colossus|sentinel/, "golem", ["bracelete", "amuleto"]], [/spider/, "spider", ["flecha", "botas"]],
-    [/wraith/, "wraith", ["tomo", "amuleto"]], [/serpent/, "serpent", ["anel", "capa"]]];
+    [/wraith/, "wraith", ["tomo", "amuleto"]], [/serpent/, "serpent", ["anel", "capa"]],
+    [/fox/, "fox", ["capa", "anel"]], [/deer/, "deer", ["botas", "flecha"]], [/bear/, "bear", ["calca", "escudo"]]]; // rodada 120
   const familyOf = (d) => { const f = FAMILY.find(([re]) => re.test(d.spr || "")); return f ? f[1] : null; };
   const tierFor = (lvl) => TIER_LVL.reduce((best, v, i) => (lvl >= v ? i : best), 0);
   // armas e peitorais da forja também caem, raramente, no tier que o nível do monstro alcança (espada, arco, montante e peitoral)

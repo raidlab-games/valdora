@@ -240,9 +240,16 @@ ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auctio
 ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
 ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
 ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
+// rodada 120: cais. Mestre do cais (Blender) e o píer de madeira (tools/pier_art.py: 2 x 6 tiles, recortado tile a tile no chão)
+ASSETS.npc_harbor = "assets/flow/npc_harbor.png"; ASSETS.npc_harbor_sheet = "assets/flow/npc_harbor_sheet.png";
+for (const s of ["s", "n", "e", "w"]) { ASSETS["pier_" + s] = `assets/flow/pier_${s}.png`; SPRITE_SIZE["pier_" + s] = s === "s" || s === "n" ? [2, 6] : [6, 2]; }
 window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
+// rodada 120: espécies novas (Blender, tools/b3d/mobs.py): raposa e cervo na caixa de 128 px do lobo, urso na de 192 px
+ASSETS.mob_fox = "assets/flow/mob_fox.png"; SPRITE_SIZE.mob_fox = [1.7, 1.7];
+ASSETS.mob_deer = "assets/flow/mob_deer.png"; SPRITE_SIZE.mob_deer = [1.7, 1.7];
+ASSETS.mob_bear = "assets/flow/mob_bear.png"; SPRITE_SIZE.mob_bear = [2.55, 2.55];
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];
 // rodada 80: Ato III (arte do Flow, lote 1): Odília, a tenda dela (3x2 tiles, como a cabana da Juna) e 4 estelas com runas (lua, olho,
 // espiral e coroa), apagadas e acesas no mesmo enquadramento
@@ -299,7 +306,7 @@ ASSETS.icon_home = "assets/flow/icon_home.png"; ASSETS.icon_rested = "assets/flo
 // Cada um tem a altura do próprio modelo (o Bento é mais baixo, o Ivo mais alto); npc_X_walk6 = caminhada nas 4 direções.
 // rodada 114: guardiões das vilas novas (Blender, no estilo do Ivo)
 for (const v of ["breu", "oasis", "escarpa", "degelo"]) { const k = "npc_warden_" + v; ASSETS[k] = `assets/flow/${k}.png`; ASSETS[k + "_sheet"] = `assets/flow/${k}_sheet.png`; }
-for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo", "npc_witch"]) {
+for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo", "npc_witch", "npc_harbor"]) {
   for (const suf of ["", "_look", "_walk6"]) SPRITE_SIZE[k + suf] = [1.45, 1.45];
   SPRITE_SIZE[k + "_sheet"] = [3 * 1.45, 4 * 1.45];
 }

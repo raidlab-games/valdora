@@ -7,7 +7,7 @@ window.ValdoraOverlay = (() => {
     const $ = (id) => document.getElementById(id);
     const GROUND_COLOR = { grass: "#4a8c3a", grass_2: "#4a8c3a", grass_flowers: "#4f9340", grass_dark: "#2c5527", grass_dark_2: "#2c5527",
       dirt: "#7d6e57", dirt_2: "#7d6e57", water: "#2f6fb0", sand: "#d9c48a", path: "#6b4f2a", stone: "#9a9188", void: "#050505",
-      grass_night: "#243a2c", grass_night_2: "#243a2c", sand_2: "#d2b878", rockg: "#7a7470", rockg_2: "#7a7470", snow: "#e8eef6", snow_2: "#dde6f0" }; // rodada 105: biomas
+      grass_night: "#243a2c", grass_night_2: "#243a2c", sand_2: "#d2b878", rockg: "#7a7470", rockg_2: "#7a7470", snow: "#e8eef6", snow_2: "#dde6f0", pier: "#8a5a34" }; // rodada 105: biomas (119: píer dos cais)
     let miniBase = null, miniS = 4;
     // rodada 105: o minimapa mostra só a área em volta do herói (96 x 72 tiles), seguindo; o mapa inteiro abre no M
     const VW = 96, VH = 72;
@@ -164,6 +164,9 @@ window.ValdoraOverlay = (() => {
           label(v.name + (p.spawnStone === v.key || (!p.spawnStone && v.main) ? " ✦" : ""), cx, cy + 16, Math.max(11, Math.round(k * 5)), on ? "#ffffff" : "#bbbbbb"); }
         for (const E of Wd.DG_ENTRIES) { const x = X(E.x + 0.5), y = Y(E.y + 0.5); g.fillStyle = "#c0392b"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 5, 0, 6.29); g.fill(); g.stroke();
           label(E.name, x, y - 13, Math.max(10, Math.round(k * 4.2)), "#ff9a8a"); }
+        for (const D of Wd.DOCKS || []) { const x = X(D.x + 0.5 + D.dx * 3), y = Y(D.y + 0.5 + D.dy * 3); // rodada 120: cais (âncora)
+          g.strokeStyle = "#000"; g.lineWidth = 4; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.moveTo(x - 5, y + 2); g.quadraticCurveTo(x, y + 9, x + 5, y + 2); g.moveTo(x - 3, y - 3); g.lineTo(x + 3, y - 3); g.stroke();
+          g.strokeStyle = "#8fd8ff"; g.lineWidth = 2; g.stroke(); label(D.name, x, y - 14, Math.max(10, Math.round(k * 4)), "#8fd8ff"); }
       }
       const hx = X(p.px + 0.5), hy = Y(p.py + 0.5), pulse = 7 + Math.sin(performance.now() / 200) * 2;
       g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, pulse, 0, 6.29); g.stroke(); g.fillStyle = "#f1c40f"; g.beginPath(); g.arc(hx, hy, 4, 0, 6.29); g.fill();

@@ -3,7 +3,7 @@
 // A água fica de fora do cache (transparente) para poder ser animada por baixo.
 window.ValdoraTerrain = (() => {
   // família de cada tipo de chão e prioridade: a família de prioridade maior "invade" a vizinha
-  const FAMILY = (k) => k.startsWith("grass_night") ? "grass_night" : k.startsWith("grass_dark") ? "grass_dark" : k.startsWith("grass") ? "grass" : k.startsWith("dirt") ? "dirt"
+  const FAMILY = (k) => k === "pier" ? "water" : k.startsWith("grass_night") ? "grass_night" : k.startsWith("grass_dark") ? "grass_dark" : k.startsWith("grass") ? "grass" : k.startsWith("dirt") ? "dirt"
     : k.startsWith("snow") ? "snow" : k.startsWith("rockg") ? "rockg" : k; // rodada 105: neve, chão de rocha e mata escura dos biomas novos
   // chão da toca: o claro (den_floor_2) avança sobre o escuro com borda pixelada, como a grama sobre a terra
   const PRIO = { void: -1, water: 0, sand: 1, sand_2: 1.5, path: 2, stone: 3, dirt: 4, rockg: 4.2, den_floor: 4, den_floor_2: 4.5, grass: 5, snow: 5.5, grass_dark: 6, grass_night: 6.5 };
@@ -143,7 +143,7 @@ window.ValdoraTerrain = (() => {
     // ---------- rodada 67: contornos orgânicos (margem dos lagos e borda da praça) ----------
     // Em vez da franja presa à borda do tile, cada bloco de 3 px consulta um campo suave (makeField): quinas viram curvas e as
     // retas ondulam. O centro de cada tile continua do mesmo lado, então caminho, pesca e nascimento não mudam.
-    const WATER = makeField(W, H, (x, y) => map[y][x] === "water", 31);
+    const WATER = makeField(W, H, (x, y) => FAMILY(map[y][x]) === "water", 31); // rodada 120: o píer fica em cima da água
     const GRASS = makeField(W, H, (x, y) => GRASSY_F[FAMILY(map[y][x])] === 1, 47);
     const wet = new Uint8Array(W * H), plaza = new Uint8Array(W * H);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -225,9 +225,9 @@ window.ValdoraTerrain = (() => {
 
     const C_WAVE = [240, 252, 255, 150], C_SHADOW = [12, 22, 8, 105], C_RIM = [10, 30, 8, 60];
     function shoreTile(g, x, y, ox, oy, waves, wx, wy) {
-      const water = map[y][x] === "water"; let land = null;
+      const water = FAMILY(map[y][x]) === "water"; let land = null;
       if (water) for (let dy = -1; dy <= 1 && land !== "sand"; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const k2 = famAt(x + dx, y + dy) && map[y + dy][x + dx]; if (!k2 || k2 === "water") continue;
+        const k2 = famAt(x + dx, y + dy) && map[y + dy][x + dx]; if (!k2 || FAMILY(k2) === "water") continue;
         if (k2 === "sand") { land = "sand"; break; } land = land || k2;
       }
       let any = false;
@@ -277,7 +277,8 @@ window.ValdoraTerrain = (() => {
         if (plaza[y * W + x]) plazaTile(g, x, y, ox, oy);
         if (nearMtn && nearMtn[y * W + x]) mountainTile(g, x, y, ox, oy); // rodada 106
         const d = decal && decal(x, y);
-        if (d) { if (spr[d]) { const s = spr[d]; g.drawImage(s, ox + (TILE - s.width) / 2, oy + TILE - s.height); } else drawDecal(g, d, ox, oy, hash(x, y, 77)); }
+        if (d && d.startsWith("pier_")) { const [nm, c, r] = d.split(":"), s = spr[nm]; if (s) { const tw = s.width / (nm === "pier_s" || nm === "pier_n" ? 2 : 6), th = s.height / (nm === "pier_s" || nm === "pier_n" ? 6 : 2); g.drawImage(s, +c * tw, +r * th, tw, th, ox, oy, TILE, TILE); } } // rodada 120: pedaço do píer
+        else if (d) { if (spr[d]) { const s = spr[d]; g.drawImage(s, ox + (TILE - s.width) / 2, oy + TILE - s.height); } else drawDecal(g, d, ox, oy, hash(x, y, 77)); }
       }
       // rodada 66: manchas grandes de cor (mais clara e quente / mais fria e escura) quebram a grama uniforme; "source-atop"
       // só pinta onde já há chão (a água animada fica por baixo, sem tinta). Amostra no centro de cada tile e amplia suavizado.

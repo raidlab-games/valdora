@@ -1025,6 +1025,22 @@
     for (const L of ["shield", "orb", "book", "sword2"]) if (!ValdoraOutfit.ORDER.includes(L)) r.push("camada " + L);
     return miss(r);
   });
+  test("rodada 120: mapa maior com mar nos 4 lados, vilas em dobro, 10 cais no litoral do continente e espécies novas", () => {
+    const r = [], Wd = ValdoraWorld, B = Wd.BIOME;
+    for (let x = 0; x < Wd.W; x++) if (B[x] || B[(Wd.H - 1) * Wd.W + x]) { r.push("terra na borda de cima/baixo"); break; }
+    for (let y = 0; y < Wd.H; y++) if (B[y * Wd.W] || B[y * Wd.W + Wd.W - 1]) { r.push("terra na borda dos lados"); break; }
+    for (const v of Wd.VILLAGES) { const w = v.x1 - v.x0 + 1, h = v.y1 - v.y0 + 1; if (w < 32 || h < 30) r.push(`${v.key} ${w}x${h}`); }
+    if (Wd.DOCKS.length !== 10) r.push(Wd.DOCKS.length + " cais");
+    for (const D of Wd.DOCKS) {
+      if (!Wd.biomeAt(D.x, D.y) || Wd.biomeAt(D.x + D.dx, D.y + D.dy) || Wd.biomeAt(D.x + D.dx * D.len, D.y + D.dy * D.len)) r.push(D.key + " fora do litoral");
+      if (!D.name || !D.keeper) r.push(D.key + " sem nome");
+    }
+    for (const k of ["fox", "deer", "bear", "dark_deer", "dark_bear", "rock_fox", "mountain_bear", "sand_fox", "arctic_fox", "ice_elk", "polar_bear"]) {
+      const m = VD.MOBS[k]; if (!m) { r.push(k); continue; } if (!ASSETS[m.spr]) r.push(k + " sem arte"); if (!VD.familyOf(m)) r.push(k + " sem família"); }
+    for (const it of ["Pele de raposa", "Pele de urso", "Galhada de cervo", "Carne de caça"]) if (!VD.ITEMS[it]) r.push(it);
+    const L = Wd.L; if (L.RX(48) !== 56 || L.RY(36) !== 43 || L.TOWN.x1 - L.TOWN.x0 !== 31) r.push("Lumeira em dobro");
+    return miss(r);
+  });
   test("rodada 105: direções em 8 (vetor -> direção, linha da folha com reserva de 4)", () => {
     const r = [], want = { "1,0": "right", "1,1": "downright", "0,1": "down", "-1,1": "downleft", "-1,0": "left", "-1,-1": "upleft", "0,-1": "up", "1,-1": "upright", "3,1": "right", "2,2": "downright" };
     for (const [k, d] of Object.entries(want)) { const [x, y] = k.split(",").map(Number); if (window.DIR_AT(x, y) !== d) r.push(k + "->" + window.DIR_AT(x, y)); }
