@@ -875,6 +875,7 @@
     const dx = Math.max(o.x - x, 0, x - (o.x + o.w - 1)), dy = Math.max(o.y - y, 0, y - (o.y + o.h - 1));
     return Math.max(dx, dy) === 1;
   }
+  const touchRect = (x, y, o) => adjRect(x, y, o) && ((x >= o.x && x < o.x + o.w) || (y >= o.y && y < o.y + o.h)); // rodada 111: encostado sem ser na quina
 
   // ---------- Jogador ----------
   let player = null;
@@ -1146,7 +1147,8 @@
     for (const g of groundItems) { const d = Math.max(Math.abs(g.x - player.x), Math.abs(g.y - player.y)); if (d < bd) { bd = d; best = { kind: "loot", tx: g.x, ty: g.y, ref: { x: g.x, y: g.y, w: 1, h: 1 } }; } }
     for (const o of objects) {
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type] || (o.type === "sign" ? "sign" : null); if (!kind) continue;
-      const d = dRect(o); if (d < bd || (d === bd && best && best.kind === "res" && kind !== "res")) { bd = d; best = { kind, ref: o, tx: o.x, ty: o.y }; } // NPC/estação ganham do recurso no empate
+      const d = dRect(o); if (kind === "res" && d > 1) continue; // rodada 111: recurso só encostado (antes aparecia a 2 tiles)
+      if (d < bd || (d === bd && best && best.kind === "res" && kind !== "res")) { bd = d; best = { kind, ref: o, tx: o.x, ty: o.y }; } // NPC/estação ganham do recurso no empate
     }
     for (const c of CAMPAIGN_RT.openCracks()) { const d = dRect(c); if (d < bd || (d === bd && best && best.kind === "res")) { bd = d; best = { kind: "crack", ref: c, tx: c.x, ty: c.y }; } } // rodada 78: fendas
     return best;
@@ -1216,6 +1218,30 @@
     }
     return best;
   }
+  // rodada 111: recurso ou estação responde ao clique em qualquer pixel visível da arte (cacto, minério, planta, NPC alto),
+  // não só no tile do pé; a sombra (pixels quase transparentes) não conta. Vale o objeto mais à frente.
+  const ALPHA = new Map();
+  function solidPx(img, x, y) {
+    if (x < 0 || y < 0 || x >= img.width || y >= img.height) return false;
+    let a = ALPHA.get(img);
+    if (a === undefined) {
+      a = null;
+      try { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const g = c.getContext("2d"); g.drawImage(img, 0, 0); a = g.getImageData(0, 0, c.width, c.height).data; } catch (e) { /* sem leitura: só o tile */ }
+      ALPHA.set(img, a);
+    }
+    return !!a && a[((y | 0) * img.width + (x | 0)) * 4 + 3] > 150;
+  }
+  function pickArt(fx, fy) {
+    const tx = Math.floor(fx), ty = Math.floor(fy), seen = new Set(); let best = null;
+    for (let y = ty; y <= ty + 4; y++) for (let x = tx - 2; x <= tx + 2; x++) {
+      const o = inside(x, y) && occ[y * W + x]; if (!o || seen.has(o)) continue; seen.add(o);
+      const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type]; if (!kind) continue;
+      const img = o.spr && SPR[o.spr]; if (!img) continue;
+      const sx = o.x * TILE + (o.w * TILE - img.width) / 2, sy = (o.y + o.h) * TILE - img.height * (1 - ((window.SPRITE_SINK || {})[o.spr] || 0));
+      if (solidPx(img, fx * TILE - sx, fy * TILE - sy) && (!best || o.y + o.h > best.ref.y + best.ref.h)) best = { kind, ref: o, tx: o.x, ty: o.y };
+    }
+    return best;
+  }
   function pick(px, py) {
     const fx = (px + cam.x) / TILE, fy = (py + cam.y) / TILE;
     let best = null;
@@ -1230,6 +1256,7 @@
     const tx = Math.floor(fx), ty = Math.floor(fy);
     if (!inside(tx, ty)) return null;
     if (groundItems.some((g) => g.x === tx && g.y === ty)) return { kind: "loot", tx, ty, ref: { x: tx, y: ty, w: 1, h: 1 } };
+    const art = pickArt(fx, fy); if (art) return art;
     const o = occ[ty * W + tx];
     if (o && o.type === "res" && !(o.respawn > 0)) return { kind: "res", ref: o, tx, ty };
     if (o && STATIONS[o.type]) return { kind: STATIONS[o.type], ref: o, tx, ty };
@@ -1295,6 +1322,10 @@
     // com NPCs, prefere parar ao lado ou acima, para não cobrir o personagem com o próprio corpo
     if (["shop", "guard", "bard", "herb", "carto", "miner", "fire"].includes(p.kind) && r.type !== "stall" && goTo((x, y) => goal(x, y) && y <= r.y)) return; // rodada 29: na fogueira, de lado ou acima (o chiado fica à vista)
     if (shoot && goal(player.x, player.y)) { player.path = []; return; } // já na mira: atira daqui
+    if (p.kind === "res" && !touchRect(player.x, player.y, r)) { // rodada 111: coleta encostada, de lado/frente, se custar até 2 passos a mais
+      const a = findPath(player.x, player.y, (x, y) => touchRect(x, y, r)), b = adjRect(player.x, player.y, r) ? [] : findPath(player.x, player.y, goal);
+      if (a && (!b || a.length <= b.length + 2)) { player.goal = (x, y) => touchRect(x, y, r); player.path = a; return; }
+    }
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
@@ -2423,7 +2454,7 @@
       if (!canStep(player.x, player.y, nx, ny)) { // diagonal bloqueada: escorrega pelo lado que estiver livre
         if (vx && vy && canStep(player.x, player.y, player.x + vx, player.y)) ny = player.y;
         else if (vx && vy && canStep(player.x, player.y, player.x, player.y + vy)) nx = player.x;
-        else return false;
+        else { thorns(nx, ny); return false; } // rodada 111: andou contra o cacto
       }
     } else if (player.path.length) {
       [nx, ny] = player.path[0];
@@ -2438,16 +2469,15 @@
     player.stepLen = nx !== player.x && ny !== player.y ? Math.SQRT2 : 1; // rodada 104: passo diagonal é mais comprido
     player.fx = player.x; player.fy = player.y; player.x = nx; player.y = ny;
     if (player.dir !== prevDir) dustAtFeet(3); // poeira ao mudar de direção correndo
-    thorns(nx, ny);
     return true;
   }
-  // rodada 110: encostar num cacto (parar ao lado dele, de frente ou na diagonal) espeta: dano pequeno, som de espinho,
-  // no máximo uma vez por segundo; espinho machuca mas nunca mata (deixa ao menos 1 de vida)
+  // rodada 110: encostar num cacto espeta: dano pequeno, som de espinho, no máximo uma vez por segundo; espinho machuca mas
+  // nunca mata (deixa ao menos 1 de vida). Rodada 111: só quando o herói anda contra o próprio cacto (passar ou parar ao lado não fere)
   let thornT = 0;
   function thorns(x, y) {
     if (inCrypt || tickN - thornT < 1 / TICK) return;
-    const c = DIRS8V.map(([dx, dy]) => inside(x + dx, y + dy) && occ[(y + dy) * W + x + dx]).find((o) => o && o.spr === "cactus");
-    if (!c) return;
+    const c = inside(x, y) && occ[y * W + x];
+    if (!c || c.spr !== "cactus") return;
     thornT = tickN; const dmg = Math.max(1, Math.round(maxHp() * 0.04));
     player.hp = Math.max(1, player.hp - dmg); player.flash = 0.14; player.hitT = 0.2; hudDirty = true;
     hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); addFloat(player.px + 0.5, player.py - 0.85, "espinhos!", "#c8e07a", 0.9, 12);

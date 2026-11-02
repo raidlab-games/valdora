@@ -20,6 +20,15 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 111 (v1.10) — alcance do cacto, do clique e da coleta
+- **Pé das artes do Blender:** `SPRITE_SINK` de cacto (0,362), rochas (0,457) e minérios (0,411) põe o pé rente à borda de baixo
+  do tile, como o pé dos personagens; antes ficava no meio do tile e a arte parecia meio tile acima do herói e do tile clicável.
+- **Clique na arte inteira:** `pickArt` testa a transparência do sprite (alfa > 150, a sombra não conta) de recursos e estações
+  num raio de 2×4 tiles; vale o objeto mais à frente. O tile do pé continua valendo.
+- **Coleta encostada:** clicar num recurso leva o herói para o lado/frente dele (`touchRect`, sem a quina) se isso custar até
+  2 passos a mais; o atalho F só oferece recurso a 1 tile (antes aparecia a 2).
+- **Espinho só no contato:** `thorns` só fere quando o herói anda contra o próprio cacto; passar ou parar ao lado não fere.
+
 ## Rodada 110 (v1.09) — montanhas e minérios ligados ao ambiente, espinho do cacto
 - **Paredão:** `tools/b3d/cliff_faces.py` (grade deslocada por voronoi lido num espaço esticado na altura → colunas de rocha;
   beirada com a textura do chão de cima e tufos/neve; cascalho no pé) + `tools/cliff_faces_pack.py` (8 tiles emendáveis,

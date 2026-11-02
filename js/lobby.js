@@ -11,6 +11,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.10", "Alcance do cacto e da coleta", ["O cacto só espeta quando você anda contra ele; passar ou parar ao lado não machuca mais",
+      "Cacto, rochas e minérios ficam no tile certo, na altura dos pés do herói",
+      "Clicar em qualquer parte do cacto, minério ou planta já seleciona (antes só a área abaixo dele)",
+      "Para coletar, o herói para encostado de lado ou de frente, e o F só aparece quando você está colado no recurso"]],
     ["v1.09", "Montanhas e minérios ligados ao ambiente", ["Paredões das montanhas refeitos em 3D: rocha fraturada em colunas, a beirada de cima com o chão do lugar (capim, mata, areia, neve) e cascalho no pé",
       "Escadas talhadas na própria rocha, e o pé e o topo da escada ficam sempre livres",
       "Todos os minérios refeitos: rocha da região saindo do chão com o minério à mostra — veios de cobre, ferro, mitril e ouro; cristais de lumita, ametista, adamante, rubi, gelo eterno e gelo astral; lascas de obsidiana",
