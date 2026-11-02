@@ -11,6 +11,12 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.08", "Contas, servidores e personagens", ["Agora você entra com uma conta: usuário e senha ligados a um e-mail (dá para entrar com o usuário ou com o e-mail)",
+      "Depois de entrar, escolha o servidor e então o personagem — até 4 por servidor, cada um com o próprio progresso",
+      "O herói salvo neste navegador pode ser trazido para um servidor com um clique",
+      "As estradas do Campo agora seguem até as outras vilas, com curvas, em vez de pararem na borda do mapa antigo; as saídas que sobravam levam a acampamentos",
+      "A borda do Campo com os outros biomas ficou ondulada, sem linha reta",
+      "Rochas e cactos novos, feitos em 3D: saem do próprio chão, com sombra, pedrinhas e capim em volta"]],
     ["v1.07", "Entrada sem travar", ["Corrigido o congelamento ao entrar: com chuva, um efeito dava erro e parava o jogo antes da interface aparecer",
       "Um erro num efeito visual nunca mais congela o jogo",
       "Depois de cada atualização, só as artes que mudaram são baixadas de novo (a entrada fica bem mais rápida)"]],
@@ -405,6 +411,7 @@
 
   // ---------- jogo salvo ----------
   function render() {
+    if (window.ValdoraAccount) { $("save-slot").hidden = true; $("new-warn").hidden = true; $("play").textContent = "CRIAR E ENTRAR"; $("play").classList.remove("secondary"); return; }
     const s = G.readSave();
     $("save-slot").hidden = !s;
     confirmNew = false;
@@ -448,7 +455,10 @@
     hang(); addEventListener("resize", hang);
   }
   if (ASSETS.icon_continue_play) $("continue").innerHTML = `<img class="btn-icon" src="${ASSETS.icon_continue_play}" alt="">CONTINUAR`;
+  // rodada 109: com contas (js/account.js), o lobby só guarda a escolha de aparência; criar e entrar passam pela conta
+  window.ValdoraLobby = { hero: () => heroId, setHero: (id) => { if (HEROES.some((h) => h.id === id)) { heroId = id; renderHeroes(); } }, esc };
   $("play").onclick = () => {
+    if (window.ValdoraAccount) return ValdoraAccount.create($("name").value, heroId);
     if (G.readSave() && !confirmNew) { confirmNew = true; $("new-warn").hidden = false; $("play").textContent = "CONFIRMAR NOVO JOGO"; return; }
     G.start({ name: $("name").value.trim().slice(0, 14) || "Aventureiro", hero: heroId });
   };

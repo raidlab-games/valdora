@@ -20,6 +20,20 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 109 (v1.08) — contas, estradas ligadas, rochas e cactos naturais
+- **Contas:** `js/net.js` (motor online Supabase ou local de teste), `js/account.js` (entrar/criar conta → servidor →
+  personagem), `js/net_config.js` (vazio = modo de teste). Banco em `supabase/schema.sql` com RLS; login pelo usuário via
+  `valdora_login_email` (devolve o e-mail só com a senha certa). Até 4 personagens por servidor, nome único no servidor.
+  O save de personagem de conta vai pelo `SINK` (a cada 20 s online, na hora ao sair/fechar); a chave antiga do navegador
+  fica intacta e pode ser trazida como personagem.
+- **Estradas:** caminho de menor custo com ruído (8 direções), saindo das pontas das estradas do mapa antigo e chegando na
+  entrada da praça de cada vila; trechos abertos custam menos (as estradas se juntam). Saídas sem vila viram trilha até um
+  acampamento. A borda do mapa antigo é cara para a estrada não correr colada nela.
+- **Borda do Campo:** faixa ondulada de Campo em volta do mapa antigo (world.js), sem reta entre biomas.
+- **Rochas e cacto:** `tools/b3d/natural_props.py` (Blender/Cycles: rocha deslocada por voronoi e nuvens, líquen/neve só no
+  topo, arenito em camadas; cacto com gomos, espinhos e flores) com chão "pegador de sombra" — no PNG só a sombra, sobre o
+  tile do jogo. `tools/natural_props_pack.py` recorta; `window.SPRITE_SINK` desce a imagem para o pé ficar no meio do tile.
+
 ## Rodada 108 (v1.07) — entrada sem travar
 - **Congelamento ao entrar:** com chuva, o respingo recebia raio negativo (`dt` negativo quando o relógio do quadro vinha antes
   do último) e o `ellipse` lançava erro: o laço parava depois do chão e antes da interface (minimapa preto, retrato vazio).

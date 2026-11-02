@@ -11,7 +11,7 @@ window.ValdoraScenery = (() => {
       const scen = sceneryFrame(o, t), HA = ANIMS[o.spr] && ANIMS[o.spr].rows.hit ? ANIMS[o.spr] : null;
       const hitF = HA && o.hitT != null ? Math.floor(o.hitT * HA.rows.hit.fps) : -1, rockHit = hitF >= 0 && hitF < HA.rows.hit.frames;
       const sh = o.shake > 0 && !scen && !HA ? Math.sin(o.shake * 60) * 3 : 0; // tremor procedural só sem folha do Blender
-      const sx = Math.round((o.x + mvx + (o.ox || 0)) * TILE - cam.x + (o.w * TILE - img.width) / 2 + sh), sy = Math.round((o.y + mvy + o.h) * TILE - cam.y - img.height);
+      const sx = Math.round((o.x + mvx + (o.ox || 0)) * TILE - cam.x + (o.w * TILE - img.width) / 2 + sh), sy = Math.round((o.y + mvy + o.h) * TILE - cam.y - img.height * (1 - ((window.SPRITE_SINK || {})[o.spr] || 0))); // rodada 109: SPRITE_SINK
       if ((o.type === "fire" || o.type === "furnace") && o.spr !== "deco_rift_brazier") { // brilho quente (rodada 82: o cristal da Fenda não)
         const gx = sx + img.width / 2, gy = sy + img.height * 0.65, r = TILE * (1.3 + Math.sin(t * 9) * 0.06 + Math.sin(t * 23) * 0.03);
         const grd = ctx.createRadialGradient(gx, gy, 4, gx, gy, r); grd.addColorStop(0, "#ffb34766"); grd.addColorStop(1, "#ffb34700");

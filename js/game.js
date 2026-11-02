@@ -135,7 +135,7 @@
   $("opt-zoom").value = ValdoraAudio.opts.zoom || "auto"; $("opt-ui").value = (() => { const u = ValdoraAudio.opts.ui; return !u || u === "auto" ? "auto" : +u >= 1.5 ? "2" : "1"; })(); // rodada 80: 1,15/1,3 antigos viram 1×
   $("opt-zoom").onchange = (e) => { ValdoraAudio.setOpt("zoom", e.target.value); resize(); };
   $("opt-ui").onchange = (e) => { ValdoraAudio.setOpt("ui", e.target.value === "auto" ? "auto" : +e.target.value); applyUi(); };
-  $("exit").onclick = () => { $("options").hidden = true; save(); running = false; closeDlg(); $("game").hidden = true; $("lobby").hidden = false; document.dispatchEvent(new Event("valdora:lobby")); };
+  $("exit").onclick = () => { $("options").hidden = true; save(true); if (SINK && window.ValdoraNet) ValdoraNet.stop(); running = false; closeDlg(); $("game").hidden = true; $("lobby").hidden = false; document.dispatchEvent(new Event("valdora:lobby")); };
 
   // ---------- Mundo ----------
   let map, occ, objects, resources, mobs, lakes, ground, groundItems, corpses, npc = {};
@@ -426,6 +426,37 @@
       }
     }
   }
+  // rodada 109: pontas das estradas do mapa antigo na borda dele → o tile de fora, logo depois da ponta (um por trecho de estrada)
+  function roadExits() {
+    const G = WORLD_G, x0 = G.OX, y0 = G.OY, x1 = G.OX + G.local().W - 1, y1 = G.OY + G.local().H - 1, out = [];
+    const edge = (list, dx, dy) => { let run = []; const flush = () => { if (run.length) { const [x, y] = run[run.length >> 1]; if (inside(x + dx, y + dy) && G.biomeAt(x + dx, y + dy)) out.push({ x: x + dx, y: y + dy }); run = []; } };
+      for (const [x, y] of list) { if (map[y][x] === "path") run.push([x, y]); else flush(); } flush(); };
+    const row = (y) => Array.from({ length: x1 - x0 + 1 }, (_, i) => [x0 + i, y]), col = (x) => Array.from({ length: y1 - y0 + 1 }, (_, i) => [x, y0 + i]);
+    edge(row(y0), 0, -1); edge(row(y1), 0, 1); edge(col(x0), -1, 0); edge(col(x1), 1, 0);
+    return out;
+  }
+  // caminho de menor custo (Dijkstra com fila de prioridade) do ponto até o primeiro tile que satisfaz goal(i); custo com ruído
+  // largo (curvas), mais barato em estrada já aberta, caro na água (vira ponte só se compensar); nunca entra no mapa antigo nem no mar
+  function routeRoad(sx, sy, goal, seed) {
+    const G = WORLD_G, n = W * H, dist = new Float32Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1), x1o = G.OX + G.local().W - 1, y1o = G.OY + G.local().H - 1;
+    const hk = [], hv = []; // heap
+    const push = (k, v) => { hk.push(k); hv.push(v); let i = hk.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (hv[p] <= hv[i]) break; [hk[p], hk[i]] = [hk[i], hk[p]]; [hv[p], hv[i]] = [hv[i], hv[p]]; i = p; } };
+    const pop = () => { const k = hk[0], lk = hk.pop(), lv = hv.pop(); if (hk.length) { hk[0] = lk; hv[0] = lv; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i;
+      if (l < hk.length && hv[l] < hv[m]) m = l; if (r < hk.length && hv[r] < hv[m]) m = r; if (m === i) break; [hk[m], hk[i]] = [hk[i], hk[m]]; [hv[m], hv[i]] = [hv[i], hv[m]]; i = m; } } return k; };
+    const s = sy * W + sx; dist[s] = 0; push(s, 0); let end = -1;
+    while (hk.length) {
+      const i = pop(), d = dist[i]; if (goal(i)) { end = i; break; }
+      const x = i % W, y = (i / W) | 0;
+      for (const [dx, dy] of DIRS8V) { const X = x + dx, Y = y + dy; if (!inside(X, Y) || G.inOld(X, Y) || !G.biomeAt(X, Y)) continue;
+        if (dx && dy && (G.inOld(x + dx, y) || G.inOld(x, y + dy))) continue; // não corta a quina do mapa antigo
+        // perto da borda do mapa antigo é caro (a estrada sai dele de frente, não corre colada na borda); ruído largo dá as curvas
+        const near = Math.max(G.OX - X, X - x1o, G.OY - Y, Y - y1o) < 5 && Math.hypot(X - sx, Y - sy) > 5 ? 9 : 0;
+        const k = Y * W + X, m = map[Y][X], c = (m === "path" ? 0.35 : m === "water" ? 8 : 1 + noise(X, Y, 13, seed) * 3.2 + noise(X, Y, 4, seed + 1) * 0.8) * (dx && dy ? 1.41 : 1) + near, nd = d + c;
+        if (nd < dist[k]) { dist[k] = nd; prev[k] = i; push(k, nd); } }
+    }
+    const pts = []; for (let i = end; i >= 0; i = prev[i]) pts.push([i % W, (i / W) | 0]);
+    return pts;
+  }
   function genContinent() {
     const G = WORLD_G, rnd = seeded(20261105), OX = G.OX, OY = G.OY;
     const tile = (k, alt) => (SPR[k] ? k : alt);
@@ -456,14 +487,36 @@
           if (d < r) { map[y][x] = "water"; Lk.tiles.push([x, y]); } else if (d < r + 0.6 + noise(x, y, 2.5, cy + 7) * 1.7 && map[y][x] !== "water") map[y][x] = G.biomeAt(x, y) === 5 ? tile("snow_2", "stone") : "sand";
         }
     }
-    // estradas da praça de Lumeira até cada vila (sobre a água viram ponte de terra batida)
-    for (const [a, b] of G.ROADS) {
-      const len = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y)), px = -(b.y - a.y) / len, py = (b.x - a.x) / len;
-      for (let i = 0; i <= len; i++) { const t = i / len, w = Math.sin(t * Math.PI) * (noise(i, len, 9, a.x + b.y) - 0.5) * 26;
-        const x = Math.round(a.x + (b.x - a.x) * t + px * w), y = Math.round(a.y + (b.y - a.y) * t + py * w);
-        for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (inside(x + dx, y + dy) && !G.inOld(x + dx, y + dy) && !occ[(y + dy) * W + x + dx]) map[y + dy][x + dx] = "path"; }
+    // rodada 109: estradas ligadas. Saem das estradas do mapa antigo (onde elas tocam a borda dele) e vão até a entrada da praça
+    // de cada vila por um caminho de menor custo com ruído (curvas naturais); trechos já abertos custam menos, então as estradas
+    // se juntam num tronco em vez de correrem lado a lado. Saída antiga que sobrar se liga à estrada mais próxima.
+    const exits = roadExits();
+    const isRoad = (x, y) => map[y][x] === "path" && !G.inOld(x, y);
+    const paint = (pts) => { for (const [x, y] of pts) for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (inside(x + dx, y + dy) && !G.inOld(x + dx, y + dy) && G.biomeAt(x + dx, y + dy) && !occ[(y + dy) * W + x + dx]) map[y + dy][x + dx] = "path"; };
+    const used = new Set();
+    for (const [, b] of G.ROADS) {
+      const v = G.VILLAGES.find((V) => Math.abs((V.x0 + V.x1) / 2 - b.x) < 2 && Math.abs((V.y0 + V.y1) / 2 - b.y) < 2); if (!v) continue;
+      const cx = v.x0 + 8, cy = v.y0 + 7, ends = [[cx, v.y0 - 1], [cx, v.y1 + 1], [v.x0 - 1, cy], [v.x1 + 1, cy]];
+      const start = exits.slice().sort((p, q) => Math.hypot(p.x - cx, p.y - cy) - Math.hypot(q.x - cx, q.y - cy))[0];
+      if (!start) continue; used.add(start);
+      const goal = new Set(ends.filter(([x, y]) => inside(x, y)).map(([x, y]) => y * W + x));
+      paint(routeRoad(start.x, start.y, (i) => goal.has(i), v.key.length * 17));
+    }
+    // saída que nenhuma vila usou: trilha que se afasta do mapa antigo (sem contornar a borda dele) e acaba num acampamento
+    const camps = [];
+    for (const e of exits) if (!used.has(e)) {
+      const ox = e.x < G.OX ? -1 : e.x >= G.OX + G.local().W ? 1 : 0, oy = e.y < G.OY ? -1 : e.y >= G.OY + G.local().H ? 1 : 0, len = 18 + rnd() * 10, side = (rnd() - 0.5) * 16;
+      const tx = Math.round(e.x + ox * len + oy * side), ty = Math.round(e.y + oy * len + ox * side);
+      const pts = routeRoad(e.x, e.y, (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2, e.y); if (!pts.length) continue;
+      paint(pts); camps.push(pts[0]);
     }
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
+    for (const [x, y] of camps) { // clareira de terra batida com fogueira, barril e caixotes
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inside(x + dx, y + dy) && Math.hypot(dx, dy * 1.2) < 2.6 && map[y + dy][x + dx] !== "water") map[y + dy][x + dx] = "dirt";
+      if (!occ[(y - 1) * W + x + 2]) deco("fire", "campfire", x + 2, y - 1, 1, 1, { wild: true });
+      if (!occ[(y + 1) * W + x - 2]) deco("barrel", "barrel", x - 2, y + 1);
+      if (SPR.deco_crates && !occ[(y - 2) * W + x - 1]) deco("prop", "deco_crates", x - 1, y - 2);
+    }
     // vilas novas: a mesma planta da Lumeira (casas, banca e mercador, cofre, fornalha, bigorna, fogueira, poço, quadro e a Pedra)
     const MERCH = { breu: "Saulo", oasis: "Zaíra", escarpa: "Dagoberto", degelo: "Ilka" };
     const HOUSES = { breu: ["house_green", "house_blue", "house_green"], oasis: ["house_red", "house_red", "house_blue"], escarpa: ["house_blue", "house_blue", "house_red"], degelo: ["house_blue", "house_green", "house_blue"] };
@@ -834,7 +887,8 @@
     if (s && ITEMS[s.name] && s.n > 0) { out[i] = { name: s.name, n: Math.floor(s.n) }; const aff = validAff(s.aff); if (aff && aff.length) { out[i].aff = aff; out[i].n = 1; }
       if (s.master) { out[i].master = 1; out[i].n = 1; } } }); return out; };
 
-  async function start(data) {
+  async function start(data, opts) {
+    SINK = (opts && opts.sink) || null; // rodada 109
     if (inCrypt) leaveCrypt();
     $("play").disabled = $("continue").disabled = true;
     await assetsReady; await animsReady; await heroAnims(HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id); // rodada 105
@@ -2763,18 +2817,22 @@
     try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (d && d.v === 2 && typeof d.name === "string") return d; } catch (e) { /* save inválido */ }
     return null;
   }
-  function save() {
+  // rodada 109: personagem de conta (servidor) salva pelo SINK de js/net.js; sem conta, o save do navegador de sempre
+  let SINK = null;
+  function save(urgent) {
     if (!player) return;
     try {
       const pos = inCrypt ? overworld.ret : player; // dentro da cripta, salva a entrada
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
+      const data = ({ v: 2, wv: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 }));
+        bags: player.bags, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+      if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
+      else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }
   }
-  addEventListener("pagehide", () => { if (running) save(); });
+  addEventListener("pagehide", () => { if (running) save(true); });
   window.ValdoraGame = { start, readSave, level, SKILLS, // usado por js/lobby.js
     seed: (n) => { RNG = n == null ? Math.random : mulberry32(n); } }; // rodada 63: só para medições (null volta ao normal)
-  document.addEventListener("visibilitychange", () => { if (document.hidden && running) save(); });
+  document.addEventListener("visibilitychange", () => { if (document.hidden && running) save(true); });
 })();

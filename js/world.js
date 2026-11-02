@@ -125,6 +125,9 @@ window.ValdoraWorld = (() => {
     const seaEdge = Math.max(0, (16 - y) / 16, (16 - (CW - 1 - x)) / 16) * 0.9; // mar só no norte e no leste; oeste e sul seguem para fora do mapa
     if (!(val + n + seaEdge < 1 || isl + n * 1.3 + seaEdge < 1)) continue;
     BIOME[y * CW + x] = biomeOf(u + (fbm(x / 34, y / 34, 1) - 0.5) * 0.11, v + (fbm(x / 34, y / 34, 2) - 0.5) * 0.11);
+    // rodada 109: o Campo transborda do quadro antigo numa faixa ondulada, para a borda dele não virar uma reta entre biomas
+    const dOld = Math.max(OX - x, x - (OX + W - 1), OY - y, y - (OY + H - 1));
+    if (dOld < 3 + fbm(x / 8, y / 8, 8) * 9 + fbm(x / 3, y / 3, 9) * 3) BIOME[y * CW + x] = 1;
   }
   // centro (média dos tiles) e "raio" (da área) de cada bioma: rótulos do mapa e sorteio dos bandos
   for (const B of BIOMES) { let sx = 0, sy = 0, k = 0; for (let y = 0; y < CH; y += 2) for (let x = 0; x < CW; x += 2) if (BIOME[y * CW + x] === B.n) { sx += x; sy += y; k++; }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Valdora — RPG em pixel art</title>
   <meta name="description" content="Valdora: um RPG 2D original em pixel art para navegador. Colete, forje, cozinhe, enfrente chefes e defenda Lumeira." />
-  <link rel="stylesheet" href="css/style.css?v=202611021104" />
+  <link rel="stylesheet" href="css/style.css?v=202611021120" />
 </head>
 <body>
   <!-- Lobby / site -->
@@ -13,7 +13,7 @@
     <div class="lobby-bg"></div>
     <div id="fireflies"></div>
     <header class="lobby-top">
-      <div class="brand"><h1>VALDORA</h1><span class="ver">v1.07</span><p class="sub">Um reino em pixel art para explorar, forjar e defender</p></div>
+      <div class="brand"><h1>VALDORA</h1><span class="ver">v1.08</span><p class="sub">Um reino em pixel art para explorar, forjar e defender</p></div>
       <nav id="lobby-nav">
         <button data-page="play" class="on">Jogar</button><button data-page="how">Como jogar</button><button data-page="news">Novidades</button>
       </nav>
@@ -27,6 +27,38 @@
           <small class="hero-note">A escolha é visual: todos começam com as mesmas habilidades.</small>
         </div>
         <div class="card form-card">
+          <!-- rodada 109: conta (usuário + senha ligados a um e-mail) → servidor → personagem -->
+          <div id="acct-bar" hidden><span id="acct-who"></span><button id="acct-out" type="button" class="link">Sair da conta</button></div>
+          <div id="acct-login" class="acct-step">
+            <div class="acct-tabs"><button type="button" data-acct="in" class="on">Entrar</button><button type="button" data-acct="up">Criar conta</button></div>
+            <form id="f-in" autocomplete="on">
+              <label>Usuário ou e-mail<input id="in-login" autocomplete="username" maxlength="80" required></label>
+              <label>Senha<input id="in-pass" type="password" autocomplete="current-password" maxlength="72" required></label>
+              <button type="submit">ENTRAR</button>
+              <button type="button" id="in-forgot" class="link">Esqueci minha senha</button>
+            </form>
+            <form id="f-up" autocomplete="on" hidden>
+              <label>Usuário <small>(3 a 14 letras, números ou _)</small><input id="up-user" autocomplete="username" maxlength="14" required></label>
+              <label>E-mail<input id="up-email" type="email" autocomplete="email" maxlength="80" required></label>
+              <label>Senha <small>(pelo menos 8 caracteres)</small><input id="up-pass" type="password" autocomplete="new-password" maxlength="72" required></label>
+              <label>Confirme a senha<input id="up-pass2" type="password" autocomplete="new-password" maxlength="72" required></label>
+              <button type="submit">CRIAR CONTA</button>
+            </form>
+            <p id="acct-msg" class="acct-msg" role="status"></p>
+            <p id="acct-mode" class="acct-mode"></p>
+          </div>
+          <div id="acct-servers" class="acct-step" hidden>
+            <div class="label">Escolha o servidor</div>
+            <div id="srv-list" class="srv-list"></div>
+          </div>
+          <div id="acct-chars" class="acct-step" hidden>
+            <div class="label acct-head"><span id="chars-title"></span><button id="chars-back" type="button" class="link">Trocar servidor</button></div>
+            <div id="char-list" class="char-list"></div>
+            <button id="char-new" type="button">+ NOVO PERSONAGEM</button>
+            <button id="char-import" type="button" class="secondary" hidden>Trazer o herói salvo neste navegador</button>
+          </div>
+          <div id="create" hidden>
+          <div class="label acct-head"><span>Novo personagem</span><button id="create-back" type="button" class="link">Voltar</button></div>
           <div id="save-slot" hidden>
             <div class="label">Continuar de onde parou</div>
             <div id="save-info"></div>
@@ -40,6 +72,7 @@
           <div id="heroes"></div>
           <p id="new-warn" class="warn" hidden>Começar um novo jogo apaga o progresso salvo. Clique de novo para confirmar.</p>
           <button id="play">COMEÇAR AVENTURA</button>
+          </div>
           <p class="hint">WASD / setas para andar · clique para interagir · Ctrl + botão direito ataca o monstro mais perto · o Guarda Ivo ensina o resto</p>
           <div id="lobby-tip" class="lobby-tip" title="Clique para outra dica"></div>
         </div>
@@ -47,7 +80,7 @@
       <div class="page" id="page-how" hidden></div>
       <div class="page news-list" id="page-news" hidden></div>
     </main>
-    <footer class="lobby-foot">Jogo original em desenvolvimento · arte criada para o projeto · sons e música sintetizados pelo próprio jogo · progresso salvo no navegador</footer>
+    <footer class="lobby-foot">Jogo original em desenvolvimento · arte criada para o projeto · sons e música sintetizados pelo próprio jogo · progresso salvo na sua conta</footer>
   </section>
 
   <!-- Jogo -->
@@ -106,45 +139,48 @@
     </div>
   </section>
 
-  <script src="js/assets.js?v=202611021104"></script>
-  <script src="js/data.js?v=202611021104"></script>
-  <script src="js/terrain.js?v=202611021104"></script>
-  <script src="js/audio.js?v=202611021104"></script>
-  <script src="js/path.js?v=202611021104"></script>
-  <script src="js/fx.js?v=202611021104"></script>
-  <script src="js/ambient.js?v=202611021104"></script>
-  <script src="js/lighting.js?v=202611021104"></script>
-  <script src="js/rules.js?v=202611021104"></script>
-  <script src="js/anim_data.js?v=202611021104"></script>
-  <script src="js/anim3d_data.js?v=202611021104"></script>
-  <script src="js/anim_extra.js?v=202611021104"></script>
-  <script src="js/version.js?v=202611021104"></script>
-  <script src="js/ui.js?v=202611021104"></script>
-  <script src="js/quests.js?v=202611021104"></script>
-  <script src="js/dialogs.js?v=202611021104"></script>
-  <script src="js/render.js?v=202611021104"></script>
-  <script src="js/hud.js?v=202611021104"></script>
-  <script src="js/mobs.js?v=202611021104"></script>
-  <script src="js/world.js?v=202611021104"></script>
-  <script src="js/crafting.js?v=202611021104"></script>
-  <script src="js/gather.js?v=202611021104"></script>
-  <script src="js/shop.js?v=202611021104"></script>
-  <script src="js/input.js?v=202611021104"></script>
-  <script src="js/pointer.js?v=202611021104"></script>
-  <script src="js/camera.js?v=202611021104"></script>
-  <script src="js/actors.js?v=202611021104"></script>
-  <script src="js/outfit.js?v=202611021104"></script>
-  <script src="js/hero.js?v=202611021104"></script>
-  <script src="js/scenery.js?v=202611021104"></script>
-  <script src="js/overlay.js?v=202611021104"></script>
-  <script src="js/events.js?v=202611021104"></script>
-  <script src="js/shrine.js?v=202611021104"></script>
-  <script src="js/dlgactions.js?v=202611021104"></script>
-  <script src="js/daily.js?v=202611021104"></script>
-  <script src="js/home.js?v=202611021104"></script>
-  <script src="js/scene.js?v=202611021104"></script>
-  <script src="js/campaign.js?v=202611021104"></script>
-  <script src="js/game.js?v=202611021104"></script>
-  <script src="js/lobby.js?v=202611021104"></script>
+  <script src="js/assets.js?v=202611021120"></script>
+  <script src="js/data.js?v=202611021120"></script>
+  <script src="js/terrain.js?v=202611021120"></script>
+  <script src="js/audio.js?v=202611021120"></script>
+  <script src="js/path.js?v=202611021120"></script>
+  <script src="js/fx.js?v=202611021120"></script>
+  <script src="js/ambient.js?v=202611021120"></script>
+  <script src="js/lighting.js?v=202611021120"></script>
+  <script src="js/rules.js?v=202611021120"></script>
+  <script src="js/anim_data.js?v=202611021120"></script>
+  <script src="js/anim3d_data.js?v=202611021120"></script>
+  <script src="js/anim_extra.js?v=202611021120"></script>
+  <script src="js/version.js?v=202611021120"></script>
+  <script src="js/ui.js?v=202611021120"></script>
+  <script src="js/quests.js?v=202611021120"></script>
+  <script src="js/dialogs.js?v=202611021120"></script>
+  <script src="js/render.js?v=202611021120"></script>
+  <script src="js/hud.js?v=202611021120"></script>
+  <script src="js/mobs.js?v=202611021120"></script>
+  <script src="js/world.js?v=202611021120"></script>
+  <script src="js/crafting.js?v=202611021120"></script>
+  <script src="js/gather.js?v=202611021120"></script>
+  <script src="js/shop.js?v=202611021120"></script>
+  <script src="js/input.js?v=202611021120"></script>
+  <script src="js/pointer.js?v=202611021120"></script>
+  <script src="js/camera.js?v=202611021120"></script>
+  <script src="js/actors.js?v=202611021120"></script>
+  <script src="js/outfit.js?v=202611021120"></script>
+  <script src="js/hero.js?v=202611021120"></script>
+  <script src="js/scenery.js?v=202611021120"></script>
+  <script src="js/overlay.js?v=202611021120"></script>
+  <script src="js/events.js?v=202611021120"></script>
+  <script src="js/shrine.js?v=202611021120"></script>
+  <script src="js/dlgactions.js?v=202611021120"></script>
+  <script src="js/daily.js?v=202611021120"></script>
+  <script src="js/home.js?v=202611021120"></script>
+  <script src="js/scene.js?v=202611021120"></script>
+  <script src="js/campaign.js?v=202611021120"></script>
+  <script src="js/game.js?v=202611021120"></script>
+  <script src="js/lobby.js?v=202611021120"></script>
+  <script src="js/net_config.js?v=202611021120"></script>
+  <script src="js/net.js?v=202611021120"></script>
+  <script src="js/account.js?v=202611021120"></script>
 </body>
 </html>
