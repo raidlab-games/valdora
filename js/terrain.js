@@ -174,39 +174,51 @@ window.ValdoraTerrain = (() => {
     const MTN_THEMES = ["gray", "green", "dark", "sand", "snow"], faceTex = {};
     function faceData(th) { // textura da face do tema (2 tiles de altura) em pixels, lida das artes já carregadas
       if (faceTex[th] !== undefined) return faceTex[th];
+      const wide = spr["mtn_face_" + th]; // rodada 110: paredão do Blender, 8 tiles de largura e com transparência no cascalho do pé
+      if (wide) { const c = document.createElement("canvas"); c.width = TILE * 8; c.height = TILE * 2; const cg = c.getContext("2d");
+        cg.drawImage(wide, 0, 0, c.width, c.height); return (faceTex[th] = { d: cg.getImageData(0, 0, c.width, c.height).data, w: c.width }); }
       const a = spr["mtn_face_t_" + th], b = spr["mtn_face_b_" + th];
       if (!a || !b) return (faceTex[th] = null);
       const c = document.createElement("canvas"); c.width = TILE; c.height = TILE * 2; const cg = c.getContext("2d");
       cg.drawImage(a, 0, 0, TILE, TILE); cg.drawImage(b, 0, TILE, TILE, TILE);
-      return (faceTex[th] = cg.getImageData(0, 0, TILE, TILE * 2).data);
+      return (faceTex[th] = { d: cg.getImageData(0, 0, TILE, TILE * 2).data, w: TILE });
     }
     const nearMtn = mtn ? new Uint8Array(W * H) : null;
     if (mtn) for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mtn.mask[y * W + x])
       for (let dy = -2; dy <= 3; dy++) for (let dx = -2; dx <= 2; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W && Y < H) nearMtn[Y * W + X] = 1; }
     function themeNear(x, y) { for (let r = 0; r < 4; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W && Y < H && mtn.mask[Y * W + X]) return MTN_THEMES[mtn.theme[Y * W + X]] || "gray"; } return "gray"; }
+    // rodada 110: a montanha é desenhada em resolução cheia (a classificação topo/face/sombra continua por bloco de 3 px, mas a
+    // rocha do paredão é amostrada pixel a pixel, para os detalhes do render do Blender não virarem mosaico)
+    const mC = document.createElement("canvas"); mC.width = mC.height = TILE; const mG = mC.getContext("2d"), mtImg = mG.createImageData(TILE, TILE);
     function mountainTile(g, x, y, ox, oy) {
-      const th = themeNear(x, y), fd = faceData(th); let any = false;
+      const th = themeNear(x, y), fd = faceData(th), D = mtImg.data; let any = false; D.fill(0);
       for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
-        const fx = x + (bx + 0.5) / N, fy = y + (by + 0.5) / N, v = MF.at(fx, fy), i = (by * N + bx) * 4; let c = null;
-        if (v >= 0.5) { // topo: mais claro; beirada clara perto da borda
-          c = v < 0.56 ? [255, 250, 230, 120] : [255, 255, 240, 34];
-          if (MF.at(fx, fy + 0.2) < 0.5) c = [255, 248, 225, 150];
-        } else {
-          let s = -1; for (let k = 1; k <= 18; k++) { const d = k * FACE_H / 18; if (MF.at(fx, fy - d) >= 0.5) { s = d; break; } }
-          if (s > 0 && fd) { // face de rocha: amostra a textura pela coluna (x) e pela profundidade abaixo da borda
-            const px = Math.floor(((fx % 1) + 1) % 1 * TILE), py = Math.min(TILE * 2 - 1, Math.floor(s / FACE_H * TILE * 2)), j = (py * TILE + px) * 4;
-            c = [fd[j], fd[j + 1], fd[j + 2], 255];
-          } else if (s > 0) c = [96, 92, 88, 255];
-          else { // sombra logo abaixo da face; contorno de rocha nos lados
+        const fx = x + (bx + 0.5) / N, fy = y + (by + 0.5) / N, v = MF.at(fx, fy); let c = null, s = -1;
+        if (v >= 0.5) c = v < 0.56 ? [255, 250, 230, 38] : [255, 255, 240, 16]; // topo só um pouco mais claro
+        else {
+          for (let k = 1; k <= 18; k++) { const d = k * FACE_H / 18; if (MF.at(fx, fy - d) >= 0.5) { s = d; break; } }
+          if (s > 0 && !fd) c = [96, 92, 88, 255];
+          else if (s <= 0) { // sombra logo abaixo da face; contorno de rocha nos lados
             let sh = -1; for (let k = 1; k <= 8; k++) { const d = FACE_H + k * 0.1; if (MF.at(fx, fy - d) >= 0.5) { sh = d - FACE_H; break; } }
             if (sh >= 0) c = [10, 8, 6, Math.round(110 * (1 - sh / 0.8))];
             else if (v > 0.44) c = [40, 36, 34, 230];
             else if (v > 0.38) c = [20, 18, 16, 70];
           }
         }
-        put(oImg.data, i, c); any = any || !!c;
+        if (!c && !(s > 0 && fd)) continue;
+        any = true;
+        const x0 = bx * BLOCK, y0 = by * BLOCK, x1 = Math.min(TILE, x0 + BLOCK), y1 = Math.min(TILE, y0 + BLOCK);
+        for (let py = y0; py < y1; py++) for (let px = x0; px < x1; px++) {
+          const o = (py * TILE + px) * 4; let r = c;
+          if (!r) { // face de rocha: coluna pela posição x exata, profundidade pela linha exata do pixel
+            const per = fd.w / TILE, ffx = x + (px + 0.5) / TILE, depth = s + (py + 0.5 - (by + 0.5) * BLOCK) / TILE;
+            const tx = Math.floor(((ffx / per % 1) + 1) % 1 * fd.w), ty = Math.max(0, Math.min(TILE * 2 - 1, Math.floor(depth / FACE_H * TILE * 2))), j2 = (ty * fd.w + tx) * 4;
+            r = fd.d[j2 + 3] > 40 ? [fd.d[j2], fd.d[j2 + 1], fd.d[j2 + 2], fd.d[j2 + 3]] : [10, 8, 6, 70]; // entre as pedras do pé: o chão, na sombra
+          }
+          D[o] = r[0]; D[o + 1] = r[1]; D[o + 2] = r[2]; D[o + 3] = r[3];
+        }
       }
-      if (any) { og.putImageData(oImg, 0, 0); g.drawImage(ov16, 0, 0, N, N, ox, oy, TILE, TILE); }
+      if (any) { mG.putImageData(mtImg, 0, 0); g.drawImage(mC, ox, oy); }
       const st = mtn.stairs.get(y * W + x); // escada talhada (2 tiles: o de cima e o de baixo da face)
       if (st && spr[`mtn_stairs_${st.part}_${st.theme}`]) g.drawImage(spr[`mtn_stairs_${st.part}_${st.theme}`], ox, oy, TILE, TILE);
     }

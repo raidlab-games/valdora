@@ -51,6 +51,7 @@ window.ValdoraAudio = (() => {
     splash: () => { noise(0.25, 0.35, 700, 0.7, 0, "lowpass"); tone(500, 0.12, "sine", 0.12, 1.6); },
     hit: () => { noise(0.035, 0.2, 5200, 0.8, 0, "highpass"); noise(0.07, 0.5, 1800, 1.5, 0.01, "bandpass", 0.45); tone(160, 0.1, "square", 0.16, 0.5, 0.01); tone(140, 0.13, "sine", 0.34, 0.4, 0.01, sfxGain, 0.5); }, // rodada 67: em camadas
     miss: () => { noise(0.12, 0.25, 2500, 0.8, 0, "highpass"); },
+    thorn: () => { for (let i = 0; i < 4; i++) noise(0.018, 0.22, 6800 + i * 900, 3, i * 0.028, "highpass"); tone(1250, 0.05, "triangle", 0.08, 0.7, 0.01); tone(180, 0.09, "sawtooth", 0.1, 0.6, 0.02); }, // rodada 110: espetadas finas e um "ai" curto
     hurt: () => { tone(220, 0.16, "sawtooth", 0.22, 0.5); noise(0.08, 0.3, 600, 1, 0, "bandpass", 0.35); tone(95, 0.15, "sine", 0.3, 0.5, 0, sfxGain, 0.4); },
     coin: () => { tone(988, 0.07, "square", 0.15); tone(1319, 0.14, "square", 0.15, 1, 0.06); },
     pickup: () => { tone(660, 0.06, "triangle", 0.25, 1.5); tone(990, 0.08, "triangle", 0.2, 1, 0.05); },

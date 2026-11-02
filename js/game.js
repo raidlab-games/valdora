@@ -344,7 +344,7 @@
   const POI = { darkwood: ["ruins", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp", "ruins"], desert: ["ruins", "bones", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp"],
     mountains: ["camp", "ruins", "rubble", "camp", "ruins", "rubble", "camp", "bones", "ruins", "camp"], snow: ["camp", "bones", "ruins", "camp", "bones", "ruins", "camp", "bones", "camp", "ruins"] };
   function placePOIs(rnd, deco) {
-    const G = WORLD_G, free = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path/.test(map[y][x]) && !nearTown(x, y, 8) && !G.inOld(x, y) && !MTN.block[y * W + x] && !MTN.elev[y * W + x];
+    const G = WORLD_G, free = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path/.test(map[y][x]) && !nearTown(x, y, 8) && !G.inOld(x, y) && !MTN.block[y * W + x] && !MTN.elev[y * W + x] && !MTN.keep[y * W + x];
     for (const B of G.BIOMES.slice(1)) for (const kind of POI[B.key]) {
       let p = null;
       for (let k = 0; k < 300 && !p; k++) { const a = rnd() * 6.283, r = Math.sqrt(rnd()) * B.c[2] * 1.2, x = Math.round(B.c[0] + Math.cos(a) * r), y = Math.round(B.c[1] + Math.sin(a) * r);
@@ -370,9 +370,9 @@
   const MTN_ORE = { 1: ["rock_iron", "rock_lumita"], 2: ["rock_obsidian", "rock_amethyst"], 3: ["rock_mithril", "rock_adamant"], 4: ["rock_sun", "rock_ruby"], 5: ["rock_frost", "rock_starice"] };
   function placeMountains(rnd) {
     const G = WORLD_G, n = W * H;
-    MTN = { mask: new Uint8Array(n), theme: new Uint8Array(n), block: new Uint8Array(n), elev: new Uint8Array(n), stairs: new Map(), list: [] };
+    MTN = { mask: new Uint8Array(n), theme: new Uint8Array(n), block: new Uint8Array(n), elev: new Uint8Array(n), keep: new Uint8Array(n), stairs: new Map(), list: [] }; // keep: pé e topo da escada sem objetos
     const used = new Uint8Array(n), key = (x, y) => y * W + x;
-    for (const [bs, [count, rmin, rmax, theme]] of Object.entries(MTN_CFG)) {
+    for (const [bs, [count, rmin, rmax]] of Object.entries(MTN_CFG)) { let theme = 0;
       const b = +bs, B = G.BIOMES[b - 1];
       for (let made = 0, tries = 0; made < count && tries < count * 60; tries++) {
         const a = rnd() * 6.283, rr = Math.sqrt(rnd()) * B.c[2] * 1.25, cx = Math.round(B.c[0] + Math.cos(a) * rr), cy = Math.round(B.c[1] + Math.sin(a) * rr);
@@ -399,6 +399,11 @@
         for (const k of M) { const x = k % W, y = (k / W) | 0;
           if (!M.has(key(x, y + 1)) && F.has(key(x, y + 1)) && F.has(key(x, y + 2)) && T.includes(key(x, y - 1)) && !M.has(key(x - 1, y + 1)) && !M.has(key(x + 1, y + 1)) && !used[key(x, y + 3)]) cand.push([x, y]); }
         if (!cand.length) continue;
+        // rodada 110: o tema da rocha e da beirada segue o chão que está de fato embaixo (terra no Campo vira rocha cinza, não capim)
+        const fam = { grass: 0, dark: 0, sand: 0, snow: 0, rock: 0 };
+        for (const k of M) { const g = map[(k / W) | 0][k % W]; fam[/night|dark/.test(g) ? "dark" : /^grass/.test(g) ? "grass" : /^sand/.test(g) ? "sand" : /^snow/.test(g) ? "snow" : "rock"]++; }
+        const top1 = Object.entries(fam).sort((p, q) => q[1] - p[1])[0][0];
+        theme = { grass: 1, dark: 2, sand: 3, snow: 4, rock: 0 }[top1];
         const [sx, sy] = cand[Math.floor(rnd() * cand.length)], th = ["gray", "green", "dark", "sand", "snow"][theme];
         for (const k of M) { MTN.mask[k] = 1; MTN.theme[k] = theme; MTN.block[k] = 1; }
         for (const k of F) MTN.block[k] = 1;
@@ -406,7 +411,10 @@
         for (const k of [...M, ...F]) { const x = k % W, y = (k / W) | 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inside(x + dx, y + dy)) used[key(x + dx, y + dy)] = 1; }
         for (const [x, y] of [[sx, sy], [sx, sy + 1], [sx, sy + 2]]) { MTN.block[key(x, y)] = 0; MTN.elev[key(x, y)] = 2; }
         MTN.stairs.set(key(sx, sy + 1), { part: "t", theme: th }); MTN.stairs.set(key(sx, sy + 2), { part: "b", theme: th });
+        for (const [x, y] of [[sx, sy + 3], [sx, sy + 4], [sx, sy - 1], [sx, sy - 2]]) if (inside(x, y)) MTN.keep[key(x, y)] = 1;
         const r = rnd(); MTN.list.push({ b, top: T.map((k) => [k % W, (k / W) | 0]), kind: r < 0.38 ? "hunt" : r < 0.7 ? "ore" : "empty", stairs: { x: sx, y: sy + 3 } });
+        for (const k of F) { const x = k % W, y = ((k / W) | 0) + 1; // rodada 110: cascalho no chão logo abaixo do paredão (pedras que caíram dele)
+          if (inside(x, y) && !MTN.block[y * W + x] && !MTN.elev[y * W + x] && !occ[y * W + x] && rnd() < 0.45) place({ type: "decal", spr: "pebbles", x, y, w: 1, h: 1, solid: false }); }
         made++;
       }
     }
@@ -414,7 +422,7 @@
   function fillMountains(rnd) { // depois dos recursos: o que cada topo guarda
     const G = WORLD_G;
     for (const m of MTN.list) {
-      const free = m.top.filter(([x, y]) => !occ[y * W + x]);
+      const free = m.top.filter(([x, y]) => !occ[y * W + x] && !MTN.keep[y * W + x]);
       if (m.kind === "ore") { const [base, rare] = MTN_ORE[m.b], k = 2 + Math.floor(rnd() * 2);
         for (let i = 0; i < k && free.length; i++) { const [x, y] = free.splice(Math.floor(rnd() * free.length), 1)[0], kind = i === 0 && rnd() < 0.5 && RES[rare] && SPR[rare] ? rare : base; if (RES[kind] && SPR[kind]) addResource(kind, x, y); } }
       else if (m.kind === "hunt") {
@@ -552,10 +560,10 @@
     placePOIs(rnd, deco);
     // recursos e enfeites (fora do quadro antigo)
     for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
-      if (G.inOld(x, y) || occ[y * W + x] || MTN.block[y * W + x] || MTN.elev[y * W + x] === 2 || nearTown(x, y, 3) || /water|path|sand/.test(map[y][x]) && G.biomeAt(x, y) !== 4) continue; // no deserto, areia recebe recurso
+      if (G.inOld(x, y) || occ[y * W + x] || MTN.block[y * W + x] || MTN.elev[y * W + x] === 2 || MTN.keep[y * W + x] || nearTown(x, y, 3) || /water|path|sand/.test(map[y][x]) && G.biomeAt(x, y) !== 4) continue; // no deserto, areia recebe recurso
       if (map[y][x] === "water" || map[y][x] === "path") continue;
       const b = G.biomeAt(x, y), reg = G.regionShape(x, y);
-      if (b === 3 && G.fbm(x / 9, y / 9, 41) > 0.7 && rnd() < 0.5) { place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false }); continue; } // rodada 106: cascalho no pé das montanhas (os paredões de pedregulho saíram)
+      if (b === 3 && G.fbm(x / 9, y / 9, 41) > 0.7 && rnd() < 0.3) { place({ type: "decal", spr: "pebbles", x, y, w: 1, h: 1, solid: false }); continue; } // rodada 106/110: pedrinhas no chão (os paredões de pedregulho saíram)
       const tab = b === 1 ? TABLE_CAMPO[reg] : TABLE_NEW[reg]; if (!tab) continue;
       if (map[y][x] === "stone" && reg !== "ruins" && b === 1) continue;
       let n = rnd(); const dens = noise(x, y, 8, 99 + b), grove = dens > 0.56 ? 2.6 : dens < 0.36 ? 0.2 : 0.9; // bosques e clareiras
@@ -1289,7 +1297,7 @@
     if (shoot && goal(player.x, player.y)) { player.path = []; return; } // já na mira: atira daqui
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
-  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
+  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
@@ -2430,7 +2438,21 @@
     player.stepLen = nx !== player.x && ny !== player.y ? Math.SQRT2 : 1; // rodada 104: passo diagonal é mais comprido
     player.fx = player.x; player.fy = player.y; player.x = nx; player.y = ny;
     if (player.dir !== prevDir) dustAtFeet(3); // poeira ao mudar de direção correndo
+    thorns(nx, ny);
     return true;
+  }
+  // rodada 110: encostar num cacto (parar ao lado dele, de frente ou na diagonal) espeta: dano pequeno, som de espinho,
+  // no máximo uma vez por segundo; espinho machuca mas nunca mata (deixa ao menos 1 de vida)
+  let thornT = 0;
+  function thorns(x, y) {
+    if (inCrypt || tickN - thornT < 1 / TICK) return;
+    const c = DIRS8V.map(([dx, dy]) => inside(x + dx, y + dy) && occ[(y + dy) * W + x + dx]).find((o) => o && o.spr === "cactus");
+    if (!c) return;
+    thornT = tickN; const dmg = Math.max(1, Math.round(maxHp() * 0.04));
+    player.hp = Math.max(1, player.hp - dmg); player.flash = 0.14; player.hitT = 0.2; hudDirty = true;
+    hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); addFloat(player.px + 0.5, player.py - 0.85, "espinhos!", "#c8e07a", 0.9, 12);
+    fx.sparks((player.px + c.x) / 2 + 0.5, (player.py + c.y) / 2 + 0.45, 5, ["#e8f0b0", "#ffffff"], 3);
+    SND.play("thorn");
   }
 
   // rodada 106: só o que está na área do minimapa (e um pouco além) pensa e se anima; o resto do continente espera parado

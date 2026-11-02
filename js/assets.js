@@ -321,6 +321,10 @@ for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boul
 // rodada 109: rochas e cacto do Blender saem de um monte de chão que passa do pé; a imagem desce esta fração da altura
 // para o pé ficar no meio do tile (tools/natural_props_pack.py)
 window.SPRITE_SINK = { boulder: 0.283, boulder_snow: 0.283, boulder_sand: 0.283, cactus: 0.224 };
+// rodada 110: minérios do Blender (rocha que sai do chão com o minério à mostra), 1,7 tile
+for (const k of ["rock", "rock_iron", "rock_mithril", "rock_sun", "rock_lumita", "rock_amethyst", "rock_adamant", "rock_ruby", "rock_frost", "rock_starice", "rock_obsidian"]) { SPRITE_SIZE[k] = [1.7, 1.7]; window.SPRITE_SINK[k] = 0.176; }
+// rodada 110: paredão das montanhas renderizado no Blender (8 tiles emendáveis por tema; tools/cliff_faces_pack.py)
+for (const th of ["gray", "green", "dark", "sand", "snow"]) { ASSETS["mtn_face_" + th] = `assets/flow/mtn_face_${th}.png`; SPRITE_SIZE["mtn_face_" + th] = [8, 2]; }
 for (const k of ["tree_pine", "tree_snowpine"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.5, 2.1]; } // como o cedro
 // rodada 106: montanhas (face de rocha e escada talhada por tema; o contorno é desenhado no chão, em terrain.js)
 for (const th of ["gray", "green", "dark", "sand", "snow"]) for (const k of [`mtn_face_t_${th}`, `mtn_face_b_${th}`, `mtn_stairs_t_${th}`, `mtn_stairs_b_${th}`]) ASSETS[k] = `assets/flow/${k}.png`;

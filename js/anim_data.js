@@ -1130,45 +1130,6 @@ window.ANIM_SHEETS = {
    }
   }
  },
- "rock": {
-  "src": "assets/flow/anim/rock_anim.png",
-  "cell": 205,
-  "px": 128,
-  "rows": {
-   "hit": {
-    "row": 0,
-    "frames": 4,
-    "fps": 14,
-    "loop": false
-   }
-  }
- },
- "rock_iron": {
-  "src": "assets/flow/anim/rock_iron_anim.png",
-  "cell": 205,
-  "px": 128,
-  "rows": {
-   "hit": {
-    "row": 0,
-    "frames": 4,
-    "fps": 14,
-    "loop": false
-   }
-  }
- },
- "rock_lumita": {
-  "src": "assets/flow/anim/rock_lumita_anim.png",
-  "cell": 205,
-  "px": 128,
-  "rows": {
-   "hit": {
-    "row": 0,
-    "frames": 4,
-    "fps": 14,
-    "loop": false
-   }
-  }
- },
  "npc_merchant": {
   "src": "assets/flow/anim/npc_merchant_anim.png",
   "cell": 205,

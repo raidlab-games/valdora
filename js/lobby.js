@@ -11,6 +11,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.09", "Montanhas e minérios ligados ao ambiente", ["Paredões das montanhas refeitos em 3D: rocha fraturada em colunas, a beirada de cima com o chão do lugar (capim, mata, areia, neve) e cascalho no pé",
+      "Escadas talhadas na própria rocha, e o pé e o topo da escada ficam sempre livres",
+      "Todos os minérios refeitos: rocha da região saindo do chão com o minério à mostra — veios de cobre, ferro, mitril e ouro; cristais de lumita, ametista, adamante, rubi, gelo eterno e gelo astral; lascas de obsidiana",
+      "Encostar num cacto espeta: um pouco de dano e som de espinho (espinho machuca, mas não mata)"]],
     ["v1.08", "Contas, servidores e personagens", ["Agora você entra com uma conta: usuário e senha ligados a um e-mail (dá para entrar com o usuário ou com o e-mail)",
       "Depois de entrar, escolha o servidor e então o personagem — até 4 por servidor, cada um com o próprio progresso",
       "O herói salvo neste navegador pode ser trazido para um servidor com um clique",

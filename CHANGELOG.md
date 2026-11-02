@@ -20,6 +20,20 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 110 (v1.09) — montanhas e minérios ligados ao ambiente, espinho do cacto
+- **Paredão:** `tools/b3d/cliff_faces.py` (grade deslocada por voronoi lido num espaço esticado na altura → colunas de rocha;
+  beirada com a textura do chão de cima e tufos/neve; cascalho no pé) + `tools/cliff_faces_pack.py` (8 tiles emendáveis,
+  `mtn_face_<tema>`, e `mtn_stairs_t/b_<tema>`). `terrain.js` desenha a montanha em resolução cheia (classificação por bloco
+  de 3 px, rocha amostrada por pixel) e usa a transparência do cascalho (o chão aparece na sombra do paredão).
+- Tema da montanha pelo chão que está embaixo (terra no Campo vira rocha cinza); pedrinhas (`pebbles`) no pé do paredão em
+  vez da pilha de entulho; topo sem contorno creme; pé e topo da escada sempre livres (`MTN.keep`).
+- **Minérios:** os 11 refeitos em `natural_props.py` (veios metálicos por borda de voronoi distorcida; cristais hexagonais
+  com ponta; obsidiana em lascas), 1,7 tile com `SPRITE_SINK`. Saíram as folhas de golpe antigas de rock/rock_iron/rock_lumita
+  (o golpe usa o tremor procedural).
+- **Cacto:** parar ao lado de um cacto (8 vizinhos) espeta: 4% da vida máxima (mín. 1), nunca abaixo de 1, no máximo 1 vez
+  por segundo, com o som novo `thorn`.
+- `net.js`: salvamento que terminava depois de voltar ao menu não quebra mais.
+
 ## Rodada 109 (v1.08) — contas, estradas ligadas, rochas e cactos naturais
 - **Contas:** `js/net.js` (motor online Supabase ou local de teste), `js/account.js` (entrar/criar conta → servidor →
   personagem), `js/net_config.js` (vazio = modo de teste). Banco em `supabase/schema.sql` com RLS; login pelo usuário via

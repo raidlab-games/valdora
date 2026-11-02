@@ -140,7 +140,7 @@
   test("efeitos (fx): água, cardumes e fumaça com tiles e linha em loop", () => miss(["fx_water", "fx_water_deep", "fx_fishspot", "fx_fishspot_deep", "fx_smoke"]
     .filter((k) => !AS[k] || !AS[k].fx || !(AS[k].tiles > 0) || !AS[k].rows.loop)));
   test("pedras com linha de golpe, NPCs com fala, portal/quadro/banca com balanço", () => miss([
-    ...["rock", "rock_iron", "rock_lumita"].filter((k) => !AS[k] || !AS[k].rows.hit), ...["npc_merchant", "npc_guard", "npc_bard"].filter((k) => !AS[k] || !AS[k].rows.talk),
+    ...["npc_merchant", "npc_guard", "npc_bard"].filter((k) => !AS[k] || !AS[k].rows.talk),
     ...["deco_board", "deco_town_sign", "stall"].filter((k) => AS[k])])); // rodada 104: placa, quadro e barraca não balançam com o vento
   test("heróis com investida nas 4 direções e folha de giro", () => miss(["hero_1", "hero_2", "hero_3"].flatMap((k) => [
     ...["down", "left", "right", "up"].filter((d) => !AS[k] || !AS[k].rows["dash_" + d]).map((d) => k + ":dash_" + d), ...(ASSETS[k + "_spin"] ? [] : [k + "_spin"])])));

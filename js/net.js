@@ -136,8 +136,8 @@ window.ValdoraNet = (() => {
   let cur = null, pending = null, timer = null, busy = false;
   async function flush() {
     if (!cur || !pending || busy) return; busy = true;
-    const { data, level } = pending; pending = null;
-    try { await E.saveChar(cur.id, data, level); cur.status = "ok"; } catch (e) { pending = pending || { data, level }; cur.status = "erro"; console.warn("Valdora: não salvou no servidor", e); }
+    const ch = cur, { data, level } = pending; pending = null; // o personagem pode sair (menu) enquanto o servidor responde
+    try { await E.saveChar(ch.id, data, level); ch.status = "ok"; } catch (e) { if (cur === ch) pending = pending || { data, level }; ch.status = "erro"; console.warn("Valdora: não salvou no servidor", e); }
     busy = false;
   }
   function sink(data, level, urgent) {
