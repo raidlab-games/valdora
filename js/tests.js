@@ -924,6 +924,38 @@
     return miss(r);
   });
 
+  test("rodada 105: continente com 5 biomas (cada um com ~3x o mapa antigo), vila com Pedra, masmorra com chefe e monstros na faixa de nível", () => {
+    const r = [], Wd = ValdoraWorld, old = 96 * 72;
+    if (Wd.BIOMES.length !== 5) r.push("5 biomas");
+    for (const B of Wd.BIOMES) {
+      if (B.area < old * 2.5) r.push(`${B.key}: área ${B.area}`);
+      const v = Wd.VILLAGES.find((x) => x.biome === B.n); if (!v) { r.push(B.key + " sem vila"); continue; }
+      if (Wd.biomeAt((v.x0 + v.x1) >> 1, (v.y0 + v.y1) >> 1) !== B.n) r.push(v.key + " fora do bioma");
+      if (B.n === 1) continue;
+      const E = Wd.DG_ENTRIES.find((d) => d.biome === B.n), D = E && Wd.DUNGEONS[E.key];
+      if (!E || Wd.biomeAt(E.x, E.y) !== B.n || !D) { r.push(B.key + " sem masmorra"); continue; }
+      const boss = D.spawns.map((s) => VD.MOBS[s[0]]).find((m) => m && m.boss); if (!boss) r.push(E.key + " sem chefe"); else if (boss.lvl < B.lv[1]) r.push(E.key + " chefe fraco");
+      if (D.spawns.filter((s) => !(VD.MOBS[s[0]] || {}).boss).length < 3) r.push(E.key + " sem guarda");
+      for (const [type] of Wd.BIOME_SPAWNS[B.key]) { const m = VD.MOBS[type]; if (!m) r.push(type); else if (m.lvl < B.lv[0] || m.lvl > B.lv[1]) r.push(`${type} nível ${m.lvl} fora de ${B.lv}`); }
+      if (!VD.REGIONS[B.key] || VD.REGIONS[B.key].min !== B.lv[0]) r.push(B.key + " região");
+    }
+    if (!ASSETS.deco_waystone) r.push("arte da Pedra");
+    if (ValdoraRules.MAX_LVL < 180) r.push("nível máximo");
+    return miss(r);
+  });
+  test("rodada 105: cada bioma novo tem minério, madeira e erva próprios e um raro de nível maior; tudo com arte e uso", () => {
+    const r = [], T = { darkwood: ["rock_obsidian", "tree_dark", "res_shadecap", "rock_amethyst", "res_nightbloom"], mountains: ["rock_mithril", "tree_pine", "res_rockmoss", "rock_adamant", "res_edelweiss"],
+      desert: ["rock_sun", "palm", "res_desertrose", "rock_ruby", "res_sunlotus"], snow: ["rock_frost", "tree_snowpine", "res_frostbloom", "rock_starice", "res_aurora"] };
+    for (const [b, list] of Object.entries(T)) {
+      const lv = ValdoraWorld.BIOMES.find((B) => B.key === b).lv;
+      for (const k of list) { const R = VD.RES[k]; if (!R || !ASSETS[k] || !VD.ITEMS[R.item]) { r.push(k); continue; }
+        if (R.req < lv[0] - 30 || R.req > lv[1]) r.push(`${k} req ${R.req}`); }
+      const rare = list.slice(3).map((k) => VD.RES[k]), base = list.slice(0, 3).map((k) => VD.RES[k]);
+      if (rare.some((R) => !R || !R.rare || R.req <= Math.max(...base.map((x) => x.req)))) r.push(b + ": raro sem nível maior");
+      for (const k of list.slice(3)) { const it = VD.RES[k].item; if (!Object.values(VD.CRAFT).some((c) => c.mats[it])) r.push(it + " sem uso"); }
+    }
+    return miss(r);
+  });
   test("rodada 105: secundária por classe (escudo, flechas, orbe/livro), bracelete e montante de duas mãos", () => {
     const r = [];
     for (const h of HEROES) { if (!VD.SEC[h.sec]) { r.push(h.id + " sem secundária"); continue; }

@@ -11,6 +11,11 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.05", "O continente", ["O mapa virou um continente com mar, baías e ilhas — tecla M abre o mapa inteiro",
+      "Cinco biomas: Campo (nível 5–30), Floresta Sombria (31–65), Montanhas de Ferro (66–101), Deserto Rubro (102–140) e Geleira do Norte (141–180)",
+      "Cada bioma tem vila, monstros próprios, masmorra com chefe, minérios, madeiras e ervas — e um raro de nível maior no fundo",
+      "Pedras nas vilas: ficam salvas ao chegar; viaje entre elas por 30 moedas e escolha onde renascer",
+      "Equipamento de obsidiana, mitril, solar e glacial; nível máximo 200"]],
     ["v1.04", "Movimento em 8 direções", ["Heróis, moradores e monstros agora olham e andam nas diagonais, com animação própria para cada direção",
       "Cortar árvore, minerar, pescar, assar na fogueira, falar com alguém ou lutar: dá para fazer de qualquer lado, inclusive na diagonal",
       "Os monstros também te perseguem e atacam na diagonal; a dança de lado do herói e do monstro acabou",
@@ -292,7 +297,7 @@
     ["v0.1", "Primeiros passos", ["Vila de Lumeira, loja do Bento e encomendas", "Coleta, culinária e combate em ticks", "Salvamento no navegador"]],
   ];
   const HOW = [
-    ["Andar e agir", "WASD ou setas para andar (duas teclas juntas andam na diagonal). Clique em árvores, veios, cardumes, monstros e pessoas para interagir, de qualquer lado. Segure Ctrl e clique com o botão direito perto de um monstro para atacar o mais próximo do ponto. Segure o botão do mouse para ir andando atrás do cursor; ao soltar, o herói vai até onde você soltou. Passar por cima de um item já pega. Clique no minimapa para viajar."],
+    ["Andar e agir", "WASD ou setas para andar (duas teclas juntas andam na diagonal). Clique em árvores, veios, cardumes, monstros e pessoas para interagir, de qualquer lado. Segure Ctrl e clique com o botão direito perto de um monstro para atacar o mais próximo do ponto. Segure o botão do mouse para ir andando atrás do cursor; ao soltar, o herói vai até onde você soltou. Passar por cima de um item já pega. M abre o mapa do continente; as Pedras das vilas levam de uma vila a outra. Clique no minimapa para viajar."],
     ["Coletar", "Corte, minere e pesque. Recursos se esgotam e voltam. Níveis mais altos liberam materiais melhores."],
     ["Forjar e criar", "Funda minério na fornalha, forje na bigorna e use o Artesanato (na mochila) para bolsas e acessórios."],
     ["Lutar", "Combate em turnos rápidos, com três estilos e uma passiva em cada. Coma peixe ou carne para curar (tecla 1). Golpe giratório (Q) acerta todos em volta; Investida (E) e Golpe esmagador (R) atordoam."],

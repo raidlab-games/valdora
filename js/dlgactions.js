@@ -83,7 +83,8 @@ window.ValdoraDlgActions = (() => {
       if (ds.votive) api.shrine().votive();
     }
     // devolve "stop" quando a janela não deve ser redesenhada (o eco desperta e fecha a janela)
-    function run(ds) { for (const act of [dlgShop, dlgBank, dlgWork, dlgQuest, dlgBard, dlgBoard, dlgShrine, dlgTravel, dlgAlchemy, dlgDaily, dlgPet, dlgHome]) if (act(ds) === "stop") return "stop"; }
+    function dlgStone(ds) { if (!api.stone) return; for (const k of ["stonego", "stonespawn"]) if (ds[k] != null) return api.stone(k, ds[k]); } // rodada 105: Pedras
+    function run(ds) { for (const act of [dlgShop, dlgBank, dlgWork, dlgQuest, dlgBard, dlgBoard, dlgShrine, dlgTravel, dlgAlchemy, dlgDaily, dlgPet, dlgHome, dlgStone]) if (act(ds) === "stop") return "stop"; }
     return { run, dlgPet, dlgHome, dlgShop, dlgBank, dlgWork, dlgQuest, dlgBard, dlgBoard, dlgShrine, dlgTravel, dlgAlchemy, dlgDaily };
   }
   return { create };

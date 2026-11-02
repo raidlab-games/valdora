@@ -6,15 +6,23 @@ window.ValdoraOverlay = (() => {
     const { canvas, cam, ctx, TILE, W, H, LIGHT, isSpecial } = api;
     const $ = (id) => document.getElementById(id);
     const GROUND_COLOR = { grass: "#4a8c3a", grass_2: "#4a8c3a", grass_flowers: "#4f9340", grass_dark: "#2c5527", grass_dark_2: "#2c5527",
-      dirt: "#7d6e57", dirt_2: "#7d6e57", water: "#2f6fb0", sand: "#d9c48a", path: "#6b4f2a", stone: "#9a9188", void: "#050505" };
-    let miniBase = null;
+      dirt: "#7d6e57", dirt_2: "#7d6e57", water: "#2f6fb0", sand: "#d9c48a", path: "#6b4f2a", stone: "#9a9188", void: "#050505",
+      grass_night: "#243a2c", grass_night_2: "#243a2c", sand_2: "#d2b878", rockg: "#7a7470", rockg_2: "#7a7470", snow: "#e8eef6", snow_2: "#dde6f0" }; // rodada 105: biomas
+    let miniBase = null, miniS = 4;
+    // rodada 105: o minimapa mostra só a área em volta do herói (96 x 72 tiles), seguindo; o mapa inteiro abre no M
+    const VW = 96, VH = 72;
+    function miniView() {
+      const p = api.state().player, w = Math.min(VW, W), h = Math.min(VH, H);
+      const x0 = Math.max(0, Math.min(W - w, Math.round(p.px + 0.5 - w / 2))), y0 = Math.max(0, Math.min(H - h, Math.round(p.py + 0.5 - h / 2)));
+      return { x0, y0, w, h };
+    }
     const fishIcon = new Image(); if (ASSETS.icon_fish_spot) fishIcon.src = ASSETS.icon_fish_spot;
     const backArrow = new Image(); if (ASSETS.icon_minimap_back) backArrow.src = ASSETS.icon_minimap_back; // rodada 59
     function buildMinimap() {
       const { map, objects, mobs, npc, player, groundItems, inCrypt } = api.state();
       // rodada 71: fundo pintado a 4 px por tile — lagos pelo mesmo contorno suave do chão (makeField), margem clara, manchas de tom
       // e sem os pontinhos brancos das pedras (só árvores, casas e enfeites grandes); o minimapa reduz com filtro
-      const S = 4; miniBase = document.createElement("canvas"); miniBase.width = W * S; miniBase.height = H * S;
+      const S = W > 200 ? 2 : 4; miniS = S; miniBase = document.createElement("canvas"); miniBase.width = W * S; miniBase.height = H * S; // rodada 105: continente a 2 px por tile
       const g = miniBase.getContext("2d"), img = g.createImageData(W * S, H * S), d = img.data, T = window.ValdoraTerrain;
       const WF = T && T.makeField ? T.makeField(W, H, (x, y) => map[y][x] === "water", 31) : null;
       const rgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
@@ -38,8 +46,9 @@ window.ValdoraOverlay = (() => {
       const { map, objects, mobs, npc, player, groundItems, inCrypt } = api.state();
       const mc = $("minimap"), g = mc.getContext("2d");
       g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
-      g.drawImage(miniBase, 0, 0, mc.width, mc.height); g.imageSmoothingEnabled = false;
-      const sx = mc.width / W, sy = mc.height / H;
+      const V = miniView(); g.clearRect(0, 0, mc.width, mc.height);
+      g.drawImage(miniBase, V.x0 * miniS, V.y0 * miniS, V.w * miniS, V.h * miniS, 0, 0, mc.width, mc.height); g.imageSmoothingEnabled = false;
+      const sx = mc.width / V.w, sy = mc.height / V.h; g.save(); g.translate(-V.x0 * sx, -V.y0 * sy); // tudo abaixo em coordenadas do mapa
       const dot = (x, y, r, col) => { g.fillStyle = "#140c06"; g.beginPath(); g.arc(x, y, r + 1, 0, 6.29); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 6.29); g.fill(); };
       // rodada 105: só os monstros da área da tela (o quadrado branco) e um pouco além (4 tiles); os longe aparecem ao chegar perto.
       // O eco desperto (evento) continua aparecendo de longe, com o anel pulsando.
@@ -79,6 +88,7 @@ window.ValdoraOverlay = (() => {
           } else if (d <= 14) { g.fillStyle = "#7dff9a"; g.beginPath(); g.arc(x1, y1, 4, 0, 6.29); g.fill(); } // sem a arte: o ponto de antes
         }
       }
+      g.restore();
     }
 
     function drawLights(t) {
@@ -129,7 +139,30 @@ window.ValdoraOverlay = (() => {
       lightFx.draw(ctx, canvas.width, canvas.height, dark, L, t);
     }
     const lightFx = LIGHT.create();
-    return { buildMinimap, drawMinimap, drawLights };
+    // rodada 105: mapa do continente (tecla M): fundo do minimapa, nomes dos biomas e vilas, Pedras, masmorras e o herói
+    function drawWorldMap(cv) {
+      if (!miniBase) return;
+      const g = cv.getContext("2d"), Wd = window.ValdoraWorld, p = api.state().player, st = api.state();
+      const k = Math.min(cv.width / W, cv.height / H), ox = (cv.width - W * k) / 2, oy = (cv.height - H * k) / 2, X = (x) => ox + x * k, Y = (y) => oy + y * k;
+      g.fillStyle = "#123a66"; g.fillRect(0, 0, cv.width, cv.height);
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(miniBase, ox, oy, W * k, H * k);
+      g.textAlign = "center"; g.textBaseline = "middle";
+      const label = (txt, x, y, size, col, sub) => { g.font = `bold ${size}px 'Valdora Pixel', 'Courier New', monospace`; g.lineWidth = 4; g.strokeStyle = "#000c"; g.strokeText(txt, x, y); g.fillStyle = col; g.fillText(txt, x, y);
+        if (sub) { g.font = `${Math.round(size * 0.7)}px 'Valdora Pixel', 'Courier New', monospace`; g.strokeText(sub, x, y + size); g.fillStyle = "#f3e6c8"; g.fillText(sub, x, y + size); } };
+      if (!st.inCrypt && Wd && Wd.BIOMES) {
+        for (const B of Wd.BIOMES) label(B.name, X(B.c[0]), Y(B.c[1] - B.c[2] * 0.55), Math.max(12, Math.round(k * 7)), "#ffd84a", `nível ${B.lv[0]}–${B.lv[1]}`);
+        const got = new Set(p.stones || ["lumeira"]);
+        for (const v of Wd.VILLAGES) { const cx = X((v.x0 + v.x1 + 1) / 2), cy = Y((v.y0 + v.y1 + 1) / 2), on = got.has(v.key);
+          g.fillStyle = on ? "#7fe8ff" : "#8a8a8a"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.moveTo(cx, cy - 7); g.lineTo(cx + 6, cy); g.lineTo(cx, cy + 7); g.lineTo(cx - 6, cy); g.closePath(); g.fill(); g.stroke();
+          label(v.name + (p.spawnStone === v.key || (!p.spawnStone && v.main) ? " ✦" : ""), cx, cy + 16, Math.max(11, Math.round(k * 5)), on ? "#ffffff" : "#bbbbbb"); }
+        for (const E of Wd.DG_ENTRIES) { const x = X(E.x + 0.5), y = Y(E.y + 0.5); g.fillStyle = "#c0392b"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 5, 0, 6.29); g.fill(); g.stroke();
+          label(E.name, x, y - 13, Math.max(10, Math.round(k * 4.2)), "#ff9a8a"); }
+      }
+      const hx = X(p.px + 0.5), hy = Y(p.py + 0.5), pulse = 7 + Math.sin(performance.now() / 200) * 2;
+      g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, pulse, 0, 6.29); g.stroke(); g.fillStyle = "#f1c40f"; g.beginPath(); g.arc(hx, hy, 4, 0, 6.29); g.fill();
+      g.strokeStyle = "#ffffff99"; g.lineWidth = 1; g.strokeRect(X(cam.x / TILE), Y(cam.y / TILE), canvas.width / TILE * k, canvas.height / TILE * k);
+    }
+    return { buildMinimap, drawMinimap, drawLights, miniView, drawWorldMap };
   }
   return { create };
 })();

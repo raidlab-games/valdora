@@ -14,7 +14,7 @@ window.ValdoraEvents = (() => {
       const balada = api.player().quests.balada && !api.player().quests.balada.done; // com a missão do Tomé, a lua cheia vem mais vezes
       if (LIGHT.darkness(api.player().dayT) > 0.4 && wolves.length && rand() < (balada ? 0.85 : 0.5)) return startMoon(wolves[Math.floor(rand() * wolves.length)]); // só à noite
       if (rand() < 0.5 || !spots.length) {
-        let n = 0; for (let i = 0; i < 5; i++) if (spawnMob("goblin", "fields", { x: 65, y: 36 }, null, { temp: true, raid: true })) n++;
+        let n = 0; for (let i = 0; i < 5; i++) if (spawnMob("goblin", "fields", { x: 65 + ValdoraWorld.OX, y: 36 + ValdoraWorld.OY }, null, { temp: true, raid: true })) n++;
         event = { kind: "raid", t: 180, total: n };
         announce("Invasão goblin!", "Saqueadores bloqueiam a estrada do leste. Derrote todos em 3 minutos (Combate 10 ou mais recomendado).");
       } else {

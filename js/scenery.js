@@ -74,7 +74,7 @@ window.ValdoraScenery = (() => {
       }
       if (o.type === "dummy" && o.drill && SPR.icon_dodge_area_64) { const ic = SPR.icon_dodge_area_64; ctx.drawImage(ic, sx + img.width / 2 - ic.width / 2, sy - ic.height - 6 + Math.sin(t * 9) * 3); }
       ctx.globalAlpha = 1;
-      if (o.type === "merchant") tags.push(["Bento", o.x + mvx + 0.5, (sy + cam.y) / TILE + 0.05, "#f5e27a"]);
+      if (o.type === "merchant") tags.push([o.name || "Bento", o.x + mvx + 0.5, (sy + cam.y) / TILE + 0.05, "#f5e27a"]); // rodada 105: mercadores das vilas novas
       const lift = o.type === "bard" && o.singing ? 0.45 : o.type === "bard" && o.sitT > 0 ? -0.28 : 0; // rodada 27: sobem com as notas; rodada 34: descem com ele sentado
       if (o.type === "bard") tags.push(["Tomé", o.x + 0.5, (sy + cam.y) / TILE + 0.05 - lift, "#f5c060"]);
       if (o.type === "crypt_chest" && !o.opened && !mobs.some((m) => !m.dead)) { const gy = sy + 6 + Math.sin(t * 4) * 3; ctx.fillStyle = "#f1c40f"; ctx.font = "bold 18px 'Courier New', monospace"; ctx.textAlign = "center"; ctx.fillText("✦", sx + img.width / 2, gy); }
@@ -85,7 +85,7 @@ window.ValdoraScenery = (() => {
       if (o.type === "carto") tags.push(["Odília", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#b8c8ff"]); // rodada 80
       if (o.type === "herb") tags.push(["Juna", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#8fe08a"]); // rodada 79
       if (o.type === "guard" || o.type === "bard" || o.type === "merchant" || o.type === "herb" || o.type === "carto" || o.type === "miner") { // "!" tutorial ou missão nova; "?" missão pronta para entregar
-        const mark = o.type === "guard" && TUTORIAL[player.tut.step] && player.tut.step === 0 ? "!" : questMark(o.type === "merchant" ? "shop" : o.type);
+        const mark = o.village ? null : o.type === "guard" && TUTORIAL[player.tut.step] && player.tut.step === 0 ? "!" : questMark(o.type === "merchant" ? "shop" : o.type); // rodada 105: missões só com os da Lumeira
         if (mark) {
           const by = sy - 14 - lift * TILE + Math.sin(t * 5) * 3; ctx.font = "24px 'Valdora Pixel', 'Courier New', monospace"; ctx.textAlign = "center";
           ctx.lineWidth = 4; ctx.strokeStyle = "#000"; ctx.strokeText(mark, sx + img.width / 2, by); ctx.fillStyle = mark === "?" ? "#7dff9a" : "#f1c40f"; ctx.fillText(mark, sx + img.width / 2, by);

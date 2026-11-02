@@ -309,3 +309,13 @@ for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_r
 // rodada 105: ícones da secundária (escudos, orbes) e dos braceletes
 for (const k of ["item_shield_wood", "item_shield_iron", "item_shield_lumita", "item_orb_quartz", "item_orb_amber", "item_orb_lumita",
   "item_bracelet_leather", "item_bracelet_iron", "item_bracelet_lumita", "item_book_apprentice", "item_book_amber", "item_book_lumita", "item_greatsword"]) ASSETS[k] = `assets/flow/${k}.png`;
+// rodada 105: chão dos biomas novos (texturas pintadas recoloridas: neve, areia rubra, rocha e mata escura)
+for (const k of ["snow", "snow_2", "sand_2", "rockg", "rockg_2", "grass_night", "grass_night_2"]) ASSETS[k] = `assets/flow/${k}.png`;
+// rodada 105: cenário dos biomas novos (a partir da arte pintada do mapa 1; Pedra no Blender), gemas e flores raras
+for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 1.3], ["boulder", 1.6], ["boulder_snow", 1.6], ["deco_waystone", 1.5],
+  ["deco_bush_dark", 1.25], ["deco_bush_dry", 1.25], ["deco_bush_snow", 1.25], ["deco_bush_mountain", 1.25],
+  ["rock_obsidian", 1.25], ["rock_sun", 1.25], ["rock_mithril", 1.25], ["rock_frost", 1.25], ["rock_amethyst", 1.25], ["rock_adamant", 1.25], ["rock_ruby", 1.25], ["rock_starice", 1.25],
+  ["res_shadecap", 1.2], ["res_desertrose", 1.2], ["res_rockmoss", 1.2], ["res_frostbloom", 1.2], ["res_nightbloom", 1.2], ["res_edelweiss", 1.2], ["res_sunlotus", 1.2], ["res_aurora", 1.2]]) {
+  ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s];
+}
+for (const k of ["tree_pine", "tree_snowpine"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.5, 2.1]; } // como o cedro

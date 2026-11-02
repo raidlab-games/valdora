@@ -623,6 +623,15 @@ window.VD = (() => {
     "Elmo de lumita": { mats: { "Barra de lumita": 3, "Fragmento ancestral": 1 }, lvl: 15, xp: 240 },
     "Grevas de lumita": { mats: { "Barra de lumita": 3, "Pele de lobo": 2 }, lvl: 15, xp: 240 },
     "Manto das ruínas": { mats: { "Fragmento ancestral": 2, "Pele de lobo": 3, "Coração de musgo": 1, "Lírio-da-lua": 2 }, lvl: 16, xp: 300 },
+    // rodada 105: joias de gema e elixires das flores raras
+    "Anel de ametista": { mats: { "Ametista sombria": 2, "Barra de obsidiana": 1 }, lvl: 55, xp: 400, desc: "anel épico: +6 acerto, +4 dano" },
+    "Amuleto de adamante": { mats: { "Adamante": 2, "Barra de mitril": 1 }, lvl: 90, xp: 700, desc: "amuleto épico: +10 defesa, +3 acerto" },
+    "Anel de rubi": { mats: { "Rubi do deserto": 2, "Barra solar": 1 }, lvl: 125, xp: 1100, desc: "anel épico: +6 acerto, +8 dano" },
+    "Amuleto de gelo astral": { mats: { "Gelo astral": 2, "Barra glacial": 1 }, lvl: 165, xp: 1700, desc: "amuleto épico: +16 defesa, +4 dano, +4 acerto" },
+    "Elixir da noite": { mats: { "Flor-da-noite": 1, "Cogumelo-sombra": 1 }, lvl: 50, xp: 80, desc: "cura 45" },
+    "Tônico de edelvais": { mats: { "Edelvais": 1, "Musgo-de-rocha": 1 }, lvl: 85, xp: 130, desc: "cura 70" },
+    "Elixir solar": { mats: { "Lótus solar": 1, "Polpa de cacto": 1 }, lvl: 120, xp: 200, desc: "cura 100" },
+    "Elixir da aurora": { mats: { "Flor-aurora": 1, "Flor-de-gelo": 1 }, lvl: 160, xp: 300, desc: "cura 140" },
     // rodada 105: escudos (Guerreiro), orbes (Místico) e braceletes
     "Escudo de madeira": { mats: { "Madeira": 4, "Couro de javali": 1 }, lvl: 2, xp: 25, desc: "secundária do Guerreiro · +2 defesa" },
     "Escudo de ferro": { mats: { "Barra de ferro": 3, "Madeira de carvalho": 1 }, lvl: 8, xp: 65, desc: "secundária do Guerreiro · +4 defesa, +1 acerto" },
@@ -647,6 +656,12 @@ window.VD = (() => {
     ["Anel do caçador", 0.2], ["Amuleto de musgo", 0.15], ["Anel ancestral", 0.06], ["Coroa do Ancião", 0.03], ["Fragmento ancestral", 0.4],
     ["Elmo de ferro", 0.15], ["Grevas de ferro", 0.12], ["Manto das ruínas", 0.03], ["Escudo de ferro", 0.12], ["Orbe de âmbar", 0.12], ["Grimório de âmbar", 0.1], ["Bracelete de ferro", 0.15]] };
 
+
+  // rodada 105: baús das masmorras dos biomas
+  const BIOME_CHEST_2 = { coins: [700, 1200], rolls: [["Barra de obsidiana", 1, 2, 4], ["Obsidiana", 0.8, 3, 6], ["Poção de vida", 0.7, 2, 3], ["Espada de obsidiana", 0.12], ["Couraça de obsidiana", 0.1], ["Anel ancestral", 0.2]] };
+  const BIOME_CHEST_3 = { coins: [1400, 2400], rolls: [["Barra de mitril", 1, 2, 4], ["Mitril", 0.8, 3, 6], ["Poção de pedra", 0.7, 2, 3], ["Espada de mitril", 0.12], ["Placas de mitril", 0.1], ["Coroa do Ancião", 0.15]] };
+  const BIOME_CHEST_4 = { coins: [2600, 4200], rolls: [["Barra solar", 1, 2, 4], ["Ouro solar", 0.8, 3, 6], ["Poção de força", 0.7, 2, 3], ["Lâmina solar", 0.12], ["Armadura solar", 0.1], ["Amuleto dos ecos", 0.12]] };
+  const BIOME_CHEST_5 = { coins: [4500, 7000], rolls: [["Barra glacial", 1, 2, 4], ["Gelo eterno", 0.8, 3, 6], ["Poção de vida", 0.8, 3, 4], ["Lâmina glacial", 0.12], ["Armadura glacial", 0.1], ["Bracelete de lumita", 0.3]] };
   // Falas curtas dos NPCs (aparecem em balões de tempos em tempos)
   const CHATTER = {
     merchant: ["Madeira fresca vale ouro!", "Encomendas novas no balcão. Dê uma olhada!", "Lumita? Pago bem por lumita.", "Volte sempre, aventureiro!",
@@ -691,6 +706,54 @@ window.VD = (() => {
   ];
 
   // Equipamento: cada nível pode ser comprado (cost, exige nível da habilidade) ou forjado na bigorna (forge).
+
+  // ================= rodada 105: monstros dos biomas novos =================
+  // Mesmos modelos 3D com outra cor (tint) e tamanho; atributos pela fórmula do nível (bate com os antigos: lobo 12, golem 20, aranha 36).
+  const mobStats = (lvl, k = 1) => ({ hp: Math.round((2.4 * lvl + 0.012 * lvl * lvl) * k), atk: Math.round(0.95 * lvl), def: Math.round(0.8 * lvl), maxHit: Math.round(2 + lvl / 4 + (k > 2 ? 3 : 0)) });
+  const STRIP = ["boss", "mini", "echo", "echoHome", "marker", "summon", "noBounty", "enrage", "light", "quest"];
+  function bmob(base, name, lvl, tint, where, o = {}) {
+    const B = { ...MOBS[base] }; for (const k of STRIP) if (!(o.keep || []).includes(k)) delete B[k];
+    return { ...B, name, lvl, ...mobStats(lvl, o.k || 1), tint, where, scale: o.scale || B.scale, coins: [Math.round(lvl * 1.4 * (o.k || 1)), Math.round(lvl * 2.6 * (o.k || 1))],
+      drops: o.drops || [], color: o.color || B.color, respawn: o.respawn || B.respawn, ...(o.extra || {}) };
+  }
+  const SH = "sepia(0.5) hue-rotate(220deg) brightness(0.55) saturate(1.6)", SAND = "sepia(0.85) saturate(1.3) brightness(1.08)", ROCK = "grayscale(0.85) brightness(0.8) contrast(1.1)", ICE = "sepia(0.4) hue-rotate(165deg) saturate(1.7) brightness(1.3)";
+  const DW = [["Obsidiana", 0.18], ["Cogumelo-sombra", 0.1], ["Poção de vida", 0.06]], DS = [["Ouro solar", 0.18], ["Rosa-do-deserto", 0.1], ["Poção de vida", 0.06]];
+  const MT = [["Mitril", 0.18], ["Musgo-de-rocha", 0.1], ["Poção de força", 0.06]], SN = [["Gelo eterno", 0.18], ["Flor-de-gelo", 0.1], ["Poção de pedra", 0.06]];
+  Object.assign(MOBS, {
+    shade_wolf: bmob("wolf", "Lobo das sombras", 32, SH, "Floresta Sombria", { drops: [["Pele de lobo", 0.5], ...DW] }),
+    wood_spider: bmob("quartz_spider", "Aranha da mata", 38, "hue-rotate(80deg) brightness(0.55) saturate(1.3)", "Floresta Sombria", { drops: DW }),
+    shade_goblin: bmob("goblin", "Goblin da sombra", 43, SH, "Floresta Sombria", { drops: DW }),
+    rot_skeleton: bmob("skeleton", "Esqueleto podre", 48, "sepia(0.6) hue-rotate(50deg) saturate(1.4) brightness(0.8)", "Floresta Sombria", { drops: DW }),
+    shade_wraith: bmob("light_wraith", "Espectro sombrio", 54, "hue-rotate(230deg) brightness(0.6) saturate(1.8)", "Floresta Sombria", { drops: DW }),
+    corrupt_ent: bmob("golem", "Ent corrompido", 60, "hue-rotate(200deg) brightness(0.55) saturate(1.3)", "Floresta Sombria", { drops: [["Madeira de ébano", 0.4], ...DW] }),
+    night_alpha: bmob("wolf_alpha", "Alfa da noite", 64, SH, "Floresta Sombria", { k: 1.6, scale: 1.15, drops: [["Barra de obsidiana", 0.3], ...DW] }),
+    shadow_king: bmob("boss", "Rei das Sombras", 70, "hue-rotate(220deg) brightness(0.6) saturate(1.8)", "Covil das Sombras (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra de obsidiana", 1, 2, 4], ["Espada de obsidiana", 0.2], ["Couraça de obsidiana", 0.15]] }),
+    sand_slime: bmob("slime_blue", "Slime de areia", 103, SAND, "Deserto Rubro", { drops: DS }),
+    red_scorpion: bmob("quartz_spider", "Escorpião rubro", 108, "sepia(1) saturate(3) hue-rotate(-25deg) brightness(0.85)", "Deserto Rubro", { drops: DS }),
+    dune_boar: bmob("boar", "Javali das dunas", 115, SAND, "Deserto Rubro", { drops: [["Couro de javali", 0.5], ...DS] }),
+    mummy: bmob("skeleton", "Múmia", 121, "sepia(0.9) brightness(1.12) saturate(0.8)", "Deserto Rubro", { drops: DS }),
+    sandstone_golem: bmob("golem", "Golem de arenito", 128, "sepia(1) saturate(1.6) hue-rotate(-10deg) brightness(1.05)", "Deserto Rubro", { drops: DS }),
+    raider_goblin: bmob("goblin", "Goblin saqueador", 134, SAND, "Deserto Rubro", { drops: DS }),
+    dune_serpent: bmob("boss_serpent", "Serpente das dunas", 139, SAND, "Deserto Rubro", { k: 1.8, scale: 0.55, drops: [["Barra solar", 0.35], ...DS] }),
+    sand_pharaoh: bmob("boss", "Faraó de Areia", 145, "sepia(1) saturate(2.4) hue-rotate(5deg) brightness(1.15)", "Tumba do Faraó (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra solar", 1, 2, 4], ["Lâmina solar", 0.2], ["Armadura solar", 0.15]] }),
+    gray_wolf: bmob("wolf", "Lobo cinzento", 67, ROCK, "Montanhas de Ferro", { drops: [["Pele de lobo", 0.5], ...MT] }),
+    stone_boar: bmob("boar", "Javali de pedra", 72, ROCK, "Montanhas de Ferro", { drops: MT }),
+    granite_golem: bmob("golem", "Golem de granito", 78, ROCK, "Montanhas de Ferro", { drops: MT }),
+    cave_goblin: bmob("goblin", "Goblin das cavernas", 84, "sepia(0.7) brightness(0.6) saturate(1.2)", "Montanhas de Ferro", { drops: MT }),
+    rock_sentinel: bmob("crystal_sentinel", "Sentinela de rocha", 90, ROCK, "Montanhas de Ferro", { drops: MT }),
+    cave_spider: bmob("quartz_spider", "Aranha das grutas", 95, "sepia(0.8) brightness(0.55) saturate(1.2)", "Montanhas de Ferro", { drops: MT }),
+    iron_colossus: bmob("crypt_colossus", "Colosso de ferro", 100, "sepia(1) hue-rotate(-20deg) saturate(1.8) brightness(0.8)", "Montanhas de Ferro", { k: 1.8, drops: [["Barra de mitril", 0.35], ...MT] }),
+    mountain_king: bmob("boss_golem", "Rei da Montanha", 106, ROCK, "Forja Abandonada (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra de mitril", 1, 2, 4], ["Espada de mitril", 0.2], ["Placas de mitril", 0.15]] }),
+    ice_wolf: bmob("wolf", "Lobo do gelo", 142, ICE, "Geleira do Norte", { drops: [["Pele de lobo", 0.5], ...SN] }),
+    frost_slime: bmob("slime_crystal", "Slime de gelo", 148, ICE, "Geleira do Norte", { drops: SN }),
+    blizzard_wraith: bmob("light_wraith", "Espectro da nevasca", 155, ICE, "Geleira do Norte", { drops: SN }),
+    ice_golem: bmob("golem", "Golem de gelo", 162, ICE, "Geleira do Norte", { drops: SN }),
+    glacial_sentinel: bmob("crystal_sentinel", "Sentinela glacial", 168, ICE, "Geleira do Norte", { drops: SN }),
+    frozen_skeleton: bmob("skeleton", "Esqueleto congelado", 174, ICE, "Geleira do Norte", { drops: SN }),
+    blizzard_alpha: bmob("wolf_moon", "Alfa da nevasca", 179, ICE, "Geleira do Norte", { k: 1.8, drops: [["Barra glacial", 0.35], ...SN] }),
+    frost_serpent: bmob("boss_serpent", "Serpente do Gelo Eterno", 185, ICE, "Gruta do Gelo Eterno (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra glacial", 1, 2, 4], ["Lâmina glacial", 0.2], ["Armadura glacial", 0.15]] }),
+  });
+
   const tool = (n, worn, first) => [
     { name: `${n} ${worn}`, bonus: 0 },
     { name: `${n} de bronze`, bonus: 1, cost: 30, req: 1, forge: { mats: first, lvl: 1, xp: 12 } },
@@ -718,22 +781,35 @@ window.VD = (() => {
     vara: { label: "Vara", icon: "tool_rod", skill: "pesca", tiers: tool("Vara", "gasta", { "Madeira": 3, "Barra de bronze": 1 }) },
     foice: { label: "Foice", icon: "tool_sickle", skill: "herbalismo", tiers: tool("Foice", "gasta", { "Barra de bronze": 1 }) }, // rodada 104
   };
+
+  // rodada 105: equipamento dos biomas novos (obsidiana 45, solar 78, mitril 112, glacial 150), forjado com as barras de cada bioma
+  const HIGH = [ // [arma, arco, montante, peitoral, sufixo das ferramentas, barra, nível, filtro]
+    ["Espada de obsidiana", "Arco de obsidiana", "Montante de obsidiana", "Couraça de obsidiana", "de obsidiana", "Barra de obsidiana", 45, "brightness(0.5) saturate(0.6) hue-rotate(230deg)"],
+    ["Espada de mitril", "Arco de mitril", "Montante de mitril", "Placas de mitril", "de mitril", "Barra de mitril", 78, "hue-rotate(180deg) saturate(1.8) brightness(1.15)"],
+    ["Lâmina solar", "Arco solar", "Montante solar", "Armadura solar", "solar", "Barra solar", 112, "sepia(1) saturate(3) hue-rotate(10deg) brightness(1.15)"],
+    ["Lâmina glacial", "Arco glacial", "Montante glacial", "Armadura glacial", "glacial", "Barra glacial", 150, "saturate(0.3) brightness(1.5)"]];
+  HIGH.forEach(([sword, bow, two, armor, de, bar, req, filter], k) => {
+    const lvl = req, cost = [32000, 70000, 140000, 260000][k];
+    GEAR.espada.tiers.push({ name: sword, bow, two, filter, acc: [26, 34, 44, 56][k], dmg: [11, 15, 20, 26][k], cost, req, forge: { mats: { [bar]: 4 }, lvl, xp: [520, 760, 1050, 1400][k] } });
+    GEAR.armadura.tiers.push({ name: armor, filter, icon: "item_armor_lumita", def: [28, 36, 46, 58][k], cost, req, forge: { mats: { [bar]: 5 }, lvl, xp: [600, 880, 1200, 1600][k] } });
+    for (const t of ["machado", "picareta", "vara", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
+  });
   // rodada 104: cada nível de arma, ferramenta e peitoral é um item (comprado, forjado, achado ou ganho do Ivo);
   // nada fica preso ao herói. Armas e ferramentas dividem o espaço "arma"; o peitoral vai no espaço "armadura".
   // O arco tem os mesmos números da espada do mesmo nível e atira flechas (munição).
   for (const [k, g] of Object.entries(GEAR)) g.tiers.forEach((t, i) => {
     const base = { slot: k === "armadura" ? "armadura" : "arma", gear: k, tier: i, rarity: i <= 1 ? "comum" : i <= 3 ? "raro" : "epico",
       price: Math.max(3, Math.round((t.cost || 12) * 0.35)), ...(t.cost && !t.rolls ? { buy: t.cost } : {}) };
-    ITEMS[t.name] = { icon: t.icon || g.icon, ...base };
-    if (t.bow) ITEMS[t.bow] = { icon: "tool_bow", ...base, bow: true };
+    ITEMS[t.name] = { icon: t.icon || g.icon, ...base, ...(t.filter ? { filter: t.filter } : {}) };
+    if (t.bow) ITEMS[t.bow] = { icon: "tool_bow", ...base, bow: true, ...(t.filter ? { filter: t.filter } : {}) };
     // aparência no herói (js/outfit.js): [camada, cor de tinta ou null]
-    if (k === "armadura") ITEMS[t.name].look = [["shirt", "#f0e6cc"], ["shirt", "#c08250"], ["plate", "#c4c8d4"], ["plate", "#f4f6fc"], ["plate", "#92eaf8"], ["plate", "#d6bcff"]][i];
+    if (k === "armadura") ITEMS[t.name].look = [["shirt", "#f0e6cc"], ["shirt", "#c08250"], ["plate", "#c4c8d4"], ["plate", "#f4f6fc"], ["plate", "#92eaf8"], ["plate", "#d6bcff"], ["plate", "#6a5a8a"], ["plate", "#ffd66a"], ["plate", "#b8e0ff"], ["plate", "#f0fbff"]][i];
     // rodada 105: montante (duas mãos, só o Guerreiro): mais dano, mas sem escudo; forja com 50% a mais de metal
-    if (t.two) { ITEMS[t.two] = { icon: "item_greatsword", ...base, twoH: true, onlyHero: "hero_1", bonus: { dmg: [0, 2, 3, 4, 6, 7][i] },
-      look: ["sword2", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]] };
+    if (t.two) { ITEMS[t.two] = { icon: "item_greatsword", ...base, twoH: true, onlyHero: "hero_1", bonus: { dmg: [0, 2, 3, 4, 6, 7, 9, 11, 13, 15][i] }, ...(t.filter ? { filter: t.filter } : {}),
+      look: ["sword2", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]] };
       if (t.forge) t.twoForge = { ...t.forge, mats: Object.fromEntries(Object.entries(t.forge.mats).map(([m, n]) => [m, Math.ceil(n * 1.5)])), xp: Math.round(t.forge.xp * 1.3) }; }
-    if (k === "espada") { ITEMS[t.name].look = ["sword", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]];
-      if (t.bow) ITEMS[t.bow].look = ["bow", [null, "#f0b878", "#d8dce8", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]]; }
+    if (k === "espada") { ITEMS[t.name].look = ["sword", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]];
+      if (t.bow) ITEMS[t.bow].look = ["bow", [null, "#f0b878", "#d8dce8", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]]; }
   });
 
   // Fornalha: barras a partir de minério (aço usa carvão de carvalho; lumita usa brasa de cedro)
@@ -744,6 +820,79 @@ window.VD = (() => {
     "Barra de lumita": { mats: { "Lumita": 2, "Madeira de cedro": 1 }, lvl: 22, xp: 48 },
     "Barra estelar": { mats: { "Fragmento cintilante": 3, "Barra de lumita": 1 }, lvl: 30, xp: 90 }, // rodada 82
   };
+
+  // ================= rodada 105: os biomas novos =================
+  // materiais (minério, madeira e erva de cada bioma) e as barras; ícones reaproveitados com outra cor (filter)
+  Object.assign(ITEMS, {
+    "Obsidiana": { icon: "item_ore_iron", price: 60, filter: "brightness(0.45) saturate(0.4) hue-rotate(230deg)" },
+    "Madeira de ébano": { icon: "item_log_cedar", price: 30, filter: "brightness(0.45) saturate(0.6)" },
+    "Cogumelo-sombra": { icon: "item_moonlily", price: 40, filter: "hue-rotate(110deg) brightness(0.7) saturate(1.4)" },
+    "Barra de obsidiana": { icon: "item_bar_iron", price: 180, filter: "brightness(0.45) saturate(0.5) hue-rotate(230deg)" },
+    "Ouro solar": { icon: "item_ore", price: 110, filter: "sepia(1) saturate(3) hue-rotate(5deg) brightness(1.15)" },
+    "Madeira de palmeira": { icon: "item_log", price: 55, filter: "sepia(0.6) saturate(1.3) brightness(1.15)" },
+    "Polpa de cacto": { icon: "item_herb", price: 60, filter: "hue-rotate(40deg) saturate(1.5) brightness(0.95)" },
+    "Rosa-do-deserto": { icon: "item_flower_honey", price: 75, filter: "hue-rotate(-40deg) saturate(1.6)" },
+    "Barra solar": { icon: "item_bar_bronze", price: 330, filter: "sepia(1) saturate(3) hue-rotate(10deg) brightness(1.2)" },
+    "Mitril": { icon: "item_ore_iron", price: 190, filter: "hue-rotate(180deg) saturate(1.8) brightness(1.2)" },
+    "Madeira de pinho": { icon: "item_log_oak", price: 90, filter: "saturate(0.7) brightness(0.9)" },
+    "Musgo-de-rocha": { icon: "item_herb", price: 110, filter: "saturate(0.5) brightness(0.8) hue-rotate(20deg)" },
+    "Barra de mitril": { icon: "item_bar_steel", price: 560, filter: "hue-rotate(180deg) saturate(2) brightness(1.15)" },
+    "Gelo eterno": { icon: "item_lumita", price: 320, filter: "saturate(0.35) brightness(1.5)" },
+    "Pinho nevado": { icon: "item_log_cedar", price: 150, filter: "saturate(0.2) brightness(1.35)" },
+    "Flor-de-gelo": { icon: "item_crystal_bloom", price: 180, filter: "saturate(0.4) brightness(1.3)" },
+    "Barra glacial": { icon: "item_bar_lumita", price: 900, filter: "saturate(0.3) brightness(1.55)" },
+  });
+
+  // rodada 105: recursos raros (só no fundo de cada bioma, longe da vila): uma gema e uma flor por bioma, de nível mais alto
+  Object.assign(ITEMS, {
+    "Ametista sombria": { icon: "item_lumita", price: 420, rare: true, filter: "hue-rotate(80deg) saturate(1.8)" },
+    "Flor-da-noite": { icon: "item_moonlily", price: 190, filter: "hue-rotate(60deg) saturate(1.6) brightness(0.9)" },
+    "Adamante": { icon: "item_lumita", price: 820, rare: true, filter: "hue-rotate(-60deg) saturate(1.5)" },
+    "Edelvais": { icon: "item_crystal_bloom", price: 360, filter: "saturate(0.2) brightness(1.3)" },
+    "Rubi do deserto": { icon: "item_lumita", price: 1550, rare: true, filter: "hue-rotate(160deg) saturate(2.2) brightness(0.95)" },
+    "Lótus solar": { icon: "item_moonlily", price: 660, filter: "hue-rotate(-170deg) saturate(2) brightness(1.1)" },
+    "Gelo astral": { icon: "item_lumita", price: 2900, rare: true, filter: "saturate(0.35) brightness(1.45)" },
+    "Flor-aurora": { icon: "item_crystal_bloom", price: 1250, filter: "hue-rotate(110deg) saturate(1.5)" },
+    "Elixir da noite": { icon: "item_potion", price: 60, heal: 45, filter: "hue-rotate(200deg) saturate(1.4)" },
+    "Tônico de edelvais": { icon: "item_potion", price: 110, heal: 70, filter: "saturate(0.3) brightness(1.3)" },
+    "Elixir solar": { icon: "item_potion", price: 190, heal: 100, filter: "hue-rotate(-150deg) saturate(1.8) brightness(1.1)" },
+    "Elixir da aurora": { icon: "item_potion", price: 320, heal: 140, filter: "hue-rotate(110deg) saturate(1.6) brightness(1.15)" },
+    "Anel de ametista": { icon: "item_ring_ancient", price: 1400, slot: "anel", rarity: "epico", bonus: { acc: 6, dmg: 4 }, filter: "hue-rotate(80deg) saturate(1.6)" },
+    "Amuleto de adamante": { icon: "item_amulet_crown", price: 2600, slot: "amuleto", rarity: "epico", bonus: { def: 10, acc: 3 }, filter: "hue-rotate(-60deg) saturate(1.4)" },
+    "Anel de rubi": { icon: "item_ring_ancient", price: 4800, slot: "anel", rarity: "epico", bonus: { acc: 6, dmg: 8 }, filter: "hue-rotate(160deg) saturate(2)" },
+    "Amuleto de gelo astral": { icon: "item_amulet_crown", price: 9000, slot: "amuleto", rarity: "epico", bonus: { def: 16, dmg: 4, acc: 4 }, filter: "saturate(0.3) brightness(1.4)" },
+  });
+  Object.assign(RES, {
+    rock_amethyst: { name: "Veio de ametista", skill: "mineracao", tool: "picareta", req: 60, item: "Ametista sombria", xp: 62, charges: [1, 2], respawn: [70, 100], empty: "rubble", verb: "Minerar", fx: ["#5a3a7a", "#d08aff"], rare: true },
+    res_nightbloom: { name: "Flor-da-noite", skill: "herbalismo", tool: "foice", req: 58, item: "Flor-da-noite", xp: 56, charges: [1, 2], respawn: [60, 90], empty: "herb_cut", verb: "Colher", fx: ["#b090ff", "#ffffff"], rare: true },
+    rock_adamant: { name: "Veio de adamante", skill: "mineracao", tool: "picareta", req: 95, item: "Adamante", xp: 92, charges: [1, 2], respawn: [80, 110], empty: "rubble", verb: "Minerar", fx: ["#2a6a4a", "#7affb0"], rare: true },
+    res_edelweiss: { name: "Edelvais", skill: "herbalismo", tool: "foice", req: 92, item: "Edelvais", xp: 86, charges: [1, 2], respawn: [70, 100], empty: "herb_cut", verb: "Colher", fx: ["#ffffff", "#f0e8a0"], rare: true },
+    rock_ruby: { name: "Veio de rubi", skill: "mineracao", tool: "picareta", req: 132, item: "Rubi do deserto", xp: 128, charges: [1, 2], respawn: [90, 120], empty: "rubble", verb: "Minerar", fx: ["#7a1a2a", "#ff5a6a"], rare: true },
+    res_sunlotus: { name: "Lótus solar", skill: "herbalismo", tool: "foice", req: 128, item: "Lótus solar", xp: 120, charges: [1, 2], respawn: [80, 110], empty: "herb_cut", verb: "Colher", fx: ["#ffd060", "#fff0c0"], rare: true },
+    rock_starice: { name: "Veio de gelo astral", skill: "mineracao", tool: "picareta", req: 172, item: "Gelo astral", xp: 172, charges: [1, 2], respawn: [100, 140], empty: "rubble", verb: "Minerar", fx: ["#a0d0f0", "#ffffff"], rare: true },
+    res_aurora: { name: "Flor-aurora", skill: "herbalismo", tool: "foice", req: 168, item: "Flor-aurora", xp: 162, charges: [1, 2], respawn: [90, 130], empty: "herb_cut", verb: "Colher", fx: ["#ff90d0", "#a0ffd0"], rare: true },
+  });
+  Object.assign(SMELT, {
+    "Barra de obsidiana": { mats: { "Obsidiana": 2, "Madeira de ébano": 1 }, lvl: 45, xp: 70 },
+    "Barra de mitril": { mats: { "Mitril": 2, "Madeira de pinho": 1 }, lvl: 78, xp: 110 },
+    "Barra solar": { mats: { "Ouro solar": 2, "Madeira de palmeira": 1 }, lvl: 112, xp: 160 },
+    "Barra glacial": { mats: { "Gelo eterno": 2, "Pinho nevado": 1 }, lvl: 150, xp: 230 },
+  });
+  Object.assign(RES, {
+    tree_dark: { name: "Ébano retorcido", skill: "corte", tool: "machado", req: 45, item: "Madeira de ébano", xp: 34, charges: [3, 6], respawn: [26, 36], empty: "stump", verb: "Cortar", fx: ["#2a2030", "#5a4a70"] },
+    rock_obsidian: { name: "Veio de obsidiana", skill: "mineracao", tool: "picareta", req: 45, item: "Obsidiana", xp: 36, charges: [1, 3], respawn: [26, 36], empty: "rubble", verb: "Minerar", fx: ["#3a3048", "#8a70c0"] },
+    res_shadecap: { name: "Cogumelo-sombra", skill: "herbalismo", tool: "foice", req: 40, item: "Cogumelo-sombra", xp: 32, charges: [1, 3], respawn: [26, 36], empty: "herb_cut", verb: "Colher", fx: ["#6a4a9a", "#b0a0f0"] },
+    palm: { name: "Palmeira", skill: "corte", tool: "machado", req: 110, item: "Madeira de palmeira", xp: 72, charges: [2, 5], respawn: [30, 40], empty: "stump", verb: "Cortar", fx: ["#a07040", "#7ab050"] },
+    cactus: { name: "Cacto", skill: "herbalismo", tool: "foice", req: 106, item: "Polpa de cacto", xp: 68, charges: [1, 3], respawn: [28, 38], empty: "herb_cut", verb: "Colher", fx: ["#4a8a40", "#c0e090"] },
+    rock_sun: { name: "Veio de ouro solar", skill: "mineracao", tool: "picareta", req: 112, item: "Ouro solar", xp: 76, charges: [1, 3], respawn: [30, 40], empty: "rubble", verb: "Minerar", fx: ["#b08a40", "#ffd860"] },
+    res_desertrose: { name: "Rosa-do-deserto", skill: "herbalismo", tool: "foice", req: 108, item: "Rosa-do-deserto", xp: 70, charges: [1, 2], respawn: [30, 40], empty: "herb_cut", verb: "Colher", fx: ["#e07060", "#f0c090"] },
+    tree_pine: { name: "Pinheiro", skill: "corte", tool: "machado", req: 75, item: "Madeira de pinho", xp: 52, charges: [3, 6], respawn: [34, 44], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#3a6a40"] },
+    rock_mithril: { name: "Veio de mitril", skill: "mineracao", tool: "picareta", req: 78, item: "Mitril", xp: 54, charges: [1, 3], respawn: [34, 44], empty: "rubble", verb: "Minerar", fx: ["#7a8a9a", "#9ae0ff"] },
+    res_rockmoss: { name: "Musgo-de-rocha", skill: "herbalismo", tool: "foice", req: 72, item: "Musgo-de-rocha", xp: 50, charges: [1, 3], respawn: [34, 44], empty: "herb_cut", verb: "Colher", fx: ["#6a7a50", "#a0b080"] },
+    tree_snowpine: { name: "Pinheiro nevado", skill: "corte", tool: "machado", req: 148, item: "Pinho nevado", xp: 98, charges: [3, 6], respawn: [38, 48], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#e8f4ff"] },
+    rock_frost: { name: "Veio de gelo eterno", skill: "mineracao", tool: "picareta", req: 150, item: "Gelo eterno", xp: 102, charges: [1, 2], respawn: [38, 48], empty: "rubble", verb: "Minerar", fx: ["#a0c0d8", "#e8fbff"] },
+    res_frostbloom: { name: "Flor-de-gelo", skill: "herbalismo", tool: "foice", req: 146, item: "Flor-de-gelo", xp: 96, charges: [1, 2], respawn: [38, 48], empty: "herb_cut", verb: "Colher", fx: ["#bfe8ff", "#ffffff"] },
+  });
 
   // Encomendas do Bento: pedidos sorteados conforme os níveis do jogador
   const ORDER_POOL = [
@@ -778,6 +927,16 @@ window.VD = (() => {
     crypt: { name: "Cripta das Ruínas", icon: "icon_region_crypt", lvl: "masmorra · nível 18+", min: 18, danger: "Mortos em todas as salas" },
     rift: { name: "Fenda Cintilante", icon: "icon_region_crypt", lvl: "masmorra · nível 38+", min: 38, danger: "Cristais vivos e uma serpente no fundo" }, // rodada 82
     den: { name: "Toca dos Lobos", icon: "icon_region_den", lvl: "masmorra · nível 14+", min: 14, danger: "Lobos acordam em grupo", pack: true },
+
+    // rodada 105: os biomas novos e as masmorras deles
+    darkwood: { name: "Floresta Sombria", icon: "icon_region_darkwood", lvl: "nível 31-65", min: 31, danger: "Sombras e mortos-vivos caçam aqui", pack: true },
+    desert: { name: "Deserto Rubro", icon: "icon_region_plateau", lvl: "nível 102-140", min: 102, danger: "Escorpiões, múmias e golens de arenito" },
+    mountains: { name: "Montanhas de Ferro", icon: "icon_region_ruins", lvl: "nível 66-101", min: 66, danger: "Golens de granito e colossos de ferro" },
+    snow: { name: "Geleira do Norte", icon: "icon_region_plateau", lvl: "nível 141-180", min: 141, danger: "O frio e as feras do gelo não perdoam" },
+    dg_darkwood: { name: "Covil das Sombras", icon: "icon_region_den", lvl: "masmorra · nível 60+ · chefe", min: 60, danger: "O Rei das Sombras e a guarda dele" },
+    dg_desert: { name: "Tumba do Faraó", icon: "icon_region_crypt", lvl: "masmorra · nível 130+ · chefe", min: 130, danger: "O Faraó de Areia e a guarda dele" },
+    dg_mountains: { name: "Forja Abandonada", icon: "icon_region_crypt", lvl: "masmorra · nível 95+ · chefe", min: 95, danger: "O Rei da Montanha e a guarda dele" },
+    dg_snow: { name: "Gruta do Gelo Eterno", icon: "icon_region_crypt", lvl: "masmorra · nível 170+ · chefe", min: 170, danger: "A Serpente do Gelo Eterno e a guarda dela" },
   };
 
   // Tutorial do Guarda Ivo. ev = evento que conta progresso (prefixo basta: "forge" conta qualquer forja).
@@ -838,5 +997,5 @@ window.VD = (() => {
     { at: 25000, title: "Lenda de Lumeira", color: "#8fe8ff", perk: "nome de lumita, halo ciano à noite e faíscas de cristal", halo: "rgba(110,230,255,A)", sparks: true }] };
 
   return { EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
-    CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
+    CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

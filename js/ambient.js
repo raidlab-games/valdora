@@ -4,7 +4,7 @@
 window.ValdoraAmbient = (() => {
   "use strict";
   const CLOUD_PX = 128, CLOUD_SCALE = 18; // textura 128 px ampliada 18× = nuvens com ~2.300 px de período
-  const MAX = 42;
+  const MAX = 64; // rodada 105: a neve da Geleira pede mais partículas
   // partículas por região: cor(es), quantas, velocidade do vento (px/s), tamanho, jeito de mover
   const KINDS = {
     town: { cols: ["#fff6d0", "#f5e27a"], n: 14, wind: 14, size: 2, mode: "seed" },
@@ -15,6 +15,11 @@ window.ValdoraAmbient = (() => {
     ruins: { cols: ["#b8b0a8", "#8a837c", "#d8cfc4"], n: 22, wind: 12, size: 2, mode: "ash" },
     dungeon: { cols: ["#d8c8a8", "#a89878"], n: 18, wind: 3, size: 2, mode: "dust" },
     night: { cols: ["#d8ff7a", "#f5ff9a"], n: 16, wind: 0, size: 2, mode: "firefly" },
+    // rodada 105: biomas novos — esporos violeta na Floresta Sombria, poeira de pedra nas Montanhas, areia no Deserto, neve caindo na Geleira
+    darkwood: { cols: ["#c8a0ff", "#9f7aff", "#e0d0ff"], n: 20, wind: 4, size: 2, mode: "spark" },
+    mountains: { cols: ["#c8c4bc", "#a8a49c", "#e8e4dc"], n: 22, wind: 26, size: 2, mode: "ash" },
+    desert: { cols: ["#e8b878", "#d89a5a", "#f4d4a0"], n: 30, wind: 42, size: 2, mode: "dust" },
+    snow: { cols: ["#ffffff", "#eef6ff", "#dbe8f8"], n: 60, wind: 8, size: 3, mode: "snow" },
   };
   // ruído periódico (repete a cada P células): a textura das nuvens emenda sem costura
   function hashP(x, y, P, s) { x = ((x % P) + P) % P; y = ((y % P) + P) % P; let h = (x * 374761393 + y * 668265263 + s * 2246822519) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
@@ -53,7 +58,7 @@ window.ValdoraAmbient = (() => {
     function spawn(p, K, cam, w, h, edge) {
       p.on = true; p.t = 0; p.life = 6 + rand() * 6; p.ph = rand() * 6.28; p.c = K.cols[Math.floor(rand() * K.cols.length)]; p.s = K.size + (rand() < 0.3 ? 1 : 0);
       p.x = cam.x + (edge && K.wind > 4 ? -10 - rand() * 40 : rand() * w); p.y = cam.y + rand() * h;
-      p.vx = K.wind * (0.6 + rand() * 0.8); p.vy = K.mode === "leaf" ? 6 + rand() * 10 : K.mode === "ash" ? -4 - rand() * 6 : K.mode === "spark" ? -8 - rand() * 8 : (rand() - 0.5) * 6;
+      p.vx = K.wind * (0.6 + rand() * 0.8); p.vy = K.mode === "snow" ? 18 + rand() * 18 : K.mode === "leaf" ? 6 + rand() * 10 : K.mode === "ash" ? -4 - rand() * 6 : K.mode === "spark" ? -8 - rand() * 8 : (rand() - 0.5) * 6;
     }
     // rodada 73: chuva passageira. A cada 6–10 min de jogo, 70–120 s de chuva fina (entra e sai em ~8 s); nunca nas masmorras.
     // Gotas em tela num vetor fixo (sem alocar), respingos curtos no chão e o céu um pouco mais fechado. Só enfeite (Math.random).

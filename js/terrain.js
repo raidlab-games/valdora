@@ -3,9 +3,10 @@
 // A água fica de fora do cache (transparente) para poder ser animada por baixo.
 window.ValdoraTerrain = (() => {
   // família de cada tipo de chão e prioridade: a família de prioridade maior "invade" a vizinha
-  const FAMILY = (k) => k.startsWith("grass_dark") ? "grass_dark" : k.startsWith("grass") ? "grass" : k.startsWith("dirt") ? "dirt"  : k;
+  const FAMILY = (k) => k.startsWith("grass_night") ? "grass_night" : k.startsWith("grass_dark") ? "grass_dark" : k.startsWith("grass") ? "grass" : k.startsWith("dirt") ? "dirt"
+    : k.startsWith("snow") ? "snow" : k.startsWith("rockg") ? "rockg" : k; // rodada 105: neve, chão de rocha e mata escura dos biomas novos
   // chão da toca: o claro (den_floor_2) avança sobre o escuro com borda pixelada, como a grama sobre a terra
-  const PRIO = { void: -1, water: 0, sand: 1, path: 2, stone: 3, dirt: 4, den_floor: 4, den_floor_2: 4.5, grass: 5, grass_dark: 6 };
+  const PRIO = { void: -1, water: 0, sand: 1, sand_2: 1.5, path: 2, stone: 3, dirt: 4, rockg: 4.2, den_floor: 4, den_floor_2: 4.5, grass: 5, snow: 5.5, grass_dark: 6, grass_night: 6.5 };
   const CH = 16, VARIANTS = 4, BLOCK = 3; // tiles por bloco; variações de máscara; tamanho do "pixel" da borda
 
   const hash = (x, y, s = 0) => { let h = (x * 374761393 + y * 668265263 + s * 2246822519) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
@@ -123,6 +124,17 @@ window.ValdoraTerrain = (() => {
           px(g, x + 1, y + 2, P / 2 + 1, 4, "#2f6b24"); px(g, x, y, 4, 3, c); px(g, x + 1, y + 1, 2, 1, "#c97a1a"); }
       } else if (kind === "mushroom") {
         px(g, bx + 2, by - 4, 3, 5, "#efe6d2"); px(g, bx - 1, by - 8, 9, 4, "#b5302a"); px(g, bx, by - 9, 7, 1, "#d8473d"); px(g, bx + 1, by - 7, 2, 1, "#fff"); px(g, bx + 5, by - 6, 1, 1, "#fff");
+      } else if (kind === "snowdrift") { // rodada 105: montinho de neve com sombra azul
+        px(g, bx - 2, by + 1, 16, 2, "#b8c8e0"); px(g, bx, by - 3, 12, 4, "#f4f8ff"); px(g, bx + 2, by - 5, 7, 2, "#ffffff"); px(g, bx + 8, by - 1, 4, 2, "#d4e2f2");
+      } else if (kind === "snowtuft") { // pontas de capim saindo da neve
+        [[0, 3], [3, 5], [6, 4], [9, 3]].forEach(([dx, h]) => { for (let k = 0; k < h; k++) px(g, bx + dx, by - k * P, P, P, k >= h - 1 ? "#c8b878" : "#8a7a48"); });
+        px(g, bx - 1, by + 1, 13, 2, "#e6eef8");
+      } else if (kind === "icecrack") { // rachadura de gelo
+        for (let i = 0; i < 6; i++) px(g, bx + i * 3, by - ((i * 7) % 5), 3, 1, "#9ab8d8"); px(g, bx + 6, by - 4, 1, 5, "#9ab8d8");
+      } else if (kind === "stones_red") { // pedrinhas avermelhadas do deserto
+        for (let i = 0; i < 3; i++) { const x = bx + i * 7 - (i % 2) * 3, y = by - (i % 2) * 5; px(g, x, y, 6, 4, "#9a5a3a"); px(g, x + 1, y, 3, 2, "#d08a5a"); px(g, x, y + 3, 6, 1, "#5a2e1e"); }
+      } else if (kind === "twigs") { // gravetos secos
+        px(g, bx, by, 14, 2, "#6a4a2a"); px(g, bx + 4, by - 3, 2, 4, "#8a6a3a"); px(g, bx + 9, by - 2, 6, 1, "#7a5a32"); px(g, bx + 2, by + 2, 12, 1, "#3a2a1a");
       } else if (kind === "leaves") {
         for (let i = 0; i < 4; i++) px(g, bx + i * 6, by - ((i * 5) % 7), 3, 2, ["#c86a2a", "#a4482a", "#d9a03a"][i % 3]);
       }

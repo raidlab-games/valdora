@@ -20,7 +20,8 @@ window.ValdoraDialogs = (() => {
     carto: { title: "Odília, a cartógrafa", talk: "" }, // rodada 80
     miner: { title: "Brás, o garimpeiro", talk: "" }, // rodada 81: marcos da campanha (título e fala vêm de js/campaign.js)
     pet: { title: "Companheiro", talk: "" },
-    home: { title: "Casa", talk: "" }, // rodada 100 // rodada 96: filhote da lua (vida, vínculo e nome)
+    home: { title: "Casa", talk: "" },
+    waystone: { title: "Pedra da vila", talk: "" }, // rodada 105 // rodada 100 // rodada 96: filhote da lua (vida, vínculo e nome)
     board: { title: "Quadro de caçadas", talk: "Pedidos da guarda para manter as estradas seguras. O progresso conta sozinho; volte aqui para receber." },
   };
   // linha padrão das listas (ícone, título, subtítulo, preço, botões)
@@ -77,7 +78,8 @@ window.ValdoraDialogs = (() => {
       const player = api.player();
       const D = DLG[dlg.kind];
       const mv = dlg.kind === "marker" && api.markerView ? api.markerView(dlg.obj) : null; // rodada 78
-      $("dlg-title").innerHTML = ValdoraUI.titleHTML(mv ? mv.title : D.title, "#ffd84a", 1); // rodada 68: fonte de títulos
+      const vt = dlg.obj && dlg.obj.village && dlg.obj.name && dlg.kind === "shop" ? `Banca de ${dlg.obj.name}` : null; // rodada 105: mercadores das vilas novas
+      $("dlg-title").innerHTML = ValdoraUI.titleHTML(vt || (mv ? mv.title : D.title), "#ffd84a", 1); // rodada 68: fonte de títulos
       $("dlg-coins").innerHTML = `<img src="${ASSETS.coin}" alt=""> ${player.coins}`;
       $("dlg-tabs").innerHTML = (D.tabs || []).map(([k, n]) => `<button data-tab="${k}" class="${dlg.tab === k ? "on" : ""}">${n}</button>`).join("");
       $("dlg-tabs").hidden = !D.tabs;
@@ -148,6 +150,8 @@ window.ValdoraDialogs = (() => {
         const JT = ["Não pise na hortelã.", "Casca de carvalho, pele de lobo, paciência. O resto é segredo.", "A mata escuta. Fale baixo.", "O Ivo ainda reclama de mim? Ótimo."];
         talk = `"${dlg.say0 || (dlg.say0 = JT[Math.floor(rand() * JT.length)])}"`;
         html = questHtml("herb") + (api.alchemyHtml ? api.alchemyHtml() : "");
+      } else if (dlg.kind === "waystone" && api.stoneDlg) { // rodada 105
+        const S = api.stoneDlg(); talk = S.talk; html = S.html;
       } else if (dlg.kind === "home" && api.homeDlg) { // rodada 100
         const H = api.homeDlg(); talk = H.talk; html = H.html;
       } else if (dlg.kind === "pet" && api.petDlg) { // rodada 96

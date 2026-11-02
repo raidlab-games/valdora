@@ -1,9 +1,9 @@
 // Regras puras do Valdora (sem estado do jogo): níveis, acerto, atributos de combate, coleta e afixos.
 // Usadas pelo game.js e pelos testes (tests.html), para que o equilíbrio seja verificável fora do jogo.
 window.ValdoraRules = (() => {
-  const MAX_LVL = 40;
+  const MAX_LVL = 200; // rodada 105: biomas até o nível 180
   // curva de XP: nível 10 ≈ 3,6 mil, 20 ≈ 23,6 mil, 30 ≈ 68 mil, 40 ≈ 142 mil
-  const xpFor = (l) => Math.round(15 * Math.pow(l - 1, 2.5));
+  const xpFor = (l) => l <= 40 ? Math.round(15 * Math.pow(l - 1, 2.5)) : Math.round(15 * Math.pow(39, 2.5) + 500 * Math.pow(l - 40, 1.85)); // até 40, a curva de sempre
   const level = (xp) => { let l = 1; while (l < MAX_LVL && xp >= xpFor(l + 1)) l++; return l; };
   const hitChance = (acc, def) => Math.max(0.1, Math.min(0.95, 0.6 + (acc - def) * 0.03));
   const critChance = (style) => (style === "agressivo" ? 0.1 : style === "preciso" ? 0.14 : 0.06); // rodada 10: Preciso 14% (medido com o robô: com o acerto no teto, só o crítico compensa)

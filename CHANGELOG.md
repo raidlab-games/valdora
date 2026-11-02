@@ -20,6 +20,23 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 106 (v1.05) — o continente
+- **Continente de 520 x 400** (`js/world.js`): uma massa de terra só, com mar ao norte e a leste, baías e ilhas; o mapa antigo
+  (96 x 72) é gerado como sempre no quadro local e encaixado no oeste (OX 34, OY 236), então missões, casa, masmorras e saves
+  continuam valendo (saves antigos andam OX/OY ao carregar).
+- **5 biomas** lado a lado: Campo (1, oeste, 5–30, o antigo crescido), Floresta Sombria (2, centro-sul, 31–65), Montanhas de Ferro
+  (3, norte, 66–101), Deserto Rubro (4, sudeste, 102–140) e Geleira do Norte (5, nordeste, 141–180). Cada um com vila (banca,
+  cofre, fornalha, bigorna, fogueira, poço, quadro e Pedra), bandos de monstros na faixa de nível (do mais fraco perto do Campo ao
+  mais forte no fundo), masmorra com chefe e guarda, estradas até a Lumeira, lagos, chão em mosaico, bosques e clareiras,
+  ruínas, acampamentos e ossadas, e clima próprio (esporos, poeira de pedra, areia, neve caindo).
+- **Pedras das vilas:** salvam ao chegar; viagem entre as salvas por 30 moedas; renascer na Pedra escolhida.
+- **Mapa do continente (M)** e minimapa que segue o herói (só os monstros perto). O diário ficou no J.
+- **Arte:** chão novo (neve pintada, areia rubra, rocha, mata escura) e árvores, arbustos e rochedos feitos a partir da arte
+  pintada do mapa 1 (`tools/biome_paint.py`); Pedra no Blender (`tools/b3d/scenery3d.py`); ervas em `tools/plants2d.py`.
+- **Recursos por bioma** (minério, madeira, erva e um raro de nível maior só no fundo do bioma), barras novas e equipamento
+  obsidiana/mitril/solar/glacial (arma, arco, montante, peitoral e ferramentas); joias de gema e elixires; nível máximo 200.
+- 32 monstros novos (modelos 3D com outra cor e tamanho, atributos pela fórmula do nível) e 4 chefes.
+
 ## Rodada 105 (v1.04)
 - **8 direções de verdade:** heróis (todas as ações e peças de roupa), moradores e monstros ganharam as 4 diagonais renderizadas no
   Blender. Heróis e moradores: câmera a 45/135/225/315° (`rig.DIRS`, `art/lay/run_diag.sh`); monstros: 5 vistas (de frente, diagonal

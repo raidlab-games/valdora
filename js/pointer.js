@@ -76,7 +76,7 @@ window.ValdoraPointer = (() => {
     $("minimap").addEventListener("click", (e) => {
       if (!api.running()) return;
       const b = e.currentTarget.getBoundingClientRect();
-      const tx = Math.floor((e.clientX - b.left) / b.width * W), ty = Math.floor((e.clientY - b.top) / b.height * H);
+      const V = api.miniView(), tx = Math.floor(V.x0 + (e.clientX - b.left) / b.width * V.w), ty = Math.floor(V.y0 + (e.clientY - b.top) / b.height * V.h); // rodada 105: minimapa que segue o herói
       let best = null; // tile andável mais próximo do ponto clicado
       for (let r = 0; r < 6 && !best; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (!best && walkable(x, y)) best = [x, y];
       if (best) { closeDlg(); api.player().target = null; api.player().job = null; if (!goTo((x, y) => x === best[0] && y === best[1])) log("Não dá para chegar lá.", "dim"); }

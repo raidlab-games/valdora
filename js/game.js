@@ -3,13 +3,17 @@
 (() => {
   "use strict";
   // ---------- Constantes ----------
-  const W = 96, H = 72, TILE = 48;
+  let W = ValdoraWorld.W, H = ValdoraWorld.H; const TILE = 48; // rodada 105: continente (o quadro antigo é 96 x 72)
   const TICK = 0.5;        // pulso do jogo (s): ações, combate e IA acontecem em ticks
   const STEP = 0.24;       // tempo para andar 1 tile (s)
   const MOB_STEP = 0.42;
   const SLOTS = 20, BANK_SLOTS = 48, SAVE_KEY = "valdora.save.v2";
   const RULES = ValdoraRules, MAX_LVL = RULES.MAX_LVL;
-  const WORLD = ValdoraWorld, { TOWN, SPAWN } = WORLD; // desenho do mundo e masmorras (js/world.js)
+  const WORLD_G = ValdoraWorld; let WORLD = WORLD_G, TOWN = WORLD.TOWN, SPAWN = WORLD.SPAWN, TOWNS = WORLD.VILLAGES; // desenho do mundo e masmorras (js/world.js)
+  // rodada 105: a casa do herói é desenhada no quadro antigo; no continente, as coordenadas dela andam (OX, OY)
+  const HOME_L = JSON.parse(JSON.stringify({ LOT: ValdoraHome.LOT, HOUSE: ValdoraHome.HOUSE, PEDESTALS: ValdoraHome.PEDESTALS, BED: ValdoraHome.BED, BENCH: ValdoraHome.BENCH, MINT: ValdoraHome.MINT }));
+  for (const o of [ValdoraHome.LOT, ValdoraHome.HOUSE, ValdoraHome.BED, ValdoraHome.BENCH, ValdoraHome.MINT, ...ValdoraHome.PEDESTALS]) { o.x += WORLD_G.OX; o.y += WORLD_G.OY; }
+  let HOME = ValdoraHome;
   const { SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS } = VD;
   const SND = ValdoraAudio, noise = ValdoraTerrain.noise, LIGHT = ValdoraLight;
   const { CHATTER, BARD_SONGS, ACTIVE, QUESTS } = VD;
@@ -113,7 +117,7 @@
 
   const xpFor = RULES.xpFor, level = RULES.level;   // curva de XP e nível (js/rules.js)
   // zona segura por mapa: a vila só existe no mapa de cima (nas masmorras, as mesmas coordenadas não protegem nem bloqueiam nada)
-  const inTown = (x, y) => !inCrypt && x >= TOWN.x0 && x <= TOWN.x1 && y >= TOWN.y0 && y <= TOWN.y1;
+  const inTown = (x, y) => !inCrypt && TOWNS.some((T) => x >= T.x0 && x <= T.x1 && y >= T.y0 && y <= T.y1); // rodada 105: qualquer vila
   function regionAt(x, y) {
     if (inCrypt) return dungeon; // "crypt" ou "den"
     if (inTown(x, y)) return "town";
@@ -138,7 +142,7 @@
   let inCrypt = false, overworld = null, dungeon = "crypt"; // masmorra: o mundo de cima fica guardado enquanto o jogador está lá embaixo
   function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
-  function genWorld() {
+  function genLocal() { // o mapa de antes, no quadro local (96 x 72), igual ao de sempre
     const rnd = seeded(20261030);
     map = Array.from({ length: H }, () => Array(W).fill("grass"));
     occ = new Array(W * H).fill(null);
@@ -227,7 +231,7 @@
       if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([dx, dy]) => !occ[(y + dy) * W + x + dx])) deco("prop", spr, x, y);
     // portal de boas-vindas na entrada sul (não bloqueia: passa-se por baixo da tábua)
     if (ASSETS.deco_town_sign) place({ type: "gate", spr: "deco_town_sign", x: 47, y: 44, w: 3, h: 1, ox: 0.45, solid: false });
-    homeObjs = null; { const H = ValdoraHome; // rodada 100: lote/casa, 9 pedestais, cama do filhote, banco e vaso (aparecem conforme o save)
+    homeObjs = null; { const H = HOME; // rodada 100: lote/casa, 9 pedestais, cama do filhote, banco e vaso (aparecem conforme o save)
       homeObjs = { house: place({ type: "home", spr: "house_hero_lot", x: H.HOUSE.x, y: H.HOUSE.y, w: H.HOUSE.w, h: H.HOUSE.h, solid: true }),
         peds: H.PEDESTALS.map((p) => place({ type: "pedestal", spr: null, x: p.x, y: p.y, w: 1, h: 1, solid: false })),
         bed: place({ type: "decal_home", spr: null, x: H.BED.x, y: H.BED.y, w: 1, h: 1, solid: false }), bench: place({ type: "prop", spr: null, x: H.BENCH.x, y: H.BENCH.y, w: 1, h: 1, solid: false }),
@@ -267,12 +271,6 @@
         n -= p;
       }
     }
-    const deepWater = new Uint8Array(W * H);
-    for (const L of lakes) if (L.kind === "fishspot_deep") for (const [x, y] of L.tiles) deepWater[y * W + x] = 1;
-    // rodada 68: a margem curva mostra água por baixo dos tiles de terra vizinhos; perto de lago fundo, essa água também é a funda
-    for (const L of lakes) if (L.kind === "fishspot_deep") for (const [x, y] of L.tiles) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
-      if (inside(x + dx, y + dy) && map[y + dy][x + dx] !== "water") deepWater[(y + dy) * W + x + dx] = 1;
-    RENDER.setDeepWater(deepWater);
     // cardumes
     for (const L of lakes) {
       L.shore = L.tiles.filter(([x, y]) => DIRS.some(([dx, dy]) => inside(x + dx, y + dy) && map[y + dy][x + dx] !== "water"));
@@ -281,9 +279,6 @@
     // monstros: [tipo, quantidade, ponto de origem opcional]
     for (const [reg, list] of Object.entries(WORLD.MOB_SPAWNS))
       for (const [type, n, home] of list) for (let i = 0; i < n; i++) spawnMob(type, reg, home);
-    // canteiros de flores: objetos não sólidos, para balançarem com a folha do Blender
-    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++)
-      if (!occ[y * W + x] && /^grass/.test(map[y][x]) && !/dark/.test(map[y][x]) && !nearTown(x, y, 1) && hash(x, y, 31) < 0.006) place({ type: "flora", spr: "deco_flowers", x, y, w: 1, h: 1, solid: false });
     // rodada 68: props fora da praça (beira do lago e entrada do Bosque), sempre a até 6 tiles da vila: ali nenhum monstro
     // nasce (spawnOk), então o sorteio do mundo fixo das medições não muda. Procura em anel até 3 tiles do ponto pedido.
     const propNear = (spr, x0, y0, ok) => { for (let r = 0; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
@@ -294,16 +289,199 @@
     const nearWater = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inside(x + dx, y + dy) && map[y + dy][x + dx] === "water") return true; return false; };
     propNear("deco_bench", 39, 25, (x, y) => nearWater(x, y)); // banco na beira do lago
     propNear("deco_lamppost", 60, 35, (x, y) => /^grass/.test(map[y][x])); propNear("deco_crates", 61, 38, (x, y) => /^grass/.test(map[y][x]));
+  }
+  // ================= rodada 105: o continente =================
+  // 1) o mapa antigo é gerado como sempre, no quadro local (96 x 72, coordenadas e sorteios de antes); 2) é encaixado em
+  // (OX, OY) no continente; 3) o resto do continente (Campo crescido e os 4 biomas novos, vilas, pedras, estradas, masmorras,
+  // recursos e monstros) é gerado em volta; 4) acabamento (água funda, flores, poças, marcos da campanha, chão e minimapa).
+  function genWorld() {
+    const Gw = WORLD_G, Lw = Gw.local();
+    WORLD = Lw; TOWN = Lw.TOWN; SPAWN = Lw.SPAWN; TOWNS = [Lw.TOWN]; W = Lw.W; H = Lw.H; HOME = HOME_L;
+    try { genLocal(); } finally { WORLD = Gw; TOWN = Gw.TOWN; SPAWN = Gw.SPAWN; TOWNS = Gw.VILLAGES; W = Gw.W; H = Gw.H; HOME = ValdoraHome; }
+    embedLocal(Gw.OX, Gw.OY);
+    genContinent();
+    finishWorld();
+  }
+  function embedLocal(OX, OY) {
+    const Lw = WORLD_G.local(), lw = Lw.W, lh = Lw.H, old = map;
+    map = Array.from({ length: H }, () => Array(W).fill("water"));
+    for (let y = 0; y < lh; y++) for (let x = 0; x < lw; x++) map[y + OY][x + OX] = old[y][x];
+    for (const o of objects) { o.x += OX; o.y += OY; }
+    occ = new Array(W * H).fill(null);
+    for (const o of objects) for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) occ[y * W + x] = o;
+    for (const L of lakes) { L.cx += OX; L.cy += OY; L.tiles = L.tiles.map(([x, y]) => [x + OX, y + OY]); L.shore = (L.shore || []).map(([x, y]) => [x + OX, y + OY]); }
+    const homeOf = new Map(); // casa local de cada bando -> a mesma casa no continente
+    for (const [reg, list] of Object.entries(Lw.MOB_SPAWNS)) list.forEach((s, i) => { if (s[2]) homeOf.set(s[2], WORLD_G.MOB_SPAWNS[reg][i][2]); });
+    for (const m of mobs) { m.x += OX; m.y += OY; m.fx += OX; m.fy += OY; m.px += OX; m.py += OY; m.hx += OX; m.hy += OY; if (m.home) m.home = homeOf.get(m.home) || { ...m.home, x: m.home.x + OX, y: m.home.y + OY }; }
+    AMBIENT.setPuddles([]);
+  }
+  // chão de cada bioma novo (com reserva quando a arte não existe)
+  const GROUND_OF = { darkwood: ["grass_night", "grass_night_2", "grass_dark", "grass_dark_2"], desert: ["sand_2", "sand_2", "sand", "sand"], mountains: ["rockg", "rockg_2", "dirt", "stone"], snow: ["snow", "snow_2", "stone", "stone"] };
+  // recursos e enfeites por região (chance por tile livre); as do Campo são as da tabela antiga
+  const TABLE_NEW = {
+    darkwood: [["tree_dark", 0.07], ["tree_cedar", 0.012], ["rock_obsidian", 0.014], ["rock_iron", 0.006], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
+    desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.012], ["rock", 0.005], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
+    mountains: [["tree_pine", 0.034], ["rock_mithril", 0.014], ["rock_iron", 0.01], ["boulder", 0.022], ["res_rockmoss", 0.008], ["bushv:deco_bush_mountain", 0.006], ["rare:rock_adamant", 0.004], ["rare:res_edelweiss", 0.004]],
+    snow: [["tree_snowpine", 0.05], ["rock_frost", 0.014], ["rock_lumita", 0.004], ["res_frostbloom", 0.009], ["boulder_snow", 0.01], ["bushv:deco_bush_snow", 0.006], ["rare:rock_starice", 0.003], ["rare:res_aurora", 0.003]],
+  };
+  const TABLE_CAMPO = {
+    fields: [["tree", 0.06], ["rock", 0.014], ["bush", 0.006], ["res_herb", 0.012], ["res_flower", 0.006]],
+    east: [["tree_oak", 0.055], ["tree", 0.025], ["rock_iron", 0.016], ["rock", 0.006], ["bush", 0.008], ["res_flower", 0.01], ["res_herb", 0.006]],
+    south: [["tree_cedar", 0.045], ["tree_oak", 0.025], ["rock_iron", 0.008], ["bush", 0.006], ["res_moonlily", 0.01], ["res_herb", 0.005]],
+    west: [["rock_lumita", 0.02], ["rock_iron", 0.018], ["tree", 0.01], ["res_crystalbloom", 0.012]],
+    ruins: [["rock_iron", 0.02], ["rubble", 0.03], ["tree_cedar", 0.008]],
+  };
+  // rodada 105: chão em mosaico por bioma — base + manchas de outros chãos em duas escalas (como a grama/terra do mapa 1)
+  function groundFor(key, x, y, b, tile) {
+    const m1 = noise(x, y, 9, 31 + b), m2 = noise(x, y, 5, 57 + b), m3 = noise(x, y, 14, 77 + b);
+    if (key === "darkwood") return m2 > 0.72 ? (m1 > 0.5 ? "dirt_2" : "dirt") : m1 > 0.64 ? "grass_dark" : m3 > 0.6 ? tile("grass_night_2", "grass_dark_2") : tile("grass_night", "grass_dark");
+    if (key === "mountains") return WORLD_G.fbm(x / 14, y / 14, 61) > 0.68 ? tile("snow", "stone") : m1 > 0.6 ? tile("rockg", "stone") : m2 > 0.7 ? "grass_dark" : m3 > 0.62 ? "dirt_2" : "dirt";
+    if (key === "desert") return m1 < 0.24 ? tile("rockg", "stone") : m2 > 0.74 ? "dirt" : m1 > 0.62 ? "sand" : tile("sand_2", "sand");
+    if (key === "snow") return m2 > 0.8 ? "dirt_2" : m1 < 0.1 ? tile("rockg", "stone") : m3 > 0.58 ? tile("snow_2", "stone") : tile("snow", "stone");
+    return "grass";
+  }
+  // pontos de interesse: ruínas, acampamentos abandonados (com fogueira para assar) e ossadas, espalhados pelo bioma
+  const POI = { darkwood: ["ruins", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp", "ruins"], desert: ["ruins", "bones", "bones", "camp", "ruins", "bones", "camp", "ruins", "bones", "camp"],
+    mountains: ["camp", "ruins", "rubble", "camp", "ruins", "rubble", "camp", "bones", "ruins", "camp"], snow: ["camp", "bones", "ruins", "camp", "bones", "ruins", "camp", "bones", "camp", "ruins"] };
+  function placePOIs(rnd, deco) {
+    const G = WORLD_G, free = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path/.test(map[y][x]) && !nearTown(x, y, 8) && !G.inOld(x, y);
+    for (const B of G.BIOMES.slice(1)) for (const kind of POI[B.key]) {
+      let p = null;
+      for (let k = 0; k < 300 && !p; k++) { const a = rnd() * 6.283, r = Math.sqrt(rnd()) * B.c[2] * 1.2, x = Math.round(B.c[0] + Math.cos(a) * r), y = Math.round(B.c[1] + Math.sin(a) * r);
+        if (G.biomeAt(x, y) === B.n && free(x, y) && !G.DG_ENTRIES.some((E) => Math.hypot(E.x - x, E.y - y) < 6)) p = { x, y }; }
+      if (!p) continue;
+      const near = (n, fn) => { for (let i = 0, tries = 0; i < n && tries < 60; tries++) { const x = p.x + Math.round((rnd() - 0.5) * 7), y = p.y + Math.round((rnd() - 0.5) * 5); if (free(x, y)) { fn(x, y); i++; } } };
+      if (kind === "ruins") { near(4 + Math.floor(rnd() * 3), (x, y) => deco("ruin", rnd() < 0.45 && SPR.deco_ruin_wall ? "deco_ruin_wall" : "deco_pillar", x, y));
+        near(4, (x, y) => place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false })); }
+      else if (kind === "camp") { if (free(p.x, p.y)) deco("fire", "campfire", p.x, p.y, 1, 1, { wild: true });
+        near(2, (x, y) => deco("barrel", "barrel", x, y)); near(1, (x, y) => SPR.deco_crates && deco("prop", "deco_crates", x, y)); near(1, (x, y) => SPR.deco_campfire_log && deco("bench", "deco_campfire_log", x, y)); }
+      else if (kind === "bones") near(5, (x, y) => place({ type: "bones", spr: ["deco_bones_1", "deco_bones_2", "deco_bones_3"][Math.floor(rnd() * 3)], x, y, w: 1, h: 1, solid: false }));
+      else if (kind === "rubble") near(7, (x, y) => place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false }));
+    }
+  }
+  function genContinent() {
+    const G = WORLD_G, rnd = seeded(20261105), OX = G.OX, OY = G.OY;
+    const tile = (k, alt) => (SPR[k] ? k : alt);
+    // chão fora do quadro antigo
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (G.inOld(x, y)) continue;
+      const b = G.biomeAt(x, y), n = rnd();
+      if (!b) { map[y][x] = "water"; continue; }
+      if (b === 1) { const r = G.regionShape(x, y);
+        map[y][x] = r === "west" ? (n < 0.3 ? "dirt_2" : "dirt") : r === "south" ? (n < 0.3 ? "grass_dark_2" : "grass_dark")
+          : r === "ruins" ? (noise(x, y, 4.5, 5) > 0.54 ? "stone" : n < 0.3 ? "dirt_2" : "dirt") : n < 0.04 ? "grass_flowers" : n < 0.3 ? "grass_2" : "grass";
+        continue; }
+      map[y][x] = groundFor(G.BKEY[b], x, y, b, tile);
+    }
+    // praia de areia no litoral (1-2 tiles), menos na neve (gelo) e nas montanhas (pedra)
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const b = G.biomeAt(x, y); if (!b || G.inOld(x, y) || b === 5 || b === 3) continue; // neve e montanhas sem praia
+      let sea = false; for (let dy = -2; dy <= 2 && !sea; dy++) for (let dx = -2; dx <= 2 && !sea; dx++) if (!G.biomeAt(x + dx, y + dy)) sea = Math.hypot(dx, dy) <= 1.6 + noise(x, y, 2.5, 9) * 0.8;
+      if (sea && map[y][x] !== "water") map[y][x] = "sand";
+    }
+    // lagos novos (os 5 primeiros são os antigos, já desenhados)
+    for (const [cx, cy, r, kind, n] of G.LAKES.slice(lakes.length)) {
+      const Lk = { cx, cy, r, kind, n, tiles: [] }; lakes.push(Lk);
+      for (let y = Math.max(0, Math.floor(cy - r * 1.6)); y <= Math.min(H - 1, Math.ceil(cy + r * 1.6)); y++)
+        for (let x = Math.max(0, Math.floor(cx - r * 2)); x <= Math.min(W - 1, Math.ceil(cx + r * 2)); x++) {
+          if (G.inOld(x, y) || !G.biomeAt(x, y)) continue;
+          const d = Math.hypot(x - cx, (y - cy) * 1.25) + (noise(x, y, 3.2, cx) - 0.5) * 3.4;
+          if (d < r) { map[y][x] = "water"; Lk.tiles.push([x, y]); } else if (d < r + 0.6 + noise(x, y, 2.5, cy + 7) * 1.7 && map[y][x] !== "water") map[y][x] = G.biomeAt(x, y) === 5 ? tile("snow_2", "stone") : "sand";
+        }
+    }
+    // estradas da praça de Lumeira até cada vila (sobre a água viram ponte de terra batida)
+    for (const [a, b] of G.ROADS) {
+      const len = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y)), px = -(b.y - a.y) / len, py = (b.x - a.x) / len;
+      for (let i = 0; i <= len; i++) { const t = i / len, w = Math.sin(t * Math.PI) * (noise(i, len, 9, a.x + b.y) - 0.5) * 26;
+        const x = Math.round(a.x + (b.x - a.x) * t + px * w), y = Math.round(a.y + (b.y - a.y) * t + py * w);
+        for (const [dx, dy] of [[0, 0], [1, 0], [0, 1], [1, 1]]) if (inside(x + dx, y + dy) && !G.inOld(x + dx, y + dy) && !occ[(y + dy) * W + x + dx]) map[y + dy][x + dx] = "path"; }
+    }
+    const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
+    // vilas novas: a mesma planta da Lumeira (casas, banca e mercador, cofre, fornalha, bigorna, fogueira, poço, quadro e a Pedra)
+    const MERCH = { breu: "Saulo", oasis: "Zaíra", escarpa: "Dagoberto", degelo: "Ilka" };
+    const HOUSES = { breu: ["house_green", "house_blue", "house_green"], oasis: ["house_red", "house_red", "house_blue"], escarpa: ["house_blue", "house_blue", "house_red"], degelo: ["house_blue", "house_green", "house_blue"] };
+    for (const v of G.VILLAGES) {
+      if (v.main) { // Lumeira: a Pedra entra num tile livre da praça
+        const cx = (TOWN.x0 + TOWN.x1) / 2, cy = (TOWN.y0 + TOWN.y1) / 2, cand = [];
+        for (let y = TOWN.y0 + 1; y < TOWN.y1; y++) for (let x = TOWN.x0 + 1; x < TOWN.x1; x++) cand.push([x, y]);
+        cand.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cy) - Math.hypot(q[0] - cx, q[1] - cy));
+        for (const [x, y] of cand) // tile de pedra livre mais perto do centro da praça, com os 8 vizinhos livres (não fecha passagem)
+          if (!occ[y * W + x] && map[y][x] === "stone" && DIRS8V.every(([dx, dy]) => !occ[(y + dy) * W + x + dx] && map[y + dy][x + dx] !== "water")) { v.stone = { x, y }; break; }
+      } else {
+        const cx = v.x0 + 8, cy = v.y0 + 7;
+        for (let y = v.y0; y <= v.y1; y++) for (let x = v.x0; x <= v.x1; x++) map[y][x] = x === cx || x === cx + 1 || y === cy || y === cy + 1 ? "path" : "stone";
+        const at = (dx, dy) => [v.x0 + dx, v.y0 + dy], hs = HOUSES[v.key];
+        deco("house", hs[0], ...at(1, 1), 3, 2); deco("house", hs[1], ...at(12, 1), 3, 2); deco("house", hs[2], ...at(1, 12), 3, 2);
+        deco("stall", "stall", ...at(10, 4), 2, 1); deco("merchant", "npc_merchant", ...at(12, 4), 1, 1, { name: MERCH[v.key], village: v.key });
+        deco("bank", "chest", ...at(4, 3)); deco("furnace", "furnace", ...at(10, 11)); deco("anvil", "anvil", ...at(12, 11));
+        deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(9, 2)); deco("well", "well", ...at(3, 6)); deco("fire", "campfire", ...at(4, 10));
+        deco("barrel", "barrel", ...at(9, 4)); deco("barrel", "barrel", ...at(14, 10)); deco("barrel", "barrel", ...at(5, 10));
+        v.stone = { x: v.x0 + 6, y: v.y0 + 5 };
+        for (const [x, y] of [at(-1, -1), at(17, -1), at(-1, 16), at(17, 16)]) if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water") deco("prop", SPR.deco_lamppost ? "deco_lamppost" : "deco_sign", x, y);
+      }
+      if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
+    }
+    // entradas das masmorras dos biomas
+    for (const E of G.DG_ENTRIES) {
+      const spr = E.biome === 2 ? "deco_den" : E.biome === 5 ? (SPR.deco_rift_entrance ? "deco_rift_entrance" : "deco_crypt") : "deco_crypt";
+      for (let dy = -1; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) if (inside(E.x + dx, E.y + dy) && map[E.y + dy][E.x + dx] === "water") map[E.y + dy][E.x + dx] = "dirt";
+      map[E.y][E.x] = "dirt"; map[E.y + 1][E.x] = "dirt";
+      E.obj = deco("dungeon", SPR[spr] ? spr : "deco_crypt", E.x, E.y, 1, 1, { dungeon: E.key, label: E.name });
+    }
+    placePOIs(rnd, deco);
+    // recursos e enfeites (fora do quadro antigo); montanhas ganham paredões de rocha onde o ruído é alto
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+      if (G.inOld(x, y) || occ[y * W + x] || nearTown(x, y, 3) || /water|path|sand/.test(map[y][x]) && G.biomeAt(x, y) !== 4) continue; // no deserto, areia recebe recurso
+      if (map[y][x] === "water" || map[y][x] === "path") continue;
+      const b = G.biomeAt(x, y), reg = G.regionShape(x, y);
+      if (b === 3 && G.fbm(x / 9, y / 9, 41) > 0.66 && !G.DG_ENTRIES.some((E) => Math.abs(E.x - x) < 4 && Math.abs(E.y - y) < 4)) { deco("rock_wall", SPR.boulder ? "boulder" : "rubble", x, y); continue; }
+      const tab = b === 1 ? TABLE_CAMPO[reg] : TABLE_NEW[reg]; if (!tab) continue;
+      if (map[y][x] === "stone" && reg !== "ruins" && b === 1) continue;
+      let n = rnd(); const dens = noise(x, y, 8, 99 + b), grove = dens > 0.56 ? 2.6 : dens < 0.36 ? 0.2 : 0.9; // bosques e clareiras
+      for (const [kind, p0] of tab) {
+        const p = b > 1 && /^(tree|palm|bushv)/.test(kind) ? p0 * grove : p0;
+        if (n < p) {
+          if (kind === "bush") deco("bush", "deco_bush", x, y);
+          else if (kind === "rubble") place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false });
+          else if (kind.startsWith("rare:")) { const k2 = kind.slice(5); if (G.depthAt(x, y) >= 0.55 && RES[k2] && SPR[k2]) addResource(k2, x, y); } // raros: só no fundo do bioma
+          else if (kind.startsWith("bushv:")) { const s = kind.slice(6); if (SPR[s]) deco("bush", s, x, y); }
+          else if (kind.startsWith("deco:")) { const s = kind.slice(5); if (SPR[s]) place({ type: "bones", spr: s, x, y, w: 1, h: 1, solid: false }); }
+          else if (kind === "boulder" || kind === "boulder_snow") { if (SPR[kind]) deco("rock_wall", kind, x, y); }
+          else if (RES[kind] && SPR[kind]) addResource(kind, x, y);
+          break;
+        }
+        n -= p;
+      }
+    }
+    // cardumes dos lagos novos
+    for (const Lk of lakes) if (!Lk.shore) {
+      Lk.shore = Lk.tiles.filter(([x, y]) => DIRS.some(([dx, dy]) => inside(x + dx, y + dy) && map[y + dy][x + dx] !== "water"));
+      if (Lk.shore.length) for (let i = 0; i < Lk.n; i++) { const o = addResource(Lk.kind, 0, 0, { lake: Lk }); relocateSpot(o, true); }
+    }
+    // monstros: Campo crescido (fora do quadro antigo) e os biomas novos (bandos com casa)
+    const outside = (m) => { if (m && G.inOld(m.x, m.y)) { m.dead = true; mobs.splice(mobs.indexOf(m), 1); } };
+    for (const [reg, list] of Object.entries(G.CAMPO_EXTRA)) for (const [type, n] of list) for (let i = 0; i < n; i++) outside(spawnMob(type, reg, null));
+    for (const [key, list] of Object.entries(G.BIOME_SPAWNS)) for (const [type, n, home] of list) if (MOBS[type]) for (let i = 0; i < n; i++) spawnMob(type, key, home);
+  }
+  function finishWorld() {
+    const deepWater = new Uint8Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!WORLD.biomeAt(x, y)) deepWater[y * W + x] = 1; // mar aberto: água funda
+    for (const L of lakes) if (L.kind === "fishspot_deep") for (const [x, y] of L.tiles) deepWater[y * W + x] = 1;
+    for (const L of lakes) if (L.kind === "fishspot_deep") for (const [x, y] of L.tiles) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++)
+      if (inside(x + dx, y + dy) && map[y + dy][x + dx] !== "water") deepWater[(y + dy) * W + x + dx] = 1;
+    RENDER.setDeepWater(deepWater);
+    // canteiros de flores: objetos não sólidos, para balançarem com a folha do Blender
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++)
+      if (!occ[y * W + x] && /^grass/.test(map[y][x]) && !/dark|night/.test(map[y][x]) && !nearTown(x, y, 1) && hash(x, y, 31) < 0.006) place({ type: "flora", spr: "deco_flowers", x, y, w: 1, h: 1, solid: false });
     // rodada 75: pontos de poça (terra e estrada, ~4% dos tiles, pelo hash da posição: não usa o aleatório do jogo)
     const pud = []; for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++)
       if (/^(path|dirt)/.test(map[y][x]) && !occ[y * W + x] && hash(x, y, 53) < 0.04) pud.push({ x: x + 0.3 + hash(x, y, 54) * 0.4, y: y + 0.5 + hash(x, y, 55) * 0.3, r: 0.4 + hash(x, y, 56) * 0.25 });
-    // rodada 77: poça perto de poste ou fogueira (até 3 tiles) reflete a luz à noite; lit = 1 colada, 0 a 3 tiles
     const lamps = objects.filter((o) => o.spr === "deco_lamppost" || o.type === "fire");
-    for (const p of pud) p.lit = Math.max(0, ...lamps.map((o) => 1 - Math.hypot(o.x + 0.5 - p.x, o.y + 0.5 - p.y) / 3));
+    for (const p of pud) { let lit = 0; for (const o of lamps) { const d = Math.hypot(o.x + 0.5 - p.x, o.y + 0.5 - p.y); if (d < 3) lit = Math.max(lit, 1 - d / 3); } p.lit = lit; }
     AMBIENT.setPuddles(pud);
-    // rodada 78: marcos da campanha, depois de todo o sorteio (o mundo fixo das medições sai igual no começo)
+    const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
+    // rodada 78: marcos da campanha, depois de todo o sorteio
     CAMPAIGN_RT.place(deco, (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path|sand/.test(map[y][x]) && regionAt(x, y) !== "town", npc);
-    // chão em blocos, com transições e decoração
     ground = ValdoraTerrain.create({ map, W, H, TILE, spr: SPR, decal: decalAt });
     buildMinimap();
   }
@@ -313,7 +491,10 @@
     if (o) return null;
     const fam = ground ? ground.family(map[y][x]) : map[y][x], h = hash(x, y, 31);
     if (fam === "grass") return h < 0.006 ? null : h < 0.05 ? "tuft" : h < 0.07 ? "flowers" : h < 0.08 ? "pebbles" : null; // canteiros viram objetos animados
-    if (fam === "grass_dark") return h < 0.05 ? "tuft_dark" : h < 0.065 ? "mushroom" : h < 0.09 ? "leaves" : null;
+    if (fam === "grass_dark" || fam === "grass_night") return h < 0.05 ? "tuft_dark" : h < 0.065 ? "mushroom" : h < 0.09 ? "leaves" : null;
+    if (fam === "rockg") return h < 0.06 ? "pebbles" : h < 0.08 ? "tuft_dry" : h < 0.09 ? "twigs" : null; // rodada 105: detalhes do chão dos biomas novos
+    if (fam === "snow") return h < 0.035 ? "snowdrift" : h < 0.06 ? "snowtuft" : h < 0.075 ? "icecrack" : h < 0.085 ? "twigs" : null;
+    if (fam === "sand_2" || (fam === "sand" && WORLD.biomeAt && WORLD.biomeAt(x, y) === 4)) return h < 0.04 ? "tuft_dry" : h < 0.065 ? "stones_red" : h < 0.075 ? "twigs" : null;
     if (fam === "dirt") return h < 0.05 ? "pebbles" : h < 0.08 ? "tuft_dry" : null;
     return null;
   }
@@ -490,7 +671,7 @@
     SND.play("rare"); burst(o.x + 0.5, o.y + 0.4, ["#f1c40f", "#ffffff", "#c79bff"], 40, 5); if (SND.opts.shake) shake = 0.2;
     showToast("Tesouro da cripta!", `+${coins} moedas e espólios no chão.`, "#f1c40f"); log(`O selo se rompe! +${coins} moedas.`, "gold"); save();
   }
-  function nearTown(x, y, m) { return !inCrypt && x >= TOWN.x0 - m && x <= TOWN.x1 + m && y >= TOWN.y0 - m && y <= TOWN.y1 + m; }
+  function nearTown(x, y, m) { return !inCrypt && TOWNS.some((T) => x >= T.x0 - m && x <= T.x1 + m && y >= T.y0 - m && y <= T.y1 + m); }
   function place(o) {
     objects.push(o);
     for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) occ[y * W + x] = o;
@@ -590,6 +771,7 @@
     for (const k of Object.keys(SKILLS)) xp[k] = Math.max(0, +data.xp?.[k] || 0);
     for (const k of Object.keys(GEAR)) gear[k] = clamp(Math.floor(+data.gear?.[k] || 0), 0, GEAR[k].tiers.length - 1);
     let { x, y } = data;
+    if (!data.wv && Number.isInteger(x) && Number.isInteger(y)) { x += WORLD_G.OX; y += WORLD_G.OY; } // rodada 105: save do mapa antigo
     if (!Number.isInteger(x) || !Number.isInteger(y) || !walkable(x, y)) ({ x, y } = SPAWN);
     player = { name: String(data.name || "Aventureiro").slice(0, 14), hero: HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id,
       x, y, fx: x, fy: y, prog: 1, px: x, py: y, dir: "down", dist: 0, moveT: 0, turnT: 0, act: null, cast: null, flash: 0, hitT: 0, deadT: 0, eatT: 0,
@@ -604,6 +786,9 @@
       stats: { logs: 0, ores: 0, fish: 0, cooked: 0, forged: 0, kills: 0, rares: 0, bosses: 0, raids: 0, ...(data.stats || {}) } };
     player.stats.bossTypes = { ...((data.stats && data.stats.bossTypes) || {}) };
     player.home = ValdoraHome.sanitize(data.home); // rodada 100: casa
+    player.stones = Array.isArray(data.stones) ? data.stones.filter((k) => WORLD_G.VILLAGES.some((v) => v.key === k)) : []; // rodada 105: Pedras salvas
+    if (!player.stones.includes("lumeira")) player.stones.unshift("lumeira");
+    player.spawnStone = player.stones.includes(data.spawnStone) ? data.spawnStone : "lumeira"; player.village = null;
     player.pet = data.pet && typeof data.pet === "object" ? { name: RULES.petName(data.pet.name) || RULES.PET.name, kills: Math.max(0, data.pet.kills | 0), hp: Math.max(0, data.pet.hp | 0), rest: Math.max(0, Math.min(RULES.PET.rest, +data.pet.rest || 0)), named: data.pet.named ? 1 : 0, seenBond: Math.max(1, data.pet.seenBond | 0 || RULES.petBond(data.pet.kills | 0)) } : null; pet = null; // rodada 95; rodada 96: vida, descanso, nome
     player.echo = typeof data.echo === "object" && data.echo ? { ...data.echo } : {}; // semana da última vitória sobre cada eco
     player.inv = slotsFrom(data.inv, SLOTS + 4 * player.bags.length);
@@ -834,7 +1019,7 @@
   }
   // teclado (js/input.js): ações de cada atalho
   const INPUT = ValdoraInput.create({
-    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; }, interact: () => interactNearest(), skill: (id) => useSkill(id),
+    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; toggleMap(false); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
     toggleDlg: (kind) => { if (dlg && dlg.kind === kind) closeDlg(); else openDlg(kind, null); }, petStay: () => petStay(),
     tab: (t) => { hudTab = t; hudDirty = true; SND.play("ui"); },
     eatBest: () => { // come a comida que mais cura
@@ -878,7 +1063,7 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
+  const STATIONS = { waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -976,7 +1161,7 @@
     tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
-  const POINTER = ValdoraPointer.create({ canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
+  const POINTER = ValdoraPointer.create({ miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
     clickFx: (...a) => clickFx(...a), setTarget: (p) => setTarget(p), nearestMob: (x, y) => nearestMob(x, y), walkable: (x, y) => walkable(x, y), inside: (x, y) => inside(x, y) });
   const PST = POINTER.st, updateTouch = POINTER.updateTouch;
@@ -1031,6 +1216,8 @@
     if (t.kind === "crypt_exit") { player.target = null; return exitCrypt(); }
     if (t.kind === "chest") { player.target = null; return openChest(r); }
     if (t.kind === "dummy") { player.target = null; return hitDummy(r); }
+    if (t.kind === "dungeon") { player.target = null; return enterCrypt(r, r.dungeon); } // rodada 105: masmorra de bioma
+    if (t.kind === "waystone") { player.target = null; unlockStone(r.village, true); return openDlg("waystone", r); } // rodada 105: Pedra da vila
     if (player.actT > 0) return;
     if (t.kind === "res" && !ensureTool(RES[r.kind].tool)) { // rodada 104: sem a ferramenta certa na mochila
       const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
@@ -1327,6 +1514,58 @@
     if (h.built && !h.furn.bench) return R(ic, "Banco do quintal", "Só enfeite.", H.BENCH_COST, `<button data-homebench="1" ${player.coins < H.BENCH_COST ? "disabled" : ""}>Comprar</button>`);
     return "";
   }
+  // ---------- rodada 105: Pedras das vilas (teleporte e ponto de renascer) ----------
+  // Cada vila tem uma Pedra. Ao chegar na vila (ou tocar a Pedra) ela fica salva; de qualquer Pedra salva dá para viajar
+  // para as outras pagando STONE_COST moedas e marcar onde renascer (uma de cada vez).
+  const STONE_COST = 30;
+  // rodada 105: mapa do continente (M): quase a tela inteira, redesenhado junto com o minimapa enquanto estiver aberto
+  function toggleMap(force) { const el = $("worldmap"), on = force ?? el.hidden; el.hidden = !on; if (on) { closeDlg(); drawMap(); } }
+  function drawMap() {
+    const el = $("worldmap"); if (el.hidden) return;
+    const cv = $("wm-canvas"), r = cv.getBoundingClientRect(), w = Math.max(200, Math.round(r.width)), h = Math.max(160, Math.round(r.height));
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    OVERLAY.drawWorldMap(cv);
+  }
+  $("wm-close").onclick = () => toggleMap(false);
+  const stoneOf = (key) => WORLD_G.VILLAGES.find((v) => v.key === key);
+  function unlockStone(key, verbose) {
+    if (!key || !stoneOf(key)) return;
+    player.stones = player.stones || ["lumeira"];
+    if (player.stones.includes(key)) return;
+    player.stones.push(key); const v = stoneOf(key);
+    showToast("Pedra desbloqueada", `${v.name}: agora dá para viajar até aqui de qualquer Pedra.`, "#7fe8ff"); SND.play("quest");
+    log(`A Pedra de ${v.name} brilha: lugar salvo. Toque nela para viajar ou marcar onde renascer.`, "gold"); hudDirty = true; save();
+  }
+  function stoneDlg() {
+    const here = dlg && dlg.obj && dlg.obj.village, R = (ic, title, sub, price, btn) => `<div class="row">${ic}<span class="grow">${title}${sub ? `<br><small>${sub}</small>` : ""}</span>${price != null ? `<span class="price">${price}<img src="${ASSETS.coin}" alt=""></span>` : ""}${btn}</div>`;
+    const ic = ASSETS.deco_waystone ? `<img src="${ASSETS.deco_waystone}" alt="">` : "";
+    const html = WORLD_G.VILLAGES.map((v) => {
+      const B = WORLD_G.BIOMES[v.biome - 1], got = (player.stones || []).includes(v.key), sp = (player.spawnStone || "lumeira") === v.key;
+      const sub = `${B.name} · monstros ${B.lv[0]}–${B.lv[1]}${sp ? " · você renasce aqui" : ""}`;
+      if (!got) return R(ic, `<span style="opacity:.55">${esc(v.name)}</span>`, `${B.name} · ainda não visitada`, null, `<button disabled>Bloqueada</button>`);
+      const go = v.key === here ? `<button disabled>Você está aqui</button>` : `<button data-stonego="${v.key}" ${player.coins < STONE_COST ? "disabled" : ""}>Viajar</button>`;
+      const spawn = sp ? "" : `<button data-stonespawn="${v.key}">Renascer aqui</button>`;
+      return R(ic, esc(v.name), sub, v.key === here ? null : STONE_COST, go + spawn);
+    }).join("");
+    return { talk: `Pedras antigas ligam as vilas do reino. Viajar custa ${STONE_COST} moedas; marcar onde renascer é de graça.`, html };
+  }
+  function stoneAct(k, v) {
+    const S = stoneOf(v); if (!S || !(player.stones || []).includes(v)) return;
+    if (k === "stonespawn") { player.spawnStone = v; log(`Você vai renascer na Pedra de ${S.name}.`, "gold"); SND.play("pickup"); save(); renderDlg(); return; }
+    if (k === "stonego") {
+      if (player.coins < STONE_COST || inCrypt || player.deadT > 0) return;
+      player.coins -= STONE_COST; const p = stoneSpot(S); closeDlg();
+      burst(player.px + 0.5, player.py + 0.5, ["#7fe8ff", "#ffffff"], 24, 3);
+      Object.assign(player, { x: p.x, y: p.y, fx: p.x, fy: p.y, px: p.x, py: p.y, prog: 1, path: [], target: null, goal: null, job: null, dir: "down" });
+      CAMERA.reset(); burst(p.x + 0.5, p.y + 0.5, ["#7fe8ff", "#ffffff"], 30, 3); SND.play("quest");
+      log(`A Pedra leva você até ${S.name} (−${STONE_COST} moedas).`, "gold"); hudDirty = true; save();
+    }
+  }
+  function stoneSpot(S) { // tile andável ao lado da Pedra da vila
+    const s = S.stone || { x: (S.x0 + S.x1) >> 1, y: (S.y0 + S.y1) >> 1 };
+    for (const [dx, dy] of [[0, 1], [1, 1], [-1, 1], [1, 0], [-1, 0], [0, -1], [0, 2], [2, 0], [-2, 0]]) if (walkable(s.x + dx, s.y + dy)) return { x: s.x + dx, y: s.y + dy };
+    return { x: SPAWN.x, y: SPAWN.y };
+  }
   function homeDlg() {
     const H = ValdoraHome, h = player.home, R = ValdoraDialogs.row;
     if (!h.lot) return { talk: "Um terreno com estacas e corda. A placa diz que a escritura está com o Bento.", html: `<p class="empty">${H.canBuy(player) ? `Escritura: ${H.COST} moedas na banca do Bento.` : "O Bento só vende o lote a quem já ajudou a vila (conclua o Ato II, O Marco da Mata)."}</p>` };
@@ -1578,7 +1817,8 @@
     log(`☠ Você desmaiou e acordou na vila.${lost ? ` Perdeu ${lost} moedas.` : ""}`, "warn");
     player.stats.deaths = (player.stats.deaths || 0) + 1; // rodada 55: na segunda morte, a dica do estilo Defensivo (uma vez por save)
     if (player.stats.deaths >= 2 && player.style !== "defensivo" && !player.seen.defTip) { player.seen.defTip = 1; log(DEF_TIP, "tip", STYLES.defensivo.passive && STYLES.defensivo.passive.icon); }
-    Object.assign(player, { x: SPAWN.x, y: SPAWN.y, fx: SPAWN.x, fy: SPAWN.y, prog: 1, px: SPAWN.x, py: SPAWN.y, hp: maxHp(), path: [], target: null, goal: null, job: null });
+    const RS = player.spawnStone && player.spawnStone !== "lumeira" && stoneOf(player.spawnStone) ? stoneSpot(stoneOf(player.spawnStone)) : SPAWN; // rodada 105: Pedra marcada
+    Object.assign(player, { x: RS.x, y: RS.y, fx: RS.x, fy: RS.y, prog: 1, px: RS.x, py: RS.y, hp: maxHp(), path: [], target: null, goal: null, job: null });
     for (const m of mobs) m.aggro = false;
     hudDirty = true; save();
   }
@@ -1793,7 +2033,7 @@
     sell: (n, q) => sell(n, q), buy: (n) => buy(n), deliver: (i) => deliver(i), newOrder: (o) => newOrder(o), moveStack: (f, i, t) => moveStack(f, i, t),
     takeFx: (o, n) => takeFx(o, n), storeFx: (o, n) => storeFx(o, n), log: (m, c, i) => log(m, c, i), craft: (n) => craft(n), QUEST, react: (o) => react(o), rand, SND,
     addFloat: (...a) => addFloat(...a), claimBounty: (i) => claimBounty(i), wakeEcho: (k) => wakeEcho(k), newBounty: (t) => newBounty(t), emit: (e) => emit(e), accName,
-    close: () => closeDlg(), scene: (id, cb) => SCENE.play(id, cb), travel: (k) => CAMPAIGN_RT.travel(k), alchemy: (n) => brew(n), claimDaily: () => claimDaily(), petName: (v) => petRename(v), petStay: () => petStay(), home: (k, v) => homeAct(k, v) }); // rodada 78/79; rodada 96: nome do filhote
+    close: () => closeDlg(), scene: (id, cb) => SCENE.play(id, cb), travel: (k) => CAMPAIGN_RT.travel(k), alchemy: (n) => brew(n), claimDaily: () => claimDaily(), petName: (v) => petRename(v), petStay: () => petStay(), home: (k, v) => homeAct(k, v), stone: (k, v) => stoneAct(k, v) }); // rodada 78/79; rodada 96: nome do filhote
   $("dlg").addEventListener("click", (e) => {
     if (!dlg) return;
     const b = e.target.closest("button, .slot[data-dep], .slot[data-wd]"); if (!b) return;
@@ -1884,7 +2124,7 @@
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect });
   const DLG_VIEW = ValdoraDialogs.create({ player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
-    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg() }); // rodada 78/79; rodada 96: filhote
+    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
   // ---------- HUD ----------
   let hudDirty = true, hudTab = "inv";
@@ -2010,7 +2250,7 @@
     else if (hitStop > 0) hitStop -= dt; else update(dt); // pausa de impacto em críticos e abates
     draw(now / 1000);
     if (hudDirty) updateHud();
-    if ((miniT -= dt) <= 0) { miniT = 0.2; drawMinimap(); updateFHint(); }
+    if ((miniT -= dt) <= 0) { miniT = 0.2; drawMinimap(); updateFHint(); drawMap(); }
     if ((skillT -= dt) <= 0) { skillT = 0.08; updateSkillbar(); }
     requestAnimationFrame(loop);
   }
@@ -2109,6 +2349,9 @@
     updateCamera(dt); updateTouch();
 
     const reg = regionAt(player.x, player.y);
+    const vil = !inCrypt && reg === "town" && WORLD_G.villageAt(player.x, player.y); // rodada 105: chegou numa vila: a Pedra fica salva
+    if (vil && !(player.stones || []).includes(vil.key)) unlockStone(vil.key, true);
+    if (vil && vil.key !== player.village) { player.village = vil.key; if (reg === player.region && !vil.main) { $("banner").innerHTML = `${UI.titleHTML(vil.name)}<small>zona segura</small>`; $("banner").classList.remove("show"); void $("banner").offsetWidth; $("banner").classList.add("show"); } }
     if (reg !== player.region) {
       const first = player.region === null; player.region = reg; hudDirty = true; SND.setMood(reg === "den" ? "crypt" : reg);
       const R0 = REGIONS[reg], low = R0.min && lv("combate") < R0.min; // rodada 31: aviso de região acima do seu nível
@@ -2117,10 +2360,10 @@
       if (reg === "east" && !low && lv("combate") < 9 && !player.seen.goblinTip) { player.seen.goblinTip = 1; log("Dica do Ivo: no Bosque, os goblins andam em bando. Puxe um de cada vez pela beirada do acampamento e só vá com comida na mochila.", "tip", "icon_tip"); } // rodada 60
       if (firstDanger) { player.seen["danger:" + reg] = 1; warnT._any = -1e9; player.backHint = safeSpot(); }
       if (low && (warnT[reg] || -1e9) < player.playT - 60 && (warnT._any || -1e9) < player.playT - 15) { warnT[reg] = warnT._any = player.playT; log(`${R0.danger}; volte no Combate ${R0.min} (você tem ${lv("combate")}).`, "warn", dIcon); } // rodada 32: também ao carregar já dentro
-      if (!first || low) { const R = REGIONS[reg]; $("banner").innerHTML = `${UI.titleHTML(R.name)}<small>${esc(R.lvl)}</small>${low ? `<small class="danger">${ASSETS[dIcon] ? `<img src="${ASSETS[dIcon]}" alt="">` : "⚠ "}${esc(R.danger)} · Combate ${R.min} recomendado</small>` : ""}`; $("banner").classList.remove("show"); $("banner").classList.toggle("first", !!firstDanger); $("banner").classList.toggle("high", RULES.talkerNear(Object.values(npc), player)); void $("banner").offsetWidth; $("banner").classList.add("show"); }
+      if (!first || low) { const R = reg === "town" && vil ? { ...REGIONS.town, name: vil.name } : REGIONS[reg]; $("banner").innerHTML = `${UI.titleHTML(R.name)}<small>${esc(R.lvl)}</small>${low ? `<small class="danger">${ASSETS[dIcon] ? `<img src="${ASSETS[dIcon]}" alt="">` : "⚠ "}${esc(R.danger)} · Combate ${R.min} recomendado</small>` : ""}`; $("banner").classList.remove("show"); $("banner").classList.toggle("first", !!firstDanger); $("banner").classList.toggle("high", RULES.talkerNear(Object.values(npc), player)); void $("banner").offsetWidth; $("banner").classList.add("show"); }
     }
     if (dlg && dlg.obj) {
-      const near = dlg.kind === "shop" ? adjRect(player.x, player.y, npc.merchant) || adjRect(player.x, player.y, npc.stall) : adjRect(player.x, player.y, dlg.obj);
+      const near = adjRect(player.x, player.y, dlg.obj) || (dlg.kind === "shop" && [npc.merchant, npc.stall].includes(dlg.obj) && (adjRect(player.x, player.y, npc.merchant) || adjRect(player.x, player.y, npc.stall)));
       if (!near) closeDlg();
     }
 
@@ -2436,7 +2679,7 @@
     if (!player) return;
     try {
       const pos = inCrypt ? overworld.ret : player; // dentro da cripta, salva a entrada
-      localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, dayT: player.dayT, master: player.master,
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 2, wv: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
         bags: player.bags, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 }));

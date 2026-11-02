@@ -27,7 +27,8 @@ window.ValdoraHud = (() => {
     document.addEventListener("focusin", (e) => { const el = e.target; if (el && el.closest && el.closest("#tab-inv") && el.dataset.i != null) invFocus = el.dataset.i; });
     function render() {
       const player = api.player(), hudTab = api.tab(), inCrypt = api.inCrypt();
-      const hp = Math.max(0, player.hp), mh = maxHp(), reg = REGIONS[player.region || "town"];
+      const vil = player.region === "town" && !inCrypt && window.ValdoraWorld.villageAt && window.ValdoraWorld.villageAt(player.x, player.y); // rodada 105: nome da vila
+      const hp = Math.max(0, player.hp), mh = maxHp(), reg = vil && !vil.main ? { ...REGIONS.town, name: vil.name } : REGIONS[player.region || "town"];
       // rodada 48: fora da vila, com 1 comida ou menos (depois da primeira refeição), o cesto quase vazio avisa
       const food = api.foodCount(), foodLow = ASSETS.icon_food_low && api.foodLow();
       const PR = api.rank && api.rank(); // rodada 49: título do santuário
