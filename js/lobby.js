@@ -11,6 +11,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.07", "Entrada sem travar", ["Corrigido o congelamento ao entrar: com chuva, um efeito dava erro e parava o jogo antes da interface aparecer",
+      "Um erro num efeito visual nunca mais congela o jogo",
+      "Depois de cada atualização, só as artes que mudaram são baixadas de novo (a entrada fica bem mais rápida)"]],
     ["v1.06", "Montanhas de verdade", ["Montanhas com contorno natural, paredão de rocha e uma escada talhada para subir",
       "No topo: um bando de monstros para caçar, um minério (às vezes raro) ou nada — refúgio, porque monstro não sobe montanha",
       "Montanhas pequenas em todos os biomas e muitas nas Montanhas de Ferro",

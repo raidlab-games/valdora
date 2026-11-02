@@ -1235,7 +1235,7 @@
     if (shoot && goal(player.x, player.y)) { player.path = []; return; } // já na mira: atira daqui
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
-  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mtn: () => MTN, walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
+  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
@@ -1257,6 +1257,7 @@
 
   function doTarget() {
     const t = player.target, r = t.ref;
+    if (!r) { player.target = null; return; } // rodada 108: alvo que sumiu (ex.: objeto recolhido) não derruba o quadro
     if (t.kind === "mob") {
       if (r.dead) { player.target = null; return; }
       ensureWeapon();
@@ -2322,16 +2323,19 @@
     ctx.fillStyle = "#1b1610"; bubble.lines.forEach((l, i) => ctx.fillText(l, x, y - bh + 14 + i * 13));
     ctx.globalAlpha = 1;
   }
+  // rodada 108: o quadro seguinte é pedido ANTES do trabalho e cada etapa roda protegida — um erro num efeito (a chuva com raio
+  // negativo travava tudo: o mundo parava e a interface nem chegava a ser desenhada) vira um aviso no console, não um jogo congelado
+  const loopErr = {};
+  function safe(name, fn) { try { fn(); } catch (e) { if (!loopErr[name]) { loopErr[name] = 1; console.error("Valdora: erro em " + name, e); } } }
   function loop(now) {
     if (!running) return;
-    const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    if (SCENE.active()) SCENE.update(dt); // rodada 78: cena de diálogo pausa o mundo
-    else if (hitStop > 0) hitStop -= dt; else update(dt); // pausa de impacto em críticos e abates
-    draw(now / 1000);
-    if (hudDirty) updateHud();
-    if ((miniT -= dt) <= 0) { miniT = 0.2; drawMinimap(); updateFHint(); drawMap(); }
-    if ((skillT -= dt) <= 0) { skillT = 0.08; updateSkillbar(); }
     requestAnimationFrame(loop);
+    const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now; // o relógio do quadro pode vir antes do último: nunca negativo
+    safe("update", () => { if (SCENE.active()) SCENE.update(dt); else if (hitStop > 0) hitStop -= dt; else update(dt); }); // cena pausa o mundo; pausa de impacto
+    safe("draw", () => draw(now / 1000));
+    safe("hud", () => { if (hudDirty) updateHud(); });
+    if ((miniT -= dt) <= 0) { miniT = 0.2; safe("minimap", () => { drawMinimap(); updateFHint(); drawMap(); }); }
+    if ((skillT -= dt) <= 0) { skillT = 0.08; safe("skillbar", updateSkillbar); }
   }
 
   function nextDir() { // direção do próximo passo (teclado ou caminho), sem andar

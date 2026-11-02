@@ -85,7 +85,7 @@ window.ValdoraAmbient = (() => {
       const n = Math.round(RAIN_N * rainK * (still ? 0.4 : 1));
       for (let i = 0; i < n; i++) { const d = drops[i], x = Math.round(d.x * w), y = Math.round(d.y * h); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 14); }
       ctx.stroke(); ctx.globalAlpha = 1;
-      for (const sp of splash) if (sp.t < 1) { ctx.globalAlpha = (1 - sp.t) * 0.5 * rainK; ctx.beginPath(); ctx.ellipse(sp.x * w, sp.y * h, 2 + sp.t * 5, 1 + sp.t * 2, 0, 0, 6.29); ctx.stroke(); }
+      for (const sp of splash) if (sp.t >= 0 && sp.t < 1) { ctx.globalAlpha = (1 - sp.t) * 0.5 * rainK; ctx.beginPath(); ctx.ellipse(sp.x * w, sp.y * h, 2 + sp.t * 5, 1 + sp.t * 2, 0, 0, 6.29); ctx.stroke(); }
       ctx.globalAlpha = 1;
     }
     function update(dt, cam, w, h, region, dark, indoor) {

@@ -20,6 +20,14 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 108 (v1.07) — entrada sem travar
+- **Congelamento ao entrar:** com chuva, o respingo recebia raio negativo (`dt` negativo quando o relógio do quadro vinha antes
+  do último) e o `ellipse` lançava erro: o laço parava depois do chão e antes da interface (minimapa preto, retrato vazio).
+  `dt` nunca é negativo, o respingo só desenha com `t >= 0` e o laço pede o próximo quadro antes do trabalho, com cada etapa
+  (update, draw, hud, minimapa, barra) protegida — um erro vira aviso no console.
+- `doTarget` com alvo sem referência limpa o alvo em vez de derrubar o quadro.
+- **Artes:** versão por arquivo pelo conteúdo (tools/asset_hashes.py na publicação, `window.ASSET_H`): só o que mudou é baixado.
+
 ## Rodada 107 (v1.06) — montanhas de verdade
 - **Montanhas:** platôs com contorno de ruído (nada quadrado), desenhados no chão por um campo suave como a margem dos lagos:
   topo mais claro com beirada iluminada, face sul de rocha (tools/cliffs.py, 5 temas por bioma) e sombra. A borda e a face
