@@ -36,7 +36,7 @@
     const miss = [], O = window.ValdoraOutfit;
     if (!O || !O.ORDER) return "js/outfit.js não carregou";
     for (const [n, it] of Object.entries(ITEMS)) {
-      if (!it.slot || ["anel", "amuleto", "municao"].includes(it.slot) || (it.gear && it.gear !== "espada" && it.gear !== "armadura")) continue;
+      if (!it.slot || ["anel", "amuleto", "bracelete"].includes(it.slot) || it.ammo || (it.gear && it.gear !== "espada" && it.gear !== "armadura")) continue;
       if (!it.look || !O.ORDER.includes(it.look[0])) miss.push(n);
     }
     for (const n of ["Túnica do guerreiro", "Manto do místico", "Roupa de caçador"]) if (!VD.SHOP_ITEMS.includes(n)) miss.push(n + " (loja)");
@@ -64,7 +64,7 @@
       for (const [n, it] of its) { if (!ASSETS[it.icon]) miss.push(n + " (ícone)"); if (!VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) miss.push(n + " (receita ou loja)"); }
     }
     for (const [n, r] of Object.entries(VD.CRAFT)) for (const m of Object.keys(r.mats)) if (!ITEMS[m]) miss.push(n + " → " + m);
-    if (!VD.EQUIP_SLOTS.municao || !VD.EQUIP_SLOTS.municao.archer) miss.push("munição (só arqueiro)");
+    if (!VD.EQUIP_SLOTS.municao || !VD.EQUIP_SLOTS.municao.sec) miss.push("secundária (por classe)"); // rodada 105
     if (VD.GEAR.armadura.label !== "Peitoral") miss.push("peitoral");
     return miss.length ? "faltando: " + miss.join(", ") : true;
   });
@@ -924,6 +924,20 @@
     return miss(r);
   });
 
+  test("rodada 105: secundária por classe (escudo, flechas, orbe/livro), bracelete e montante de duas mãos", () => {
+    const r = [];
+    for (const h of HEROES) { if (!VD.SEC[h.sec]) { r.push(h.id + " sem secundária"); continue; }
+      const its = Object.entries(ITEMS).filter(([, it]) => it.slot === "municao" && it.sec === h.sec);
+      if (!["comum", "raro", "epico"].every((q) => its.some(([, it]) => it.rarity === q))) r.push(h.sec + " (raridades)");
+      for (const [n, it] of its) { if (!ASSETS[it.icon]) r.push(n + " (ícone)"); if (!VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) r.push(n + " (receita ou loja)"); } }
+    if (!Object.values(ITEMS).some((it) => it.sec === "orbe" && it.look && it.look[0] === "book")) r.push("livros do Místico");
+    const br = Object.entries(ITEMS).filter(([, it]) => it.slot === "bracelete");
+    if (!VD.EQUIP_SLOTS.bracelete || br.length < 3 || br.some(([n, it]) => !ASSETS[it.icon] || !(VD.CRAFT[n] || it.buy))) r.push("bracelete");
+    for (const t of VD.GEAR.espada.tiers.slice(1)) { const it = ITEMS[t.two];
+      if (!it || !it.twoH || it.onlyHero !== "hero_1" || !(it.bonus.dmg > 0) || !ASSETS[it.icon] || !t.twoForge || (it.look || [])[0] !== "sword2") r.push("montante " + t.two); }
+    for (const L of ["shield", "orb", "book", "sword2"]) if (!ValdoraOutfit.ORDER.includes(L)) r.push("camada " + L);
+    return miss(r);
+  });
   test("rodada 105: direções em 8 (vetor -> direção, linha da folha com reserva de 4)", () => {
     const r = [], want = { "1,0": "right", "1,1": "downright", "0,1": "down", "-1,1": "downleft", "-1,0": "left", "-1,-1": "upleft", "0,-1": "up", "1,-1": "upright", "3,1": "right", "2,2": "downright" };
     for (const [k, d] of Object.entries(want)) { const [x, y] = k.split(",").map(Number); if (window.DIR_AT(x, y) !== d) r.push(k + "->" + window.DIR_AT(x, y)); }

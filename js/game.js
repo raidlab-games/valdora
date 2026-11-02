@@ -15,6 +15,8 @@
   const { CHATTER, BARD_SONGS, ACTIVE, QUESTS } = VD;
   const EQUIP_KEYS = Object.keys(VD.EQUIP_SLOTS); // rodada 104: espaços do boneco que recebem itens (a munição só o arqueiro usa)
   const isArcher = () => !!(HEROES.find((h) => h.id === player.hero) || {}).archer; // rodada 104: o Arqueiro atira de longe
+  const heroSec = () => (HEROES.find((h) => h.id === player.hero) || {}).sec; // rodada 105: escudo, flecha ou orbe (espaço "Secundária")
+  const arrows = () => { const q = player.equip.municao; return q && ITEMS[q.name] && ITEMS[q.name].ammo ? q : null; }; // flechas na secundária
   const ARROW_RANGE = 4.3; // alcance do arco (tiles)
 
   const $ = (id) => document.getElementById(id);
@@ -608,7 +610,7 @@
     for (const k of EQUIP_KEYS) { // aceita o formato antigo (só o nome) e o novo ({ name, aff })
       const e = data.equip && data.equip[k], name = e && (typeof e === "string" ? e : e.name);
       if (name && ITEMS[name] && ITEMS[name].slot === k) { player.equip[k] = { name }; const aff = validAff(e.aff); if (aff && aff.length) player.equip[k].aff = aff; if (e.master) player.equip[k].master = 1; }
-      if (k === "municao" && player.equip.municao) { const n = Math.floor(+e.n || 0); if (n > 0) player.equip.municao.n = n; else player.equip.municao = null; }
+      if (k === "municao" && player.equip.municao && ITEMS[player.equip.municao.name].ammo) { const n = Math.floor(+e.n || 0); if (n > 0) player.equip.municao.n = n; else player.equip.municao = null; }
     }
     if (data.gear && !data.itemized) { // rodada 104: save antigo — os níveis presos ao herói viram itens (nada se perde)
       const mk = (k) => { const g = GEAR[k], i = clamp(Math.floor(+data.gear[k] || 0), 0, g.tiers.length - 1), t = g.tiers[i];
@@ -618,6 +620,8 @@
       if (!player.equip.armadura) player.equip.armadura = mk("armadura");
       for (const k of ["machado", "picareta", "vara"]) { const e = mk(k); if (!addTo(player.bank, e.name, 1, e.aff, e.master) && !addItem(e.name, 1, e.aff, e.master)) dropItem(e.name, 1, player.x, player.y); }
     }
+    { const q = player.equip.municao, it = q && ITEMS[q.name]; // rodada 105: secundária de outra classe (flechas num Guerreiro) vai para a mochila
+      if (it && it.sec !== heroSec()) { player.equip.municao = null; if (!addItem(q.name, q.n || 1) && !addTo(player.bank, q.name, q.n || 1)) dropItem(q.name, q.n || 1, player.x, player.y); } }
     setTimeout(refreshOutfit, 0); // rodada 104: monta o visual pelo que está vestido
     if (isArcher() && !player.seen.arrowKit) { // rodada 104: o arqueiro começa com a aljava cheia (vale também para quem já jogava com este herói)
       player.seen.arrowKit = 1; if (!player.equip.municao) player.equip.municao = { name: "Flecha de madeira", n: 30 };
@@ -960,7 +964,7 @@
     player.target = { kind: p.kind, ref: p.ref }; player.job = null;
     const r = p.ref;
     if (p.kind === "mob") ensureWeapon(); // rodada 104: arma na mão antes de escolher onde parar
-    const shoot = p.kind === "mob" && hasBow() && player.equip.municao; // rodada 104: com arco, para na distância de tiro
+    const shoot = p.kind === "mob" && hasBow() && arrows(); // rodada 104: com arco, para na distância de tiro
     const goal = shoot ? (x, y) => Math.hypot(r.x - x, r.y - y) <= ARROW_RANGE && clearShot(x, y, r.x, r.y) : p.kind === "mob" ? (x, y) => adjacent({ x, y }, r) : p.kind === "loot" ? (x, y) => x === r.x && y === r.y : (x, y) => adjRect(x, y, r);
     // com NPCs, prefere parar ao lado ou acima, para não cobrir o personagem com o próprio corpo
     if (["shop", "guard", "bard", "herb", "carto", "miner", "fire"].includes(p.kind) && r.type !== "stall" && goTo((x, y) => goal(x, y) && y <= r.y)) return; // rodada 29: na fogueira, de lado ou acima (o chiado fica à vista)
@@ -970,7 +974,7 @@
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
-    drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
+    drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
@@ -993,7 +997,7 @@
       if (r.dead) { player.target = null; return; }
       ensureWeapon();
       // rodada 105: encostar vale na diagonal (adjacent), então o herói golpeia dali mesmo; acabou a "dança" da diagonal (rodadas 48/83)
-      if (hasBow() && player.equip.municao) { // rodada 104: atira de até ARROW_RANGE tiles, com a linha livre
+      if (hasBow() && arrows()) { // rodada 104: atira de até ARROW_RANGE tiles, com a linha livre
         const ok = (x, y) => Math.hypot(r.x - x, r.y - y) <= ARROW_RANGE && clearShot(x, y, r.x, r.y);
         if (!ok(player.x, player.y)) {
           if (goTo(ok)) player.noPath = 0;
@@ -1058,8 +1062,8 @@
       if (--j.left <= 0) player.job = null;
       renderDlg();
     } else if (j.kind === "forge") {
-      const t = GEAR[j.key].tiers[j.tier];
-      if (!t || !t.forge || !hasMats(t.forge.mats)) { player.job = null; return renderDlg(); }
+      const t = GEAR[j.key].tiers[j.tier], F = t && (j.two ? t.twoForge : t.forge); // rodada 105: montante usa mais metal
+      if (!t || !F || !hasMats(F.mats)) { player.job = null; return renderDlg(); }
       j.hits++; const last = j.hits >= 3;
       useTool("hammer", () => {
         SND.play("clang"); fx.sparks(o.x + 0.5, o.y + 0.15, last ? 18 : 10, ["#ffe08a", "#ffffff", "#ff9a3a"], last ? 6 : 4.5);
@@ -1067,9 +1071,9 @@
       });
       player.actT = 2;
       if (j.hits >= 3) {
-        for (const [k, n] of Object.entries(t.forge.mats)) removeItem(k, n);
-        const name = j.bow && t.bow ? t.bow : t.name; let aff, master = 0;
-        gainXp("ferraria", t.forge.xp); emit("forge:" + j.key); player.stats.forged++;
+        for (const [k, n] of Object.entries(F.mats)) removeItem(k, n);
+        const name = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : t.name; let aff, master = 0;
+        gainXp("ferraria", F.xp); emit("forge:" + j.key); player.stats.forged++;
         if (t.rolls) { aff = RULES.rollAffixes(rand() < 0.4 ? 2 : 1, 1, rand); // rodada 82: o metal "escolhe"
           log(`✦ ${name}: ${aff.map((a) => RULES.affixNames({ aff: [a] })).join(" e ")} (${bonusText(RULES.itemBonus({ name: "", aff }, ITEMS))}).`, "rare"); }
         if (rand() < 0.12 + lv("ferraria") * 0.002) { // obra-prima: bônus extra nesta peça
@@ -1112,7 +1116,8 @@
   }
   function ensureWeapon() {
     const e = player.equip.arma; if (e && ITEMS[e.name].gear === "espada") return;
-    const i = bestInBag((it) => it.gear === "espada" && (!it.bow || player.equip.municao)); if (i >= 0) equip(i, true);
+    const shield = player.equip.municao && ITEMS[player.equip.municao.name].sec === "escudo"; // rodada 105: com escudo, não pega montante
+    const i = bestInBag((it) => it.gear === "espada" && (!it.bow || arrows()) && (!it.onlyHero || it.onlyHero === player.hero) && !(it.twoH && shield)); if (i >= 0) equip(i, true);
   }
   // rodada 104: tiro do arqueiro. A flecha sai na soltura da corda e o dano entra quando ela chega.
   function clearShot(x0, y0, x1, y1) { // nada sólido no caminho (água não bloqueia; árvore, parede e casa sim)
@@ -1128,7 +1133,7 @@
   function startShot(m) {
     m.aggro = true; if (m.atkT < 1) m.atkT = 1;
     useTool("bow", () => {
-      const q = player.equip.municao; if (!q || m.dead) return;
+      const q = arrows(); if (!q || m.dead) return;
       const it = q.name; if (--q.n <= 0) { player.equip.municao = null; log("Acabaram as flechas! Compre com o Bento ou crie no Artesanato.", "warn"); refreshOutfit(); }
       const x0 = player.px + 0.5 + DIR_VEC[player.dir][0] * 0.3, y0 = player.py + 0.35, x1 = m.px + 0.5, y1 = headOf(m) + 0.55;
       shots.push({ x0, y0, x1, y1, t: 0, dur: Math.max(0.12, Math.hypot(x1 - x0, y1 - y0) / 14), m, it });
@@ -1582,23 +1587,37 @@
   function refreshOutfit() {
     const looks = [], e = player.equip, w = e.arma && ITEMS[e.arma.name];
     for (const k of Object.keys(e)) { const it = e[k] && ITEMS[e[k].name]; if (it && it.look) looks.push(it.look); }
-    if (e.municao) looks.push(["quiver", null]);
+    if (arrows()) looks.push(["quiver", null]); // escudo e orbe entram pelo look da própria peça
     looks.push(["tool", null]); // ferramenta das ações de coleta (machado, picareta, vara, foice, martelo, espeto)
     ValdoraOutfit.apply(player.hero, looks, !!(w && w.bow), ANIMS, SPR).then((ok) => { if (ok) hudDirty = true; });
   }
   function equip(i, quiet) {
     const s = player.inv[i], it = ITEMS[s.name], old = player.equip[it.slot];
     if (it.gear) { const g = GEAR[it.gear], t = g.tiers[it.tier]; if (lv(g.skill) < (t.req || 0)) { log(`${s.name} pede ${SKILLS[g.skill]} ${t.req}.`, "warn"); return; } }
+    if (it.onlyHero && it.onlyHero !== player.hero) { // rodada 105: montante só o Guerreiro
+      log(`${s.name} é arma de duas mãos do Guerreiro.`, "warn"); return;
+    }
+    const wNow = player.equip.arma && ITEMS[player.equip.arma.name];
+    if (it.sec === "escudo" && wNow && wNow.twoH) { log(`Com o ${player.equip.arma.name} (duas mãos) não dá para usar escudo. Troque por uma espada de uma mão.`, "warn"); return; }
+    if (it.sec && it.sec !== heroSec()) { // rodada 105: a secundária depende da classe
+      const S = VD.SEC[heroSec()] || {}, h = HEROES.find((x) => x.id === player.hero) || {};
+      log(`${s.name} é para o ${VD.SEC[it.sec].who}. A secundária do ${h.name} é ${(S.name || "outra").toLowerCase()}.`, "warn"); return;
+    }
     if (it.ammo) { // rodada 104: o maço inteiro vai para a aljava (mesma flecha soma; outra volta para a mochila)
       player.inv[i] = null;
       if (old && old.name === s.name) old.n += s.n;
-      else { player.equip.municao = { name: s.name, n: s.n }; if (old && !addItem(old.name, old.n)) dropItem(old.name, old.n, player.x, player.y); }
+      else { player.equip.municao = { name: s.name, n: s.n }; if (old && !addItem(old.name, old.n || 1, old.aff, old.master)) dropItem(old.name, old.n || 1, player.x, player.y); }
       const q = player.equip.municao; log(`Aljava: ${q.n}x ${q.name}.`, "gold"); SND.play("pickup"); hudDirty = true; save(); refreshOutfit(); return;
     }
     if (s.n > 1) s.n--; else player.inv[i] = null;
+    if (it.twoH && player.equip.municao && ITEMS[player.equip.municao.name].sec === "escudo") { // montante: o escudo sai da mão
+      const sh = player.equip.municao; player.equip.municao = null;
+      if (!addItem(sh.name, 1, sh.aff, sh.master)) dropItem(sh.name, 1, player.x, player.y, null, sh.aff);
+      log(`${s.name} usa as duas mãos: o ${sh.name} foi para a mochila.`, "dim");
+    }
     player.equip[it.slot] = { name: s.name, ...(s.aff ? { aff: s.aff } : {}), ...(s.master ? { master: 1 } : {}) };
     if (old && !addItem(old.name, 1, old.aff, old.master)) dropItem(old.name, 1, player.x, player.y, null, old.aff);
-    const bt = it.gear ? gearEffect(it.gear, GEAR[it.gear].tiers[it.tier]) : bonusText(accBonus(player.equip[it.slot]));
+    const bt = it.gear ? gearEffect(it.gear, GEAR[it.gear].tiers[it.tier]) + (it.twoH ? `, +${it.bonus.dmg} dano · duas mãos` : "") : bonusText(accBonus(player.equip[it.slot]));
     if (quiet) log(`Trocou para ${accName(player.equip[it.slot])}.`, "dim");
     else { log(`Você equipou ${accName(player.equip[it.slot])}${bt ? ` (${bt})` : ""}.`, "gold"); SND.play("pickup"); }
     refreshOutfit();

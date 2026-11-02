@@ -109,7 +109,7 @@ window.ValdoraDialogs = (() => {
         html = CRAFTING.furnaceHtml();
       } else if (dlg.kind === "char") {
         const st = combatStats(), hero = HEROES.find((h) => h.id === player.hero), S = player.stats;
-        const gearRows = Object.entries(VD.EQUIP_SLOTS).filter(([, S]) => !S.archer).map(([k, S]) => { const e = player.equip[k]; return `<div class="cs-row"${e ? ` data-tip="${esc(itemTip(e))}"` : ""}>${e ? iconImg(e.name) : '<span class="q">–</span>'}<span ${e && e.aff ? 'style="color:#ffd84a"' : ""}>${e ? esc(accName(e)) : `${S.name}: vazio`} ${affBadges(e)}</span><small>${e ? esc(bonusText(accBonus(e))) : ""}</small></div>`; }).join(""); // rodada 104: todos os espaços do boneco
+        const gearRows = Object.entries(VD.EQUIP_SLOTS).map(([k, S]) => { const e = player.equip[k]; return `<div class="cs-row"${e ? ` data-tip="${esc(itemTip(e))}"` : ""}>${e ? iconImg(e.name) : '<span class="q">–</span>'}<span ${e && e.aff ? 'style="color:#ffd84a"' : ""}>${e ? esc(accName(e)) : `${S.name}: vazio`} ${affBadges(e)}</span><small>${e ? esc(bonusText(accBonus(e))) : ""}</small></div>`; }).join(""); // rodada 104: todos os espaços do boneco
         html = charSheet({ heroImg: ASSETS[player.hero], name: player.name, heroName: hero.name, rank: SHRINE.rankOf(player.offered || 0), total: totalLevel(),
           hours: Math.floor(player.playT / 3600), mins: Math.floor(player.playT / 60) % 60, region: REGIONS[player.region || "town"].name,
           st, hp: player.hp, crit: Math.round(RULES.critChance(player.style) * 100), style: STYLES[player.style], passiveIcon: ASSETS[(STYLES[player.style].passive || {}).icon],

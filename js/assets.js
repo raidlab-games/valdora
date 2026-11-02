@@ -292,9 +292,9 @@ for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odili
 }
 
 window.HEROES = [
-  { id: "hero_1", sheet: "hero_1_sheet", attack: "hero_1_attack", name: "Guerreiro", color: "#c0392b" },
-  { id: "hero_2", sheet: "hero_2_sheet", attack: "hero_2_attack", name: "Arqueiro", color: "#3f9e4a", archer: true }, // rodada 104: no lugar do Marinheiro
-  { id: "hero_3", sheet: "hero_3_sheet", attack: "hero_3_attack", name: "Místico", color: "#8e44ad" },
+  { id: "hero_1", sheet: "hero_1_sheet", attack: "hero_1_attack", name: "Guerreiro", color: "#c0392b", sec: "escudo" }, // rodada 105: secundária
+  { id: "hero_2", sheet: "hero_2_sheet", attack: "hero_2_attack", name: "Arqueiro", color: "#3f9e4a", archer: true, sec: "flecha" }, // rodada 104: no lugar do Marinheiro
+  { id: "hero_3", sheet: "hero_3_sheet", attack: "hero_3_attack", name: "Místico", color: "#8e44ad", sec: "orbe" },
 ];
 // rodada 104: ícones (Blender) das peças novas do boneco: capacete, calça, botas e capa
 for (const k of ["item_helm_leather", "item_helm_iron", "item_helm_lumita", "item_pants_leather", "item_pants_iron", "item_pants_lumita",
@@ -305,3 +305,7 @@ for (const k of ["tool_bow", "item_arrows_wood", "item_arrows_iron", "item_arrow
 for (const k of ["res_herb", "res_flower", "res_moonlily", "res_crystalbloom", "herb_cut"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.2, 1.2]; }
 for (const k of ["item_herb", "item_flower_honey", "item_moonlily", "item_crystal_bloom", "tool_sickle"]) ASSETS[k] = `assets/flow/${k}.png`;
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_reap.png`; SPRITE_SIZE[`hero_${n}_reap`] = [3 * 1.45 * 1.5, 4 * 1.45 * 1.5]; }
+
+// rodada 105: ícones da secundária (escudos, orbes) e dos braceletes
+for (const k of ["item_shield_wood", "item_shield_iron", "item_shield_lumita", "item_orb_quartz", "item_orb_amber", "item_orb_lumita",
+  "item_bracelet_leather", "item_bracelet_iron", "item_bracelet_lumita", "item_book_apprentice", "item_book_amber", "item_book_lumita", "item_greatsword"]) ASSETS[k] = `assets/flow/${k}.png`;

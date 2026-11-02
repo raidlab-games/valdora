@@ -92,16 +92,34 @@ window.VD = (() => {
   };
   // rodada 104: munição do arqueiro (vai inteira para o espaço de munição; cada tiro gasta 1)
   Object.assign(ITEMS, {
-    "Flecha de madeira": { icon: "item_arrows_wood", price: 1, slot: "municao", rarity: "comum", bonus: {}, ammo: true, buy: 8, buyN: 10 },
-    "Flecha de ferro": { icon: "item_arrows_iron", price: 3, slot: "municao", rarity: "raro", bonus: { dmg: 1 }, ammo: true },
-    "Flecha de lumita": { icon: "item_arrows_lumita", price: 8, slot: "municao", rarity: "epico", bonus: { dmg: 2, acc: 2 }, ammo: true },
+    "Flecha de madeira": { icon: "item_arrows_wood", price: 1, slot: "municao", sec: "flecha", rarity: "comum", bonus: {}, ammo: true, buy: 8, buyN: 10 },
+    "Flecha de ferro": { icon: "item_arrows_iron", price: 3, slot: "municao", sec: "flecha", rarity: "raro", bonus: { dmg: 1 }, ammo: true },
+    "Flecha de lumita": { icon: "item_arrows_lumita", price: 8, slot: "municao", sec: "flecha", rarity: "epico", bonus: { dmg: 2, acc: 2 }, ammo: true },
+    // rodada 105: secundária do Guerreiro (escudo, aparece no braço) e do Místico (orbe, flutua junto da mão)
+    "Escudo de madeira": { icon: "item_shield_wood", price: 22, buy: 60, slot: "municao", sec: "escudo", rarity: "comum", bonus: { def: 2 }, look: ["shield", "#a8703e"] },
+    "Escudo de ferro": { icon: "item_shield_iron", price: 160, slot: "municao", sec: "escudo", rarity: "raro", bonus: { def: 4, acc: 1 }, look: ["shield", "#d0d4e0"] },
+    "Escudo de lumita": { icon: "item_shield_lumita", price: 650, slot: "municao", sec: "escudo", rarity: "epico", bonus: { def: 6, dmg: 1 }, look: ["shield", "#92eaf8"] },
+    "Orbe de quartzo": { icon: "item_orb_quartz", price: 22, buy: 60, slot: "municao", sec: "orbe", rarity: "comum", bonus: { acc: 2, dmg: 1 }, look: ["orb", "#f2d6e6"] },
+    "Orbe de âmbar": { icon: "item_orb_amber", price: 160, slot: "municao", sec: "orbe", rarity: "raro", bonus: { acc: 3, dmg: 2 }, look: ["orb", "#f0a040"] },
+    "Orbe de lumita": { icon: "item_orb_lumita", price: 650, slot: "municao", sec: "orbe", rarity: "epico", bonus: { acc: 4, dmg: 3 }, look: ["orb", "#78e0f6"] },
+    // livros do Místico (mesmo espaço do orbe): menos dano, mais defesa
+    "Tomo do aprendiz": { icon: "item_book_apprentice", price: 22, buy: 60, slot: "municao", sec: "orbe", rarity: "comum", bonus: { acc: 1, def: 2 }, look: ["book", "#9a5cc8"] },
+    "Grimório de âmbar": { icon: "item_book_amber", price: 160, slot: "municao", sec: "orbe", rarity: "raro", bonus: { acc: 2, def: 3, dmg: 1 }, look: ["book", "#b8502e"] },
+    "Códice de lumita": { icon: "item_book_lumita", price: 650, slot: "municao", sec: "orbe", rarity: "epico", bonus: { acc: 3, def: 4, dmg: 2 }, look: ["book", "#3c6eb4"] },
+    // rodada 105: braceletes (espaço próprio)
+    "Bracelete de couro": { icon: "item_bracelet_leather", price: 14, buy: 40, slot: "bracelete", rarity: "comum", bonus: { acc: 1, def: 1 } },
+    "Bracelete de ferro": { icon: "item_bracelet_iron", price: 140, slot: "bracelete", rarity: "raro", bonus: { def: 2, dmg: 1 } },
+    "Bracelete de lumita": { icon: "item_bracelet_lumita", price: 560, slot: "bracelete", rarity: "epico", bonus: { acc: 2, dmg: 2, def: 1 } },
   });
+  // rodada 105: o que vai na secundária de cada classe
+  const SEC = { escudo: { name: "Escudo", who: "Guerreiro", empty: "⛨" }, flecha: { name: "Flechas", who: "Arqueiro", empty: "➶" }, orbe: { name: "Orbe ou livro", who: "Místico", empty: "◉" } };
   // rodada 104: espaços do boneco que recebem itens da mochila (a arma e o peitoral são as peças forjadas na bigorna, em GEAR).
   // A munição só vale para arqueiros: o espaço aparece trancado até existir um arco no jogo.
   const EQUIP_SLOTS = {
     capacete: { name: "Capacete", empty: "⌒" }, armadura: { name: "Peitoral", empty: "▣" }, arma: { name: "Arma", empty: "⚔" }, amuleto: { name: "Amuleto", empty: "◇" }, calca: { name: "Calça", empty: "∏" },
     botas: { name: "Botas", empty: "▂" }, capa: { name: "Capa", empty: "▽" }, anel: { name: "Anel", empty: "○" },
-    municao: { name: "Munição", empty: "➶", archer: true }, // só o arqueiro equipa (flechas)
+    bracelete: { name: "Bracelete", empty: "◎" }, // rodada 105
+    municao: { name: "Secundária", empty: "◈", sec: true }, // rodada 105: escudo (Guerreiro), flechas (Arqueiro) ou orbe (Místico) — VD.SEC
   };
 
   // Recursos: nível exigido, XP, cargas (quantas vezes rende antes de esgotar) e tempo para voltar (s)
@@ -578,7 +596,8 @@ window.VD = (() => {
     casca: { name: "Casca grossa", acc: 0, dmg: 0, def: 4, ticks: 240, color: "#c8a070" },
   };
   const SHOP_ITEMS = ["Poção de vida", "Poção de força", "Poção de pedra", "Flecha de madeira", // rodada 104: flechas em maço de 10
-    "Túnica do guerreiro", "Capa de viagem", "Manto do místico", "Capuz do místico", "Roupa de caçador", "Chapéu de caçador"]; // e as roupas dos heróis
+    "Túnica do guerreiro", "Capa de viagem", "Manto do místico", "Capuz do místico", "Roupa de caçador", "Chapéu de caçador", // e as roupas dos heróis
+    "Escudo de madeira", "Orbe de quartzo", "Tomo do aprendiz", "Bracelete de couro"]; // rodada 105: secundárias e bracelete
 
   // Artesanato (aba "Criar" da mochila, em qualquer lugar). bag = aumenta a mochila em 4 espaços (uma vez cada)
   const CRAFT = {
@@ -604,16 +623,29 @@ window.VD = (() => {
     "Elmo de lumita": { mats: { "Barra de lumita": 3, "Fragmento ancestral": 1 }, lvl: 15, xp: 240 },
     "Grevas de lumita": { mats: { "Barra de lumita": 3, "Pele de lobo": 2 }, lvl: 15, xp: 240 },
     "Manto das ruínas": { mats: { "Fragmento ancestral": 2, "Pele de lobo": 3, "Coração de musgo": 1, "Lírio-da-lua": 2 }, lvl: 16, xp: 300 },
+    // rodada 105: escudos (Guerreiro), orbes (Místico) e braceletes
+    "Escudo de madeira": { mats: { "Madeira": 4, "Couro de javali": 1 }, lvl: 2, xp: 25, desc: "secundária do Guerreiro · +2 defesa" },
+    "Escudo de ferro": { mats: { "Barra de ferro": 3, "Madeira de carvalho": 1 }, lvl: 8, xp: 65, desc: "secundária do Guerreiro · +4 defesa, +1 acerto" },
+    "Escudo de lumita": { mats: { "Barra de lumita": 3, "Madeira de cedro": 1 }, lvl: 14, xp: 220, desc: "secundária do Guerreiro · +6 defesa, +1 dano" },
+    "Orbe de quartzo": { mats: { "Barra de bronze": 1, "Flor-de-mel": 2 }, lvl: 2, xp: 25, desc: "secundária do Místico · +2 acerto, +1 dano" },
+    "Orbe de âmbar": { mats: { "Âmbar antigo": 1, "Barra de ferro": 1, "Lírio-da-lua": 1 }, lvl: 9, xp: 70, desc: "secundária do Místico · +3 acerto, +2 dano" },
+    "Orbe de lumita": { mats: { "Barra de lumita": 2, "Flor de cristal": 2 }, lvl: 14, xp: 220, desc: "secundária do Místico · +4 acerto, +3 dano" },
+    "Tomo do aprendiz": { mats: { "Couro de javali": 2, "Erva-cidreira": 2 }, lvl: 2, xp: 25, desc: "secundária do Místico · +1 acerto, +2 defesa" },
+    "Grimório de âmbar": { mats: { "Âmbar antigo": 1, "Couro de javali": 2 }, lvl: 9, xp: 70, desc: "secundária do Místico · +2 acerto, +3 defesa, +1 dano" },
+    "Códice de lumita": { mats: { "Barra de lumita": 1, "Lírio-da-lua": 2, "Pele de lobo": 2 }, lvl: 14, xp: 220, desc: "secundária do Místico · +3 acerto, +4 defesa, +2 dano" },
+    "Bracelete de couro": { mats: { "Couro de javali": 2 }, lvl: 2, xp: 18 },
+    "Bracelete de ferro": { mats: { "Barra de ferro": 2, "Couro de javali": 1 }, lvl: 7, xp: 50 },
+    "Bracelete de lumita": { mats: { "Barra de lumita": 2, "Pele de lobo": 1 }, lvl: 13, xp: 180 },
   };
 
   // Baú no fim da cripta: moedas garantidas + sorteios
   // baú da Toca dos Lobos (rodada 11)
   const RIFT_CHEST = { coins: [400, 700], rolls: [["Fragmento cintilante", 1, 3, 6], ["Barra estelar", 0.6, 1, 2], ["Anel ancestral", 0.25], ["Coroa do Ancião", 0.1], ["Elixir do lobo", 0.6, 1, 2],
-    ["Botas de lumita", 0.15], ["Grevas de lumita", 0.1]] }; // rodada 82; rodada 104: peças de lumita
+    ["Botas de lumita", 0.15], ["Grevas de lumita", 0.1], ["Escudo de lumita", 0.08], ["Orbe de lumita", 0.08], ["Códice de lumita", 0.06], ["Bracelete de lumita", 0.1]] }; // rodada 82; rodada 104: peças de lumita; 105
   const DEN_CHEST = { coins: [90, 180], rolls: [["Pele de lobo", 1, 2, 4], ["Presa lunar", 0.6], ["Poção de vida", 0.6, 1, 2], ["Anel do caçador", 0.25], ["Âmbar antigo", 0.3], ["Capa do caçador", 0.12]] };
   const CRYPT_CHEST = { coins: [150, 300], rolls: [["Barra de aço", 1, 2, 3], ["Barra de lumita", 0.5, 1, 2], ["Poção de força", 0.6, 1, 2],
     ["Anel do caçador", 0.2], ["Amuleto de musgo", 0.15], ["Anel ancestral", 0.06], ["Coroa do Ancião", 0.03], ["Fragmento ancestral", 0.4],
-    ["Elmo de ferro", 0.15], ["Grevas de ferro", 0.12], ["Manto das ruínas", 0.03]] };
+    ["Elmo de ferro", 0.15], ["Grevas de ferro", 0.12], ["Manto das ruínas", 0.03], ["Escudo de ferro", 0.12], ["Orbe de âmbar", 0.12], ["Grimório de âmbar", 0.1], ["Bracelete de ferro", 0.15]] };
 
   // Falas curtas dos NPCs (aparecem em balões de tempos em tempos)
   const CHATTER = {
@@ -667,12 +699,12 @@ window.VD = (() => {
   const GEAR = {
     espada: { label: "Arma", icon: "tool_sword", skill: "combate", tiers: [
       { name: "Espada gasta", bow: "Arco gasto", acc: 0, dmg: 0 },
-      { name: "Espada de bronze", bow: "Arco de bronze", acc: 3, dmg: 1, cost: 40, req: 1, forge: { mats: { "Barra de bronze": 2 }, lvl: 1, xp: 20 } },
-      { name: "Espada de ferro", bow: "Arco de ferro", acc: 6, dmg: 2, cost: 180, req: 8, forge: { mats: { "Barra de ferro": 3 }, lvl: 8, xp: 55 } },
-      { name: "Espada de aço", bow: "Arco de aço", acc: 10, dmg: 4, cost: 900, req: 16, forge: { mats: { "Barra de aço": 3 }, lvl: 15, xp: 100 } },
-      { name: "Lâmina de lumita", bow: "Arco de lumita", acc: 15, dmg: 6, cost: 3000, req: 24, forge: { mats: { "Barra de lumita": 4 }, lvl: 22, xp: 200 } },
+      { name: "Espada de bronze", bow: "Arco de bronze", two: "Montante de bronze", acc: 3, dmg: 1, cost: 40, req: 1, forge: { mats: { "Barra de bronze": 2 }, lvl: 1, xp: 20 } },
+      { name: "Espada de ferro", bow: "Arco de ferro", two: "Montante de ferro", acc: 6, dmg: 2, cost: 180, req: 8, forge: { mats: { "Barra de ferro": 3 }, lvl: 8, xp: 55 } },
+      { name: "Espada de aço", bow: "Arco de aço", two: "Montante de aço", acc: 10, dmg: 4, cost: 900, req: 16, forge: { mats: { "Barra de aço": 3 }, lvl: 15, xp: 100 } },
+      { name: "Lâmina de lumita", bow: "Arco de lumita", two: "Montante de lumita", acc: 15, dmg: 6, cost: 3000, req: 24, forge: { mats: { "Barra de lumita": 4 }, lvl: 22, xp: 200 } },
       // rodada 82: nível 5 (estelar), só na forja, com 1–2 modificadores sorteados ao forjar (player.gearAff)
-      { name: "Lâmina estelar", bow: "Arco estelar", icon: "item_star_blade", acc: 20, dmg: 8, cost: 15000, req: 35, rolls: true, forge: { mats: { "Barra estelar": 4 }, lvl: 30, xp: 420 } }] },
+      { name: "Lâmina estelar", bow: "Arco estelar", two: "Montante estelar", icon: "item_star_blade", acc: 20, dmg: 8, cost: 15000, req: 35, rolls: true, forge: { mats: { "Barra estelar": 4 }, lvl: 30, xp: 420 } }] },
     armadura: { label: "Peitoral", icon: "item_armor", skill: "vitalidade", tiers: [
       { name: "Roupa comum", def: 0 },
       { name: "Gibão de couro", def: 3, cost: 50, req: 1, forge: { mats: { "Couro de javali": 3, "Barra de bronze": 1 }, lvl: 3, xp: 30 } },
@@ -696,6 +728,10 @@ window.VD = (() => {
     if (t.bow) ITEMS[t.bow] = { icon: "tool_bow", ...base, bow: true };
     // aparência no herói (js/outfit.js): [camada, cor de tinta ou null]
     if (k === "armadura") ITEMS[t.name].look = [["shirt", "#f0e6cc"], ["shirt", "#c08250"], ["plate", "#c4c8d4"], ["plate", "#f4f6fc"], ["plate", "#92eaf8"], ["plate", "#d6bcff"]][i];
+    // rodada 105: montante (duas mãos, só o Guerreiro): mais dano, mas sem escudo; forja com 50% a mais de metal
+    if (t.two) { ITEMS[t.two] = { icon: "item_greatsword", ...base, twoH: true, onlyHero: "hero_1", bonus: { dmg: [0, 2, 3, 4, 6, 7][i] },
+      look: ["sword2", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]] };
+      if (t.forge) t.twoForge = { ...t.forge, mats: Object.fromEntries(Object.entries(t.forge.mats).map(([m, n]) => [m, Math.ceil(n * 1.5)])), xp: Math.round(t.forge.xp * 1.3) }; }
     if (k === "espada") { ITEMS[t.name].look = ["sword", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]];
       if (t.bow) ITEMS[t.bow].look = ["bow", [null, "#f0b878", "#d8dce8", "#f6f8ff", "#96ecf8", "#dcc4ff"][i]]; }
   });
@@ -801,6 +837,6 @@ window.VD = (() => {
     { at: 10000, title: "Guardião da chama", color: "#ffa64a", perk: "nome cor de brasa e halo quente à noite", halo: "rgba(255,170,80,A)" },
     { at: 25000, title: "Lenda de Lumeira", color: "#8fe8ff", perk: "nome de lumita, halo ciano à noite e faíscas de cristal", halo: "rgba(110,230,255,A)", sparks: true }] };
 
-  return { EQUIP_SLOTS, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

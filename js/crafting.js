@@ -35,11 +35,12 @@ window.ValdoraCrafting = (() => {
         // rodada 104: cada peça forjada vai para a mochila; mostra o que já dá para forjar e os próximos níveis
         for (const [k, g] of Object.entries(GEAR)) g.tiers.forEach((t, i) => {
           const f = t.forge; if (!f || f.lvl > lvl + 7) return;
-          for (const bow of k === "espada" && t.bow ? [false, true] : [false]) {
-            const name = bow ? t.bow : t.name, lvOk = lvl >= f.lvl, mats = hasMats(f.mats);
-            const why = !lvOk ? `requer Ferraria ${f.lvl}` : !mats ? "faltam materiais" : "";
-            html += row(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${bow ? " · atira flechas" : ""} · ${esc(matsText(f.mats))} · ${lvOk ? "" : '<b class="lock">'}Ferraria ${f.lvl}${lvOk ? "" : "</b>"} · usar: ${SKILLS[g.skill]} ${t.req || 1}`, null,
-              `<button data-forge="${k}:${i}${bow ? ":bow" : ""}" ${!why ? "" : "disabled"} title="${why}">Forjar</button>`);
+          for (const v of k === "espada" ? ["", ...(t.bow ? ["bow"] : []), ...(t.two ? ["two"] : [])] : [""]) { // rodada 105: + montante
+            const ff = v === "two" ? t.twoForge : f, name = v === "bow" ? t.bow : v === "two" ? t.two : t.name, lvOk = lvl >= ff.lvl, mats = hasMats(ff.mats);
+            const why = !lvOk ? `requer Ferraria ${ff.lvl}` : !mats ? "faltam materiais" : "";
+            const extra = v === "bow" ? " · atira flechas" : v === "two" ? ` · duas mãos, +${ITEMS[name].bonus.dmg} dano, sem escudo · só o Guerreiro` : k === "espada" ? " · uma mão (deixa usar escudo)" : "";
+            html += row(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · ${esc(matsText(ff.mats))} · ${lvOk ? "" : '<b class="lock">'}Ferraria ${ff.lvl}${lvOk ? "" : "</b>"} · usar: ${SKILLS[g.skill]} ${t.req || 1}`, null,
+              `<button data-forge="${k}:${i}${v ? ":" + v : ""}" ${!why ? "" : "disabled"} title="${why}">Forjar</button>`);
           }
         });
         if (player.job && player.job.kind === "forge") html += `<p class="empty">Martelando... (${player.job.hits}/3)</p>`;

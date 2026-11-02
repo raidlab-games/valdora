@@ -78,9 +78,11 @@ window.ValdoraHud = (() => {
         // rodada 104: espaço do boneco. espada/armadura = peças forjadas (GEAR); o resto vem da mochila (VD.EQUIP_SLOTS)
         const dollSlot = (k) => {
           const S = VD.EQUIP_SLOTS[k], e = player.equip[k];
-          const bow = player.equip.arma && ITEMS[player.equip.arma.name].bow;
-          if (S.archer && !e && !bow) return `<div class="dslot empty locked" title="Munição: flechas para quem usa arco."><span class="q">${S.empty}</span><small>${S.name}</small></div>`;
-          if (S.archer && e) return `<div class="dslot" data-unequip="${k}" style="border-color:${itemColor(e.name)}" data-tip="${esc(itemTip(e, `${e.n} na aljava · clique para guardar`))}">${iconImg(e.name)}<i class="aff ammo">${e.n}</i><small>${S.name}</small></div>`;
+          // rodada 105: secundária pela classe (escudo, flechas, orbe ou livro); montante (duas mãos) tranca o escudo
+          const hs = S.sec && VD.SEC[(HEROES.find((h) => h.id === player.hero) || {}).sec], w = player.equip.arma && ITEMS[player.equip.arma.name];
+          if (S.sec && !e && w && w.twoH) return `<div class="dslot empty locked" title="${esc(player.equip.arma.name)} usa as duas mãos: sem escudo."><span class="q">${hs ? hs.empty : S.empty}</span><small>${S.name}</small></div>`;
+          if (S.sec && !e) return `<div class="dslot empty" title="${S.name}: ${hs ? esc(hs.name.toLowerCase()) : "vazio"} (equipe pela mochila)"><span class="q">${hs ? hs.empty : S.empty}</span><small>${S.name}</small></div>`;
+          if (S.sec && e && ITEMS[e.name].ammo) return `<div class="dslot" data-unequip="${k}" style="border-color:${itemColor(e.name)}" data-tip="${esc(itemTip(e, `${e.n} na aljava · clique para guardar`))}">${iconImg(e.name)}<i class="aff ammo">${e.n}</i><small>${S.name}</small></div>`;
           return `<div class="dslot${e ? "" : " empty"}" ${e ? `data-unequip="${k}" style="border-color:${e.aff ? "#ffd84a" : itemColor(e.name)}" data-tip="${esc(itemTip(e, "clique para guardar"))}"` : `title="${S.name}: vazio (equipe pela mochila)"`}>${e ? iconImg(e.name) + (e.aff || e.master ? `<i class="aff">${affBadges(e)}${e.master ? masterBadge(k === "armadura" ? "armadura" : ITEMS[e.name].gear) : ""}</i>` : "") : `<span class="q">${S.empty}</span>`}<small>${S.name}</small></div>`;
         };
         const st = combatStats();
@@ -88,7 +90,7 @@ window.ValdoraHud = (() => {
           <p class="desc">${esc(STYLES[player.style].desc)}${passiveHtml(STYLES[player.style])}</p>
           <button class="wide char-btn">Ficha do personagem (P)</button>
           <div class="stats"><span>Acerto <b>${st.acc}</b></span><span>Dano máx. <b>${st.maxHit}</b></span><span>Defesa <b>${st.def}</b></span><span>Vida máx. <b>${maxHp()}</b></span></div>
-          <div class="doll">${["capacete", "amuleto", "armadura", "calca", "botas"].map(dollSlot).join("")}<img class="dhero" src="${ValdoraOutfit.doll() || ASSETS[player.hero]}" alt="">${["capa", "arma", "municao", "anel"].map(dollSlot).join("")}</div>
+          <div class="doll">${["capacete", "amuleto", "armadura", "calca", "botas"].map(dollSlot).join("")}<img class="dhero" src="${ValdoraOutfit.doll() || ASSETS[player.hero]}" alt="">${["capa", "arma", "municao", "anel", "bracelete"].map(dollSlot).join("")}</div>
           ${Object.keys(VD.EQUIP_SLOTS).filter((k) => player.equip[k]).map((k) => { const e = player.equip[k]; // rodada 104: só as peças vestidas (as vazias aparecem no boneco)
             return `<div class="gear acc" data-unequip="${k}" data-tip="${esc(itemTip(e, "clique para guardar na mochila"))}">${iconImg(e.name)}<span style="color:${e.aff ? "#ffd84a" : itemColor(e.name)}">${esc(accName(e))}<small>${bonusText(accBonus(e))}</small></span>${affBadges(e)}</div>`; }).join("")}`;
       } else {

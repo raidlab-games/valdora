@@ -24,7 +24,7 @@ window.ValdoraShop = (() => {
         } else {
           html = (api.homeShop ? api.homeShop() : "") + SHOP_ITEMS.map((n) => { // rodada 100: escritura do lote e banco
             const it = ITEMS[n], B = it.buff && BUFFS[it.buff];
-            const sub = it.ammo ? `maço de ${it.buyN || 1} · munição do arqueiro` : it.slot ? `${VD.EQUIP_SLOTS[it.slot].name} · ${bonusText(it.bonus || {})}` : it.heal ? `cura ${it.heal}` : `${B.name}: ${[B.acc && `+${B.acc} acerto`, B.dmg && `+${B.dmg} dano`, B.def && `+${B.def} defesa`].filter(Boolean).join(", ")} por ${B.ticks * TICK} s`;
+            const sub = it.ammo ? `maço de ${it.buyN || 1} · secundária do Arqueiro` : it.sec ? `secundária do ${VD.SEC[it.sec].who} · ${bonusText(it.bonus || {})}` : it.slot ? `${VD.EQUIP_SLOTS[it.slot].name} · ${bonusText(it.bonus || {})}` : it.heal ? `cura ${it.heal}` : `${B.name}: ${[B.acc && `+${B.acc} acerto`, B.dmg && `+${B.dmg} dano`, B.def && `+${B.def} defesa`].filter(Boolean).join(", ")} por ${B.ticks * TICK} s`;
             return row(iconImg(n), esc(n) + (it.buyN ? ` x${it.buyN}` : ""), sub, it.buy, `<button data-buy="${esc(n)}" ${player.coins < it.buy ? "disabled" : ""}>Comprar</button>`); }).join("");
           // rodada 104: armas, ferramentas e peitorais à venda (vão para a mochila); o estelar só sai da bigorna
           for (const [k, g] of Object.entries(GEAR)) g.tiers.forEach((t, i) => {

@@ -41,6 +41,13 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   contorno vermelho; Ctrl + botão direito ataca esse monstro (`nearestMob`). Ctrl + botão esquerdo é um clique comum.
 - **Luta por clique:** um clique no monstro basta — o herói segue batendo até ele morrer, o herói morrer ou o jogador andar.
   Saiu o "revida sozinho": depois de matar, não puxa outro monstro sem um novo clique.
+- **Secundária por classe** (o antigo espaço de munição): o Guerreiro usa escudo (aparece no braço esquerdo), o Arqueiro, flechas,
+  e o Místico, orbe (flutua junto da mão) ou livro (na mão). 3 escudos, 3 orbes e 3 livros (comum/raro/épico) no Bento, no
+  Artesanato e nos baús; secundária de outra classe volta para a mochila ao carregar o save.
+- **Montantes (duas mãos):** só o Guerreiro; um por nível de espada (bronze a estelar), +2 a +7 de dano sobre a espada, forjados com
+  50% a mais de metal. Com montante não entra escudo (o escudo vai para a mochila); a espada de uma mão deixa usar escudo.
+  A troca automática de arma não pega montante enquanto houver escudo. Camadas novas no Blender: `shield`, `orb`, `book`, `sword2`.
+- **Bracelete:** espaço novo no boneco, com 3 peças (couro, ferro, lumita).
 - **Cartão do personagem no lugar do "Salvar e sair":** retrato com o equipamento atual (recorte do `ValdoraOutfit.face()`), nível
   total embaixo e ouro ao lado; clicar abre a ficha (P). O jogo já salva sozinho; "Voltar ao menu" ficou dentro das opções (⚙).
 - **Itens no chão:** passar por cima já pega (no meio do passo), não só parando no tile.
