@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vitrine 3D — Valdora</title>
+  <style>
+    :root { --bg: #14100b; --panel: #221a12; --line: #4a3a26; --text: #f3e6c8; --muted: #b8a27c; --accent: #ffcf5a; --stage: #4f6b3f; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px "Courier New", monospace; }
+    header { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    h1 { font-size: 18px; margin: 0 12px 0 0; color: var(--accent); }
+    .ctl { display: flex; gap: 8px; align-items: center; color: var(--muted); }
+    button, select { background: var(--panel); color: var(--text); border: 1px solid var(--line); padding: 5px 9px; font: inherit; cursor: pointer; border-radius: 3px; }
+    button.on { border-color: var(--accent); color: var(--accent); }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; min-height: calc(100vh - 60px); }
+    #list { padding: 12px 16px; overflow: auto; }
+    h2 { font-size: 13px; color: var(--muted); margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+    .card { background: var(--stage); border: 2px solid transparent; border-radius: 4px; cursor: pointer; text-align: center; padding: 4px 2px 6px; }
+    .card.sel { border-color: var(--accent); }
+    .card canvas { width: 110px; height: 110px; image-rendering: pixelated; display: block; margin: 0 auto; }
+    .card span { font-size: 11px; color: #f7f0dc; text-shadow: 0 1px 0 #000; }
+    aside { border-left: 1px solid var(--line); padding: 14px 16px; position: sticky; top: 0; align-self: start; }
+    #big { width: 328px; height: 328px; background: var(--stage); image-rendering: pixelated; border-radius: 4px; display: block; }
+    #rows { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    #info { color: var(--muted); margin-top: 8px; min-height: 2.6em; font-size: 12px; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } aside { border-left: 0; border-top: 1px solid var(--line); position: static; } #big { width: 100%; height: auto; aspect-ratio: 1; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Vitrine 3D</h1>
+    <div class="ctl">Velocidade <select id="speed"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></div>
+    <div class="ctl"><button id="flip">Olhar para a direita</button></div>
+    <div class="ctl">Todos tocam: <select id="allRow"><option value="idle">parado</option><option value="walk">andando</option><option value="attack">ataque</option><option value="death">morte</option></select></div>
+  </header>
+  <main>
+    <div id="list"></div>
+    <aside>
+      <canvas id="big" width="328" height="328"></canvas>
+      <div id="info"></div>
+      <div id="rows"></div>
+    </aside>
+  </main>
+  <script src="js/anim_data.js"></script>
+  <script src="js/anim3d_data.js"></script>
+  <script>
+  // Mostra as folhas de animação feitas no Blender (window.ANIM3D) tocando como no jogo.
+  const D = window.ANIM3D || {};
+  const NAMES = { hero_1: "Guerreiro", hero_2: "Marinheiro", hero_3: "Místico", npc_merchant: "Bento", npc_guard: "Ivo", npc_bard: "Tomé",
+    npc_juna: "Juna", npc_odilia: "Odília", npc_bras: "Brás", slime: "Slime", mob_slime_blue: "Slime azul", mob_slime_crystal: "Slime de lumita",
+    mob_boar: "Javali", mob_wolf: "Lobo sombrio", mob_wolf_alpha: "Lobo alfa", mob_wolf_moon: "Alfa da lua cheia", mob_goblin: "Goblin",
+    mob_goblin_boss: "Capataz Rasgo", mob_skeleton: "Esqueleto", mob_crypt_guardian: "Guardião da cripta", mob_boss_ruins: "Senhor das Ruínas",
+    mob_golem: "Golem de musgo", mob_boss_golem: "Golem Ancião", mob_lumita_colossus: "Colosso de lumita", mob_crystal_sentinel: "Sentinela de cristal",
+    mob_quartz_spider: "Aranha de quartzo", mob_light_wraith: "Espectro de luz", mob_boss_serpent: "Serpente de Lumita", mob_boss_serpent_echo: "Eco da Serpente" };
+  const ROWN = { idle: "parado", walk: "andando", attack: "ataque", hit: "dano", death: "morte", special: "especial", rise_up: "sai da terra",
+    enrage: "fúria", howl: "uivo", sleep: "dormindo", wake: "acorda", talk: "falando", thumbs: "joinha", salute: "continência", play: "tocando",
+    sit: "sentado", bow: "reverência", stand_up: "levanta", eat: "comendo", dash: "investida", block: "bloqueio", cancel: "cancela", cheer: "comemora",
+    cheer_walk: "comemora andando", strike: "golpe" };
+  // heróis: junta as folhas por direção (hero_N, _walk6, _dash...) numa lista de "linhas" para tocar
+  const groups = [["Heróis", ["hero_1", "hero_2", "hero_3"]], ["Moradores", ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras"]],
+    ["Monstros", Object.keys(D).filter((k) => k === "slime" || k.startsWith("mob_"))]];
+  const imgs = {}; const load = (src) => imgs[src] || (imgs[src] = Object.assign(new Image(), { src }));
+  function rowsOf(key) {
+    const out = [];
+    const EXTRA = ["_walk6", "_look", "_dash", "_block", "_cancel", "_cheer", "_strike4"]; // folhas extras de heróis e moradores
+    const sheets = [key, ...EXTRA.map((s) => key + s)].filter((k) => D[k]);
+    for (const k of sheets) for (const [r, R] of Object.entries(D[k].rows)) out.push({ name: r, sheet: D[k], R });
+    return out;
+  }
+  const pick = (rows, want) => rows.find((r) => r.name === want) || rows.find((r) => r.name === want + "_left") || rows.find((r) => r.name.startsWith(want)) || rows[0];
+  let speed = 1, flip = false, allRow = "idle", sel = null, selRow = null;
+  const cards = [];
+  function draw(cv, row, t) {
+    const g = cv.getContext("2d"), S = row.sheet, R = row.R, im = load(S.dressed || S.src); // heróis: com a roupa típica (a base é só o corpo) g.clearRect(0, 0, cv.width, cv.height);
+    if (!im.complete || !im.naturalWidth) return;
+    const n = R.frames, f = R.loop === false ? Math.min(n - 1, Math.floor(t * (R.fps || 8)) % (n + 6)) : Math.floor(t * (R.fps || 8)) % n;
+    const c = S.cell; g.imageSmoothingEnabled = false; g.save();
+    if (flip) { g.translate(cv.width, 0); g.scale(-1, 1); }
+    g.drawImage(im, Math.min(f, n - 1) * c, R.row * c, c, c, 0, 0, cv.width, cv.height); g.restore();
+  }
+  const list = document.getElementById("list");
+  for (const [title, keys] of groups) {
+    const h = document.createElement("h2"); h.textContent = title; list.appendChild(h);
+    const grid = document.createElement("div"); grid.className = "grid"; list.appendChild(grid);
+    for (const key of keys) {
+      if (!D[key]) continue;
+      const el = document.createElement("div"); el.className = "card";
+      const cv = document.createElement("canvas"); cv.width = cv.height = 110;
+      const sp = document.createElement("span"); sp.textContent = NAMES[key] || key;
+      el.append(cv, sp); grid.appendChild(el);
+      const rows = rowsOf(key), card = { key, cv, rows, el, t0: Math.random() * 3 };
+      el.onclick = () => select(card); cards.push(card);
+    }
+  }
+  function select(card) {
+    sel = card; cards.forEach((c) => c.el.classList.toggle("sel", c === card));
+    const box = document.getElementById("rows"); box.innerHTML = "";
+    for (const r of card.rows) {
+      const b = document.createElement("button"); const [base, dir] = [r.name.replace(/_(down|left|right|up)$/, ""), (r.name.match(/_(down|left|right|up)$/) || [])[1]];
+      b.textContent = (ROWN[base] || base) + (dir ? " · " + { down: "frente", left: "esq.", right: "dir.", up: "costas" }[dir] : "");
+      b.onclick = () => { selRow = r; t1 = 0; [...box.children].forEach((x) => x.classList.toggle("on", x === b)); info(); }; box.appendChild(b);
+    }
+    selRow = pick(card.rows, "idle"); t1 = 0; [...box.children][card.rows.indexOf(selRow)]?.classList.add("on"); info();
+  }
+  function info() {
+    const R = selRow.R; document.getElementById("info").textContent = `${NAMES[sel.key] || sel.key} — ${selRow.name}: ${R.frames} quadros a ${R.fps} fps` +
+      (R.impact != null ? `, dano no quadro ${R.impact + 1}` : "") + (R.loop === false ? " (toca uma vez e repete)" : "");
+  }
+  let last = performance.now(), t = 0, t1 = 0;
+  function loop(now) {
+    const dt = Math.min(0.1, (now - last) / 1000) * speed; last = now; t += dt; t1 += dt;
+    for (const c of cards) draw(c.cv, pick(c.rows, allRow), t + c.t0);
+    if (sel) draw(document.getElementById("big"), selRow, t1);
+    requestAnimationFrame(loop);
+  }
+  document.getElementById("speed").onchange = (e) => (speed = +e.target.value);
+  document.getElementById("allRow").onchange = (e) => (allRow = e.target.value);
+  document.getElementById("flip").onclick = (e) => { flip = !flip; e.target.classList.toggle("on", flip); };
+  select(cards.find((c) => c.key === "mob_wolf") || cards[0]);
+  requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

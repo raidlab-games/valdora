@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Valdora — RPG em pixel art</title>
+  <meta name="description" content="Valdora: um RPG 2D original em pixel art para navegador. Colete, forje, cozinhe, enfrente chefes e defenda Lumeira." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Lobby / site -->
+  <section id="lobby">
+    <div class="lobby-bg"></div>
+    <div id="fireflies"></div>
+    <header class="lobby-top">
+      <div class="brand"><h1>VALDORA</h1><span class="ver">v1.03</span><p class="sub">Um reino em pixel art para explorar, forjar e defender</p></div>
+      <nav id="lobby-nav">
+        <button data-page="play" class="on">Jogar</button><button data-page="how">Como jogar</button><button data-page="news">Novidades</button>
+      </nav>
+    </header>
+    <main class="lobby-main">
+      <div class="page" id="page-play">
+        <div class="card hero-card">
+          <canvas id="hero-preview" width="220" height="230"></canvas>
+          <div id="hero-title" class="hero-title"></div>
+          <p id="hero-desc" class="hero-desc"></p>
+          <small class="hero-note">A escolha é visual: todos começam com as mesmas habilidades.</small>
+        </div>
+        <div class="card form-card">
+          <div id="save-slot" hidden>
+            <div class="label">Continuar de onde parou</div>
+            <div id="save-info"></div>
+            <button id="continue">CONTINUAR</button>
+            <div class="or"><span>ou crie um novo aventureiro</span></div>
+          </div>
+          <label>Nome do aventureiro
+            <input id="name" maxlength="14" value="Aventureiro" autocomplete="off" />
+          </label>
+          <div class="label">Aparência</div>
+          <div id="heroes"></div>
+          <p id="new-warn" class="warn" hidden>Começar um novo jogo apaga o progresso salvo. Clique de novo para confirmar.</p>
+          <button id="play">COMEÇAR AVENTURA</button>
+          <p class="hint">WASD / setas para andar · clique para interagir · o Guarda Ivo ensina o resto</p>
+          <div id="lobby-tip" class="lobby-tip" title="Clique para outra dica"></div>
+        </div>
+      </div>
+      <div class="page" id="page-how" hidden></div>
+      <div class="page news-list" id="page-news" hidden></div>
+    </main>
+    <footer class="lobby-foot">Jogo original em desenvolvimento · arte criada para o projeto · sons e música sintetizados pelo próprio jogo · progresso salvo no navegador</footer>
+  </section>
+
+  <!-- Jogo -->
+  <section id="game" hidden>
+    <canvas id="canvas"></canvas>
+    <img id="lowhp" alt="" hidden>
+    <div id="hud">
+      <canvas id="minimap" width="192" height="144" title="Clique para andar até o ponto"></canvas>
+      <div id="player-info"></div>
+      <button id="quest" hidden title="Abrir o diário"></button>
+      <div id="event" hidden></div>
+      <button id="hud-toggle" title="Mostrar ou ocultar mapa e painel (telas pequenas)">▾ Ocultar painel</button>
+      <div id="panel">
+        <div class="tabs">
+          <button data-tab="inv" class="on"><img class="tabicon" src="assets/ui/icon_tab_bag_flow.png" alt="">Mochila</button>
+          <button data-tab="skills"><img class="tabicon" src="assets/ui/icon_tab_levels_flow.png" alt="">Níveis</button>
+          <button data-tab="combat"><img class="tabicon" src="assets/flow/item_armor.png" alt="">Equip.</button>
+          <button data-tab="journal"><img class="tabicon" src="assets/flow/icon_journal_quests.png" alt="">Diário</button>
+        </div>
+        <div id="tab-inv"></div>
+        <div id="tab-skills" hidden></div>
+        <div id="tab-combat" hidden></div>
+        <div id="tab-journal" hidden></div>
+      </div>
+    </div>
+    <div id="banner"></div>
+    <div id="levelup"></div>
+    <div id="toasts"></div>
+    <div id="xpdrop"></div>
+    <div id="bossbar" hidden></div>
+    <div id="log"></div>
+    <div id="scene" hidden role="dialog" aria-live="polite"><img id="scene-portrait" alt=""><div class="scene-box"><b id="scene-name"></b><p id="scene-text"></p>
+      <span id="scene-more">▼</span><small class="scene-help"><span id="scene-step"></span> · clique, Espaço ou F para seguir</small><button id="scene-skip" title="Pular a cena (Esc)">Pular ⏭</button></div></div>
+    <div id="dlg" hidden>
+      <div class="dlg-head"><b id="dlg-title"></b><span id="dlg-coins"></span><button id="dlg-close" title="Fechar (Esc)">✕</button></div>
+      <p id="dlg-talk" class="talk"></p>
+      <div id="dlg-tabs" class="tabs"></div>
+      <div id="dlg-body"></div>
+    </div>
+    <button id="exit">Salvar e sair</button>
+    <div id="skillbar"></div>
+    <div id="fhint" hidden></div>
+    <div id="touch-btns" hidden><button id="touch-help" title="Dica do Ivo">?</button><button id="touch-eat" title="Comer (1)">✚</button><button id="touch-attack" title="Atacar o mais próximo (Espaço)">⚔</button></div>
+    <button id="opt-btn" title="Opções (som, tremor de tela)">⚙</button>
+    <div id="options" hidden>
+      <b>Opções</b>
+      <label>Efeitos <input id="opt-sfx" type="range" min="0" max="1" step="0.05"></label>
+      <label>Música <input id="opt-music" type="range" min="0" max="1" step="0.05"></label>
+      <label class="check"><input id="opt-shake" type="checkbox"> Tremor de tela</label>
+      <label>Zoom do mundo <select id="opt-zoom"><option value="auto">Automático</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option></select></label>
+      <label>Interface <select id="opt-ui"><option value="auto">Automática</option><option value="1">Normal (1×)</option><option value="2">Dobro (2×)</option></select></label>
+      <small id="opt-keys">Teclado: Tab vai para botões, abas e a mochila (setas andam entre os espaços, Enter usa) · Esc fecha janelas.</small>
+      <small>Atalhos: I mochila · K níveis · C equipamento · J/M diário e missões · P ficha · O artesanato · 1 comida · 2-4 poções · Espaço ataca o monstro mais próximo · Q/E/R habilidades · F usar/conversar com o que está perto · G o filhote fica/segue</small>
+      <small>Sons e música são sintetizados pelo próprio jogo.</small>
+    </div>
+  </section>
+
+  <script src="js/assets.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/terrain.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/path.js"></script>
+  <script src="js/fx.js"></script>
+  <script src="js/ambient.js"></script>
+  <script src="js/lighting.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/anim_data.js"></script>
+  <script src="js/anim3d_data.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/quests.js"></script>
+  <script src="js/dialogs.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/hud.js"></script>
+  <script src="js/mobs.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/crafting.js"></script>
+  <script src="js/gather.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/pointer.js"></script>
+  <script src="js/camera.js"></script>
+  <script src="js/actors.js"></script>
+  <script src="js/outfit.js"></script>
+  <script src="js/hero.js"></script>
+  <script src="js/scenery.js"></script>
+  <script src="js/overlay.js"></script>
+  <script src="js/events.js"></script>
+  <script src="js/shrine.js"></script>
+  <script src="js/dlgactions.js"></script>
+  <script src="js/daily.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/scene.js"></script>
+  <script src="js/campaign.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/lobby.js"></script>
+</body>
+</html>

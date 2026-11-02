@@ -1,0 +1,633 @@
+* { box-sizing: border-box; }
+:root { --wood: #1b1610; --wood-2: #0f0c08; --edge: #6b4f2a; --edge-dim: #3a2a16; --gold: #f1c40f; --text: #f3e6c8; }
+html, body { margin: 0; height: 100%; background: #0c0c0c; color: var(--text); font-family: "Valdora Pixel", "Courier New", monospace; overflow: hidden;
+  -webkit-font-smoothing: none; font-smooth: never; } /* rodada 79: fonte em pixel art (nítida em 12/24/36 px) */
+[hidden] { display: none !important; }
+img { image-rendering: pixelated; }
+button { font: inherit; color: inherit; }
+
+/* ---------- Lobby / site ---------- */
+#lobby { position: fixed; inset: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 18px 16px 12px; }
+.lobby-bg { position: fixed; inset: -4%; z-index: -2; background: url("../assets/flow/title_bg.jpg") center / cover no-repeat; image-rendering: pixelated;
+  animation: kenburns 40s ease-in-out infinite alternate; }
+.lobby-bg::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 30%, #0000 0%, #0c0c0c99 60%, #0c0c0cf0 100%), linear-gradient(#0c0c0c40, #0c0c0cb0); }
+@keyframes kenburns { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.08) translate(-1.5%, -1%); } }
+#fireflies { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+#fireflies span { position: absolute; width: 3px; height: 3px; background: #ffe98a; box-shadow: 0 0 6px 2px #ffd84a88; animation: firefly 12s ease-in-out infinite; opacity: 0; }
+@keyframes firefly { 0% { opacity: 0; transform: translate(0, 0); } 20% { opacity: .9; } 50% { transform: translate(30px, -40px); opacity: .5; }
+  80% { opacity: .9; } 100% { opacity: 0; transform: translate(-20px, -90px); } }
+.lobby-top { width: min(900px, 100%); display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.brand h1 { display: inline-block; margin: 0; font-size: 52px; letter-spacing: 8px; color: var(--gold); text-shadow: 4px 4px 0 #6b2f00, 0 0 24px #f1c40f55; }
+/* rodada 39: faixa de tecido atrás do título (área lisa ~120–520 × 20–92 de 640 × 120); sombra escura de 2 px para ler sobre o vermelho */
+.brand h1.banner { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: min(440px, 100%); aspect-ratio: 640 / 120;
+  padding: 0 18.75% 2.5%; background: url("../assets/flow/deco_lobby_banner.png") center / 100% 100% no-repeat; image-rendering: pixelated;
+  font-size: 36px; letter-spacing: 6px; text-shadow: 2px 2px 0 #1a0700; }
+/* rodada 40: faixa ondulando (fx_banner_wave: 8 quadros de 640 × 120 lado a lado, 6 fps); a estática fica como reserva */
+.brand h1.banner.wave { background-image: var(--wave); background-size: 800% 100%; background-position: 0 0; animation: banner-wave 1.333s steps(8, jump-none) infinite; }
+@keyframes banner-wave { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+@media (prefers-reduced-motion: reduce) { .brand h1.banner.wave { animation: none; } }
+/* plaquinha da versão pendurada na ponta direita da faixa (texto escuro ~11 px) */
+.brand { position: relative; }
+.brand .ver.tag { position: absolute; margin: 0; width: 64px; height: 24px; /* left/top vêm do lobby.js (ponta direita da faixa) */
+  box-sizing: border-box; padding: 7px 0 0; border: 0; background: url("../assets/flow/icon_version_tag.png") center / 100% 100% no-repeat; image-rendering: pixelated;
+  color: #2a1a0c; font-size: 12px; font-weight: bold; text-align: center; line-height: 1; }
+.brand.has-tag .sub { margin-top: 24px; } /* espaço para a plaquinha pendurada */
+.brand .ver-hook { position: absolute; width: 16px; height: 16px; image-rendering: pixelated; pointer-events: none; } /* rodada 41 */
+@media (min-resolution: 2dppx) { .brand .ver.tag { background-image: url("../assets/flow/icon_version_tag_2x.png"); } }
+.brand .ver { display: inline-block; vertical-align: top; margin: 8px 0 0 8px; font-size: 12px; padding: 2px 6px; border: 2px solid var(--gold); color: var(--gold); background: #0008; }
+.brand .sub { margin: 4px 0 0; opacity: .85; font-size: 12px; text-shadow: 1px 1px 0 #000; }
+#lobby-nav { display: flex; gap: 6px; }
+#lobby-nav button { background: #1b1610d0; border: 2px solid var(--edge); padding: 8px 14px; cursor: pointer; font-weight: bold; letter-spacing: 1px; }
+#lobby-nav button.on { border-color: var(--gold); color: var(--gold); background: #2a2010e8; }
+#lobby-nav button:hover { border-color: var(--gold); }
+.lobby-main { width: min(900px, 100%); flex: 1; }
+.page { animation: pageIn .3s ease-out; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(8px); } }
+#page-play { display: grid; grid-template-columns: 300px 1fr; gap: 16px; align-items: start; }
+.card { background: #1b1610e8; border: 3px solid var(--edge); box-shadow: 0 0 0 3px #000, 0 10px 40px #000a; padding: 18px; }
+.hero-card { text-align: center; }
+#hero-preview { width: 220px; height: 230px; image-rendering: pixelated; display: block; margin: 0 auto; }
+.hero-title { font-size: 24px; font-weight: bold; color: var(--gold); letter-spacing: 2px; text-shadow: 2px 2px 0 #000; }
+.hero-desc { font-size: 12px; opacity: .85; min-height: 42px; margin: 6px 0; }
+.hero-note { font-size: 12px; opacity: .5; }
+.form-card { text-align: center; }
+label, .label { display: block; text-align: left; font-size: 12px; margin: 12px 0 6px; opacity: .85; }
+input { width: 100%; margin-top: 6px; padding: 10px; background: var(--wood-2); color: inherit; border: 2px solid var(--edge); font: inherit; }
+input:focus { outline: none; border-color: var(--gold); }
+/* rodada 39: foco visível no teclado e ícone do Continuar */
+button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:focus-visible, .slot:focus-visible { outline: 2px solid #ffd84a; outline-offset: 2px; }
+.btn-icon { width: 24px; height: 24px; vertical-align: middle; margin-right: 8px; image-rendering: pixelated; }
+@media (max-width: 480px) { /* alvos de toque de pelo menos 44 px (fechar janela, abas e botões das janelas) */
+  #dlg-close { min-width: 44px; min-height: 44px; }
+  #panel .tabs button, #dlg-tabs button { min-height: 44px; }
+  #dlg .row button { min-height: 40px; min-width: 44px; }
+  .bank-head button { min-height: 44px; } /* rodada 44 */
+}
+#heroes { display: flex; gap: 10px; justify-content: center; }
+.hero { flex: 1; background: var(--wood-2); border: 2px solid var(--edge-dim); padding: 8px 4px; cursor: pointer; font-size: 12px; transition: transform .12s; }
+.hero:hover { transform: translateY(-2px); border-color: var(--edge); }
+.hero img { width: 56px; height: 56px; display: block; margin: 0 auto 4px; }
+.hero.sel { border-color: var(--gold); background: #2a2010; box-shadow: 0 0 12px #f1c40f44; }
+#play, #exit, #continue { margin-top: 18px; width: 100%; padding: 13px; font-size: 24px; font-weight: bold; letter-spacing: 3px;
+  background: #c97a1a; color: #1b0f00; border: 3px solid #000; box-shadow: inset -3px -3px 0 #8a4f0a, 0 4px 0 #000; cursor: pointer; transition: transform .08s, background .12s; }
+#play:hover, #continue:hover { background: #e08d25; transform: translateY(-1px); }
+#play:active, #continue:active { transform: translateY(2px); box-shadow: inset -3px -3px 0 #8a4f0a; }
+#play.secondary { background: #6b5636; box-shadow: inset -3px -3px 0 #3f321e, 0 4px 0 #000; color: var(--text); font-size: 12px; }
+#save-slot { margin-bottom: 4px; }
+#save-info { display: flex; gap: 12px; align-items: center; text-align: left; font-size: 12px; line-height: 1.5;
+  /* rodada 38: pergaminho (área de texto ~40–280 px × 14–82 px de 320 × 96) com texto escuro */
+  background: url("../assets/flow/icon_save_card_bg.png") center / 100% 100% no-repeat; border: 0; padding: 4.5% 12.5%; min-height: 96px; color: #3a2a16; image-rendering: pixelated; }
+#save-info b { color: #3a2a16; } #save-info .save-achs { color: #7a4a10; }
+#save-info img { width: 56px; height: 56px; }
+#save-info small { opacity: .75; }
+@media (max-width: 480px) { #save-info { padding: 24px 11% 22px; font-size: 12px; gap: 8px; } #save-info small.saved { display: none; } #save-info > img { width: 44px; height: 44px; } .save-achs span:nth-child(n+3) { display: none; } } /* rodada 38: celular */
+#continue { margin-top: 10px; background: #3f8f3a; box-shadow: inset -3px -3px 0 #24601f, 0 4px 0 #000; color: #071a05; }
+#continue:hover { background: #4fa648; }
+.or { display: flex; align-items: center; gap: 8px; margin: 16px 0 2px; font-size: 12px; opacity: .6; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 2px dashed var(--edge-dim); }
+.warn { color: #ff9a7a; font-size: 12px; margin: 12px 0 0; }
+.hint { font-size: 12px; opacity: .55; margin-top: 14px; }
+.how-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.how-grid .card b { color: var(--gold); font-size: 12px; }
+.how-grid .card p { font-size: 12px; line-height: 1.5; opacity: .9; margin: 8px 0 0; }
+.news-list { display: flex; flex-direction: column; gap: 14px; }
+.news-h { display: flex; align-items: center; gap: 10px; }
+.news-h b { font-size: 12px; }
+.tag { padding: 2px 8px; border: 2px solid var(--edge); background: var(--wood-2); font-size: 12px; }
+.news.latest .tag { border-color: var(--gold); color: var(--gold); }
+.news ul { margin: 10px 0 0; padding-left: 20px; font-size: 12px; line-height: 1.6; }
+.lobby-foot { width: min(900px, 100%); text-align: center; font-size: 12px; opacity: .5; margin-top: 16px; text-shadow: 1px 1px 0 #000; }
+@media (max-width: 720px) {
+  #page-play { grid-template-columns: 1fr; }
+  .form-card { order: -1; }
+  .brand h1 { font-size: 38px; letter-spacing: 5px; }
+  .brand h1.banner { font-size: clamp(20px, 7vw, 30px); letter-spacing: 3px; max-width: 100%; } /* rodada 39: a faixa encolhe pela largura */
+  .brand .ver.tag { position: static; display: inline-block; vertical-align: middle; margin: 2px 0 0; } /* rodada 40: no celular, logo abaixo da faixa */
+  .brand .ver-hook { display: none; } .brand.has-tag .sub { margin-top: 4px; }
+  .lobby-top { justify-content: center; text-align: center; }
+  #hero-preview { width: 160px; height: 168px; }
+}
+
+/* ---------- HUD ---------- */
+#game { position: fixed; inset: 0; }
+#canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+/* rodada 47: moldura vermelha com a vida abaixo de 30% (pulsa entre 0,45 e 0,8; parada em 0,6 com "reduzir movimento": a arte já é suave e 0,45 sumia na grama) */
+#game > :not(#canvas):not(#lowhp) { z-index: 2; } /* a interface fica acima da moldura */
+#lowhp { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: fill; pointer-events: none; opacity: .5; animation: lowhp 1.1s ease-in-out infinite alternate; }
+@keyframes lowhp { from { opacity: .45; } to { opacity: .8; } }
+@media (prefers-reduced-motion: reduce) { #lowhp { animation: none; opacity: .6; } }
+#hud { position: absolute; top: 10px; right: 10px; width: 220px; display: flex; flex-direction: column; gap: 6px; font-size: 12px;
+  max-height: calc(100% - 20px); }
+#hud > * { background: #1b1610ee; border: 2px solid var(--edge); }
+#minimap { width: 100%; aspect-ratio: 4 / 3; height: auto; display: block; image-rendering: pixelated; cursor: crosshair; padding: 0; }
+#player-info { padding: 6px 8px; }
+.who { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.who span { font-size: 12px; opacity: .85; white-space: nowrap; }
+/* rodada 49: moedas, hora e cesto não quebram; a região encolhe com reticências (nome inteiro no title) */
+.who .reg { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; }
+/* rodada 93: nome da região quebra em duas linhas em vez da reticência ("Ruínas Esquecidas" cortava 8 px) */
+.who .reg, .who .reg .rname { white-space: normal; text-overflow: clip; line-height: 1.15; }
+/* rodada 48: cesto quase vazio (1 comida ou menos fora da vila) */
+.who .foodlow { display: inline-flex; align-items: center; gap: 2px; color: #ffae4a; font-weight: bold; opacity: 1; cursor: help; }
+.who .foodlow img { width: 20px; height: 20px; image-rendering: pixelated; }
+.coins { display: flex; align-items: center; gap: 3px; color: var(--gold); font-weight: bold; opacity: 1 !important; font-size: 12px !important; }
+.coins img { width: 18px; height: 18px; }
+.reg { text-align: right; }
+.bar { position: relative; height: 8px; background: #000; margin: 4px 0; border: 1px solid #000; }
+.bar > i { display: block; height: 100%; background: #c0392b; }
+.bar.hp { height: 14px; }
+.bar.hp > i { background: linear-gradient(#e0533f, #a52a1c); }
+.bar.hp em { position: absolute; inset: 0; font-style: normal; font-size: 12px; line-height: 12px; text-align: center; text-shadow: 1px 1px 0 #000; }
+.bar.xp { height: 5px; margin: 2px 0 0; grid-column: 1 / -1; }
+.bar.xp > i { background: #4b9fd1; }
+#panel { display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: flex; }
+.tabs button { flex: 1; background: var(--wood-2); border: 0; border-bottom: 2px solid var(--edge); padding: 5px 2px; font-size: 12px; cursor: pointer; opacity: .7; }
+.tabs button.on { background: #2a2010; opacity: 1; color: var(--gold); border-bottom-color: var(--gold); }
+#tab-inv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px; }
+.slot { position: relative; aspect-ratio: 1; background: var(--wood-2); border: 1px solid var(--edge-dim); display: grid; place-items: center; }
+.slot[data-i] { cursor: pointer; }
+.slot[data-i]:hover { border-color: var(--gold); }
+.slot.rare { border-color: #c56ad8; box-shadow: inset 0 0 8px #c56ad877; }
+.slot img { width: 80%; height: 80%; }
+.slot span { position: absolute; left: 3px; bottom: 1px; /* rodada 31: embaixo (em cima ficam cura e frigideira) */ font-size: 12px; font-weight: bold; color: #ffe680; text-shadow: 1px 1px 0 #000, -1px 0 0 #000; }
+#tab-skills { padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+.skill { display: grid; grid-template-columns: 1fr auto; font-size: 12px; }
+.skill b { color: var(--gold); }
+#tab-combat { padding: 6px 8px; font-size: 12px; }
+.styles { display: flex; gap: 3px; }
+.styles button { flex: 1; font-size: 12px; padding: 5px 0; background: var(--wood-2); border: 1px solid var(--edge-dim); cursor: pointer; }
+.styles button.on { border-color: var(--gold); color: var(--gold); background: #2a2010; }
+.desc { margin: 5px 0; opacity: .7; font-size: 12px; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 8px; margin-bottom: 6px; }
+.stats b { color: var(--gold); }
+.gear { display: flex; align-items: center; gap: 6px; padding: 2px 0; border-top: 1px solid #ffffff10; }
+.gear img { width: 22px; height: 22px; }
+
+#log { position: absolute; left: 10px; bottom: 10px; width: min(420px, calc(100% - 250px)); max-height: 168px; overflow: hidden;
+  background: #1b1610cc; border: 2px solid var(--edge); padding: 6px 8px; font-size: 12px; display: flex; flex-direction: column-reverse; pointer-events: none; }
+#log div { padding: 1px 0; }
+#log div:first-child { animation: logIn .25s ease-out; }
+#log .gold { color: var(--gold); }
+#log .rare { color: #ff9cf0; font-weight: bold; }
+#log .warn { color: #ff9a7a; }
+#log .dim { opacity: .65; }
+@keyframes logIn { from { opacity: 0; transform: translateX(-8px); } }
+#exit { position: absolute; top: 10px; left: 10px; width: auto; margin: 0; font-size: 12px; padding: 6px 10px; letter-spacing: 1px; }
+
+#banner { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; opacity: 0;
+  font-size: 24px; font-weight: bold; letter-spacing: 3px; color: var(--gold); text-shadow: 3px 3px 0 #000, 0 0 12px #000; white-space: nowrap; }
+#banner small { display: block; font-size: 12px; letter-spacing: 1px; color: var(--text); }
+#banner small.danger { color: #ffb347; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; } /* rodada 31 */
+#banner small.danger img { width: 32px; height: 32px; }
+@media (max-width: 480px) { /* rodada 32: no celular a linha do perigo quebra em duas em vez de sair da tela */
+  #banner { left: 12px; transform: none; font-size: 24px; letter-spacing: 2px; text-align: left; } /* à esquerda: a coluna do HUD fica à direita */
+  #banner small.danger { white-space: normal; width: calc(100vw - 180px); font-size: 12px; text-align: left; justify-content: flex-start; }
+  #banner.show.show { animation-name: bannerM; } /* .show.show: vence a regra geral que vem depois */
+  #banner small.danger img { width: 26px; height: 26px; flex: none; }
+}
+#banner.show { animation: banner 3.2s ease-out forwards; }
+#banner.high { top: 9%; } /* rodada 93: com NPC perto do herói, o letreiro sobe para não cobrir o rosto dele */
+@keyframes banner { 0% { opacity: 0; transform: translate(-50%, 10px); } 12%, 70% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; } }
+@keyframes bannerM { 0% { opacity: 0; transform: translate(0, 10px); } 12%, 70% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; } } /* rodada 32: celular */
+
+/* ---------- Janelas (loja, guarda, cofre, fornalha, bigorna) ---------- */
+#dlg { position: absolute; left: 10px; top: 50px; width: min(360px, calc(100% - 20px)); max-height: calc(100% - 240px); min-height: 220px;
+  display: flex; flex-direction: column; background: var(--wood); border: 3px solid var(--edge); box-shadow: 0 0 0 3px #000, 0 10px 40px #000c; font-size: 12px; }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 2px solid var(--edge); }
+.dlg-head b { flex: 1; color: var(--gold); font-size: 12px; }
+#dlg-coins { display: flex; align-items: center; gap: 4px; color: var(--gold); font-weight: bold; }
+#dlg-coins img { width: 18px; height: 18px; }
+#dlg-close { background: none; border: 1px solid var(--edge); cursor: pointer; padding: 2px 7px; }
+.talk { margin: 8px 10px; font-size: 12px; opacity: .75; font-style: italic; }
+#dlg .tabs button { font-size: 12px; padding: 7px; }
+#dlg-body { overflow-y: auto; padding: 6px 8px 10px; }
+.row { display: flex; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px solid #ffffff10; }
+.row img { width: 28px; height: 28px; }
+.row .grow { flex: 1; line-height: 1.2; }
+.row small { opacity: .65; font-size: 12px; }
+.price { color: var(--gold); min-width: 40px; text-align: right; }
+.price::after { content: " ●"; font-size: 12px; vertical-align: 2px; }
+.row button, .wide { background: #3a2a16; border: 2px solid #000; box-shadow: inset -2px -2px 0 #24190c; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.row button:hover:not(:disabled), .wide:hover { background: #5a4020; }
+.row button:disabled { opacity: .35; cursor: not-allowed; }
+.wide { width: 100%; margin-top: 8px; padding: 8px; }
+.empty { opacity: .65; font-size: 12px; text-align: center; padding: 12px 4px; }
+
+@media (max-width: 700px) {
+  #hud { width: 168px; font-size: 12px; }
+  #log { width: calc(100% - 196px); max-height: 120px; font-size: 12px; }
+  #banner { font-size: 24px; }
+}
+@media (max-width: 480px) {
+  #hud { width: 140px; }
+  #log { width: calc(100% - 20px); bottom: 74px; max-height: 66px; } /* rodada 66: acima da barra de habilidades (antes ficava por baixo dela) */
+  #minimap { display: none; }
+}
+
+/* ---------- Rodada 2: tarefa, diário, cofre, chefe ---------- */
+#quest { text-align: left; padding: 6px 8px; font-size: 12px; color: var(--text); cursor: pointer; line-height: 1.3; border-color: #3f8f3a !important; }
+#quest small { display: block; color: #7dff9a; font-size: 12px; letter-spacing: 1px; }
+#quest b { color: var(--gold); float: right; }
+#panel .tabs button { font-size: 12px; padding: 5px 0; }
+#tab-journal { padding: 6px 8px; overflow-y: auto; max-height: 300px; font-size: 12px; }
+.journal-h { color: var(--gold); font-weight: bold; margin-bottom: 4px; }
+.beast { display: flex; gap: 6px; align-items: flex-start; padding: 4px 0; border-top: 1px solid #ffffff10; }
+.beast img { width: 34px; height: 34px; object-fit: contain; transform: scaleX(-1); flex: none; }
+.beast small { opacity: .7; }
+.beast.unknown { opacity: .55; }
+.beast .q { width: 34px; height: 34px; display: grid; place-items: center; background: var(--wood-2); border: 1px solid var(--edge-dim); flex: none; }
+.beast .bwhere { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+.beast .resp { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: #9fe39a; }
+.beast .resp.dim { color: #c9b98a; }
+.beast .resp.none { color: #ffffff70; }
+.beast img.ricon { width: 14px; height: 14px; transform: none; image-rendering: auto; }
+.beast .btag { font-size: 12px; padding: 0 4px; border: 1px solid #c79bff; color: #c79bff; border-radius: 3px; vertical-align: 1px; }
+.beast .btag.boss { border-color: var(--gold); color: var(--gold); }
+.drops { display: flex; flex-wrap: wrap; gap: 2px 6px; margin-top: 2px; }
+.drops span { font-size: 12px; opacity: .85; }
+.drops .r { color: #ff9cf0; }
+.drops .u { opacity: .4; }
+.quest-card { background: var(--wood-2); border: 2px solid #3f8f3a; padding: 8px; }
+.quest-card p { margin: 4px 0 6px; }
+.quest-card small { opacity: .75; }
+#dlg .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; margin: 4px 0 8px; }
+#dlg .grid .slot img { width: 80%; height: 80%; }
+#dlg .grid .slot[data-dep], #dlg .grid .slot[data-wd] { cursor: pointer; }
+#dlg .grid .slot[data-dep]:hover, #dlg .grid .slot[data-wd]:hover { border-color: var(--gold); }
+.bank-head { display: flex; justify-content: space-between; align-items: center; color: var(--gold); font-size: 12px; margin-top: 4px; }
+.bank-head button { background: #3a2a16; border: 2px solid #000; padding: 3px 6px; cursor: pointer; font-size: 12px; color: var(--text); display: inline-flex; align-items: center; gap: 4px; }
+.bank-head button img { width: 20px; height: 20px; image-rendering: pixelated; } /* rodada 42 */
+#bank-filter { flex: 1; min-width: 60px; margin: 0 6px; padding: 3px 6px 3px 22px; font-size: 12px; /* rodada 43; rodada 44: lupa dentro do campo */
+  background: var(--wood-2) url("../assets/flow/icon_filter.png") 4px 50% / 16px 16px no-repeat; background-image: image-set(url("../assets/flow/icon_filter.png") 1x, url("../assets/flow/icon_filter_32.png") 2x); }
+.bank-head { flex-wrap: wrap; gap: 4px; } .bank-head small { margin-right: auto; } #bank-filter { order: 3; flex-basis: 100%; margin: 2px 0 0; } /* rodada 44: filtro na linha de baixo (a janela tem 360 px) */
+.grid.bank .slot.filtered { opacity: .15; pointer-events: none; }
+.slot img, .row img { object-fit: contain; }
+#bossbar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: min(420px, calc(100% - 300px)); text-align: center;
+  color: #e3ccff; text-shadow: 2px 2px 0 #000; font-size: 12px; pointer-events: none; }
+#bossbar .bar { height: 12px; border: 2px solid #000; background: #2a1438; margin-top: 3px; }
+#bossbar .bar i { background: linear-gradient(#c48cff, #7b3fd0); transition: width .2s; }
+#play:disabled, #continue:disabled { opacity: .6; cursor: progress; }
+@media (max-width: 700px) { #bossbar { width: calc(100% - 200px); left: 10px; transform: none; } }
+@media (max-width: 480px) {
+  #panel .tabs { flex-wrap: wrap; }
+  #panel .tabs button { flex: 1 1 50%; }
+  #quest { font-size: 12px; }
+}
+
+/* ---------- Rodada 3: opções e efeitos ativos ---------- */
+#opt-btn { position: absolute; top: 10px; left: 150px; padding: 4px 9px; font-size: 12px; background: #c97a1a; color: #1b0f00;
+  border: 3px solid #000; box-shadow: inset -3px -3px 0 #8a4f0a; cursor: pointer; }
+#options { position: absolute; top: 50px; left: 150px; width: 220px; background: var(--wood); border: 3px solid var(--edge);
+  box-shadow: 0 0 0 3px #000; padding: 10px; display: flex; flex-direction: column; gap: 8px; font-size: 12px; z-index: 5; }
+#options b { color: var(--gold); }
+#options label { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0; opacity: 1; }
+#options input[type=range] { width: 120px; margin: 0; padding: 0; border: 0; accent-color: #c97a1a; }
+#options input[type=checkbox] { width: auto; margin: 0; accent-color: #c97a1a; }
+#options .check { justify-content: flex-start; }
+#options small { opacity: .55; font-size: 12px; }
+.buffs { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.buffs span { font-size: 12px; border: 1px solid; padding: 0 4px; background: #0008; }
+@media (max-width: 480px) { #opt-btn { left: auto; right: 150px; } #options { left: 10px; } }
+
+/* ---------- Rodada 4: sensação de jogo ---------- */
+#xpdrop { position: absolute; right: 10px; bottom: 10px; transform: translateY(20px); width: 220px; background: #1b1610ee; border: 2px solid var(--edge);
+  padding: 5px 8px; font-size: 12px; opacity: 0; transition: opacity .25s, transform .25s; pointer-events: none; }
+#xpdrop.show { opacity: 1; transform: translateY(0); }
+#xpdrop b { color: var(--gold); }
+#xpdrop em { float: right; font-style: normal; color: #8fd3ff; font-weight: bold; }
+#xpdrop small { opacity: .6; font-size: 12px; }
+#levelup { position: absolute; left: 50%; top: 30%; transform: translateX(-50%); text-align: center; pointer-events: none; opacity: 0; min-width: 260px;
+  background: radial-gradient(ellipse, #000a 0%, #0000 70%); padding: 20px 40px; text-shadow: 3px 3px 0 #000; }
+#levelup small { font-size: 12px; letter-spacing: 3px; color: var(--text); }
+#levelup .lv { font-size: 46px; font-weight: bold; color: var(--gold); letter-spacing: 4px; text-shadow: 4px 4px 0 #6b2f00, 0 0 24px #f1c40faa; }
+#levelup ul { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12px; color: #7dff9a; }
+#levelup li::before { content: "+ "; }
+#levelup.show { animation: levelup 3.4s ease-out forwards; }
+@keyframes levelup { 0% { opacity: 0; transform: translateX(-50%) scale(.6); } 10% { opacity: 1; transform: translateX(-50%) scale(1.08); }
+  16% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+#toasts { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 6px; pointer-events: none; width: min(340px, calc(100% - 260px)); }
+.toast { background: #1b1610f2; border: 2px solid var(--gold); box-shadow: 0 0 0 2px #000, 0 6px 20px #000a; padding: 7px 10px; font-size: 12px; animation: toastIn .35s ease-out; transition: opacity .5s, transform .5s; }
+.toast b { display: block; font-size: 12px; }
+.toast small { opacity: .8; }
+.toast.out { opacity: 0; transform: translateY(-8px); }
+@keyframes toastIn { from { opacity: 0; transform: translateY(-14px) scale(.96); } }
+#event { padding: 6px 8px; font-size: 12px; color: #ffb86a; border-color: #ff9a3a !important; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 10px #ff9a3a88; } }
+.craft-btn { grid-column: 1 / -1; margin-top: 4px; padding: 6px; background: #3a2a16; border: 2px solid #000; box-shadow: inset -2px -2px 0 #24190c; cursor: pointer; font-size: 12px; }
+.craft-btn:hover { background: #5a4020; color: var(--gold); }
+.gear.acc { cursor: pointer; }
+.gear.acc img { width: 22px; height: 22px; }
+.gear.acc span small { display: block; font-size: 12px; opacity: .7; color: var(--text); }
+.gear.acc.empty { opacity: .5; cursor: default; }
+.gear .q { width: 22px; text-align: center; }
+.achs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 8px; }
+.ach { font-size: 12px; padding: 1px 4px; border: 1px solid var(--edge-dim); opacity: .45; }
+.ach.on { opacity: 1; border-color: var(--gold); color: var(--gold); }
+.journal-h small { opacity: .6; font-weight: normal; }
+
+/* ---------- Rodada 5: interface escalável, boneco de equipamento, relógio ---------- */
+#hud, #log, #dlg, #xpdrop, #toasts, #options, #bossbar, #exit, #opt-btn, #levelup, #banner { zoom: var(--ui, 1); }
+#options select { background: var(--wood-2); color: var(--text); border: 2px solid var(--edge); font: inherit; font-size: 12px; padding: 2px; }
+.clock { font-size: 12px !important; color: #cfe3ff; }
+/* rodada 104: boneco com 9 espaços: coluna da esquerda (5), herói no meio, coluna da direita (4) */
+.doll { display: grid; grid-template-columns: 1fr 1.2fr 1fr; grid-template-rows: repeat(5, auto); grid-auto-flow: column; gap: 4px; align-items: center; margin: 6px 0; }
+.doll .dhero { grid-column: 2; grid-row: 1 / span 5; width: 100%; max-width: 84px; margin: 0 auto; display: block; filter: drop-shadow(0 3px 0 #0008); }
+.dslot.locked { opacity: .45; border-style: dashed; }
+.dslot { border: 2px solid var(--edge-dim); background: var(--wood-2); text-align: center; padding: 2px; }
+.dslot img { width: 26px; height: 26px; display: block; margin: 0 auto; }
+.dslot small { font-size: 12px; opacity: .7; }
+.dslot.empty .q { display: block; height: 26px; line-height: 26px; opacity: .5; }
+.dslot[data-unequip] { cursor: pointer; }
+.gear .master { color: var(--gold); }
+
+/* ---------- Rodada 6: toque, ficha do personagem, afixos ---------- */
+#canvas { touch-action: none; }
+#touch-btns { position: absolute; right: 14px; bottom: 120px; display: flex; flex-direction: column; gap: 12px; zoom: var(--ui, 1); }
+#touch-btns button { width: 64px; height: 64px; border-radius: 50%; font-size: 24px; background: #1b1610dd; border: 3px solid var(--edge); color: var(--gold); box-shadow: 0 0 0 3px #000; }
+#touch-btns button:active { transform: scale(.94); background: #2a2010; }
+.cs-chances { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; margin-bottom: 6px; } .cs-chances b { color: var(--gold); }
+.slot i.heal { position: absolute; right: 1px; top: 1px; display: flex; align-items: center; gap: 1px; font: bold 12px/1 "Valdora Pixel", "Courier New", monospace; font-style: normal; color: #9fff9a; text-shadow: 1px 1px 0 #000; pointer-events: none; } /* rodada 30 */
+.slot i.heal img { width: 11px; height: 11px; }
+#touch-help { width: 48px !important; height: 48px !important; align-self: flex-end; } #touch-help img { width: 28px; height: 28px; vertical-align: middle; } /* rodada 33 */
+#touch-eat { position: relative; } #touch-eat img { width: 30px; height: 30px; vertical-align: middle; } #touch-eat small { position: absolute; right: 2px; bottom: 2px; font-size: 12px; color: #9fff9a; text-shadow: 1px 1px 0 #000; }
+.slot img.cookok { position: absolute; left: 1px; top: 1px; width: 14px; height: 14px; filter: drop-shadow(0 1px 0 #000); pointer-events: none; } /* rodada 29 */
+.slot .aff, .dslot .aff { position: absolute; right: 1px; bottom: 1px; font-style: normal; display: flex; flex-direction: column-reverse; pointer-events: none; }
+.slot .aff img.badge, .dslot .aff img.badge { width: 15px; height: 15px; margin-top: -4px; filter: drop-shadow(0 1px 0 #000); }
+.dslot { position: relative; }
+img.badge { width: 18px; height: 18px; vertical-align: middle; image-rendering: auto; }
+.gear img.badge { width: 18px; height: 18px; margin-left: auto; }
+.gear.acc img.badge { width: 16px; height: 16px; margin-left: 0; }
+.cs-row img.badge { width: 16px; height: 16px; grid-row: auto; }
+#tip { position: fixed; z-index: 60; pointer-events: none; max-width: 260px; background: #1b1610f2; border: 2px solid #6b4f2a; box-shadow: 0 0 0 2px #000;
+  padding: 6px 9px; font: 12px/1.45 "Valdora Pixel", "Courier New", monospace; color: #e8dcc0; }
+#tip small { opacity: .75; }
+#tip .tip-aff { display: flex; align-items: center; gap: 5px; color: #ffd84a; margin-top: 2px; }
+#tip .tip-aff img.badge { width: 22px; height: 22px; }
+#tip .tip-hint { display: block; margin-top: 4px; }
+.slot.affix { box-shadow: inset 0 0 10px #ffd84a66; }
+.char-btn { margin: 6px 0 8px !important; }
+.charsheet { font-size: 12px; }
+.cs-top { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.cs-hero { width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 3px 0 #0008); }
+.cs-name { font-size: 12px; color: var(--gold); }
+.cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cs-h { color: var(--gold); font-weight: bold; margin: 8px 0 4px; border-bottom: 1px solid var(--edge-dim); }
+.cs-stat { display: flex; justify-content: space-between; padding: 1px 0; }
+.cs-stat b { color: var(--gold); }
+.cs-row { display: grid; grid-template-columns: 26px 1fr; gap: 0 6px; align-items: center; padding: 2px 0; border-bottom: 1px solid #ffffff10; }
+.cs-row img, .cs-row .q { width: 24px; height: 24px; grid-row: span 2; text-align: center; }
+.cs-row small { opacity: .7; font-size: 12px; }
+.cs-feats { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+.cs-feats b { color: var(--gold); float: right; }
+@media (max-width: 520px) { .cs-grid { grid-template-columns: 1fr; } }
+
+#dlg.wide { width: min(560px, calc(100% - 20px)); max-height: calc(100% - 70px); }
+
+/* ---------- Rodada 7: barra de habilidades ---------- */
+#skillbar { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 8px; zoom: var(--ui, 1); }
+#skillbar button { position: relative; width: 54px; height: 54px; background: #1b1610ee; border: 3px solid var(--edge); box-shadow: 0 0 0 2px #000; cursor: pointer; overflow: hidden; padding: 0; }
+#skillbar .ic { font-size: 24px; line-height: 48px; color: var(--text); }
+#skillbar img.ic { display: block; width: 44px; height: 44px; margin: 2px auto; image-rendering: auto; }
+#skillbar .ready img.ic { filter: drop-shadow(0 0 4px #f1c40f88); }
+#skillbar b { position: absolute; left: 3px; top: 1px; font-size: 12px; color: var(--gold); text-shadow: 1px 1px 0 #000; }
+#skillbar .cd { position: absolute; inset: 0; background: conic-gradient(#000b calc(var(--p, 0) * 360deg), transparent 0); pointer-events: none; }
+#skillbar .lock { display: none; position: absolute; left: 0; right: 0; bottom: 1px; font-size: 12px; color: #ff9a7a; }
+#skillbar .locked { opacity: .55; } #skillbar .locked .lock { display: block; }
+#skillbar .ready { border-color: var(--gold); box-shadow: 0 0 0 2px #000, 0 0 10px #f1c40f66; }
+#skillbar .ready .ic { color: #fff6c0; }
+#skillbar button:active { transform: translateY(2px); }
+/* rodada 66: pulso quando a recarga termina */
+#skillbar .justready { animation: skready .55s ease-out; }
+@keyframes skready { 0% { transform: scale(1.14); box-shadow: 0 0 0 2px #000, 0 0 0 3px #fff6c0, 0 0 22px 8px #f1c40fcc; filter: brightness(1.6); }
+  100% { transform: scale(1); box-shadow: 0 0 0 2px #000, 0 0 10px #f1c40f66; filter: none; } }
+@media (prefers-reduced-motion: reduce) { #skillbar .justready { animation: none; } }
+@media (max-width: 700px) { #skillbar { left: auto; right: 90px; transform: none; bottom: 14px; } }
+
+#quest small.echo { color: #7fe8ff; }
+#quest small.turnin { color: #ffd84a; } /* rodada 34 */
+#quest small.soon { color: #b8d8ff; } /* rodada 35 */
+#dlg .row b.lock { color: #ffb347; font-weight: normal; } /* rodada 46: nível que falta */
+.save-achs { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font-size: 12px; color: var(--gold); } /* rodada 37 */
+.save-achs span { display: inline-flex; align-items: center; gap: 3px; } #save-info .save-achs img { width: 18px; height: 18px; }
+.jquest.ready { border-color: #ffd84a; } .jquest.ready small { color: #ffd84a; } /* rodada 36 */
+#log img.licon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
+#log .tip { color: #f3e6c8; }
+#dlg-talk.tip { padding-left: 34px; background: url("../assets/flow/icon_tip.png") 6px 50% / 22px 22px no-repeat; }
+.lobby-tip { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12px; line-height: 1.35; cursor: pointer; opacity: .85; text-align: left; }
+.lobby-tip img { width: 24px; height: 24px; flex: none; }
+.lobby-tip b { color: var(--gold); }
+.journal-h.echo-h { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.journal-h.echo-h img { width: 22px; height: 22px; }
+.beast .resp.echo { color: #7fe8ff; }
+/* rodada 24: em telas bem estreitas, as abas abrem em largura total sobre o mapa (a coluna de 140 px quebrava o bestiário) */
+@media (max-width: 480px) {
+  #hud:not(.collapsed) #panel { position: fixed; left: 10px; right: 10px; bottom: 104px; max-height: 58vh; z-index: 20; box-shadow: 0 6px 24px #000c; font-size: 12px; }
+  #hud:not(.collapsed) #panel .tabs button { flex: 1 1 25%; font-size: 12px; }
+  #hud:not(.collapsed) #panel > :not(.tabs) { overflow-y: auto; max-height: calc(58vh - 34px); }
+  #hud:not(.collapsed) #tab-journal { max-height: calc(58vh - 34px); }
+}
+#quest .qline { margin-top: 4px; padding-top: 3px; border-top: 1px solid #ffffff14; }
+.quest-card.done { opacity: .6; }
+.quest-card .wide { margin-top: 6px; }
+
+/* ---------- Rodada 7: painel recolhível em telas estreitas ---------- */
+#hud-toggle { display: none; }
+@media (max-width: 700px) {
+  #hud-toggle { display: block; font: inherit; font-size: 12px; padding: 3px 6px; color: var(--gold); cursor: pointer; text-align: left; }
+  #hud.collapsed #panel, #hud.collapsed #minimap { display: none; }
+  /* rodada 54: na coluna de 140 px do celular — o nome fica inteiro (o nível vai para a aba Níveis), a chama mostra só o ícone
+     (os minutos ficam no title) e a linha das moedas esconde hora e região (que aparecem no aviso ao entrar) */
+  #player-info .who:first-child .lvl, #player-info .bar.hp .vm, #player-info .who .clock, #player-info .who .reg .rname { display: none; }
+  #player-info .who .reg { flex: none; } /* rodada 55: no celular, só o ícone da região */
+}
+
+/* ---------- Rodada 8: selos menores em telas pequenas ---------- */
+@media (max-width: 480px) {
+  .slot .aff img.badge, .dslot .aff img.badge { width: 11px; height: 11px; margin-top: -3px; }
+  .gear img.badge, .cs-row img.badge { width: 13px; height: 13px; }
+}
+
+/* ---------- Rodada 9: ícone de missão ---------- */
+img.qicon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; image-rendering: auto; }
+.quest-card img.qicon { width: 22px; height: 22px; vertical-align: -6px; }
+
+/* ---------- Rodada 10: passivas, lua cheia e menu da mochila no toque ---------- */
+img.picon { width: 18px; height: 18px; vertical-align: -4px; margin-right: 4px; image-rendering: auto; }
+#tip img.picon { width: 24px; height: 24px; vertical-align: -7px; }
+img.eicon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; }
+#banner img.bicon { display: block; width: 48px; height: 48px; margin: 0 auto 4px; }
+#invmenu { position: fixed; z-index: 70; display: flex; flex-direction: column; gap: 4px; min-width: 150px; padding: 8px; background: #1b1610f6; border: 2px solid #6b4f2a;
+  box-shadow: 0 0 0 2px #000; font: 12px "Valdora Pixel", "Courier New", monospace; color: #e8dcc0; }
+#invmenu b { color: #ffd84a; } #invmenu small { color: #e8dcc0; opacity: .7; }
+#invmenu button { font: inherit; padding: 8px 6px; background: var(--wood-2, #3a2a1a); color: #e8dcc0; border: 1px solid #6b4f2a; cursor: pointer; text-align: left; }
+#invmenu button[data-act="close"] { opacity: .7; }
+
+/* ---------- Rodada 11: dica da tecla F e ícones do menu da mochila ---------- */
+#fhint { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); padding: 4px 10px 4px 6px; background: #1b1610e6; border: 2px solid #6b4f2a;
+  box-shadow: 0 0 0 2px #000; font: bold 12px "Valdora Pixel", "Courier New", monospace; color: #f5e27a; pointer-events: none; zoom: var(--ui, 1); white-space: nowrap; }
+#fhint img { width: 20px; height: 20px; vertical-align: -5px; margin-right: 4px; image-rendering: auto; }
+#invmenu button img { width: 18px; height: 18px; vertical-align: -4px; margin-right: 6px; image-rendering: auto; }
+
+/* ---------- Rodada 16: missões no diário ---------- */
+.jquest { padding: 5px 6px; margin: 4px 0; border: 1px solid #3f8f3a; background: #142012cc; font-size: 12px; line-height: 1.35; }
+.jquest b { color: #7dff9a; } .jquest .rw { display: block; color: #ffd84a; opacity: .85; margin-top: 2px; }
+.jquest.done { border-color: #6b4f2a; background: transparent; opacity: .8; } .jquest.done b { color: #e8dcc0; }
+
+.journal-h img.kicon { width: 16px; height: 16px; vertical-align: -3px; margin-left: 6px; opacity: .8; image-rendering: auto; }
+
+/* rodada 49: Santuário de Lumeira */
+.shrine-card { display: flex; gap: 10px; align-items: center; padding: 8px; margin-bottom: 8px; background: #2a2116; border: 2px solid #6b4f2a; border-radius: 4px; }
+.shrine-card .shrine-icon { width: 64px; height: 64px; image-rendering: pixelated; flex: none; }
+.shrine-card .grow { flex: 1; min-width: 0; } .shrine-card .bar { margin: 4px 0; }
+.shrine-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; } .shrine-btns .wide { flex: 1 1 40%; width: auto; margin-top: 0; }
+.shrine-btns .wide:disabled { opacity: .35; cursor: not-allowed; }
+#dlg .row img.dim { filter: grayscale(1) brightness(.6); opacity: .7; }
+.row small.ok { color: #7dff9a; font-weight: bold; }
+/* rodada 50: medalha do título (ficha e cartão do save) */
+.cs-title, .save-title { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: bold; }
+.cs-title img, #save-info .save-title img { width: 20px; height: 20px; image-rendering: pixelated; }
+#save-info .save-title { color: #5b2d86; } /* no pergaminho, roxo escuro da fita (o dourado não se lê) */
+/* rodada 51: medalha no painel e chama votiva */
+.who .tbadge { width: 16px; height: 16px; vertical-align: -3px; margin-right: 3px; image-rendering: pixelated; }
+.who b { white-space: nowrap; }
+/* rodada 53: chama votiva no painel (ícone 16 px desenhado à mão + minutos) */
+#player-info .who:first-child b { font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.bar.hp .votive { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); display: inline-flex; align-items: center; gap: 2px;
+  color: #ffd27a; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 0 #000; }
+.bar.hp .votive img { width: 16px; height: 16px; image-rendering: pixelated; }
+.shrine-card.votive { flex-direction: column; align-items: stretch; margin-top: 8px; }
+/* rodada 55: ícone da região no painel */
+.who .reg .ricon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 3px; image-rendering: pixelated; }
+/* rodada 58: primeira entrada numa região acima do nível — o aviso fica mais tempo e a linha de perigo pulsa */
+#banner.show.first { animation-duration: 7s; }
+#banner.first small.danger { animation: dangerPulse .5s ease-in-out 6 alternate; }
+@keyframes dangerPulse { from { color: #ffb347; } to { color: #ff5a3a; } }
+@media (prefers-reduced-motion: reduce) { #banner.first small.danger { animation: none; color: #ff5a3a; } }
+/* rodada 61: atacou sem comida — o cesto pulsa por 4 s (parado e vermelho com "reduzir movimento") */
+.who .foodlow.pulse { animation: foodPulse .4s ease-in-out 10 alternate; }
+@keyframes foodPulse { from { color: #ffae4a; transform: scale(1); } to { color: #ff4a3a; transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) { .who .foodlow.pulse { animation: none; color: #ff4a3a; } }
+/* rodada 66: no celular estreito o registro sobe para cima da barra de habilidades; a dica do F sobe junto */
+@media (max-width: 480px) { #fhint { bottom: 150px; } }
+/* rodada 66: em monitores grandes o lobby cresce junto (antes ocupava só a faixa de cima de uma tela 1080p) */
+/* rodada 80: só zoom inteiro (a fonte em pixel art borra em 1,2× e 1,35×): 2× a partir de 2400 × 1300 */
+@media (min-width: 1500px) and (min-height: 860px) { #lobby { padding-top: 3vh; } }
+@media (min-width: 2400px) and (min-height: 1300px) { .lobby-top, .lobby-main, .lobby-foot { zoom: 2; } }
+/* rodada 68: títulos em pixel art (UI.titleHTML): 2x na faixa e na comemoração, 1x nas janelas */
+.tfont { image-rendering: pixelated; display: block; margin: 0 auto 2px; height: auto; max-width: 100%; }
+.tfont.s2 { height: 48px; } .tfont.s1 { height: 24px; display: inline-block; vertical-align: middle; margin: -4px 0; }
+#levelup .lv .tfont { filter: drop-shadow(0 0 10px #f1c40f88); }
+@media (max-width: 700px) { #banner .tfont.s2 { height: 32px; margin: 0 0 2px; } #levelup .tfont.s2 { height: 36px; } }
+/* rodada 69: placa de madeira 9-slice (assets/ui/plaque_9s.png, cantos de 12 px desenhados a 2x; miolo repetido, nunca esticado) */
+.dlg-head, #lobby-nav button, #banner { border-style: solid; border-color: transparent; border-image: url("../assets/ui/plaque_9s.png") 12 fill / 24px round; image-rendering: pixelated; }
+.dlg-head { border-width: 6px; padding: 10px 16px; }
+.dlg-head b { text-shadow: none; }
+#lobby-nav button { border-width: 4px; padding: 10px 16px; background: none; min-height: 52px; }
+#lobby-nav button.on { background: none; filter: brightness(1.18) drop-shadow(0 0 6px #f1c40f66); }
+#lobby-nav button:hover { filter: brightness(1.12); }
+#lobby-nav button .tfont.s1 { margin: 0; }
+#banner { border-width: 6px; padding: 14px 26px 12px; }
+.hero-title { min-height: 48px; display: flex; justify-content: center; align-items: center; }
+.hero-title .tfont.s2 { margin: 0; }
+@media (max-width: 700px) {
+  #banner { padding: 10px 16px 8px; max-width: calc(100vw - 180px); }
+  #lobby-nav button { padding: 8px 10px; min-height: 48px; }
+  .hero-title .tfont.s2 { height: 36px; }
+}
+/* rodada 69: no celular estreito a faixa desce abaixo do painel e usa a largura toda; o título não deforma (object-fit) */
+.tfont { object-fit: contain; }
+@media (max-width: 480px) { #banner { top: 30%; max-width: calc(100vw - 24px); } #banner .tfont.s2 { object-position: left center; } }
+/* rodada 70: abas do painel com ícone (pixel art) e rótulo pequeno embaixo; a aberta com o ícone inteiro e um filete dourado */
+#panel .tabs button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 4px 0 3px; line-height: 1; }
+#panel .tabs .tabicon { width: 24px; height: 24px; image-rendering: auto; /* rodada 71: ícones do Flow (32 px) reduzidos com filtro */ object-fit: contain; filter: grayscale(.55) brightness(.8); }
+#panel .tabs button.on .tabicon { filter: drop-shadow(0 0 3px #f1c40f88); }
+/* rodada 70: no celular estreito o topo das janelas usa a placa em 1x (mais baixo) */
+@media (max-width: 480px) { .dlg-head { border-width: 3px; border-image-width: 12px; padding: 5px 10px; } }
+/* rodada 76: região do save no cartão do lobby */
+#save-info .save-reg { display: inline-flex; align-items: center; gap: 4px; color: #2f5a1e; font-size: 12px; font-weight: bold; }
+#save-info .save-reg img { width: 20px; height: 20px; margin: 0; image-rendering: pixelated; }
+
+/* rodada 78: fonte de texto corrido em pixel art (feita pelo coordenador; nítida em múltiplos de 12 px). Rodada 79: em toda a
+   interface (texto pequeno 12 px, destaques 24 px) e nos textos do canvas; o Courier fica de reserva. */
+@font-face { font-family: "Valdora Pixel"; src: url("../assets/fonts/valdora_pixel.ttf") format("truetype"); font-display: swap; }
+/* rodada 78: cenas de diálogo da campanha (js/scene.js) */
+#scene { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); width: min(820px, calc(100% - 24px)); z-index: 30;
+  display: flex; align-items: flex-end; gap: 0; cursor: pointer; user-select: none; }
+#scene.show { animation: sceneIn .22s ease-out; }
+@keyframes sceneIn { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+#scene-portrait { width: 156px; height: 156px; image-rendering: auto; flex: none; margin-right: -14px; position: relative; z-index: 1;
+  filter: drop-shadow(0 4px 0 #000a) drop-shadow(2px 0 0 #000) drop-shadow(-2px 0 0 #000); }
+#scene.bust #scene-portrait { width: 128px; height: 128px; margin-bottom: 6px; image-rendering: pixelated; } /* rodada 84: retrato de busto 128 px, 1:1 */
+.scene-box { position: relative; flex: 1; min-height: 112px; padding: 14px 18px 26px 26px; background: var(--wood); border: 3px solid var(--edge);
+  box-shadow: 0 0 0 3px #000, 0 10px 40px #000c; }
+#scene.narr .scene-box { padding-left: 18px; background: #120f0b; border-color: #4a3a22; }
+#scene-name { display: block; font: 24px/1 "Valdora Pixel", "Courier New", monospace; letter-spacing: 1px; margin-bottom: 8px;
+  -webkit-font-smoothing: none; font-smooth: never; text-shadow: 2px 2px 0 #000; }
+#scene-text { margin: 0; font: 24px/36px "Valdora Pixel", "Courier New", monospace; color: var(--text); min-height: 72px;
+  -webkit-font-smoothing: none; font-smooth: never; text-shadow: 2px 2px 0 #000; }
+#scene.narr #scene-text { color: #d8cdb4; font-style: normal; }
+#scene-more { position: absolute; right: 16px; bottom: 8px; color: var(--gold); font-size: 12px; animation: sceneMore .8s steps(2) infinite; }
+@keyframes sceneMore { 50% { transform: translateY(3px); } }
+.scene-help { position: absolute; left: 26px; bottom: 6px; font: 12px "Valdora Pixel", "Courier New", monospace; opacity: .55; -webkit-font-smoothing: none; }
+#scene.narr .scene-help { left: 18px; }
+#scene-skip { position: absolute; right: 8px; top: -30px; background: var(--wood); border: 2px solid var(--edge); box-shadow: 0 0 0 2px #000; padding: 3px 10px;
+  cursor: pointer; font-size: 12px; color: var(--text); }
+@media (max-width: 700px) { /* celular: caixa na largura toda, retrato pequeno saindo por cima à esquerda */
+  #scene { bottom: 132px; flex-direction: column; align-items: stretch; }
+  #scene-portrait { position: absolute; left: 4px; top: -58px; width: 76px; height: 76px; margin: 0; }
+  .scene-box { padding: 10px 12px 24px 12px; min-height: 96px; }
+  #scene-name { margin-left: 70px; }
+  #scene.narr #scene-name { margin-left: 0; }
+  .scene-box, #scene.narr .scene-box { padding-left: 12px; }
+  .scene-help { left: 12px; }
+  #scene-text { font-size: 24px; line-height: 28px; min-height: 56px; }
+}
+@media (prefers-reduced-motion: reduce) { #scene.show, #scene-more { animation: none; } }
+/* campanha: cartões, rastreador e diário */
+.quest-card.campaign { border-color: #3fa8b8; background: linear-gradient(#0f1a1c, var(--wood-2)); }
+.quest-card .qhint { display: block; color: #7fe8ff; opacity: .9; }
+#quest small.camp { color: #7fe8ff; }
+#quest small.camp.turnin { color: #ffd84a; }
+.camp-act { border: 2px solid #2c5a62; background: #0d1517; padding: 6px 8px; margin-bottom: 6px; }
+.camp-act.locked { border-color: var(--edge-dim); background: var(--wood-2); opacity: .7; }
+.camp-act .camp-h { display: flex; justify-content: space-between; gap: 6px; color: #7fe8ff; font-weight: bold; }
+.camp-act.locked .camp-h { color: #b8a888; }
+.camp-act ul { margin: 4px 0 2px; padding-left: 2px; list-style: none; }
+.camp-act li.ok { color: #7dff9a; } .camp-act li.now { color: #ffd84a; }
+.camp-premise { font-size: 12px; opacity: .75; margin: 0 0 6px; }
+/* rodada 85: no celular, o retrato de busto fica em 64 px (metade exata), saindo por cima da caixa à esquerda, sem cobrir o nome */
+@media (max-width: 700px) { #scene.bust #scene-portrait { width: 64px; height: 64px; top: -50px; left: 6px; margin: 0; } }
+/* rodada 88: o herói fala do lado direito da caixa (NPC à esquerda, herói à direita). O busto e o sprite do herói olham para a
+   esquerda, então olham para a fala sem espelhar (a luz e os detalhes da arte ficam como foram desenhados). */
+#scene.right { flex-direction: row-reverse; }
+#scene.right #scene-portrait { margin-right: 0; margin-left: -14px; }
+#scene.right .scene-box { padding-left: 18px; padding-right: 26px; }
+#scene.right .scene-help { left: 18px; }
+@media (max-width: 700px) {
+  #scene.right { flex-direction: column; }
+  #scene.right #scene-portrait { left: auto; right: 6px; margin: 0; }
+  #scene.right #scene-name { margin-left: 0; margin-right: 70px; text-align: right; }
+  #scene.right .scene-box { padding-left: 12px; padding-right: 12px; }
+  #scene.right .scene-help { left: 12px; }
+  #scene.right #scene-skip { right: auto; left: 8px; }
+}
+
+/* rodada 96: filhote da lua no painel (ícone, nome e vida; clique abre a janela) e na janela dele */
+.petline { display: flex; align-items: center; gap: 5px; width: 100%; margin: 0 0 4px; padding: 0; background: none; border: 0; box-shadow: none; color: inherit; font: inherit; cursor: pointer; text-align: left; min-height: 0; }
+.petline img { width: 20px; height: 20px; image-rendering: pixelated; flex: none; }
+.petline .pn { font-size: 12px; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #b8d8ff; }
+.petline .bar.pethp, .pet-card .bar.pethp { flex: 1; height: 12px; margin: 0; }
+.bar.pethp > i { background: linear-gradient(#7cc4ff, #3a7fc0); }
+.petline.down .bar.pethp > i { background: linear-gradient(#7a8896, #4a5560); }
+.bar.pethp em { position: absolute; inset: 0; font-style: normal; font-size: 11px; line-height: 10px; text-align: center; text-shadow: 1px 1px 0 #000; white-space: nowrap; }
+.petline:hover .pn { text-decoration: underline; }
+.petline:focus-visible { outline: 2px solid #ffd84a; outline-offset: 1px; }
+.pet-card { display: flex; gap: 10px; align-items: center; }
+.pet-card .pet-pt { width: 96px; height: 96px; image-rendering: pixelated; flex: none; border: 2px solid #000; background: #1d2a3a; }
+.pet-card .grow { flex: 1; min-width: 0; } .pet-card .bar.pethp { display: block; margin: 5px 0; }
+.pet-name { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
+.pet-name input { flex: 1; min-width: 0; font: inherit; font-size: 14px; padding: 5px 7px; background: #1a1410; color: #fff; border: 2px solid #000; }
+.pet-name input:focus-visible { outline: 2px solid #ffd84a; }
+/* rodada 104: quantidade de flechas na aljava (espaço de munição do Arqueiro) */
+.dslot .aff.ammo { font: bold 11px "Valdora Pixel", monospace; color: #ffe8a0; text-shadow: 0 1px 0 #000, 1px 0 0 #000; bottom: 12px; }
