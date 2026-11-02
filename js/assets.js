@@ -240,7 +240,7 @@ ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auctio
 ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
 ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
 ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
-window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17 }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 } };
+window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];

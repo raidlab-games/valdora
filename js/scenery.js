@@ -63,7 +63,7 @@ window.ValdoraScenery = (() => {
         const A = ANIMS[o.npcSpr], D = (window.DESKS || {})[o.spr] || { ax: 0.5, ay: 0.76, nx: 0, ny: -0.17 }, fxN = Math.round((o.x + 1.5 + D.nx) * TILE - cam.x), fyN = Math.round((o.y + 1 + D.ny) * TILE - cam.y);
         const talking = o.type === "auction" ? api.marketOpen && api.marketOpen() : dlg && dlg.kind === "witch";
         if (A) { const R = o.react && A.rows[o.react.row], row = R ? o.react.row : talking ? "talk" : "idle";
-          drawAnim(A, row, R ? Math.min(R.frames - 1, Math.floor(o.react.t * R.fps)) : animFrame(A.rows[row], t + o.x * 0.37), fxN, fyN, false); }
+          drawAnim(A, row, R ? Math.min(R.frames - 1, Math.floor(o.react.t * R.fps)) : animFrame(A.rows[row], t + o.x * 0.37), fxN, fyN, !!D.flip); } // rodada 118: olha para a frente do balcão
         ctx.drawImage(img, Math.round((o.x + 1.5) * TILE - cam.x - img.width * D.ax), Math.round((o.y + 1) * TILE - cam.y - img.height * D.ay));
       } else ctx.drawImage(img, sx, sy);
       if ((o.type === "marker" || o.type === "rune" || o.type === "seal") && o.fade > 0 && SPR[o.fadeFrom]) { ctx.globalAlpha = Math.min(1, o.fade); ctx.drawImage(SPR[o.fadeFrom], sx, sy); ctx.globalAlpha = 1; } // rodada 79: marco acendendo
