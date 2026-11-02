@@ -924,6 +924,40 @@
     return miss(r);
   });
 
+  test("rodada 105: direções em 8 (vetor -> direção, linha da folha com reserva de 4)", () => {
+    const r = [], want = { "1,0": "right", "1,1": "downright", "0,1": "down", "-1,1": "downleft", "-1,0": "left", "-1,-1": "upleft", "0,-1": "up", "1,-1": "upright", "3,1": "right", "2,2": "downright" };
+    for (const [k, d] of Object.entries(want)) { const [x, y] = k.split(",").map(Number); if (window.DIR_AT(x, y) !== d) r.push(k + "->" + window.DIR_AT(x, y)); }
+    if (window.DIR_AT(0, 0) !== null) r.push("parado");
+    if (window.SHEET_ROW("upleft", 8) !== 6 || window.SHEET_ROW("upleft", 4) !== 1 || window.SHEET_ROW("downright", 4) !== 2 || window.SHEET_ROW("up", 8) !== 3) r.push("linhas");
+    return miss(r);
+  });
+  test("rodada 105: heróis, moradores e monstros 3D têm as diagonais (monstros: 4 vistas extras, carregadas sob demanda)", () => {
+    const r = [], A = window.ANIM3D || {}, DG = ["downleft", "downright", "upleft", "upright"];
+    for (const h of ["hero_1", "hero_2", "hero_3"]) {
+      for (const d of DG) for (const [k, rn] of [[h, "idle_"], [h, "hit_"], [h, "death_"], [h + "_walk6", "walk_"], [h + "_dash", "dash_"], [h + "_block", "block_"]]) if (!A[k] || !A[k].rows[rn + d]) r.push(k + " " + rn + d);
+    }
+    for (const n of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras"]) for (const d of DG) {
+      if (!A[n + "_walk6"] || !A[n + "_walk6"].rows["walk_" + d]) r.push(n + " walk_" + d);
+      if (!A[n + "_look"] || !A[n + "_look"].rows["idle_" + d]) r.push(n + " idle_" + d);
+    }
+    for (const [k, S] of Object.entries(A)) {
+      if (!(k === "slime" || k.startsWith("mob_")) || k.includes("@")) continue;
+      if (!S.views || S.views.length !== 4) { r.push(k + " (vistas)"); continue; }
+      for (const v of S.views) { const V = A[k + "@" + v]; if (!V || !V.lazy || ["idle", "walk", "attack", "hit", "death"].some((rn) => !V.rows[rn] || V.rows[rn].frames !== S.rows[rn].frames)) r.push(k + "@" + v); }
+    }
+    return miss(r);
+  });
+  test("rodada 105: monstro na diagonal do herói ataca dali (e olha para ele); anda na diagonal sem cortar quina", () => {
+    const r = [], P = { x: 10, y: 10 }; let hits = 0;
+    const M = ValdoraMobs.create({ ANIMS: {}, TICK: 0.5, DIRS: [[1, 0], [-1, 0], [0, 1], [0, -1]], walkable: () => true, regionAt: () => "south", inTown: () => false, tickN: () => 1, player: () => P, rand: () => 0.5,
+      mobAttack: () => { hits++; }, canStep: (x, y, nx, ny) => !(nx === 6 && ny === 6) });
+    const m = { x: 11, y: 11, hx: 11, hy: 11, d: { hp: 10, speed: 3, atk: 5, maxHit: 3 }, hp: 10, aggro: true, atkT: 0, prog: 1, face: -1 };
+    M.mobTick(m); if (hits !== 1) r.push("não atacou na diagonal"); if (m.dir8 !== "upleft") r.push("olha para " + m.dir8);
+    const w = { x: 3, y: 3, d: {}, prog: 1 }; M.mobStepToward(w, 9, 9); if (!(w.x === 4 && w.y === 4) || w.dir8 !== "downright") r.push("passo diagonal " + w.x + "," + w.y + " " + w.dir8);
+    const q = { x: 5, y: 5, d: {}, prog: 1 }; M.mobStepToward(q, 9, 9); if (q.x === 6 && q.y === 6) r.push("cortou a quina");
+    return miss(r);
+  });
+
   // ---------- equilíbrio: XP e moedas por hora ----------
   const TICK = 0.5, xpFor = RU.xpFor;
   const rows = [];

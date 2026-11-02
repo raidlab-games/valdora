@@ -35,7 +35,7 @@ window.ValdoraInput = (() => {
       const y = (keys["s"] || keys["arrowdown"] ? 1 : 0) - (keys["w"] || keys["arrowup"] ? 1 : 0);
       return x || y ? [x, y] : null;
     };
-    const keyDir = () => { const v = keyVec(); return !v ? null : v[0] ? (v[0] > 0 ? "right" : "left") : v[1] > 0 ? "down" : "up"; };
+    const keyDir = () => { const v = keyVec(); return v ? window.DIR_AT(v[0], v[1]) : null; }; // rodada 105: 8 direções
     return { shortcut, keyDir, keyVec };
   }
   return { create };

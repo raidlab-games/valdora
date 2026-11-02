@@ -20,6 +20,20 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 105 (v1.04)
+- **8 direções de verdade:** heróis (todas as ações e peças de roupa), moradores e monstros ganharam as 4 diagonais renderizadas no
+  Blender. Heróis e moradores: câmera a 45/135/225/315° (`rig.DIRS`, `art/lay/run_diag.sh`); monstros: 5 vistas (de frente, diagonal
+  de frente, de lado, diagonal de costas, de costas — `tools/b3d/mobrun.py`) com a mesma câmera, girando no lugar; o lado direito é
+  o esquerdo espelhado. As vistas extras ficam em folhas `<monstro>__<vista>.png` (`"<monstro>@<vista>"`, `lazy`) que o jogo só
+  carrega com o monstro por perto e solta após 40 s; só as folhas do herói escolhido ficam na memória.
+- **Direção pelo ângulo:** `DIR_AT(dx, dy)` em 8 setores (herói, moradores, monstros, minimapa); folhas antigas de 4 linhas usam
+  o lado mais próximo (`SHEET_ROW`, `DIR4`). Folhas de ação do herói (3 colunas) têm 4 ou 8 linhas (`ASPECT_FIT`).
+- **Ações de qualquer ângulo:** encostar vale na diagonal (`adjacent`/`adjRect`) para coletar, cozinhar, falar, abrir e lutar; na
+  diagonal, golpe só se um dos tiles do meio não for parede/água. Monstros andam e atacam na diagonal (sem cortar quina) e o passo
+  diagonal dura √2; moradores passeiam na diagonal. Saiu a espera da "dança da diagonal" (rodadas 48/83).
+- **Fogo:** fogueira, braseiro e tocha deixam pedras, lenha e ferro iguais à arte parada; só a chama e as fagulhas mudam (`fire_only`).
+- Testes: 3 novos (direções, diagonais nas folhas, monstro atacando e andando na diagonal).
+
 ## Rodada 104 (v1.03)
 - **Personagens e monstros em 3D (Blender):** heróis, moradores e os 20 monstros viraram modelos 3D com esqueleto, pés plantados
   (IK), braços e roupas com física (verlet); `tools/char3d.py` (moradores), `tools/mob3d.py` (monstros), `tools/b3d/`.

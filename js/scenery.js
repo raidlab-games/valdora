@@ -30,13 +30,13 @@ window.ValdoraScenery = (() => {
         const look = !o.mv && o.lookDir && o.lookDir !== "down" && !talk && !o.react && !o.rise && !(o.sitT > 0) && !o.singing;
         const WS = (o.mv || look) && SPR[o.spr + "_sheet"], fx0 = Math.round((o.x + mvx + 0.5) * TILE - cam.x), fy0 = Math.round((o.y + mvy + 1) * TILE - cam.y);
         if (WS) { // passo pela folha de 4 direções (mesmo formato da do herói)
-          const dx = o.mv ? o.x - o.mv.fx : 0, dy = o.mv ? o.y - o.mv.fy : 0, dir = !o.mv ? o.lookDir : dx > 0 ? "right" : dx < 0 ? "left" : dy < 0 ? "up" : "down";
+          const dx = o.mv ? o.x - o.mv.fx : 0, dy = o.mv ? o.y - o.mv.fy : 0, dir = !o.mv ? o.lookDir : window.DIR_AT(dx, dy) || "down"; // rodada 105: 8 direções
           const fw = WS.width / HERO_SHEET.cols, fh = WS.height / HERO_SHEET.rows.length, col = !o.mv ? 0 : HERO_SHEET.walk[Math.floor(((o.steps || 0) + o.mv.t) * 2) % HERO_SHEET.walk.length];
-          const LK = !o.mv && ANIMS[o.spr + "_look"], LR = LK && LK.rows["idle_" + dir]; // rodada 74: olhando de lado/de costas, respirando
-          const W6 = o.mv && ANIMS[o.spr + "_walk6"], WR = W6 && W6.rows["walk_" + dir]; // caminhada 3D em 6 quadros (Blender)
-          if (WR) drawAnim(W6, "walk_" + dir, Math.floor(((o.steps || 0) + o.mv.t) * 3) % WR.frames, fx0, fy0, false); else
-          if (LR) drawAnim(LK, "idle_" + dir, animFrame(LR, t + (o.x * 0.37)), fx0, fy0, false); else
-          ctx.drawImage(WS, col * fw, HERO_SHEET.rows.indexOf(dir) * fh, fw, fh, fx0 - fw / 2, fy0 - fh, fw, fh);
+          const LK = !o.mv && ANIMS[o.spr + "_look"], lkR = LK && (LK.rows["idle_" + dir] ? "idle_" + dir : "idle_" + window.DIR4(dir)), LR = LK && LK.rows[lkR]; // rodada 74: olhando de lado/de costas, respirando
+          const W6 = o.mv && ANIMS[o.spr + "_walk6"], wkR = W6 && (W6.rows["walk_" + dir] ? "walk_" + dir : "walk_" + window.DIR4(dir)), WR = W6 && W6.rows[wkR]; // caminhada 3D em 6 quadros (Blender)
+          if (WR) drawAnim(W6, wkR, Math.floor(((o.steps || 0) + o.mv.t) * 3) % WR.frames, fx0, fy0, false); else
+          if (LR) drawAnim(LK, lkR, animFrame(LR, t + (o.x * 0.37)), fx0, fy0, false); else
+          ctx.drawImage(WS, col * fw, HERO_SHEET.rows.indexOf(window.DIR4(dir)) * fh, fw, fh, fx0 - fw / 2, fy0 - fh, fw, fh);
         } else {
           // rodada 25: o Tomé dedilha (linha "play") com a janela de canções aberta ou cantando no balão (falas com ♪)
           const sing = o.type === "bard" && A.rows.play && !o.react && ((dlg && dlg.kind === "bard") || (bubble && bubble.o === o && String(bubble.text).includes("♪")));

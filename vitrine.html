@@ -34,6 +34,7 @@
     <div class="ctl">Velocidade <select id="speed"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option></select></div>
     <div class="ctl"><button id="flip">Olhar para a direita</button></div>
     <div class="ctl">Todos tocam: <select id="allRow"><option value="idle">parado</option><option value="walk">andando</option><option value="attack">ataque</option><option value="death">morte</option></select></div>
+    <div class="ctl">Direção: <select id="allDir"><option value="">padrão</option><option value="down">frente</option><option value="downleft">frente-esq.</option><option value="left">esquerda</option><option value="upleft">costas-esq.</option><option value="up">costas</option></select></div>
   </header>
   <main>
     <div id="list"></div>
@@ -65,11 +66,13 @@
   function rowsOf(key) {
     const out = [];
     const EXTRA = ["_walk6", "_look", "_dash", "_block", "_cancel", "_cheer", "_strike4"]; // folhas extras de heróis e moradores
-    const sheets = [key, ...EXTRA.map((s) => key + s)].filter((k) => D[k]);
-    for (const k of sheets) for (const [r, R] of Object.entries(D[k].rows)) out.push({ name: r, sheet: D[k], R });
+    const views = (D[key] && D[key].views || []).map((v) => key + "@" + v); // rodada 105: vistas extras dos monstros
+    const sheets = [key, ...EXTRA.map((s) => key + s), ...views].filter((k) => D[k]);
+    for (const k of sheets) for (const [r, R] of Object.entries(D[k].rows)) out.push({ name: r + (k.includes("@") ? "@" + k.split("@")[1] : D[key].views && !/_(down|left|right|up|downleft|downright|upleft|upright)$/.test(r) ? "@left" : ""), sheet: D[k], R });
     return out;
   }
-  const pick = (rows, want) => rows.find((r) => r.name === want) || rows.find((r) => r.name === want + "_left") || rows.find((r) => r.name.startsWith(want)) || rows[0];
+  let allDir = "";
+  const pick = (rows, want) => (allDir && (rows.find((r) => r.name === want + "_" + allDir) || rows.find((r) => r.name === want + "@" + allDir))) || rows.find((r) => r.name === want) || rows.find((r) => r.name === want + "_left") || rows.find((r) => r.name.startsWith(want)) || rows[0];
   let speed = 1, flip = false, allRow = "idle", sel = null, selRow = null;
   const cards = [];
   function draw(cv, row, t) {
@@ -98,8 +101,8 @@
     sel = card; cards.forEach((c) => c.el.classList.toggle("sel", c === card));
     const box = document.getElementById("rows"); box.innerHTML = "";
     for (const r of card.rows) {
-      const b = document.createElement("button"); const [base, dir] = [r.name.replace(/_(down|left|right|up)$/, ""), (r.name.match(/_(down|left|right|up)$/) || [])[1]];
-      b.textContent = (ROWN[base] || base) + (dir ? " · " + { down: "frente", left: "esq.", right: "dir.", up: "costas" }[dir] : "");
+      const b = document.createElement("button"); const m = r.name.match(/^(.*?)(?:_|@)(downleft|downright|upleft|upright|down|left|right|up)$/), base = m ? m[1] : r.name, dir = m && m[2];
+      b.textContent = (ROWN[base] || base) + (dir ? " · " + { down: "frente", left: "esq.", right: "dir.", up: "costas", downleft: "frente-esq.", downright: "frente-dir.", upleft: "costas-esq.", upright: "costas-dir." }[dir] : "");
       b.onclick = () => { selRow = r; t1 = 0; [...box.children].forEach((x) => x.classList.toggle("on", x === b)); info(); }; box.appendChild(b);
     }
     selRow = pick(card.rows, "idle"); t1 = 0; [...box.children][card.rows.indexOf(selRow)]?.classList.add("on"); info();
@@ -117,6 +120,7 @@
   }
   document.getElementById("speed").onchange = (e) => (speed = +e.target.value);
   document.getElementById("allRow").onchange = (e) => (allRow = e.target.value);
+  document.getElementById("allDir").onchange = (e) => (allDir = e.target.value);
   document.getElementById("flip").onclick = (e) => { flip = !flip; e.target.classList.toggle("on", flip); };
   select(cards.find((c) => c.key === "mob_wolf") || cards[0]);
   requestAnimationFrame(loop);

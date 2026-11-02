@@ -28,7 +28,9 @@
   const mulberry32 = RULES.mulberry32; // rodada 64: mora em js/rules.js
   const rand = () => RNG(), ri = (a, b) => a + Math.floor(rand() * (b - a + 1));
   const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  const DIR_VEC = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
+  const DIRS8V = [...DIRS, [1, 1], [1, -1], [-1, 1], [-1, -1]]; // rodada 105: vizinhos em 8 direções
+  const DG = Math.SQRT1_2, DIR_VEC = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0], // rodada 105: + diagonais
+    downleft: [-DG, DG], downright: [DG, DG], upleft: [-DG, -DG], upright: [DG, -DG] };
   // curvas de easing (sem movimento linear seco)
   const ease = {
     outQuad: (t) => 1 - (1 - t) * (1 - t), inQuad: (t) => t * t, outCubic: (t) => 1 - Math.pow(1 - t, 3),
@@ -45,7 +47,8 @@
     const img = new Image();
     img.onload = () => {
       const [w, h] = SPRITE_SIZE[key] || [1, 1];
-      const c = document.createElement("canvas"); c.width = Math.round(w * TILE); c.height = Math.round(h * TILE);
+      const c = document.createElement("canvas"); c.width = Math.round(w * TILE);
+      c.height = window.ASPECT_FIT.has(key) ? Math.round(c.width * img.naturalHeight / img.naturalWidth) : Math.round(h * TILE); // rodada 105: 4 ou 8 linhas
       // pixel art pequena amplia sem suavizar; artes grandes (PNG) reduzem com filtro de qualidade
       const g = c.getContext("2d"); g.imageSmoothingEnabled = img.naturalWidth > c.width; g.imageSmoothingQuality = "high";
       g.drawImage(img, 0, 0, c.width, c.height);
@@ -62,13 +65,16 @@
   const ANIMS = {}, AM = window.ANIM_META || { margin: 1.6, ground: 0.125 };
   // rodada 50: folhas "overlay" (tiles 0) que cobrem exatamente a arte de outra peça, quadro a quadro, no mesmo retângulo
   const OVERLAY_HOST = { fx_candle_flames: "deco_shrine_offering", fx_offering_coins: "deco_shrine_offering", fx_votive_candles: "deco_shrine_offering" }; // rodada 51: moedas na tigela; rodada 52: velas votivas
-  const animsReady = Promise.all(Object.entries(window.ANIM_SHEETS || {}).map(([key, A]) => new Promise((done) => {
+  // rodada 105: folhas "lazy" (vistas extras dos monstros) e as dos heróis que ninguém está usando não carregam no início:
+  // lazyAnim() as busca quando aparecem na tela e as descarta depois de 40 s sem uso; o herói escolhido carrega no start().
+  const isHeroKey = (k) => /^hero_\d(_|$)/.test(k);
+  const loadAnim = (key, A) => new Promise((done) => {
     if (A.fx && !(A.tiles > 0) && !OVERLAY_HOST[key]) return done(); // rodada 40: folha da tela inicial (fx_banner_wave, 640 × 120): o lobby usa direto por CSS
     const img = new Image();
     img.onload = () => {
       const hero = HEROES.find((h) => h.id === key), isHero = !!hero; // hero_N_dash não é herói: usa SPRITE_SIZE próprio
       const host = OVERLAY_HOST[key] && (SPRITE_SIZE[OVERLAY_HOST[key]] || [1, 1]);
-      const size = host ? [host[0] / AM.margin, host[1] / AM.margin] : A.fx ? [A.tiles / AM.margin, A.tiles / AM.margin] : isHero ? [(SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols, (SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols] : (SPRITE_SIZE[key] || [1, 1]);
+      const size = host ? [host[0] / AM.margin, host[1] / AM.margin] : A.fx ? [A.tiles / AM.margin, A.tiles / AM.margin] : isHero ? [(SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols, (SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols] : (SPRITE_SIZE[key] || SPRITE_SIZE[key.split("@")[0]] || [1, 1]);
       const cw = Math.round(size[0] * TILE * AM.margin), ch = Math.round((size[1] || size[0]) * TILE * AM.margin);
       const cols = Math.round(img.naturalWidth / A.cell), rows = Math.round(img.naturalHeight / A.cell);
       const c = document.createElement("canvas"); c.width = cols * cw; c.height = rows * ch;
@@ -78,7 +84,22 @@
     };
     img.onerror = () => { console.warn("Valdora: folha animada não carregou:", key); done(); };
     img.src = A.src;
-  })));
+  });
+  const animsReady = Promise.all(Object.entries(window.ANIM_SHEETS || {}).filter(([key, A]) => !A.lazy && !isHeroKey(key)).map(([key, A]) => loadAnim(key, A)));
+  const lazyUse = {}, lazyLoading = {};
+  function lazyAnim(key) {
+    lazyUse[key] = performance.now();
+    if (ANIMS[key]) return ANIMS[key];
+    const A = (window.ANIM_SHEETS || {})[key];
+    if (A && !lazyLoading[key]) lazyLoading[key] = loadAnim(key, A).then(() => { delete lazyLoading[key]; });
+    return null;
+  }
+  setInterval(() => { const now = performance.now(); // solta as vistas que ninguém desenhou nos últimos 40 s
+    for (const k of Object.keys(lazyUse)) if (now - lazyUse[k] > 40000 && ANIMS[k] && (window.ANIM_SHEETS[k] || {}).lazy) { delete ANIMS[k]; delete lazyUse[k]; } }, 10000);
+  function heroAnims(id) { // folhas do herói escolhido; as dos outros saem da memória
+    for (const k of Object.keys(ANIMS)) if (isHeroKey(k) && !(k === id || k.startsWith(id + "_"))) delete ANIMS[k];
+    return Promise.all(Object.entries(window.ANIM_SHEETS || {}).filter(([k]) => (k === id || k.startsWith(id + "_")) && !ANIMS[k]).map(([k, A]) => loadAnim(k, A)));
+  }
   function whiteOf(key) { // silhueta branca para o "flash" de dano
     if (WHITE[key] || !SPR[key]) return WHITE[key];
     const s = SPR[key], c = document.createElement("canvas"); c.width = s.width; c.height = s.height;
@@ -385,12 +406,12 @@
       // rodada 73: para onde o NPC olha parado. Com o herói a até 4 passos, vira para ele; o Bento, sozinho em casa, de vez em
       // quando se vira para a banca (arrumando) por 3 s. Só enfeite: usa Math.random, não o aleatório do jogo.
       if (!o.mv && Math.abs(player.x - o.x) + Math.abs(player.y - o.y) <= 4) {
-        const dx = player.x - o.x, dy = player.y - o.y; o.lookDir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy < 0 ? "up" : "down";
+        o.lookDir = window.DIR_AT(player.x - o.x, player.y - o.y) || "down"; // rodada 105: olha em 8 direções
       } else if (o.type === "merchant" && !o.mv && o.x === o.hx && o.y === o.hy) {
         o.tidyT = (o.tidyT ?? 6 + Math.random() * 8) - dt; o.lookDir = o.tidyT < 0 ? "left" : null;
         if (o.tidyT < -3) o.tidyT = 8 + Math.random() * 10;
       } else o.lookDir = null;
-      if (o.mv) { if ((o.mv.t += dt / NPC_STEP) >= 1) o.mv = null; continue; }
+      if (o.mv) { if ((o.mv.t += dt / NPC_STEP / (o.mv.len || 1)) >= 1) o.mv = null; continue; }
       const busy = (dlg && dlg.kind === { merchant: "shop", guard: "guard", bard: "bard" }[o.type]) || (player.target && player.target.ref === o)
         || Math.abs(player.x - o.x) + Math.abs(player.y - o.y) <= 3 || (bubble && bubble.o === o);
       if (o.react || o.rise) continue; // parado durante a reação (e enquanto o Tomé levanta)
@@ -404,11 +425,12 @@
         o.goal = seat ? { ...seat, sit: true } : patrol ? { x: o.hx + patrol[0], y: o.hy + patrol[1] } : atHome ? { x: o.hx + ri(-r, r), y: o.hy + ri(-r, r) } : { x: o.hx, y: o.hy };
       }
       const free = (x, y) => inside(x, y) && inTown(x, y) && map[y][x] !== "water" && !occ[y * W + x] && !mobAt(x, y) && !(player.x === x && player.y === y);
-      const d0 = Math.abs(o.x - o.goal.x) + Math.abs(o.y - o.goal.y);
-      const steps = DIRS.map(([dx, dy]) => [o.x + dx, o.y + dy]).filter(([x, y]) => free(x, y) && Math.abs(x - o.goal.x) + Math.abs(y - o.goal.y) < d0);
+      // rodada 105: também anda na diagonal (sem cortar quina); distância em 8 direções
+      const oct = (x, y) => { const a = Math.abs(x - o.goal.x), b = Math.abs(y - o.goal.y); return Math.max(a, b) + 0.414 * Math.min(a, b); }, d0 = oct(o.x, o.y);
+      const steps = DIRS8V.map(([dx, dy]) => [o.x + dx, o.y + dy, dx, dy]).filter(([x, y, dx, dy]) => free(x, y) && (!dx || !dy || (free(o.x + dx, o.y) && free(o.x, o.y + dy))) && oct(x, y) < d0 - 0.01);
       if (!steps.length) { const home = o.x === o.hx && o.y === o.hy; o.goal = home ? null : { x: o.hx, y: o.hy }; o.wait = 1 + rand() * 2; continue; }
       const [nx, ny] = steps[Math.floor(rand() * steps.length)];
-      occ[o.y * W + o.x] = null; o.mv = { fx: o.x, fy: o.y, t: 0 }; o.x = nx; o.y = ny; occ[ny * W + nx] = o; o.steps = (o.steps || 0) + 1;
+      occ[o.y * W + o.x] = null; o.mv = { fx: o.x, fy: o.y, t: 0, len: nx !== o.x && ny !== o.y ? Math.SQRT2 : 1 }; o.x = nx; o.y = ny; occ[ny * W + nx] = o; o.steps = (o.steps || 0) + 1;
       if (nx === o.goal.x && ny === o.goal.y) { const sit = o.goal.sit; o.goal = null; o.wait = 4 + rand() * 7; if (sit) o.wantSit = 0.6; }
     }
     // o Tomé chegou ao lado do tronco: sobe nele e fica 20–40 s tocando (a casa dele vira o tronco enquanto isso)
@@ -525,10 +547,14 @@
   const isBlockingObj = (o) => o && o.solid && !(o.type === "res" && o.respawn > 0);
   const mobAt = (x, y) => mobs.find((m) => !m.dead && m.x === x && m.y === y);
   const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]) && !mobAt(x, y);
-  const adjacent = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
-  function adjRect(x, y, o) { // (x,y) está encostado (sem diagonal) na área ocupada por o?
+  // rodada 105: encostar vale nas 8 direções. Na diagonal, pelo menos um dos dois tiles do meio precisa estar livre de parede/água
+  // (não se golpeia através de uma quina fechada); monstros e o herói no meio não atrapalham.
+  const open = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]);
+  const adjacent = (a, b) => { const dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+    return Math.max(dx, dy) === 1 && (dx + dy === 1 || open(a.x, b.y) || open(b.x, a.y)); };
+  function adjRect(x, y, o) { // (x,y) está encostado (também na diagonal) na área ocupada por o?
     const dx = Math.max(o.x - x, 0, x - (o.x + o.w - 1)), dy = Math.max(o.y - y, 0, y - (o.y + o.h - 1));
-    return dx + dy === 1;
+    return Math.max(dx, dy) === 1;
   }
 
   // ---------- Jogador ----------
@@ -553,7 +579,7 @@
   async function start(data) {
     if (inCrypt) leaveCrypt();
     $("play").disabled = $("continue").disabled = true;
-    await assetsReady; await animsReady;
+    await assetsReady; await animsReady; await heroAnims(HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id); // rodada 105
     if (document.fonts) await Promise.race([document.fonts.load('12px "Valdora Pixel"'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {}); // rodada 79: o canvas só usa a fonte depois de carregada fx.setDigits(SPR.ui_digits); UI.setTitleFont(SPR.ui_font_title); // rodadas 67-68: números e títulos em pixel art
     $("play").disabled = $("continue").disabled = false;
     genWorld();
@@ -816,7 +842,7 @@
         .sort((a, b) => (Math.abs(a.x - player.x) + Math.abs(a.y - player.y)) - (Math.abs(b.x - player.x) + Math.abs(b.y - player.y))).slice(0, 6);
       let best = null, bl = Infinity;
       for (const m of near) {
-        const len = adjacent(player, m) ? 0 : (findPath(player.x, player.y, (x, y) => Math.abs(x - m.x) + Math.abs(y - m.y) === 1) || { length: Infinity }).length;
+        const len = adjacent(player, m) ? 0 : (findPath(player.x, player.y, (x, y) => adjacent({ x, y }, m)) || { length: Infinity }).length;
         if (len < bl) { bl = len; best = m; }
       }
       if (best) setTarget({ kind: "mob", ref: best }); else log(near.length ? "Nenhum monstro alcançável por perto." : "Nenhum monstro por perto.", "dim");
@@ -932,7 +958,8 @@
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, mobs: () => mobs, setTarget, shots: () => shots,
-    advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects }; // rodada 104: inspeção pelo console (só com ?debug)
+    advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
+    tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS) }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
@@ -940,9 +967,8 @@
   const PST = POINTER.st, updateTouch = POINTER.updateTouch;
 
   // ---------- Ações (executadas em ticks) ----------
-  function faceTo(x, y) {
-    const dx = x - player.x, dy = y - player.y;
-    player.dir = Math.abs(dx) >= Math.abs(dy) && dx ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"); // na diagonal olha para o lado
+  function faceTo(x, y) { // rodada 105: olha em 8 direções (diagonal de verdade)
+    player.dir = window.DIR_AT(x - player.x, y - player.y) || player.dir;
   }
   function faceRect(o) { faceTo(clamp(player.x, o.x, o.x + o.w - 1), clamp(player.y, o.y, o.y + o.h - 1)); }
   // ação do herói em 3 tempos: preparação → golpe (o efeito acontece no quadro de impacto) → recuperação
@@ -955,12 +981,7 @@
     if (t.kind === "mob") {
       if (r.dead) { player.target = null; return; }
       ensureWeapon();
-      // rodada 48: monstro em perseguição na diagonal: espera ele encostar (até 1,5 s por posição). Se os dois andassem juntos,
-      // trocavam de lado e caíam de novo na diagonal ("dança" que travava a luta por minutos)
-      const diag = Math.abs(r.x - player.x) === 1 && Math.abs(r.y - player.y) === 1, dk = diag ? `${player.x},${player.y},${r.x},${r.y}` : "";
-      if (dk !== player.diagKey) { player.diagKey = dk; player.diagWait = 0; }
-      // rodada 83: a espera vale também para chefes e dura o passo do monstro (+1 tick). Antes, monstros lentos (passo de 4 ticks ou mais,
-      // como a Serpente e o Golem Ancião) e chefes ficavam na "dança" da diagonal: robô preso 90 s+ sem golpe em ~1 de cada 4 descidas.
+      // rodada 105: encostar vale na diagonal (adjacent), então o herói golpeia dali mesmo; acabou a "dança" da diagonal (rodadas 48/83)
       if (hasBow() && player.equip.municao) { // rodada 104: atira de até ARROW_RANGE tiles, com a linha livre
         const ok = (x, y) => Math.hypot(r.x - x, r.y - y) <= ARROW_RANGE && clearShot(x, y, r.x, r.y);
         if (!ok(player.x, player.y)) {
@@ -973,7 +994,6 @@
         if (player.actT <= 0) { startShot(r); player.actT = 3; }
         return;
       }
-      if (diag && r.aggro && ++player.diagWait <= Math.max(3, (r.d.speed || 3) + 1)) { faceTo(r.x, r.y); return; }
       if (!adjacent(player, r)) { // rodada 45: sem caminho por ~2 s (diagonal com os dois lados bloqueados): solta o alvo em vez de travar
         if (goTo((x, y) => adjacent({ x, y }, r))) player.noPath = 0; else if ((player.noPath = (player.noPath || 0) + 1) >= 4) { player.noPath = 0; player.target = null; log("Não dá para chegar até ele daqui. Dê a volta.", "dim"); }
         return;
@@ -1449,7 +1469,7 @@
   }
   function pushCorpse(m) { // quadros de morte do Blender (ou a queda procedural) e depois fade; "life" tira o corpo da lista
     const d = m.d, DA = ANIMS[d.spr] && ANIMS[d.spr].rows.death;
-    corpses.push({ spr: d.spr, scale: d.scale || 1, tint: d.tint, x: m.px, y: m.py, face: m.face, t: 0, squish: d.squish, dir: Math.sign(m.x - player.x) || (m.face > 0 ? 1 : -1),
+    corpses.push({ spr: d.spr, scale: d.scale || 1, tint: d.tint, x: m.px, y: m.py, face: m.face, dir8: m.dir8, t: 0, squish: d.squish, dir: Math.sign(m.x - player.x) || (m.face > 0 ? 1 : -1),
       anim: !!DA, life: DA ? DA.frames / DA.fps + 0.6 : 0.8 });
   }
   function killMob(m) {
@@ -1954,8 +1974,8 @@
   function nextDir() { // direção do próximo passo (teclado ou caminho), sem andar
     const kd = keyDir(); if (kd) return kd;
     if (!player.path.length) return null;
-    const [nx, ny] = player.path[0], dx = nx - player.x, dy = ny - player.y;
-    return Math.abs(dx) >= Math.abs(dy) && dx ? (dx > 0 ? "right" : "left") : dy ? (dy > 0 ? "down" : "up") : null;
+    const [nx, ny] = player.path[0];
+    return window.DIR_AT(nx - player.x, ny - player.y);
   }
   function cancelAct() {
     const a = player.act; player.act = null; if (!a) return;
@@ -2082,7 +2102,7 @@
         if ((m.respawnT -= dt) <= 0) respawnMob(m); continue;
       }
       if (m.appear != null && (m.appear += dt) >= APPEAR) m.appear = null; // eco surgindo da névoa
-      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP)); m.dist += dt / MOB_STEP; }
+      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) / (m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; } // rodada 105: passo diagonal mais longo
       // slime: agacha, salta e aterrissa; os outros andam com easing (perseguindo, em ritmo constante)
       const k = m.d.squish ? (m.prog < 0.2 ? 0 : m.prog > 0.8 ? 1 : ease.inOutSine((m.prog - 0.2) / 0.6)) : m.aggro ? m.prog : ease.inOutSine(m.prog);
       m.px = m.fx + (m.x - m.fx) * k; m.py = m.fy + (m.y - m.fy) * k;
@@ -2125,7 +2145,7 @@
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },
@@ -2300,7 +2320,7 @@
     shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
   const drawPlayer = (t) => HERO.drawPlayer(t);
   // desenho dos monstros (js/actors.js)
-  const ACTORS = ValdoraActors.create({ ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
+  const ACTORS = ValdoraActors.create({ lazyAnim: (k) => lazyAnim(k), ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
   const { drawMob, drawMobAnim, drawCorpse, drawStun } = ACTORS;
   function drawBossBar() {
     const b = mobs.find((m) => (m.d.boss || m.d.mini) && !m.dead && m.aggro && Math.abs(m.x - player.x) + Math.abs(m.y - player.y) < 14);

@@ -80,7 +80,7 @@ window.ValdoraShrine = (() => {
     function drawVotive(t) {
       const player = api.player(), A = ANIMS.fx_votive_flame; if (!A || !(player.votiveT > 0) || player.deadT > 0 || api.inCrypt()) return;
       const tag = tags.find((g) => g[0] === player.name && !g[4]); if (!tag) return;
-      const side = player.dir === "right" ? -1 : 1, bob = Math.sin(t * 2.4) * 0.05;
+      const side = window.DIR4(player.dir) === "right" ? -1 : 1, bob = Math.sin(t * 2.4) * 0.05;
       const cx = (tag[1] + side * 0.55) * TILE - cam.x, cy = (tag[2] + 0.42 + bob) * TILE - cam.y;
       const R = A.rows.loop; drawFx(A, Math.floor(t * R.fps) % R.frames, Math.round(cx - A.cw / 2), Math.round(cy - A.ch / 2));
     }

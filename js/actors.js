@@ -6,6 +6,19 @@ window.ValdoraActors = (() => {
     const { ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt, whiteOf } = api;
     // rodada 25: cópia tingida de cada folha, feita uma vez (ctx.filter a cada quadro custava ~13% do quadro com um eco na tela)
     const tintCache = new WeakMap();
+    // rodada 105: vista do monstro pela direção (8). De frente, de costas e nas diagonais a folha é outra ("<spr>@<vista>",
+    // carregada só quando o monstro está por perto); o lado direito é o esquerdo espelhado. Enquanto a vista carrega, ou em
+    // linhas que não giram (uivo, fúria...), usa a folha de lado virada para o lado do jogador.
+    const VIEW = { down: ["down", false], downleft: ["downleft", false], downright: ["downleft", true], left: [null, false], right: [null, true],
+      upleft: ["upleft", false], upright: ["upleft", true], up: ["up", false] };
+    function mobSheet(spr, dir8, face, row) {
+      const A = ANIMS[spr], v = dir8 && VIEW[dir8], meta = (window.ANIM_SHEETS || {})[spr];
+      if (v && v[0] && meta && meta.views && meta.views.includes(v[0])) {
+        const V = api.lazyAnim(spr + "@" + v[0]);
+        if (V && V.rows[row]) return [V, v[1]];
+      }
+      return [A, face > 0];
+    }
     function tinted(A, tint) {
       if (!tint) return A;
       let byTint = tintCache.get(A); if (!byTint) tintCache.set(A, (byTint = new Map()));
@@ -75,7 +88,8 @@ window.ValdoraActors = (() => {
         grd.addColorStop(0, "#9d5cff55"); grd.addColorStop(1, "#9d5cff00"); ctx.fillStyle = grd; ctx.fillRect(footX - r, footY - h * 0.4 - r, r * 2, r * 2);
       }
       if (d.alpha) ctx.globalAlpha *= d.alpha; // rodada 83: eco translúcido (o Blender achata o alfa parcial da arte)
-      drawAnim(tinted(A, d.tint), row, frame, footX, footY, m.face > 0, s, m.flash > 0 ? Math.min(1, m.flash / 0.16) * 0.85 : 0);
+      const [SA, flip] = mobSheet(d.spr, m.dir8, m.face, row);
+      drawAnim(tinted(SA, d.tint), row, frame, footX, footY, flip, s, m.flash > 0 ? Math.min(1, m.flash / 0.16) * 0.85 : 0);
       if (d.alpha) ctx.globalAlpha /= d.alpha;
       const top = footY - h;
       if (m.windup > 0 && SPR.icon_dodge_64) { const ic = SPR.icon_dodge_64, bob = Math.sin(t * 9) * 3; ctx.drawImage(ic, footX - ic.width / 2, top - ic.height - 26 + bob); } // "saia do círculo"
@@ -98,9 +112,9 @@ window.ValdoraActors = (() => {
         ctx.globalAlpha = 1; return;
       }
       if (c.anim) {
-        const A = ANIMS[c.spr], R = A.rows.death, dur = R.frames / R.fps;
+        const A = ANIMS[c.spr], R = A.rows.death, dur = R.frames / R.fps, [SA, flip] = mobSheet(c.spr, c.dir8, c.face, "death");
         ctx.globalAlpha = c.t > dur ? Math.max(0, 1 - (c.t - dur) / 0.6) : 1;
-        drawAnim(tinted(A, c.tint), "death", Math.min(R.frames - 1, Math.floor(c.t * R.fps)), Math.round(c.x * TILE - cam.x + TILE / 2), Math.round((c.y + 1) * TILE - cam.y), c.face > 0, c.scale);
+        drawAnim(tinted(SA, c.tint), "death", Math.min(R.frames - 1, Math.floor(c.t * R.fps)), Math.round(c.x * TILE - cam.x + TILE / 2), Math.round((c.y + 1) * TILE - cam.y), flip, c.scale);
         ctx.globalAlpha = 1; return;
       }
       const img = SPR[c.spr]; if (!img) return;

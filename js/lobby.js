@@ -11,6 +11,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.04", "Movimento em 8 direções", ["Heróis, moradores e monstros agora olham e andam nas diagonais, com animação própria para cada direção",
+      "Cortar árvore, minerar, pescar, assar na fogueira, falar com alguém ou lutar: dá para fazer de qualquer lado, inclusive na diagonal",
+      "Os monstros também te perseguem e atacam na diagonal; a dança de lado do herói e do monstro acabou",
+      "Fogueira, braseiro e tocha: só a chama se mexe"]],
     ["v1.03", "Arqueiro, equipamento de verdade e plantas", ["Novo herói: o Arqueiro (no lugar do Marinheiro) atira flechas de longe; com arco equipado, qualquer herói atira",
       "Todos começam só de roupa de baixo; o que você veste aparece no personagem (camisa, placas, calça, botas, capuz, elmo, capa, aljava e arma)",
       "Armas, ferramentas e peitorais viram itens: compre com o Bento, forje na bigorna ou ganhe do Ivo no tutorial; a ferramenta certa entra na mão sozinha",

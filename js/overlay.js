@@ -57,7 +57,7 @@ window.ValdoraOverlay = (() => {
       g.strokeStyle = "#ffffff88"; g.lineWidth = 1;
       g.strokeRect(Math.round(cam.x / TILE * sx) + 0.5, Math.round(cam.y / TILE * sy) + 0.5, Math.round(canvas.width / TILE * sx), Math.round(canvas.height / TILE * sy));
       { // herói: seta branca com contorno, apontando para onde olha
-        const a = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[player.dir] || 0, hx = (player.px + 0.5) * sx, hy = (player.py + 0.5) * sy;
+        const a = { right: 0, downright: Math.PI / 4, down: Math.PI / 2, downleft: 3 * Math.PI / 4, left: Math.PI, upleft: -3 * Math.PI / 4, up: -Math.PI / 2, upright: -Math.PI / 4 }[player.dir] || 0, hx = (player.px + 0.5) * sx, hy = (player.py + 0.5) * sy;
         g.save(); g.translate(hx, hy); g.rotate(a); g.beginPath(); g.moveTo(5, 0); g.lineTo(-3.5, -3.8); g.lineTo(-1.5, 0); g.lineTo(-3.5, 3.8); g.closePath();
         g.fillStyle = "#ffffff"; g.strokeStyle = "#140c06"; g.lineWidth = 1.5; g.stroke(); g.fill(); g.restore();
       }

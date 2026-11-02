@@ -4,6 +4,9 @@ window.ValdoraHero = (() => {
   "use strict";
   function create(api) {
     const { ctx, cam, TILE, ANIMS, SPR, HEROES, HERO_SHEET, DIR_VEC, ease, tags, fx, rand, drawAnim, animFrame, shadowAt, whiteOf } = api;
+    // rodada 105: 8 direções. Linha "<ação>_<dir>" da folha; sem a diagonal, a do lado (folhas antigas)
+    const D4 = window.DIR4, rk = (A, pre, d) => (A && A.rows[pre + d] ? pre + d : pre + D4(d));
+    const rowIn = (img, cell, d) => window.SHEET_ROW(d, Math.round(img.height / cell)); // linha da folha de 3 colunas (4 ou 8 linhas)
     function heroPose() {
       const player = api.player();
       const a = player.act; if (!a) return { phase: -1, off: 0, k: 0 };
@@ -30,7 +33,7 @@ window.ValdoraHero = (() => {
     }
     function drawTool(t, cx, cy) { // ferramenta na mão, rastro do golpe e linha de pesca
       const player = api.player();
-      const a = player.act, dir = player.dir, flip = dir === "left" ? -1 : 1;
+      const a = player.act, dir = D4(player.dir), flip = dir === "left" ? -1 : 1;
       const fishing = player.cast && player.target && player.target.ref === player.cast.spot && !player.path.length;
       const key = a && a.key ? a.key : fishing ? "rod" : null; if (!key) return;
       const hx = cx + (dir === "left" ? -11 : dir === "right" ? 11 : dir === "down" ? 10 : -10), hy = cy + 4;
@@ -101,7 +104,7 @@ window.ValdoraHero = (() => {
       player.upOff = (player.upOff || 0) + ((above ? 0.24 : 0) - (player.upOff || 0)) * Math.min(1, Math.max(0, t - lt) * 10);
       const hero = HEROES.find((h) => h.id === player.hero), sheet = SPR[hero.sheet], atkSheet = hero.attack && SPR[hero.attack], HA = ANIMS[player.hero];
       if (HA && player.deadT > 0) { // morte: toca uma vez e segura o último quadro
-        const row = HA.rows["death_" + player.dir] ? "death_" + player.dir : "death_down", R = HA.rows[row], k = 1.6 - player.deadT;
+        const r0 = rk(HA, "death_", player.dir), row = HA.rows[r0] ? r0 : "death_down", R = HA.rows[row], k = 1.6 - player.deadT;
         ctx.globalAlpha = player.deadT < 0.3 ? player.deadT / 0.3 : 1;
         drawAnim(HA, row, Math.min(R.frames - 1, Math.floor(k * R.fps)), Math.round(player.px * TILE - cam.x + TILE / 2), Math.round((player.py + 1) * TILE - cam.y), false);
         ctx.globalAlpha = 1; return;
@@ -117,14 +120,14 @@ window.ValdoraHero = (() => {
       shadowAt(cx, by - 2, TILE * 0.3 * (1 - bob / 25), TILE * 0.1 * (1 - bob / 25));
       const fishing = player.cast && player.target && player.target.ref === player.cast.spot && !player.path.length;
       const aSheet = pose.phase >= 0 ? actSheet(hero, player.act.key) : fishing && !moving ? actSheet(hero, "rod") : null;
-      const DS = ANIMS[hero.id + "_dash"], DA = DS && DS.rows["dash_" + player.dir] ? DS : HA, DR = DA && DA.rows["dash_" + player.dir]; // investida com espada (hero_N_dash)
+      const DS = ANIMS[hero.id + "_dash"], DA = DS && DS.rows[rk(DS, "dash_", player.dir)] ? DS : HA, DR = DA && DA.rows[rk(DA, "dash_", player.dir)]; // investida com espada (hero_N_dash)
       if (DR && (player.ghosts || player.dash)) { // investida (Blender): corpo esticado para a frente; rastro em código com o último quadro
-        const row = "dash_" + player.dir;
+        const row = rk(DA, "dash_", player.dir);
         for (const gh of (player.dash ? player.dash.ghosts : player.ghosts)) { ctx.globalAlpha = Math.max(0, gh.a) * 0.75; drawAnim(DA, row, DR.frames - 1, Math.round(gh.x * TILE - cam.x + TILE / 2), Math.round((gh.y + 1) * TILE - cam.y), false); }
         ctx.globalAlpha = 1;
         if (player.dash) { drawAnim(DA, row, Math.min(DR.frames - 1, Math.floor(player.dash.t * DR.fps)), cx, by, false); tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return; }
       } else if (player.ghosts || player.dash) { // rastro da investida: cópias translúcidas do quadro de golpe
-        const gs = SPR[hero.attack]; if (gs) { const cell = gs.width / 3, row = HERO_SHEET.rows.indexOf(player.dir);
+        const gs = SPR[hero.attack]; if (gs) { const cell = gs.width / 3, row = rowIn(gs, cell, player.dir);
           for (const g of (player.dash ? player.dash.ghosts : player.ghosts)) { ctx.globalAlpha = Math.max(0, g.a) * 0.75; ctx.drawImage(gs, cell, row * cell, cell, cell, Math.round(g.x * TILE - cam.x + TILE / 2 - cell / 2), Math.round((g.y + 1) * TILE - cam.y - cell), cell, cell); }
           ctx.globalAlpha = 1;
           if (player.dash) { ctx.drawImage(gs, cell, row * cell, cell, cell, cx - cell / 2, by - cell, cell, cell); tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return; } }
@@ -132,76 +135,77 @@ window.ValdoraHero = (() => {
       if (player.act && player.act.key === "spin") { // golpe giratório: gira pelas 4 direções com um anel de corte
         const a = player.act, gs = SPR[hero.attack], k = Math.min(1, Math.max(0, (a.t - a.prep) / a.strike)), ss = SPR[hero.id + "_spin"];
         if (ss) { const cell = ss.height, cw8 = ss.width / 8, f = Math.min(7, Math.floor(a.t / (a.prep + a.strike + a.rec) * 8)); ctx.drawImage(ss, Math.round(f * cw8), 0, cw8, cell, cx - cell / 2, by - cell, cell, cell); } // giro (8 quadros)
-        else if (gs) { const cell = gs.width / 3, dir = pose.phase === 1 ? SPIN_ROWS[Math.floor(k * 4) % 4] : player.dir; ctx.drawImage(gs, (pose.phase === 1 ? 1 : pose.phase === 0 ? 0 : 2) * cell, HERO_SHEET.rows.indexOf(dir) * cell, cell, cell, cx - cell / 2, by - cell, cell, cell); }
+        else if (gs) { const cell = gs.width / 3, dir = pose.phase === 1 ? SPIN_ROWS[Math.floor(k * 4) % 4] : player.dir; ctx.drawImage(gs, (pose.phase === 1 ? 1 : pose.phase === 0 ? 0 : 2) * cell, rowIn(gs, cell, dir) * cell, cell, cell, cx - cell / 2, by - cell, cell, cell); }
         if (pose.phase >= 1) { const fade = pose.phase === 2 ? 1 - pose.k : 1, cy = by - fh * 0.35;
           for (let i = 0; i < 12; i++) { const a0 = k * 6.28 * 1.1 - i * 0.22; ctx.strokeStyle = `rgba(255,250,220,${(1 - i / 12) * 0.8 * fade})`; ctx.lineWidth = 5 - i * 0.3;
             ctx.beginPath(); ctx.ellipse(cx, cy, 34, 16, 0, a0, a0 + 0.22); ctx.stroke(); } }
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
-      const CH = ANIMS[hero.id + "_cheer"], CHR = CH && CH.rows["cheer_" + player.dir];
-      const CWR = CH && CH.rows["cheer_walk_" + player.dir];
+      const CH = ANIMS[hero.id + "_cheer"], chR = rk(CH, "cheer_", player.dir), cwR = rk(CH, "cheer_walk_", player.dir), CHR = CH && CH.rows[chR];
+      const CWR = CH && CH.rows[cwR];
       if (CHR && player.cheerT > 0 && player.prog >= 1 && !player.act) { // comemoração (Blender): missão ou tarefa concluída
-        drawAnim(CH, "cheer_" + player.dir, Math.min(CHR.frames - 1, Math.floor((CHR.frames / CHR.fps - player.cheerT) * CHR.fps)), cx, by, false);
+        drawAnim(CH, chR, Math.min(CHR.frames - 1, Math.floor((CHR.frames / CHR.fps - player.cheerT) * CHR.fps)), cx, by, false);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
       if (CWR && player.cheerT > 0 && player.prog < 1 && !player.act) { // comemora andando: arma no alto e passos (loop)
-        drawAnim(CH, "cheer_walk_" + player.dir, Math.floor(player.dist * 2) % CWR.frames, cx, by, false);
+        drawAnim(CH, cwR, Math.floor(player.dist * 2) % CWR.frames, cx, by, false);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
-      const BK = ANIMS[hero.id + "_block"], BR = BK && BK.rows["block_" + player.dir];
-      const CA = ANIMS[hero.id + "_cancel"], CR = CA && CA.rows["cancel_" + player.dir];
+      const BK = ANIMS[hero.id + "_block"], bkR = rk(BK, "block_", player.dir), BR = BK && BK.rows[bkR];
+      const CA = ANIMS[hero.id + "_cancel"], caR = rk(CA, "cancel_", player.dir), CR = CA && CA.rows[caR];
       if (CR && player.cancelT > 0) { // cancelou o golpe para andar: recolhe a arma (Blender)
-        drawAnim(CA, "cancel_" + player.dir, Math.min(CR.frames - 1, Math.floor((0.125 - player.cancelT) * CR.fps)), cx, by, false);
+        drawAnim(CA, caR, Math.min(CR.frames - 1, Math.floor((0.125 - player.cancelT) * CR.fps)), cx, by, false);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
       if (BR && player.blockT > 0) { // bloqueio (Blender): recua firme e absorve o golpe
-        drawAnim(BK, "block_" + player.dir, Math.min(BR.frames - 1, Math.floor((0.22 - player.blockT) * BR.fps)), cx, by, false);
+        drawAnim(BK, bkR, Math.min(BR.frames - 1, Math.floor((0.22 - player.blockT) * BR.fps)), cx, by, false);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
       if (player.act && player.act.key === "smash" && pose.phase === 0 && rand() < 0.5) fx.sparks(player.px + 0.5 + DIR_VEC[player.dir][0] * 0.4, player.py + 0.2, 1, ["#ffd23a", "#fff6c0"], 1.5); // carregando
       const CK = SPR[hero.id + "_cook"]; // rodada 29: assando — agachado girando o espeto, em loop 0,1,2,1 a 7 fps
       if (CK && !moving && player.cookUntil > performance.now() / 1000 && player.target && player.target.kind === "fire") {
-        const cell = CK.width / 3, row = HERO_SHEET.rows.indexOf(player.dir), col = [0, 1, 2, 1][Math.floor(t * 7) % 4];
+        const cell = CK.width / 3, row = rowIn(CK, cell, player.dir), col = [0, 1, 2, 1][Math.floor(t * 7) % 4];
         ctx.drawImage(CK, col * cell, row * cell, cell, cell, cx - cell / 2, by - cell, cell, cell);
         tags.push([player.name, player.px + 0.5, (by - fh * 0.72 + cam.y) / TILE + 0.12, "#f1c40f"]); return; // agachado: ~72% da altura em pé
       }
       if (aSheet) { // ação pela folha própria: preparação → golpe/arremesso (impacto) → finalização (ou vara estendida esperando o peixe)
-        const cell = aSheet.width / 3, row = HERO_SHEET.rows.indexOf(player.dir), col = pose.phase >= 0 ? pose.phase : 2;
+        const cell = aSheet.width / 3, row = rowIn(aSheet, cell, player.dir), col = pose.phase >= 0 ? pose.phase : 2;
         const shot = pose.phase >= 0 && player.act.key === "bow", sword = pose.phase >= 0 && (player.act.key === "tool_sword" || player.act.key === "smash" || shot);
         // rodada 67: de frente e de costas, o golpe usa 4 quadros do Blender (antecipação 0-1, avanço 2, assentar 3)
         const S4 = sword && ANIMS[hero.id + "_strike4"], R4 = S4 && S4.rows["strike_" + player.dir];
         const f4 = !R4 ? -1 : pose.phase === 0 ? (pose.k < 0.5 ? 0 : 1) : pose.phase === 1 ? 2 : pose.k < 0.55 ? 3 : -1;
-        if (sword && !shot && player.dir === "up") drawSlash(cx, by, fh, player.dir, pose); // de costas o arco passa por trás
+        const back = player.dir.startsWith("up"); // de costas (também na diagonal) o arco passa por trás
+        if (sword && !shot && back) drawSlash(cx, by, fh, D4(player.dir), pose);
         if (f4 >= 0) drawAnim(S4, "strike_" + player.dir, f4, cx, by, false);
         else ctx.drawImage(aSheet, col * cell, row * cell, cell, cell, cx - cell / 2, by - cell, cell, cell);
-        if (sword && !shot && player.dir !== "up") drawSlash(cx, by, fh, player.dir, pose); // o tiro de arco não deixa rastro de lâmina
+        if (sword && !shot && !back) drawSlash(cx, by, fh, D4(player.dir), pose); // o tiro de arco não deixa rastro de lâmina
         if (player.cast && (fishing || (player.act && player.act.key === "rod")) && col === 2) {
-          const [tx, ty] = ((window.ROD_TIP3D || {})[hero.id] || ROD_TIP)[player.dir], k = cell / 96; // 3D: ponta medida no Blender drawFishLine(cx + tx * k, by + ty * k, t);
+          const tips = (window.ROD_TIP3D || {})[hero.id] || ROD_TIP, [tx, ty] = tips[player.dir] || tips[D4(player.dir)], k = cell / 96; // 3D: ponta medida no Blender drawFishLine(cx + tx * k, by + ty * k, t);
         }
         if (player.flash > 0) ctx.globalAlpha = 1;
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]);
         return;
       }
       const idleAnim = HA && !moving && pose.phase < 0;
-      if (HA && player.eatT > 0 && !moving && HA.rows["eat_" + player.dir]) { // comendo/bebendo
-        const R = HA.rows["eat_" + player.dir];
-        drawAnim(HA, "eat_" + player.dir, Math.floor((0.5 - player.eatT) * R.fps) % R.frames, cx, by, false);
+      if (HA && player.eatT > 0 && !moving && HA.rows[rk(HA, "eat_", player.dir)]) { // comendo/bebendo
+        const R = HA.rows[rk(HA, "eat_", player.dir)];
+        drawAnim(HA, rk(HA, "eat_", player.dir), Math.floor((0.5 - player.eatT) * R.fps) % R.frames, cx, by, false);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]); return;
       }
       if (HA && (player.hitT > 0 || (idleAnim && !fishing))) { // idle e hit pela folha animada (já trazem respiração e reação)
-        const hit = player.hitT > 0, row = (hit ? "hit_" : "idle_") + player.dir, R = HA.rows[row];
+        const hit = player.hitT > 0, row = rk(HA, hit ? "hit_" : "idle_", player.dir), R = HA.rows[row];
         const frame = hit ? Math.min(R.frames - 1, Math.floor((0.3 - player.hitT) * R.fps)) : animFrame(R, t);
         if (!hit && player.cast && !actSheet(hero, "rod")) drawTool(t, cx, by - fh * 0.45);
         drawAnim(HA, row, frame, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0);
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]);
         return;
       }
-      const img = sheet, row = HERO_SHEET.rows.indexOf(player.dir);
+      const img = sheet, row = HERO_SHEET.rows.indexOf(D4(player.dir));
       const col = moving ? HERO_SHEET.walk[Math.floor(player.dist * 2) % HERO_SHEET.walk.length] : 0; // quadro pela distância percorrida
       const dh = Math.round(fh * breath), sy = by - dh - Math.round(bob);
-      const toolBehind = player.dir === "up" && !(player.act && player.act.key && player.act.key !== "rod");
+      const toolBehind = player.dir.startsWith("up") && !(player.act && player.act.key && player.act.key !== "rod");
       if (toolBehind) drawTool(t, cx, by - fh * 0.45 - bob);
-      if (W6 && moving && W6.rows["walk_" + player.dir]) drawAnim(W6, "walk_" + player.dir, Math.floor(player.dist * 3) % 6, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0); // 6 quadros a cada 2 tiles
+      if (W6 && moving && W6.rows[rk(W6, "walk_", player.dir)]) drawAnim(W6, rk(W6, "walk_", player.dir), Math.floor(player.dist * 3) % 6, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0); // 6 quadros a cada 2 tiles
       else if (img) ctx.drawImage(img, col * fw, row * fh, fw, fh, cx - fw / 2, sy, fw, dh);
       else if (SPR[player.hero]) ctx.drawImage(SPR[player.hero], cx - TILE / 2, by - TILE);
       if (!toolBehind) drawTool(t, cx, by - fh * 0.45 - bob);

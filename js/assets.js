@@ -62,6 +62,16 @@ window.SPRITE_SIZE = {
 
 // Folha de animação dos personagens: 3 colunas (parado, passo A, passo B) x 4 linhas.
 window.HERO_SHEET = { cols: 3, rows: ["down", "left", "right", "up"], walk: [1, 0, 2, 0], fps: 8 };
+// rodada 105: 8 direções. As folhas novas (Blender) têm as diagonais; as antigas (4 linhas) usam o lado mais próximo.
+window.DIRS8 = ["down", "left", "right", "up", "downleft", "downright", "upleft", "upright"]; // ordem das linhas nas folhas de 8
+window.DIR4 = (d) => (d === "downleft" || d === "upleft" ? "left" : d === "downright" || d === "upright" ? "right" : d);
+window.DIR_AT = (dx, dy) => { // direção (8) do vetor; null se parado
+  if (!dx && !dy) return null;
+  return ["right", "downright", "down", "downleft", "left", "upleft", "up", "upright"][(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) % 8 + 8) % 8];
+};
+window.SHEET_ROW = (d, nRows) => (nRows >= 8 ? window.DIRS8.indexOf(d) : window.HERO_SHEET.rows.indexOf(window.DIR4(d))); // linha da folha
+// folhas de ação do herói (3 colunas): a altura vem da imagem (4 ou 8 linhas)
+window.ASPECT_FIT = new Set([1, 2, 3].flatMap((n) => ["attack", "chop", "mine", "hammer", "fish", "cook", "reap"].map((a) => `hero_${n}_${a}`)));
 
 // Animações simples (quadros alternados) para chão e objetos.
 // (os cardumes são desenhados por código: ondulações animadas, sem arte)

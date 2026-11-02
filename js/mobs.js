@@ -5,21 +5,25 @@ window.ValdoraMobs = (() => {
   "use strict";
   function create(api) {
     const { ANIMS, TICK, DIRS, SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat, playerDied } = api;
+    const DIRS8V = api.DIRS8V || DIRS, canStep = api.canStep || (() => true); // rodada 105 (os testes montam a IA sem eles)
+    const adjacent = api.adjacent || ((a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1);
+    // rodada 105: para onde o monstro olha, em 8 direções (m.dir8); m.face (-1/1) segue o lado para as folhas espelhadas
+    function faceAt(m, tx, ty) { const d = window.DIR_AT(tx - m.x, ty - m.y); if (!d) return; m.dir8 = d; if (tx !== m.x) m.face = tx > m.x ? 1 : -1; }
     function mobTick(m) {
-      const player = api.player(), d = m.d, dist = Math.abs(m.x - player.x) + Math.abs(m.y - player.y);
+      const player = api.player(), d = m.d, dist = Math.abs(m.x - player.x) + Math.abs(m.y - player.y), near = adjacent(m, player); // encostado (também na diagonal)
       if (m.stun > 0) return; // atordoado: não age
       if (m.appear != null) return; // eco ainda surgindo da névoa
       if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage")) return; // uivando ou levantando: espera a folha terminar
     if (m.sleeping) { if (dist <= 2) wake(m); return; } // lobo dormindo na toca: acorda com o uivo do Alfa, com um golpe ou com o jogador a 2 passos
       if (m.howlPending && dist <= 8 && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { // uiva ao ver o jogador, antes de atacar
-        m.howlPending = false; m.an = { s: "howl", t: 0, still: 0 }; m.face = player.x > m.x ? 1 : -1; api.howl(m); return;
+        m.howlPending = false; m.an = { s: "howl", t: 0, still: 0 }; faceAt(m, player.x, player.y); api.howl(m); return;
       }
       if (m.atkT > 0) m.atkT--;
-      if (m.aggro && m.atkT === 1 && dist === 1 && !m.windup && m.prog >= 1 && !ANIMS[d.spr]) m.prep = TICK; // recua antes de atacar (sem folha animada)
+      if (m.aggro && m.atkT === 1 && near && !m.windup && m.prog >= 1 && !ANIMS[d.spr]) m.prep = TICK; // recua antes de atacar (sem folha animada)
       if (!m.aggro && m.hp < d.hp && api.tickN() % 4 === 0) m.hp++; // regenera fora de combate
       if (!m.aggro && d.aggro && dist <= d.aggro && lv("combate") < d.lvl * 2 && !inTown(player.x, player.y) && !(player.deadT > 0) && !(api.calm && api.calm(m))) { // rodada 79: Marco da Mata aceso acalma os lobos
         m.aggro = true; m.atkT = 2;
-        if (!d.mini && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { m.an = { s: "howl", t: 0, still: 0 }; m.howlFast = true; m.face = player.x > m.x ? 1 : -1; api.howl(m, true); return; } // uivo curto
+        if (!d.mini && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { m.an = { s: "howl", t: 0, still: 0 }; m.howlFast = true; faceAt(m, player.x, player.y); api.howl(m, true); return; } // uivo curto
       }
       if (m.aggro) {
         if (Math.hypot(m.x - m.hx, m.y - m.hy) > 11 || inTown(player.x, player.y) || dist > 14) { m.aggro = false; m.windup = 0; if (!m.temp) api.giveUp(m); if (m.temp && !m.dungeon) { if (d.echo) api.echoFade(m); m.dead = true; m.respawnT = 0; } return; } // eventos somem (o eco em névoa); masmorra não
@@ -28,16 +32,16 @@ window.ValdoraMobs = (() => {
           if (--m.windup === 0) {
             if (m.an && m.an.s === "special") { /* já resolvido no quadro de impacto da carga */ }
             else if (d.slam) { if (ANIMS[d.spr]) mobAttack(m, false, true); else slam(m); }
-            else if (dist === 1) mobAttack(m, true); // golpe pesado: só acerta se o jogador continuar ao lado
+            else if (near) mobAttack(m, true); // golpe pesado: só acerta se o jogador continuar ao lado
             else { addFloat(m.px + 0.5, m.py - 1.6, "esquivou!", "#9fe08a", 1, 14); burst(m.px + 0.5 + (player.x - m.x) * 0.6, m.py + 0.8, ["#c79bff", "#ffffff"], 10, 2); }
             m.atkT = spd;
           }
           return;
         }
         const pf = api.petFoe && api.petFoe(m, dist); // rodada 96: ao lado do filhote e longe do herói (ou mordido por último por ele): ataca o filhote
-        if (pf) { m.face = pf.x > m.x ? 1 : pf.x < m.x ? -1 : m.face; if (m.atkT <= 0 && m.prog >= 1) { api.petAttack(m); m.atkT = spd; } return; }
-        if (dist === 1) {
-          m.face = player.x > m.x ? 1 : player.x < m.x ? -1 : m.face;
+        if (pf) { faceAt(m, pf.x, pf.y); if (m.atkT <= 0 && m.prog >= 1) { api.petAttack(m); m.atkT = spd; } return; }
+        if (near) {
+          faceAt(m, player.x, player.y);
           if (m.atkT <= 0 && m.prog >= 1) {
             if ((d.boss || (d.special && ANIMS[d.spr] && ANIMS[d.spr].rows.special)) && ++m.swings % (d.slam ? 3 : 4) === 0) { // chefes e monstros com linha "special"
               m.windup = d.slam ? 3 : 2; SND.play("warn");
@@ -53,7 +57,7 @@ window.ValdoraMobs = (() => {
         } else if (m.prog >= 1) mobStepToward(m, player.x, player.y);
       } else if (m.prog >= 1 && Math.abs(m.x - m.hx) + Math.abs(m.y - m.hy) > 4) mobStepToward(m, m.hx, m.hy); // volta para casa
       else if (m.prog >= 1 && rand() < 0.12) {
-        const [dx, dy] = DIRS[Math.floor(rand() * 4)];
+        const [dx, dy] = DIRS8V[Math.floor(rand() * 8)]; // rodada 105: passeia também na diagonal
         if (Math.hypot(m.x + dx - m.hx, m.y + dy - m.hy) < 5) mobMove(m, m.x + dx, m.y + dy);
       }
     }
@@ -72,12 +76,14 @@ window.ValdoraMobs = (() => {
     const mobCan = (m, x, y) => { const player = api.player(); return walkable(x, y) && !(x === player.x && y === player.y) && regionAt(x, y) !== "town" && !(api.petAt && api.petAt(x, y)); }; // rodada 96: nem no tile do filhote
     function mobMove(m, x, y) {
       if (!mobCan(m, x, y)) return false;
-      if (x !== m.x) m.face = x > m.x ? 1 : -1;
+      if (x !== m.x && y !== m.y && !canStep(m.x, m.y, x, y)) return false; // diagonal sem cortar quina
+      faceAt(m, x, y);
       m.fx = m.x; m.fy = m.y; m.x = x; m.y = y; m.prog = 0; return true;
     }
     function mobStepToward(m, tx, ty) {
       const dx = Math.sign(tx - m.x), dy = Math.sign(ty - m.y);
       const first = Math.abs(tx - m.x) >= Math.abs(ty - m.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
+      if (dx && dy) first.unshift([dx, dy]); // rodada 105: vai direto na diagonal quando dá
       for (const [ax, ay] of first) if ((ax || ay) && mobMove(m, m.x + ax, m.y + ay)) { m.stuck = 0; return; }
       // rodada 45: preso na diagonal (os dois tiles do meio bloqueados): tenta um passo de lado; depois de ~5 s desiste e volta para casa
       m.stuck = (m.stuck || 0) + 1;
@@ -116,7 +122,7 @@ window.ValdoraMobs = (() => {
       if (!m.sleeping) return; m.sleeping = false; m.aggro = true; m.atkT = 2;
       const A = ANIMS[m.d.spr]; m.an = A && A.rows.wake ? { s: "wake", t: 0, still: 0 } : A && A.rows.hit ? { s: "hit", t: 0, still: 0 } : { s: "idle", t: 0, still: 0 }; // levanta (Blender)
     }
-    return { mobTick, slam, mobCan, mobMove, mobStepToward, mobAnim, wake };
+    return { mobTick, slam, mobCan, mobMove, mobStepToward, mobAnim, wake, faceAt };
   }
   return { create };
 })();
