@@ -712,6 +712,10 @@ window.VD = (() => {
   // ================= rodada 105: monstros dos biomas novos =================
   // Mesmos modelos 3D com outra cor (tint) e tamanho; atributos pela fórmula do nível (bate com os antigos: lobo 12, golem 20, aranha 36).
   const mobStats = (lvl, k = 1) => ({ hp: Math.round((2.4 * lvl + 0.012 * lvl * lvl) * k), atk: Math.round(0.95 * lvl), def: Math.round(0.8 * lvl), maxHit: Math.round(2 + lvl / 4 + (k > 2 ? 3 : 0)) });
+  // rodada 113: ninja encapuzado — emboscada de quem farma (mais com a mochila pesada). Nasce no nível de Combate do herói
+  // (vida, ataque e defesa por mobStats, como um monstro comum do mesmo nível), persegue sem desistir e some ao entrar numa vila.
+  MOBS.ninja = { name: "Ninja encapuzado", spr: "mob_ninja", lvl: 1, ...mobStats(1), speed: 3, aggro: 99, coins: [2, 4], where: "Emboscada: surge de quem farma (bem mais com a mochila pesada)",
+    drops: [], color: "#3a3848", ambush: true, noBounty: true };
   const STRIP = ["boss", "mini", "echo", "echoHome", "marker", "summon", "noBounty", "enrage", "light", "quest"];
   function bmob(base, name, lvl, tint, where, o = {}) {
     const B = { ...MOBS[base] }; for (const k of STRIP) if (!(o.keep || []).includes(k)) delete B[k];
@@ -1086,7 +1090,7 @@ window.VD = (() => {
   // armas e peitorais da forja também caem, raramente, no tier que o nível do monstro alcança (espada, arco, montante e peitoral)
   const forgeTierFor = (g, lvl) => g.tiers.reduce((best, t, i) => (!t.rolls && (t.req || 0) <= lvl ? i : best), 0);
   for (const d of Object.values(MOBS)) {
-    if (d.summon || d.echo || d.temp) continue;
+    if (d.summon || d.echo || d.temp || d.ambush) continue;
     // sem família (chefes humanoides, guarda da cripta): a secundária das três classes
     const fam = FAMILY.find(([re]) => re.test(d.spr || "")) || [null, "boss", ["escudo", "flecha", "orbe", "tomo"]], lvl = d.lvl || 1, have = new Set((d.drops = d.drops || []).map((x) => x[0]));
     const big = d.boss || d.mini || (d.k || 1) > 1;
@@ -1126,6 +1130,6 @@ window.VD = (() => {
   }
   const CARRY = { base: 50, perVit: 0.4, heavy: 1, crawl: 1.3 };
 
-  return { REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

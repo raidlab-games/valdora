@@ -7056,6 +7056,211 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true
+ },
+ "mob_ninja": {
+  "src": "assets/flow/anim3d/mob_ninja.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_ninja@down": {
+  "src": "assets/flow/anim3d/mob_ninja__down.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_ninja@downleft": {
+  "src": "assets/flow/anim3d/mob_ninja__downleft.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_ninja@upleft": {
+  "src": "assets/flow/anim3d/mob_ninja__upleft.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_ninja@up": {
+  "src": "assets/flow/anim3d/mob_ninja__up.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true
  }
 };
 window.ROD_TIP3D = {"hero_1": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_2": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_3": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}};

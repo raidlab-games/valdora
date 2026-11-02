@@ -484,6 +484,8 @@ img.eicon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; 
 #invmenu b { color: #ffd84a; } #invmenu small { color: #e8dcc0; opacity: .7; }
 #invmenu button { font: inherit; padding: 8px 6px; background: var(--wood-2, #3a2a1a); color: #e8dcc0; border: 1px solid #6b4f2a; cursor: pointer; text-align: left; }
 #invmenu button[data-act="close"] { opacity: .7; }
+#invmenu button:hover, #invmenu button:focus-visible { background: #5a4024; color: #fff; outline: none; } /* rodada 113 */
+#invmenu button[data-act="cookhint"] { opacity: .6; } #invmenu button small { opacity: .75; }
 
 /* ---------- Rodada 11: dica da tecla F e ícones do menu da mochila ---------- */
 #fhint { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); padding: 4px 10px 4px 6px; background: #1b1610e6; border: 2px solid #6b4f2a;
@@ -713,3 +715,6 @@ button.link:hover { color: #cfe3ff; }
 #me-load em { position: absolute; inset: 0; font-size: 10px; line-height: 9px; font-style: normal; font-weight: bold; text-align: center; color: #fff; text-shadow: 1px 1px 0 #000; letter-spacing: 0; }
 @keyframes loadPulse { to { box-shadow: inset 0 0 0 1px #ff6a4a, 0 0 6px #ff3a2a; } }
 @media (prefers-reduced-motion: reduce) { #me-load.crawl { animation: none; } }
+/* rodada 113: comparação no resumo do item (verde = ganha, vermelho = perde) */
+#tip .tip-cmp { margin-top: 3px; padding-top: 3px; border-top: 1px solid #6b4f2a88; }
+#tip b.up { color: #7dff9a; } #tip b.down { color: #ff6b5a; }

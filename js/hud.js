@@ -8,6 +8,49 @@ window.ValdoraHud = (() => {
     const { esc, iconImg, isSpecial, itemColor, accName, accBonus, itemTip, affBadges } = ValdoraUI;
     const RULES = ValdoraRules, { level, xpFor, MAX_LVL, bonusText } = RULES, LIGHT = ValdoraLight;
     const { QUEST, TICK, combatStats, gearName, masterBadge, maxHp, tier, totalLevel } = api;
+    // rodada 113: resumo do item ao passar o mouse na mochila: o que ele faz e quanto muda em relação ao que está vestido
+    const ST = { acc: "acerto", dmg: "dano", def: "defesa", gather: "% coleta", tool: "ferramenta" };
+    function statsOf(e) { // números de uma peça (bônus + afixos + tier da forja); ferramentas contam o tier como "ferramenta"
+      if (!e) return {};
+      const it = ITEMS[e.name], o = { ...(accBonus(e) || {}) };
+      if (it.gear) { const t = GEAR[it.gear].tiers[it.tier];
+        if (it.gear === "espada") { o.acc = (o.acc || 0) + (t.acc || 0); o.dmg = (o.dmg || 0) + (t.dmg || 0); }
+        else if (it.gear === "armadura") o.def = (o.def || 0) + (t.def || 0);
+        else o.tool = t.bonus || 0; }
+      for (const k of Object.keys(o)) if (!o[k]) delete o[k];
+      return o;
+    }
+    const sgn = (v) => (v > 0 ? `<b class="up">+${v}</b>` : `<b class="down">−${-v}</b>`);
+    function invTip(s, player) {
+      const it = ITEMS[s.name], kg = (w) => String(Math.round(w * 10) / 10).replace(".", ",");
+      const col = s.aff ? "#ffd84a" : it.rarity ? RARITY[it.rarity].color : "#fff";
+      let h = `<b style="color:${col}">${esc(accName(s))}</b>${s.n > 1 ? ` <small>x${s.n}</small>` : ""}`;
+      if (it.slot) {
+        const S = VD.EQUIP_SLOTS[it.slot], cur = player.equip[it.slot], mine = statsOf(s), now = statsOf(cur);
+        h += `<br><small>${esc(S.name)}${it.rarity ? " · " + esc(RARITY[it.rarity].name) : ""}${it.need ? ` · requer Combate ${it.need}` : ""}</small>`;
+        const line = Object.entries(mine).map(([k, v]) => `+${v} ${ST[k] || k}`).join(", ");
+        if (line) h += `<div>${esc(line)}</div>`;
+        if (it.pack) h += `<div>+${it.pack.slots} espaços · +${it.pack.cap} kg de carga</div>`;
+        if (it.ammo) h += `<div>munição do Arqueiro</div>`;
+        if (cur && cur.name !== s.name) {
+          const keys = [...new Set([...Object.keys(mine), ...Object.keys(now)])], d = keys.map((k) => [k, (mine[k] || 0) - (now[k] || 0)]).filter(([, v]) => v);
+          const cp = cur && ITEMS[cur.name].pack;
+          if (it.pack && cp) d.push(["espaços", it.pack.slots - cp.slots], ["kg de carga", it.pack.cap - cp.cap]);
+          h += `<div class="tip-cmp">No lugar de ${esc(accName(cur))}: ${d.filter(([, v]) => v).map(([k, v]) => `${sgn(v)} ${ST[k] || k}`).join(", ") || "sem diferença"}</div>`;
+        } else if (!cur) h += `<div class="tip-cmp">Espaço vazio: tudo isso é ganho.</div>`;
+        else h += `<div class="tip-cmp">Igual ao que você está usando.</div>`;
+      } else if (it.heal) {
+        const hp = Math.max(0, player.hp), mh = api.maxHp(), to = Math.min(mh, hp + it.heal);
+        h += `<div>Cura ${it.heal} de vida</div><div class="tip-cmp">Agora: ${hp}/${mh} → ${sgn(to - hp)} = ${to}/${mh}</div>`;
+      } else if (it.buff) { const B = BUFFS[it.buff]; h += `<div>${esc(B.name)} por ${B.ticks * TICK} s</div>${B.desc ? `<small>${esc(B.desc)}</small>` : ""}`; }
+      else if (it.cook) { const l = level(player.xp.culinaria); h += `<div>Cru: asse numa fogueira (Culinária ${it.cookLvl})</div><small>${l < it.cookLvl ? "seu nível ainda não deixa assar" : `${Math.round(RULES.burnChance(l, it.cookLvl) * 100)}% de queimar`}</small>`; }
+      else if (it.quest) h += `<div>Item de missão</div>`;
+      else { const R = [...Object.values(VD.CRAFT), ...Object.values(VD.SMELT)], uses = R.filter((r) => r.mats && r.mats[s.name]).length; h += `<div>Material${it.region ? " da região" : ""}${uses ? ` · usado em ${uses} receita${uses > 1 ? "s" : ""}` : ""}</div>`; }
+      for (const a of s.aff || []) h += `<div class="tip-aff">${esc(ValdoraUI.affLine(a))}</div>`;
+      const w = VD.weightOf(s.name);
+      h += `<small class="tip-hint">peso ${kg(w)} kg${s.n > 1 ? ` (total ${kg(w * s.n)} kg)` : ""} · vale ${it.price} moedas · clique para opções</small>`;
+      return h;
+    }
     // ícone da passiva do estilo (Flow) + nome e descrição
     const passiveHtml = (s) => s.passive ? `<br>${s.passive.icon && ASSETS[s.passive.icon] ? `<img class="picon" src="${ASSETS[s.passive.icon]}" alt="">` : ""}<b>${esc(s.passive.name)}:</b> ${esc(s.passive.desc)}` : "";
     // rodada 21: quem vive no mapa aberto renasce (ampulheta + tempo); masmorra volta a cada visita; evento e missão não renascem
@@ -69,7 +112,7 @@ window.ValdoraHud = (() => {
           const B = it.buff && BUFFS[it.buff];
           const tip = `${s.name}${it.heal ? ` · cura ${it.heal} (clique para comer)` : ""}${B ? ` · ${B.name} por ${B.ticks * TICK} s (clique para beber)` : ""}${it.cook ? (level(player.xp.culinaria) < it.cookLvl ? ` · asse numa fogueira (requer Culinária ${it.cookLvl})` : ` · asse numa fogueira (${Math.round(RULES.burnChance(level(player.xp.culinaria), it.cookLvl) * 100)}% de queimar)`) : ""} · vale ${it.price} · clique direito larga no chão`;
           const tip2 = it.slot ? `${accName(s)} · ${RARITY[it.rarity].name}${s.aff ? " com afixos" : ""} · ${bonusText(accBonus(s))} · clique para equipar` : tip;
-          const tipAttr = it.slot ? `data-tip="${esc(itemTip(s, "clique para equipar · clique direito larga no chão"))}"` : `title="${esc(tip2)}"`;
+          const tipAttr = `data-tip="${esc(invTip(s, player))}" aria-label="${esc(tip2)}"`; // rodada 113: resumo com a comparação; o texto curto vai para o leitor de tela
           return `<div class="slot${isSpecial(s.name) || s.aff ? " rare" : ""}${s.aff ? " affix" : ""}" data-i="${i}" tabindex="${i === rov ? 0 : -1}" role="button" ${tipAttr} ${it.rarity ? `style="border-color:${RARITY[it.rarity].color}"` : ""}>${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}${it.heal && !s.name.startsWith("Poção") && ASSETS.icon_heal_small ? `<i class="heal"><img src="${ASSETS.icon_heal_small}" alt="">${it.heal}</i>` : ""}${it.cook && ASSETS.icon_cook_level && RULES.burnChance(level(player.xp.culinaria), it.cookLvl) === 0 ? `<img class="cookok" src="${ASSETS.icon_cook_level}" alt="" title="Não queima mais no seu nível">` : ""}${s.aff ? `<i class="aff">${affBadges(s)}</i>` : ""}</div>`;
         }).join("") + `<button class="craft-btn">Artesanato · criar itens</button>`;
         if (fi != null) { const el = $("tab-inv").querySelector(`[data-i="${fi}"]`) || $("tab-inv").querySelector(".slot[tabindex]"); if (el) el.focus(); }

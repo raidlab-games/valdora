@@ -20,6 +20,24 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 113 (v1.12) — ninjas encapuzados, menu e resumo dos itens, perseguição sem pausas
+- **Ninja encapuzado** (`mob_ninja`, Blender em `tools/b3d/mobs_hum.py`: capuz, máscara, olhos acesos, ataduras, faixa
+  vermelha e lâmina curta; 5 vistas). Emboscada (`ambushRoll`): cada golpe em monstro e cada batida de coleta tem 1,5% de
+  chamar um ninja; com a barra de peso amarela ou vermelha, 10%. Até 3 ao mesmo tempo; nunca na vila, nas masmorras ou em cena.
+  Nasce a 3–5 tiles no nível de Combate do herói (`VD.mobStats`, a mesma curva dos monstros comuns), persegue sem desistir
+  (longe, preso ou em outra altura reaparece a 2–4 tiles numa nuvem de fumaça) e some ao entrar numa vila (`ambushVanish`).
+  Solta moedas, poção e as secundárias das classes no degrau do nível do herói.
+- **Menu do item** na mochila (clique ou clique direito; duplo clique faz a ação principal): equipar / pôr na aljava / vestir
+  a mochila, comer, beber, assar (perto da fogueira), guardar 1 ou tudo no cofre (com o cofre aberto), vender 1 ou tudo (com a
+  banca aberta), ver no Artesanato, examinar, largar 1 ou tudo, cancelar.
+- **Resumo ao passar o mouse** (`invTip`): números da peça e a diferença para a que está vestida no mesmo espaço (verde ganha,
+  vermelho perde; mochila compara espaços e carga), cura com a vida antes → depois, efeito das poções, chance de queimar do cru,
+  em quantas receitas o material entra, peso e preço.
+- **Perseguição sem pausas** (`MOBAI.chase`): o tick de 0,5 s decidia pouco para um passo de 0,42 s (0,59 s na diagonal) e o
+  monstro parava entre passos. Entre os ticks, quem persegue emenda o passo seguinte e golpeia no quadro em que encosta; quem
+  fica agressivo ao ver o herói já pode bater (`atkT` 2 → 0). O tempo entre golpes não mudou.
+- Testes: +2 (ninja com arte e na curva dos monstros); o teste de compilação pegou um comentário no meio da linha antes de publicar.
+
 ## Rodada 112 (v1.11) — itens das três classes por nível, saque por monstro e região, mochila e peso
 - **Letreiro** de troca de mapa e de eventos com metade do tamanho (título 24 px, placa, ícones e espaços pela metade).
 - **Plantas e arbustos** (moitas de ervas, flores, cogumelos, arbustos de enfeite) não barram o caminho (`isPlant`); dá para

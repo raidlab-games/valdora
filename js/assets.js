@@ -232,6 +232,7 @@ SPRITE_SIZE.deco_lumita_marker_lit = [2.1, 2.1]; SPRITE_SIZE.deco_lumita_marker_
 ASSETS.deco_crack_open = "assets/flow/deco_crack_open.png"; ASSETS.deco_crack_scar = "assets/flow/deco_crack_scar.png"; ASSETS.deco_crack_open_glow = "assets/flow/deco_crack_open_glow.png";
 SPRITE_SIZE.deco_crack_open = [2.8, 1.87]; SPRITE_SIZE.deco_crack_scar = [2.8, 1.87]; SPRITE_SIZE.deco_crack_open_glow = [2.8, 1.87];
 ASSETS.mob_goblin_boss = "assets/flow/mob_goblin_boss.png"; SPRITE_SIZE.mob_goblin_boss = [1.75, 1.75];
+ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];
 // rodada 80: Ato III (arte do Flow, lote 1): Odília, a tenda dela (3x2 tiles, como a cabana da Juna) e 4 estelas com runas (lua, olho,
 // espiral e coroa), apagadas e acesas no mesmo enquadramento

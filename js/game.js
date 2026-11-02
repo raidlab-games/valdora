@@ -1398,7 +1398,7 @@
         }
         if (player.prog < 1) return;
         faceTo(r.x, r.y);
-        if (player.actT <= 0) { startShot(r); player.actT = 3; }
+        if (player.actT <= 0) { startShot(r); player.actT = 3; ambushRoll(r); } // rodada 113: emboscada
         return;
       }
       if (!adjacent(player, r)) { // rodada 45: sem caminho por ~2 s (diagonal com os dois lados bloqueados): solta o alvo em vez de travar
@@ -1406,7 +1406,7 @@
         return;
       }
       faceTo(r.x, r.y);
-      if (player.actT <= 0) { startAttack(r); player.actT = 3; }
+      if (player.actT <= 0) { startAttack(r); player.actT = 3; ambushRoll(r); } // rodada 113: emboscada
       return;
     }
     if (t.kind === "loot") { if (player.x === r.x && player.y === r.y) { pickupAt(r.x, r.y, true); player.target = null; } else if (!goTo((x, y) => x === r.x && y === r.y)) player.target = null; return; }
@@ -1430,7 +1430,7 @@
     if (t.kind === "res" && !ensureTool(RES[r.kind].tool)) { // rodada 104: sem a ferramenta certa na mochila
       const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
     }
-    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS : 2; } // rodada 112: pesca mais lenta
+    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS : 2; if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
     else if (t.kind === "fire") { cook(r); player.actT = 3; }
   }
 
@@ -2169,6 +2169,47 @@
   }
   // rodada 24: o eco se desfaz em névoa (fx_echo_fade) quando o jogador se afasta; o corpo some nos 3 primeiros quadros
   // rodada 46: "???" sobem da cabeça do monstro que desiste da perseguição (base do quadro no topo do sprite)
+  // ---------- rodada 113: emboscada de ninjas encapuzados ----------
+  // Cada golpe num monstro e cada batida de coleta (árvore, minério, planta, pesca) pode chamar um ninja: 1,5% com a carga leve,
+  // 10% com a barra de peso amarela ou vermelha. Até 3 ao mesmo tempo; nunca na vila, nas masmorras ou durante uma cena.
+  // O ninja nasce no nível de Combate do herói, persegue sem desistir (longe ou preso, reaparece perto) e some ao entrar numa vila.
+  const NINJA = { light: 0.015, heavy: 0.1, max: 3 };
+  const ninjas = () => mobs.filter((m) => m.ambush && !m.dead);
+  function ninjaSpot(r0, r1) { // tile livre a r0..r1 do herói, na mesma altura (chão ou topo da montanha) e longe das vilas
+    const e = elevAt(player.x, player.y);
+    for (let t = 0; t < 80; t++) {
+      const a = rand() * Math.PI * 2, r = r0 + rand() * (r1 - r0), x = Math.round(player.x + Math.cos(a) * r), y = Math.round(player.y + Math.sin(a) * r);
+      if (inside(x, y) && walkable(x, y) && !nearTown(x, y, 6) && elevAt(x, y) === e && !(x === player.x && y === player.y)) return { x, y };
+    }
+    return null;
+  }
+  function ninjaDef() { // ficha do ninja no nível do herói; solta moedas, poção e a secundária das classes no degrau desse nível
+    const L = Math.max(1, lv("combate")), T = VD.TIER_LVL.reduce((b, v, i) => (L >= v ? i : b), 0);
+    const sec = ["escudo", "flecha", "orbe", "tomo"].map((k) => VD.LADDER[k][Math.min(VD.LADDER[k].length - 1, T)]);
+    return { ...MOBS.ninja, lvl: L, ...VD.mobStats(L), coins: [Math.round(L * 1.6) + 2, Math.round(L * 3) + 4],
+      drops: [["Poção de vida", 0.2], ...sec.map((n, i) => (i === 1 ? [n, 0.25, 4, 12] : [n, 1 / 25]))] };
+  }
+  function smokeAt(x, y) { RENDER.playOnce("fx_mob_give_up", x, y - 0.4, { foot: true }); burst(x + 0.5, y + 0.4, ["#3a3848", "#6a6878", "#1a1820"], 16, 2.2); }
+  function ambushRoll(target) {
+    if (!player || inCrypt || player.deadT > 0 || SCENE.active() || inTown(player.x, player.y) || (target && target.ambush)) return;
+    if (rand() >= (loadNow().k >= 1 ? NINJA.heavy : NINJA.light) || ninjas().length >= NINJA.max) return;
+    const at = ninjaSpot(3, 5); if (!at) return;
+    const D = ninjaDef(), m = spawnMob("ninja", regionAt(at.x, at.y), { x: at.x, y: at.y, r: 1, elev: elevAt(at.x, at.y) }, null, { at, d: D, hp: D.hp, temp: true, ambush: true, aggro: true, atkT: 3 });
+    if (!m) return;
+    m.face = Math.sign(player.x - m.x) || -1; smokeAt(m.x, m.y); SND.play("whoosh");
+    addFloat(m.px + 0.5, m.py - 1.2, "emboscada!", "#ff6a4a", 1.6, 15);
+    log(`Um ninja encapuzado (nível ${D.lvl}) saiu das sombras! Ele não desiste: derrote-o ou fuja para uma vila.`, "warn");
+  }
+  function ambushVanish(m) { // herói entrou numa vila (ou caiu): o ninja some numa nuvem de fumaça
+    smokeAt(m.x, m.y); m.dead = true; const i = mobs.indexOf(m); if (i >= 0) mobs.splice(i, 1);
+    if (!ninjas().length && player.deadT <= 0) log("Os ninjas recuaram para as sombras.", "dim");
+  }
+  function ambushBlink(m) { // ficou longe ou preso: some e reaparece a 2–4 passos do herói
+    const at = ninjaSpot(2, 4); if (!at) return;
+    smokeAt(m.x, m.y);
+    Object.assign(m, { x: at.x, y: at.y, fx: at.x, fy: at.y, px: at.x, py: at.y, prog: 1, stuck: 0, elev: elevAt(at.x, at.y) }); mobIdx.set(at.y * W + at.x, m);
+    m.face = Math.sign(player.x - m.x) || -1; smokeAt(m.x, m.y); SND.play("whoosh");
+  }
   function giveUp(m) { const img = SPR[m.d.spr], h = img ? img.height * (m.d.scale || 1) / TILE : 1; RENDER.playOnce("fx_mob_give_up", m.px, m.py + 1 - h - 1, { foot: true }); }
   function echoFade(m) {
     const F = ANIMS.fx_echo_fade; if (F) RENDER.playOnce("fx_echo_fade", m.px, m.py, { foot: true }); SND.play("echo_fade");
@@ -2366,32 +2407,71 @@
     player.inv[i] = null; hudDirty = true; dropItem(s.name, s.n, player.x, player.y, null, s.aff);
     log(`Você largou ${s.n}x ${accName(s)} no chão.`, "dim");
   }
-  // celular: tocar num item abre um menu curto (usar/equipar ou largar), já que não há clique direito
+  // rodada 113: clicar num item da mochila abre o menu de opções dele (no computador e no celular). As opções dependem do item
+  // (equipar, comer, beber, assar, criar) e do que está aberto ou perto (cofre: guardar; banca do Bento: vender; fogueira: assar).
+  // Duplo clique faz a ação principal direto; clique direito também abre o menu.
   const invMenu = document.createElement("div"); invMenu.id = "invmenu"; invMenu.hidden = true; document.body.appendChild(invMenu);
   const closeInvMenu = () => { invMenu.hidden = true; invMenu.dataset.i = ""; };
+  const fireNear = () => objects.find((o) => o.type === "fire" && adjRect(player.x, player.y, o));
+  function invActions(i) {
+    const s = player.inv[i], it = ITEMS[s.name], A = [], ic = (k) => (ASSETS[k] ? `<img src="${ASSETS[k]}" alt="">` : "");
+    const many = s.n > 1, bank = dlg && dlg.kind === "bank", shop = dlg && dlg.kind === "shop";
+    if (it.slot) A.push(["use", ic("icon_use") + (it.ammo ? "Pôr na aljava" : it.pack ? "Vestir a mochila" : "Equipar")]);
+    if (it.heal) A.push(["use", ic("icon_use") + `Comer <small>(cura ${it.heal})</small>`]);
+    if (it.buff) A.push(["use", ic("icon_use") + `Beber <small>(${esc(BUFFS[it.buff].name)})</small>`]);
+    if (it.cook) A.push(fireNear() ? ["cook", ic("icon_use") + "Assar na fogueira"] : ["cookhint", "Assar <small>(chegue numa fogueira)</small>"]);
+    if (bank) { A.push(["dep1", ic("icon_bank_move") + "Guardar 1 no cofre"]); if (many) A.push(["dep", ic("icon_bank_move") + `Guardar tudo no cofre <small>(${s.n})</small>`]); }
+    if (shop && !it.quest && it.price > 0) { A.push(["sell1", `Vender 1 <small>(${it.price} moedas)</small>`]); if (many) A.push(["sell", `Vender tudo <small>(${it.price * s.n} moedas)</small>`]); }
+    if (!it.slot && !it.heal && !it.buff && !it.quest && Object.values(CRAFT).some((r) => r.mats && r.mats[s.name])) A.push(["craft", "Ver no Artesanato"]);
+    A.push(["info", "Examinar"]);
+    if (!it.quest) { if (many) A.push(["drop1", ic("icon_drop") + "Largar 1 no chão"]); A.push(["drop", ic("icon_drop") + (many ? `Largar tudo no chão <small>(${s.n})</small>` : "Largar no chão")]); }
+    A.push(["close", "Cancelar"]);
+    return A;
+  }
   function openInvMenu(i, el) {
     const s = player.inv[i]; if (!s) return;
-    const it = ITEMS[s.name], use = it.slot ? "Equipar" : it.heal ? "Comer" : it.buff ? "Beber" : null, r = el.getBoundingClientRect();
-    invMenu.innerHTML = `<b>${esc(accName(s))}${s.n > 1 ? ` <small>x${s.n}</small>` : ""}</b>${use ? `<button data-act="use">${ASSETS.icon_use ? `<img src="${ASSETS.icon_use}" alt="">` : ""}${use}</button>` : ""}<button data-act="drop">${ASSETS.icon_drop ? `<img src="${ASSETS.icon_drop}" alt="">` : ""}Largar no chão</button><button data-act="close">Cancelar</button>`;
+    const r = el.getBoundingClientRect();
+    invMenu.innerHTML = `<b>${esc(accName(s))}${s.n > 1 ? ` <small>x${s.n}</small>` : ""}</b>` + invActions(i).map(([k, label]) => `<button data-act="${k}">${label}</button>`).join("");
     invMenu.dataset.i = i; invMenu.hidden = false;
     invMenu.style.left = Math.max(6, Math.min(innerWidth - invMenu.offsetWidth - 6, r.left - invMenu.offsetWidth - 6)) + "px";
     invMenu.style.top = Math.max(6, Math.min(innerHeight - invMenu.offsetHeight - 6, r.top)) + "px";
   }
+  function invAct(i, act) {
+    const s = player.inv[i]; if (!s) return;
+    const it = ITEMS[s.name];
+    if (act === "use") eat(i);
+    else if (act === "cook") { const f = fireNear(); if (f) { closeDlg(); setTarget({ kind: "fire", ref: f }); } }
+    else if (act === "cookhint") log(`${s.name}: asse numa fogueira (a da vila fica na praça). Culinária ${it.cookLvl}.`, "dim");
+    else if (act === "dep" || act === "dep1") {
+      if (act === "dep1" && s.n > 1 && !s.aff) { if (addTo(player.bank, s.name, 1)) { s.n--; if (dlg.obj) storeFx(dlg.obj, s.name); } else log("O cofre está cheio.", "warn"); }
+      else moveStack(player.inv, i, player.bank);
+      hudDirty = true; renderDlg();
+    }
+    else if (act === "sell1" || act === "sell") { if (s.aff) DLG_ACT.run({ sellslot: String(i) }); else sell(s.name, act === "sell" ? Infinity : 1); renderDlg(); }
+    else if (act === "craft") { SND.play("ui"); openDlg("craft", null); }
+    else if (act === "info") {
+      const w = VD.weightOf(s.name), what = it.slot ? `${VD.EQUIP_SLOTS[it.slot].name.toLowerCase()} · ${bonusText(accBonus(s)) || "sem bônus"}` : it.heal ? `cura ${it.heal}` : it.buff ? BUFFS[it.buff].name : it.cook ? `cru · asse com Culinária ${it.cookLvl}` : it.quest ? "item de missão" : "material";
+      log(`${accName(s)}: ${what}${it.need ? ` · requer Combate ${it.need}` : ""} · peso ${String(w).replace(".", ",")} kg (x${s.n} = ${String(Math.round(w * s.n * 10) / 10).replace(".", ",")} kg) · vale ${it.price} moedas.`, "dim");
+    }
+    else if (act === "drop1") { if (s.n > 1 && !s.aff) { s.n--; hudDirty = true; dropItem(s.name, 1, player.x, player.y); log(`Você largou 1x ${s.name} no chão.`, "dim"); } else dropSlot(i); }
+    else if (act === "drop") dropSlot(i);
+  }
   invMenu.addEventListener("click", (e) => {
     const b = e.target.closest("[data-act]"), i = +invMenu.dataset.i; if (!b) return;
-    if (b.dataset.act === "use") eat(i); else if (b.dataset.act === "drop") dropSlot(i);
+    if (b.dataset.act !== "close") invAct(i, b.dataset.act);
     closeInvMenu();
   });
   document.addEventListener("pointerdown", (e) => { if (!invMenu.hidden && !e.target.closest("#invmenu") && !e.target.closest("#tab-inv .slot")) closeInvMenu(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !invMenu.hidden) closeInvMenu(); });
   $("tab-inv").addEventListener("click", (e) => {
     if (e.target.closest(".craft-btn")) { SND.play("ui"); return openDlg("craft", null); }
     const s = e.target.closest(".slot[data-i]"); if (!s) return;
-    if (e.pointerType === "touch") return openInvMenu(+s.dataset.i, s);
-    eat(+s.dataset.i);
+    if (e.detail >= 2) { closeInvMenu(); return eat(+s.dataset.i); } // duplo clique: ação principal (equipar, comer, beber)
+    openInvMenu(+s.dataset.i, s);
   });
-  $("tab-inv").addEventListener("contextmenu", (e) => { // clique direito: larga a pilha no chão
+  $("tab-inv").addEventListener("contextmenu", (e) => { // clique direito: o mesmo menu
     const el = e.target.closest(".slot[data-i]"); if (!el) return;
-    e.preventDefault(); dropSlot(+el.dataset.i);
+    e.preventDefault(); openInvMenu(+el.dataset.i, el);
   });
   $("tab-combat").addEventListener("click", (e) => {
     const u = e.target.closest("[data-unequip]"); if (u) return unequip(u.dataset.unequip);
@@ -2640,6 +2720,7 @@
       }
       if (m.appear != null && (m.appear += dt) >= APPEAR) m.appear = null; // eco surgindo da névoa
       if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) / (m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; } // rodada 105: passo diagonal mais longo
+      if (m.aggro && m.prog >= 1 && activeMob(m)) MOBAI.chase(m); // rodada 113: emenda o passo / golpeia sem esperar o tick
       // slime: agacha, salta e aterrissa; os outros andam com easing (perseguindo, em ritmo constante)
       const k = m.d.squish ? (m.prog < 0.2 ? 0 : m.prog > 0.8 ? 1 : ease.inOutSine((m.prog - 0.2) / 0.6)) : m.aggro ? m.prog : ease.inOutSine(m.prog);
       m.px = m.fx + (m.x - m.fx) * k; m.py = m.fy + (m.y - m.fy) * k;
@@ -2682,7 +2763,7 @@
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },

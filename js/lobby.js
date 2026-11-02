@@ -20,6 +20,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.12", "Ninjas encapuzados e menu dos itens", ["Ninjas encapuzados podem surgir enquanto você farma ou luta — bem mais com a mochila pesada. Eles têm o seu nível, não desistem e só somem quando você entra numa vila",
+      "Clique num item da mochila para ver as opções: equipar, comer, beber, assar, guardar no cofre, vender, examinar, largar 1 ou tudo",
+      "Passe o mouse num item para ver o resumo: o que ele dá e quanto ganha ou perde em relação ao que você está usando",
+      "Monstros perseguem sem parar entre os passos e batem assim que chegam ao seu lado"]],
     ["v1.11", "Mochila, peso e itens para todas as classes", ["Mochila no personagem: mais espaços e mais carga (a de pano o Bento vende; as outras você cria no Artesanato)",
       "Peso: tudo o que você leva pesa. A barra embaixo do retrato mostra a carga; pesado demais, o herói anda igual a uma tartaruga",
       "Cada tipo de monstro solta peças próprias no nível dele, com itens das três classes (escudo, flechas, orbe e códice) até o nível 150",

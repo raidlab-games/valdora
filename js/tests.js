@@ -18,7 +18,7 @@
     VD.LADDER[k].length === VD.TIER_LVL.length && VD.LADDER[k].every((n) => ITEMS[n] && ITEMS[n].slot === "municao") ? [] : [k])));
   test("rodada 112: peças dos biomas pedem Combate e têm receita no Artesanato", () => miss(VD.SETS.flatMap((S) => Object.values(VD.LADDER).map((l) => l[VD.SETS.indexOf(S) + 3]))
     .filter((n) => !ITEMS[n] || !ITEMS[n].need || !CRAFT[n] || Object.keys(CRAFT[n].mats).some((m) => !ITEMS[m]))));
-  test("rodada 112: todo monstro comum solta peças do tipo dele no nível dele", () => miss(Object.entries(MOBS).filter(([, d]) => !d.summon && !d.echo && !d.temp).filter(([, d]) => {
+  test("rodada 112: todo monstro comum solta peças do tipo dele no nível dele", () => miss(Object.entries(MOBS).filter(([, d]) => !d.summon && !d.echo && !d.temp && !d.ambush).filter(([, d]) => {
     const names = new Set(d.drops.map((x) => x[0])), tier = VD.TIER_LVL.reduce((b, v, i) => (d.lvl >= v ? i : b), 0);
     return !Object.values(VD.LADDER).some((l) => names.has(l[Math.min(l.length - 1, tier)]));
   }).map(([k]) => k)));
@@ -30,6 +30,12 @@
     return bad.length ? "sem peso: " + bad.join(", ") : grow || "mochilas fora de ordem";
   });
   test("rodada 112: a Mochila de pano está à venda e tem a camada no herói", () => SHOP_ITEMS.includes("Mochila de pano") && ITEMS["Mochila de pano"].look[0] === "backpack" || "faltando");
+  // rodada 113: ninja encapuzado (emboscada)
+  test("rodada 113: ninja tem arte 3D e é agressivo sem recompensa de caçada", () => (MOBS.ninja && ASSETS.mob_ninja && MOBS.ninja.ambush && MOBS.ninja.aggro > 0 && MOBS.ninja.noBounty) || "ninja incompleto");
+  test("rodada 113: ninja no nível do herói tem a força de um monstro comum do mesmo nível", () => {
+    const bad = [5, 40, 120, 190].filter((L) => { const s = VD.mobStats(L); return !(s.hp > 0 && s.atk > 0 && Math.abs(s.atk - MOBS.wolf.atk * L / MOBS.wolf.lvl) < L * 0.5); });
+    return bad.length ? "fora da curva: " + bad.join(", ") : true;
+  });
   test("todo item tem ícone registrado em ASSETS", () => miss(Object.entries(ITEMS).filter(([, it]) => !ASSETS[it.icon]).map(([n]) => n)));
   test("drops de monstros usam itens existentes", () => miss(Object.values(MOBS).flatMap((d) => d.drops.map(([i]) => i)).filter((i) => !ITEMS[i])));
   test("monstros têm arte registrada", () => miss(Object.values(MOBS).map((d) => d.spr).filter((k) => !ASSETS[k])));

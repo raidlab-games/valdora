@@ -22,11 +22,14 @@ window.ValdoraMobs = (() => {
       if (m.aggro && m.atkT === 1 && near && !m.windup && m.prog >= 1 && !ANIMS[d.spr]) m.prep = TICK; // recua antes de atacar (sem folha animada)
       if (!m.aggro && m.hp < d.hp && api.tickN() % 4 === 0) m.hp++; // regenera fora de combate
       if (!m.aggro && d.aggro && dist <= d.aggro && lv("combate") < d.lvl * 2 && !inTown(player.x, player.y) && !(player.deadT > 0) && !(api.calm && api.calm(m))) { // rodada 79: Marco da Mata aceso acalma os lobos
-        m.aggro = true; m.atkT = 2;
+        m.aggro = true; m.atkT = 0; // rodada 113: chegou perto, já bate (antes esperava 1 s)
         if (!d.mini && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { m.an = { s: "howl", t: 0, still: 0 }; m.howlFast = true; faceAt(m, player.x, player.y); api.howl(m, true); return; } // uivo curto
       }
       if (m.aggro) {
-        if (Math.hypot(m.x - m.hx, m.y - m.hy) > 11 || inTown(player.x, player.y) || dist > 14) { m.aggro = false; m.windup = 0; if (!m.temp) api.giveUp(m); if (m.temp && !m.dungeon) { if (d.echo) api.echoFade(m); m.dead = true; m.respawnT = 0; } return; } // eventos somem (o eco em névoa); masmorra não
+        if (m.ambush) { // rodada 113: ninja não desiste; some na vila (ou com o herói caído) e, longe ou preso, reaparece perto dele
+          if (inTown(player.x, player.y) || player.deadT > 0) { api.ambushVanish(m); return; }
+          if (dist > 12 || (m.stuck || 0) >= 6 || (api.elevAt && api.elevAt(m.x, m.y) !== api.elevAt(player.x, player.y))) { api.ambushBlink(m); return; }
+        } else if (Math.hypot(m.x - m.hx, m.y - m.hy) > 11 || inTown(player.x, player.y) || dist > 14) { m.aggro = false; m.windup = 0; if (!m.temp) api.giveUp(m); if (m.temp && !m.dungeon) { if (d.echo) api.echoFade(m); m.dead = true; m.respawnT = 0; } return; } // eventos somem (o eco em névoa); masmorra não
         const spd = m.enraged ? Math.max(2, d.speed - 2) : d.speed;
         if (m.windup > 0) { // chefe preparando golpe especial
           if (--m.windup === 0) {
@@ -40,6 +43,16 @@ window.ValdoraMobs = (() => {
         }
         const pf = api.petFoe && api.petFoe(m, dist); // rodada 96: ao lado do filhote e longe do herói (ou mordido por último por ele): ataca o filhote
         if (pf) { faceAt(m, pf.x, pf.y); if (m.atkT <= 0 && m.prog >= 1) { api.petAttack(m); m.atkT = spd; } return; }
+        engage(m, near, spd);
+      } else if (m.prog >= 1 && Math.abs(m.x - m.hx) + Math.abs(m.y - m.hy) > 4) mobStepToward(m, m.hx, m.hy); // volta para casa
+      else if (m.prog >= 1 && rand() < 0.12) {
+        const [dx, dy] = DIRS8V[Math.floor(rand() * 8)]; // rodada 105: passeia também na diagonal
+        if (Math.hypot(m.x + dx - m.hx, m.y + dy - m.hy) < 5) mobMove(m, m.x + dx, m.y + dy);
+      }
+    }
+    // ao lado do herói: golpeia (ou prepara o golpe especial); longe: dá o próximo passo atrás dele
+    function engage(m, near, spd) {
+      const player = api.player(), d = m.d;
         if (near) {
           faceAt(m, player.x, player.y);
           if (m.atkT <= 0 && m.prog >= 1) {
@@ -55,11 +68,16 @@ window.ValdoraMobs = (() => {
             } else { mobAttack(m); m.atkT = spd; }
           }
         } else if (m.prog >= 1) mobStepToward(m, player.x, player.y);
-      } else if (m.prog >= 1 && Math.abs(m.x - m.hx) + Math.abs(m.y - m.hy) > 4) mobStepToward(m, m.hx, m.hy); // volta para casa
-      else if (m.prog >= 1 && rand() < 0.12) {
-        const [dx, dy] = DIRS8V[Math.floor(rand() * 8)]; // rodada 105: passeia também na diagonal
-        if (Math.hypot(m.x + dx - m.hx, m.y + dy - m.hy) < 5) mobMove(m, m.x + dx, m.y + dy);
-      }
+    }
+    // rodada 113: perseguição sem pausas. O tick (0,5 s) decide pouco para um passo de 0,42 s (0,59 s na diagonal): o monstro
+    // parava entre um passo e outro. Entre os ticks, quem persegue emenda o próximo passo assim que termina o anterior e golpeia
+    // no mesmo quadro em que fica ao lado do herói (o tempo entre golpes continua o mesmo).
+    function chase(m) {
+      const player = api.player(), d = m.d;
+      if (!m.aggro || m.dead || m.prog < 1 || m.stun > 0 || m.windup > 0 || m.appear != null || m.sleeping || m.stuck || player.deadT > 0) return; // preso: o tick resolve
+      if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage" || m.an.s === "special")) return;
+      if (api.petFoe && api.petFoe(m, Math.abs(m.x - player.x) + Math.abs(m.y - player.y))) return; // brigando com o filhote: fica com o tick
+      engage(m, adjacent(m, player), m.enraged ? Math.max(2, d.speed - 2) : d.speed);
     }
     function slam(m) { // tremor em área: acerta quem estiver a até 2 tiles do golem
       const player = api.player(), d = m.d, st = combatStats(); SND.play("slam"); if (SND.opts.shake) api.shake(0.45);
@@ -88,7 +106,7 @@ window.ValdoraMobs = (() => {
       // rodada 45: preso na diagonal (os dois tiles do meio bloqueados): tenta um passo de lado; depois de ~5 s desiste e volta para casa
       m.stuck = (m.stuck || 0) + 1;
       if (m.stuck >= 3) { const side = dx && dy ? [[-dx, 0], [0, -dy]] : dx ? [[0, 1], [0, -1]] : [[1, 0], [-1, 0]]; for (const [ax, ay] of side.sort(() => rand() - 0.5)) if (mobMove(m, m.x + ax, m.y + ay)) return; }
-      if (m.stuck >= 10 && m.aggro) { m.aggro = false; m.windup = 0; m.stuck = 0; api.giveUp(m); }
+      if (m.stuck >= 10 && m.aggro && !m.ambush) { m.aggro = false; m.windup = 0; m.stuck = 0; api.giveUp(m); }
     }
     // estados: idle → walk → attack → hit → death. O ataque não é cortado pela caminhada; o hit não interrompe o ataque nem a morte.
     function mobAnim(m, dt) {
@@ -122,7 +140,7 @@ window.ValdoraMobs = (() => {
       if (!m.sleeping) return; m.sleeping = false; m.aggro = true; m.atkT = 2;
       const A = ANIMS[m.d.spr]; m.an = A && A.rows.wake ? { s: "wake", t: 0, still: 0 } : A && A.rows.hit ? { s: "hit", t: 0, still: 0 } : { s: "idle", t: 0, still: 0 }; // levanta (Blender)
     }
-    return { mobTick, slam, mobCan, mobMove, mobStepToward, mobAnim, wake, faceAt };
+    return { mobTick, chase, slam, mobCan, mobMove, mobStepToward, mobAnim, wake, faceAt };
   }
   return { create };
 })();
