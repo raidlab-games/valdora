@@ -11,7 +11,7 @@ window.ValdoraOutfit = (() => {
   const BOW_ALT = { _attack: "_attack_bow", _strike4: "_strike4_bow" }; // com arco, o golpe vira tiro (outro corpo e outras peças)
   const imgs = {};
   const load = (src) => imgs[src] || (imgs[src] = new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = src; }));
-  const path = (name, suf, anim) => anim ? `assets/flow/anim3d/${name}${suf}.png` : `assets/flow/${name}${suf}.png`;
+  const path = (name, suf, anim) => (window.assetV || String)(anim ? `assets/flow/anim3d/${name}${suf}.png` : `assets/flow/${name}${suf}.png`); // rodada 105: com a versão da arte
   const base = { anim: {}, spr: {} };
   let token = 0, doll = null;
 
