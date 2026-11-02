@@ -1237,8 +1237,9 @@
   });
   const shortcut = INPUT.shortcut; // rodada 104: keyVec = passo em 8 direções
   // rodada 114: toque rápido (soltou antes de dar o passo, ex.: enquanto o herói virava) ainda anda 1 tile
-  let tapVec = null, lastVec = null;
-  const keyVec = () => INPUT.keyVec() || tapVec, keyDir = () => { const v = keyVec(); return v ? window.DIR_AT(v[0], v[1]) : null; };
+  // rodada 119: os toques entram numa fila, na ordem em que foram apertados (antes só cabia um e o toque novo se perdia)
+  let taps = [], lastVec = null;
+  const keyVec = () => taps[0] || INPUT.keyVec(), keyDir = () => { const v = keyVec(); return v ? window.DIR_AT(v[0], v[1]) : null; };
 
   const canvas = $("canvas"), ctx = canvas.getContext("2d");
   const cam = { x: 0, y: 0 };
@@ -1391,7 +1392,7 @@
   }
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
-    tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
+    tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
@@ -1935,7 +1936,7 @@
     player.px = D.fx + (player.x - D.fx) * k; player.py = D.fy + (player.y - D.fy) * k;
     if (!D.lastG || D.t - D.lastG > 0.025) { D.lastG = D.t; D.ghosts.push({ x: player.px, y: player.py, a: 0.55 }); }
     if (k >= 1) {
-      player.dash = null; player.fx = player.x; player.fy = player.y; player.prog = 1;
+      player.dash = null; player.fx = player.x; player.fy = player.y; player.prog = 1; player.halfStop = false;
       const m = D.m, S = ACTIVE.dash;
       if (!m.dead && adjacent(player, m)) {
         faceTo(m.x, m.y);
@@ -2556,7 +2557,7 @@
       return Math.min(VR.v || canvas.width, canvas.width); },
     freeNear: (x0, y0, r) => { for (let k = 0; k <= r; k++) for (let dy = -k; dy <= k; dy++) for (let dx = -k; dx <= k; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === k && walkable(x0 + dx, y0 + dy)) return { x: x0 + dx, y: y0 + dy }; return null; },
     removeItem: (n, q) => removeItem(n, q),
-    teleport: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, job: null, dir: "down" }); CAMERA.reset(); hudDirty = true; save(); } });
+    teleport: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null, dir: "down" }); CAMERA.reset(); hudDirty = true; save(); } });
   // ---------- Partículas e textos flutuantes (js/fx.js) ----------
   const fx = ValdoraFX.create(TILE, rand), { burst, ember, clickFx, addFloat, hitSplat } = fx;
   const AMBIENT = ValdoraAmbient.create({ TILE, rand: Math.random }); // rodada 66 (js/ambient.js): enfeite, fora do aleatório do jogo
@@ -2636,14 +2637,14 @@
     let nx, ny;
     if (kd) {
       // rodada 114: cada toque em W/A/S/D anda só 1 tile; segurando, o herói segue andando depois de KEY_REPEAT s
-      if (keySteps >= 1 && keyHoldT < KEY_REPEAT) return false;
+      if (!taps.length && keySteps >= 1 && keyHoldT < KEY_REPEAT) return false;
       if (player.act && player.act.key !== "rod") cancelAct(); // apertar uma direção cancela o golpe, mesmo contra um obstáculo
       player.path = []; player.target = null; player.goal = null; player.job = null; player.dir = kd;
       const [vx, vy] = keyVec(); nx = player.x + vx; ny = player.y + vy;
       if (!canStep(player.x, player.y, nx, ny)) { // diagonal bloqueada: escorrega pelo lado que estiver livre
         if (vx && vy && canStep(player.x, player.y, player.x + vx, player.y)) ny = player.y;
         else if (vx && vy && canStep(player.x, player.y, player.x, player.y + vy)) nx = player.x;
-        else { thorns(nx, ny); tapVec = null; return false; } // rodada 111: andou contra o cacto (114: o toque se gasta na batida)
+        else { thorns(nx, ny); taps.shift(); return false; } // rodada 111: andou contra o cacto (114: o toque se gasta na batida)
       }
     } else if (player.path.length) {
       [nx, ny] = player.path[0];
@@ -2655,7 +2656,8 @@
       player.path.shift();
       faceTo(nx, ny);
     } else return false;
-    if (kd) { keySteps++; tapVec = null; } player.kstep = !!kd; player.halfStop = false; // rodada 117: passo de teclado (pode parar no meio)
+    if (kd) { if (taps.length) taps.shift(); else keySteps++; } player.kstep = !!kd; player.halfStop = false; // rodada 117: passo de teclado (pode parar no meio)
+    player.kdir = [nx - player.x, ny - player.y];
     player.stepLen = nx !== player.x && ny !== player.y ? Math.SQRT2 : 1; // rodada 104: passo diagonal é mais comprido
     player.fx = player.x; player.fy = player.y; player.x = nx; player.y = ny;
     if (player.dir !== prevDir) dustAtFeet(3); // poeira ao mudar de direção correndo
@@ -2687,18 +2689,27 @@
     // velocidade constante entre tiles, com arrancada e frenagem suaves; passos encadeados sem parar
     if (player.dash) updateDash(dt);
     const held = INPUT.keyVec(); // rodada 114: toque = 1 tile (ver nextStep)
-    if (held) { keyHoldT += dt; lastVec = held; } else { if (lastVec && keySteps === 0 && !tapVec) tapVec = lastVec; lastVec = null; keyHoldT = 0; if (!tapVec) keySteps = 0; }
+    if (held && lastVec && (held[0] !== lastVec[0] || held[1] !== lastVec[1])) keySteps = 0; // trocou de tecla sem soltar: conta como toque novo (correndo, segue sem pausa)
+    if (held) { keyHoldT += dt; lastVec = held; } else { if (lastVec && keySteps === 0 && taps.length < 4) taps.push(lastVec); lastVec = null; keyHoldT = 0; keySteps = 0; }
     const wasMoving = !player.dash && player.prog < 1;
     if (player.turnT > 0) player.turnT -= dt;
     let rate = 1;
     // rodada 117: meio passo. Um toque em W/A/S/D anda meio tile e o herói para no meio dele; o próximo toque na mesma direção
-    // termina o tile, na direção oposta ele volta, e qualquer outra direção, clique ou alvo termina o passo antes de seguir.
+    // termina o tile. Rodada 119: qualquer outra direção sai do meio do tile direto para o vizinho daquele lado (antes ela só
+    // terminava o passo antigo e o toque se perdia: 3× A e 1× W andava 4 para a esquerda); clique ou alvo terminam o passo.
     if (player.halfStop) {
-      const kv = INPUT.keyVec(), dx = player.x - player.fx, dy = player.y - player.fy;
-      if (kv && kv[0] === -dx && kv[1] === -dy && canStep(player.x, player.y, player.fx, player.fy)) {
-        [player.x, player.fx] = [player.fx, player.x]; [player.y, player.fy] = [player.fy, player.y]; player.prog = 1 - player.prog;
-        player.dir = window.DIR_AT(-dx, -dy) || player.dir; player.halfStop = false; keySteps = 1;
-      } else if (kv || tapVec || player.path.length || player.target || player.goal || player.deadT > 0) { player.halfStop = false; keySteps = 1; tapVec = null; }
+      const hk = INPUT.keyVec(), kv = taps[0] || (hk && keySteps === 0 ? hk : null), k0 = player.kdir || [player.x - player.fx, player.y - player.fy];
+      if (kv) {
+        if (kv === taps[0]) taps.shift(); else keySteps = 1;
+        const tx = player.x + kv[0], ty = player.y + kv[1];
+        if (kv[0] === k0[0] && kv[1] === k0[1]) player.halfStop = false; // mesma direção: termina o tile
+        else if (canStep(player.x, player.y, tx, ty)) {
+          if (player.act && player.act.key !== "rod") cancelAct();
+          player.fx = player.px; player.fy = player.py; player.x = tx; player.y = ty; player.prog = 0; player.kdir = kv;
+          player.stepLen = Math.hypot(tx - player.fx, ty - player.fy); player.dir = window.DIR_AT(kv[0], kv[1]) || player.dir;
+          player.halfStop = false; SND.play("step");
+        } else { player.dir = window.DIR_AT(kv[0], kv[1]) || player.dir; thorns(tx, ty); } // bloqueado: só vira para lá
+      } else if (player.path.length || player.target || player.goal || player.deadT > 0) player.halfStop = false;
     }
     if (wasMoving && !player.halfStop) {
       const before = player.prog;
@@ -2707,7 +2718,8 @@
       if (!player.path.length && !keyDir()) rate *= 1 - 0.42 * player.prog; // último passo: desacelera
       rate *= loadRate(); // rodada 112: peso
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
-      if (player.kstep && !INPUT.keyVec() && keySteps <= 1 && before < 0.5 && player.prog >= 0.5) { player.prog = 0.5; player.halfStop = true; } // toque: para no meio
+      // toque: para no meio (só passos inteiros; segurando a mesma tecla sem toques na fila ele segue andando)
+      if (player.kstep && (player.stepLen || 1) > 0.9 && before < 0.5 && player.prog >= 0.5 && !(INPUT.keyVec() && keySteps >= 1 && !taps.length)) { player.prog = 0.5; player.halfStop = true; }
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
       const over = wasMoving ? player.prog - 1 : 0;

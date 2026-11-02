@@ -20,6 +20,12 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 119 (v1.18) — teclas na ordem em que foram apertadas
+- Parado no meio do tile, apertar outra direção (ex.: 3× A e depois W) só terminava o meio passo antigo e a tecla nova se perdia,
+  então o herói andava mais um para o lado antigo. Agora ele sai do meio do tile direto para o vizinho da direção apertada.
+- Os toques rápidos entram numa fila na ordem em que foram apertados (antes só cabia um, e o toque mais novo era descartado).
+- Trocar de tecla sem soltar a anterior conta como toque novo; correndo, a troca segue sem pausa. Teletransporte limpa o meio passo.
+
 ## Rodada 118 (v1.17) — Celeste olha para a frente do balcão
 - A Celeste é desenhada espelhada (`DESKS.auction_desk.flip`) para olhar para a direita, para o lado da frente do balcão
   (que ficou de frente para a direita na rodada 117). A Morgana já olhava para a frente da bancada dela (esquerda).
