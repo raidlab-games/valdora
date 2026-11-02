@@ -24,19 +24,36 @@ window.ValdoraPointer = (() => {
     });
     canvas.addEventListener("mousemove", (e) => { st.mouse = { x: e.clientX / api.zoom(), y: e.clientY / api.zoom() }; });
     canvas.addEventListener("mouseleave", () => { st.mouse = null; st.hover = null; });
-    // ---------- Toque (celular): tocar = clicar; segurar = andar seguindo o dedo ----------
+    // ---------- Segurar para andar: toque (celular) ou botão esquerdo do mouse ----------
+    // tocar/clicar = interagir; segurar (mais de 0,26 s) = andar seguindo o dedo/cursor; ao soltar, vai até o ponto onde soltou.
+    // rodada 105: o mouse também (só quando o botão desce no chão, sem Ctrl; em monstro/objeto o clique continua sendo clique).
     let touch = null, suppressClick = false;
-    canvas.addEventListener("pointerdown", (e) => { if (e.pointerType === "touch" && api.running()) touch = { x: e.clientX / api.zoom(), y: e.clientY / api.zoom(), t0: performance.now(), hold: false, last: 0 }; });
-    canvas.addEventListener("pointermove", (e) => { if (touch && e.pointerType === "touch") { touch.x = e.clientX / api.zoom(); touch.y = e.clientY / api.zoom(); } });
-    const endTouch = () => { if (touch && touch.hold) suppressClick = true; touch = null; };
-    canvas.addEventListener("pointerup", endTouch); canvas.addEventListener("pointercancel", endTouch);
+    const at = (e) => ({ x: e.clientX / api.zoom(), y: e.clientY / api.zoom() });
+    canvas.addEventListener("pointerdown", (e) => {
+      if (!api.running()) return;
+      if (e.pointerType === "touch") { touch = { ...at(e), t0: performance.now(), hold: false, last: 0, mouse: false }; return; }
+      if (e.button !== 0 || e.ctrlKey || st.attack) return;
+      const p = at(e), k = pick(p.x, p.y);
+      if (k && k.kind === "tile") touch = { ...p, t0: performance.now(), hold: false, last: 0, mouse: true };
+    });
+    window.addEventListener("pointermove", (e) => { if (touch && (e.pointerType === "touch") !== touch.mouse) Object.assign(touch, at(e)); });
+    const tileAt = (p) => [Math.floor((p.x + cam.x) / TILE), Math.floor((p.y + cam.y) / TILE)];
+    const walkTo = (tx, ty) => inside(tx, ty) && !(tx === api.player().x && ty === api.player().y) && goTo((x, y) => Math.abs(x - tx) + Math.abs(y - ty) <= (walkable(tx, ty) ? 0 : 1));
+    const endTouch = (e) => {
+      if (touch && touch.hold) { // soltou depois de segurar: anda até onde soltou e engole o clique
+        suppressClick = true; if (e && e.clientX != null) Object.assign(touch, at(e));
+        const [tx, ty] = tileAt(touch); if (api.running() && !(api.player().deadT > 0)) { walkTo(tx, ty); clickFx(tx + 0.5, ty + 0.5, "#f1c40f"); }
+        setTimeout(() => { suppressClick = false; }, 0); // o clique (se vier) chega antes deste timeout
+      }
+      touch = null;
+    };
+    window.addEventListener("pointerup", endTouch); window.addEventListener("pointercancel", () => { touch = null; });
     function updateTouch() {
       if (!touch || api.player().deadT > 0) return;
       const now = performance.now(); if (now - touch.t0 < 260) return;
       if (!touch.hold) { touch.hold = true; closeDlg(); api.player().target = null; api.player().job = null; }
       if (now - touch.last < 180) return; touch.last = now;
-      const tx = Math.floor((touch.x + cam.x) / TILE), ty = Math.floor((touch.y + cam.y) / TILE);
-      if (inside(tx, ty) && !(tx === api.player().x && ty === api.player().y)) goTo((x, y) => Math.abs(x - tx) + Math.abs(y - ty) <= (walkable(tx, ty) ? 0 : 1));
+      const [tx, ty] = tileAt(touch); walkTo(tx, ty);
     }
     canvas.addEventListener("click", (e) => {
       if (!api.running()) return;

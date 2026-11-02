@@ -16,6 +16,7 @@
       "Os monstros também te perseguem e atacam na diagonal; a dança de lado do herói e do monstro acabou",
       "Segure Ctrl e clique perto de um monstro: o herói ataca o mais próximo do ponto clicado (não precisa acertar o monstro)",
       "Passar por cima de um item no chão já pega (antes só parando em cima)",
+      "Segure o botão esquerdo do mouse no chão: o herói vai andando atrás do cursor e, ao soltar, segue até o ponto onde você soltou",
       "Plantas de coleta redesenhadas para combinar com cada região",
       "Fogueira, braseiro e tocha: só a chama se mexe"]],
     ["v1.03", "Arqueiro, equipamento de verdade e plantas", ["Novo herói: o Arqueiro (no lugar do Marinheiro) atira flechas de longe; com arco equipado, qualquer herói atira",
@@ -286,7 +287,7 @@
     ["v0.1", "Primeiros passos", ["Vila de Lumeira, loja do Bento e encomendas", "Coleta, culinária e combate em ticks", "Salvamento no navegador"]],
   ];
   const HOW = [
-    ["Andar e agir", "WASD ou setas para andar (duas teclas juntas andam na diagonal). Clique em árvores, veios, cardumes, monstros e pessoas para interagir, de qualquer lado. Segure Ctrl e clique perto de um monstro para atacar o mais próximo do ponto. Passar por cima de um item já pega. Clique no minimapa para viajar."],
+    ["Andar e agir", "WASD ou setas para andar (duas teclas juntas andam na diagonal). Clique em árvores, veios, cardumes, monstros e pessoas para interagir, de qualquer lado. Segure Ctrl e clique perto de um monstro para atacar o mais próximo do ponto. Segure o botão do mouse para ir andando atrás do cursor; ao soltar, o herói vai até onde você soltou. Passar por cima de um item já pega. Clique no minimapa para viajar."],
     ["Coletar", "Corte, minere e pesque. Recursos se esgotam e voltam. Níveis mais altos liberam materiais melhores."],
     ["Forjar e criar", "Funda minério na fornalha, forje na bigorna e use o Artesanato (na mochila) para bolsas e acessórios."],
     ["Lutar", "Combate em turnos rápidos, com três estilos e uma passiva em cada. Coma peixe ou carne para curar (tecla 1). Golpe giratório (Q) acerta todos em volta; Investida (E) e Golpe esmagador (R) atordoam."],

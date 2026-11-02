@@ -37,6 +37,8 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
 - **Luta por clique:** um clique no monstro basta — o herói segue batendo até ele morrer, o herói morrer ou o jogador andar.
   Saiu o "revida sozinho": depois de matar, não puxa outro monstro sem um novo clique.
 - **Itens no chão:** passar por cima já pega (no meio do passo), não só parando no tile.
+- **Segurar para andar com o mouse:** botão esquerdo pressionado no chão (mais de 0,26 s) faz o herói seguir o cursor; ao soltar,
+  anda até o tile onde soltou e o clique é engolido. Mesmo esquema do toque no celular, que também passou a ir até o ponto final.
 - **Plantas de coleta redesenhadas** em pixel art (`tools/plants2d.py`): folhas em cacho com contorno, sombra e luz, paleta por região
   (campos, leste, Mata Sombria, planalto de lumita) e vento só na copa. As plantas 3D da rodada 104 ficaram em `art/backup_plants3d/`.
 - Testes: 3 novos (direções, diagonais nas folhas, monstro atacando e andando na diagonal).
