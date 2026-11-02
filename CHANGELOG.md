@@ -20,6 +20,18 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 116 (v1.15) — balcão da leiloeira com as texturas da vila e mercado em tela cheia
+- **Balcão** montado em 2D com as texturas da própria casa vermelha (`tools/auction_art.py`, `desk()`): a face esquerda da casa
+  é "endireitada" (inclinação 0,43) para tirar pedra, tábuas com ferragens, esteios e viga; a frente, o tampo e a lateral
+  (na sombra) são montados e inclinados coluna por coluna como as faces das casas, com o mesmo contorno. Em cima, camada
+  própria do render `tools/b3d/auction_desk.py` (martelinho no bloco, notas com pena e tinteiro, moedas, cristais).
+- A **Celeste** fica atrás do balcão, encostada na frente da casa (`npcSpr` desenhado entre a casa e o balcão).
+- **Mercado em tela cheia** (como o mapa no M; `js/auction.js` refeito): Comprar com 40 lotes por rodada, busca por nome,
+  categoria, classe, raridade, faixa de nível, preço máximo, "só o que posso usar" e ordenação; Vender com escolha do item,
+  quantidade, preço por unidade (atalhos = tabela/+30%/+60%/×2), duração (curta/média/longa) e a chance de vender calculada
+  pelo preço; Meus lotes (até 8) com receber/retirar. Esc ou ✕ fecham.
+- Teste novo: toda categoria e classe dos filtros tem item de verdade.
+
 ## Rodada 115 (v1.14) — martelo refeito na cumeeira, leiloeira na frente da casa
 - **Martelo da Casa de Leilões refeito**: `tools/b3d/roof_gavel.py` renderiza o martelo já na perspectiva da casa vermelha
   (cumeeira subindo ~18°), deitado sobre dois calços de madeira com cavilhas de ferro e o cabo descendo pela água da frente;

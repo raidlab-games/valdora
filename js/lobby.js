@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.15", "Mercado da Casa de Leilões", ["A Celeste agora atende atrás de um balcão feito com a mesma madeira, pedra e ferragens das casas da vila",
+      "O mercado abre em tela cheia, com busca e filtros por categoria, classe, raridade, nível e preço",
+      "Venda seus itens escolhendo a quantidade, o preço e a duração do leilão (o jogo mostra a chance de vender)"]],
     ["v1.14", "Casa de Leilões caprichada", ["O martelo da Casa de Leilões foi refeito: montado na cumeeira, no mesmo desenho da casa",
       "A leiloeira Celeste agora fica na frente da casa: clique nela para abrir o leilão"]],
     ["v1.13", "Casa de Leilões e guardiões das vilas", ["Casa de Leilões na Lumeira: a leiloeira Celeste, atrás do balcão, tem lotes novos a cada 15 minutos e leiloa os seus itens",

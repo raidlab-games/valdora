@@ -174,8 +174,8 @@
     for (let y = TOWN.y0; y <= TOWN.y1; y++) for (let x = TOWN.x0; x <= TOWN.x1; x++) map[y][x] = (x === 48 || x === 49 || y === 36 || y === 37) ? "path" : "stone";
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
     // rodada 114: no lugar da casa vermelha, a Casa de Leilões (um tile acima e à esquerda) com a banca e a leiloeira na frente
-    // rodada 115: sem a banca; a leiloeira fica sozinha, de frente, um tile à frente da casa (clicar nela abre o leilão)
-    deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "npc_auctioneer", 42, 32, 1, 1, { name: "Celeste" });
+    // rodada 116: a leiloeira encostada na frente da casa, atrás do balcão de juiz (clicar nela ou no balcão abre o mercado)
+    deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "auction_desk", 41, 31, 3, 1, { name: "Celeste", npcSpr: "npc_auctioneer" });
     deco("house", "house_blue", 53, 30, 3, 2); deco("house", "house_green", 42, 41, 3, 2);
     npc.stall = deco("stall", "stall", 51, 33, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 53, 33, 1, 1, { name: "Bento" });
@@ -707,9 +707,9 @@
   const PATROL = [[3, 2], [-2, 3], [2, -1], [-1, -2]];
   // rodada 34/35: reação ao entregar missão/encomenda — Ivo bate continência ("salute"), Bento faz joinha ("thumbs"); segura o último quadro 0,6 s
   const REACT = { auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
-  const reactDur = (o) => { const R = ANIMS[o.spr] && ANIMS[o.spr].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; };
+  const reactDur = (o) => { const S = o.npcSpr || o.spr, R = ANIMS[S] && ANIMS[S].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; }; // rodada 116: npcSpr = NPC desenhado junto de um objeto
   function react(o) {
-    const row = o && REACT[o.type]; if (!row || !ANIMS[o.spr] || !ANIMS[o.spr].rows[row]) return;
+    const S = o && (o.npcSpr || o.spr), row = o && REACT[o.type]; if (!row || !ANIMS[S] || !ANIMS[S].rows[row]) return;
     if (o.sitT > 0) { if (ANIMS[o.spr].rows.stand_up) o.rise = { t: 0, moved: false }; return; } // rodada 38: sentado, levanta primeiro (stand_up) e depois se curva
     o.react = { row, t: 0 };
   }
@@ -721,7 +721,7 @@
       if (B.rise && B.rise.t * R.fps >= R.frames) { B.rise = null; B.react = { row: "bow", t: 0 }; }
     }
     for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, ...Object.values(npc.wardens || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
-      const R = ANIMS[o.spr] && ANIMS[o.spr].rows[o.react.row], before = o.react.t;
+      const R = ANIMS[o.npcSpr || o.spr] && ANIMS[o.npcSpr || o.spr].rows[o.react.row], before = o.react.t;
       if ((o.react.t += dt) > reactDur(o)) { o.react = null; continue; }
       const SP = { merchant: [-0.25, -0.4], guard: [0.05, -1.05], bard: [0.3, -0.1] }[o.type]; // centro do brilho (tiles; y já desconta o meio do quadro)
       if (SP && R && before * R.fps < 3 && o.react.t * R.fps >= 3) RENDER.playOnce("fx_thumbs_spark", o.x + SP[0], o.y + SP[1]);
@@ -1208,7 +1208,7 @@
   }
   // teclado (js/input.js): ações de cada atalho
   const INPUT = ValdoraInput.create({
-    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; toggleMap(false); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
+    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
     toggleDlg: (kind) => { if (dlg && dlg.kind === kind) closeDlg(); else openDlg(kind, null); }, petStay: () => petStay(),
     tab: (t) => { hudTab = t; hudDirty = true; SND.play("ui"); },
     eatBest: () => { // come a comida que mais cura
@@ -1285,6 +1285,7 @@
     for (let y = ty; y <= ty + 4; y++) for (let x = tx - 2; x <= tx + 2; x++) {
       const o = inside(x, y) && occ[y * W + x]; if (!o || seen.has(o)) continue; seen.add(o);
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type]; if (!kind) continue;
+      if (o.type === "auction" && fx >= o.x + 0.7 && fx <= o.x + 2.9 && fy >= o.y - 0.75 && fy <= o.y + 1.1) { if (!best || o.y + o.h > best.ref.y + best.ref.h) best = { kind, ref: o, tx: o.x, ty: o.y }; continue; } // rodada 116: leiloeira + balcão
       const img = o.spr && SPR[o.spr]; if (!img) continue;
       const sx = o.x * TILE + (o.w * TILE - img.width) / 2, sy = (o.y + o.h) * TILE - img.height * (1 - ((window.SPRITE_SINK || {})[o.spr] || 0));
       if (solidPx(img, fx * TILE - sx, fy * TILE - sy) && (!best || o.y + o.h > best.ref.y + best.ref.h)) best = { kind, ref: o, tx: o.x, ty: o.y };
@@ -1429,7 +1430,8 @@
     const onPlant = t.kind === "res" && isPlant(r) && player.x === r.x && player.y === r.y; // rodada 112: em cima da planta também colhe
     if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
     if (!onPlant) faceRect(r);
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "auction", "warden"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
     if (t.kind === "crypt") { player.target = null; return enterCrypt(r); }
@@ -2286,7 +2288,7 @@
   const DLG = ValdoraDialogs.DLG; // títulos e falas das janelas (js/dialogs.js)
   // rodada 114: Casa de Leilões (js/auction.js)
   const AUCTION = ValdoraAuction.create({ player: () => player, lv: (s) => lv(s), addItem: (...a) => addItem(...a), dropItem: (n, q) => dropItem(n, q, player.x, player.y),
-    log: (m, c) => log(m, c), sound: (k) => SND.play(k), dirty: () => { hudDirty = true; }, bang: () => react(npc.auction) }); // rodada 115: bate o martelinho (linha "gavel")
+    log: (m, c) => log(m, c), sound: (k) => SND.play(k), dirty: () => { hudDirty = true; }, save: () => save(), bang: () => react(npc.auction), opened: () => { closeDlg(); toggleMap(false); } }); // rodada 115: bate o martelinho (linha "gavel")
   let dlg = null; // { kind, obj, tab }
   // rodada 105: a janela abre embaixo do cartão do personagem e acima do registro; sem espaço ali, abre ao lado do cartão.
   // Nunca cobre o cartão, o registro nem o painel da direita.
@@ -2322,7 +2324,6 @@
     const b = e.target.closest("button, .slot[data-dep], .slot[data-wd]"); if (!b) return;
     const ds = b.dataset; SND.play("ui");
     if (DLG_VIEW.uiClick(b, dlg)) return; // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
-    if (dlg.kind === "auction" && AUCTION.act(ds)) { renderDlg(); save(); return; } // rodada 114
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
     renderDlg(); save();
   });
@@ -2408,7 +2409,7 @@
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect });
   const DLG_VIEW = ValdoraDialogs.create({ player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
-    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg(), auction: AUCTION }); // rodada 78/79; rodada 96: filhote
+    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
   // ---------- HUD ----------
   let hudDirty = true, hudTab = "inv";
@@ -2785,7 +2786,7 @@
     petTick(); // rodada 95
     CAMPAIGN_RT.tick(tickN); // rodada 78: bênção do marco
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
-    if (tickN % 10 === 0) { AUCTION.tick(); if (dlg && dlg.kind === "auction") renderDlg(); } // rodada 114: lotes que terminaram (e o relógio da janela)
+    if (tickN % 10 === 0) AUCTION.tick(); // rodada 114/116: lotes que terminaram (e o relógio da janela do mercado)
   }
   // IA e animação dos monstros (js/mobs.js)
   const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
@@ -2948,7 +2949,7 @@
   }
   // desenho dos objetos do mapa (js/scenery.js)
   const SCENERY = ValdoraScenery.create({ ctx, cam, TILE, ANIMS, SPR, HERO_SHEET, TUTORIAL, tags, animFrame, drawAnim, drawFx, drawSmoke, sceneryFrame,
-    shadow: (...a) => shadow(...a), questMark: (g) => questMark(g), player: () => player, dlg: () => dlg, bubble: () => bubble, mobs: () => mobs });
+    shadow: (...a) => shadow(...a), marketOpen: () => AUCTION.isOpen(), questMark: (g) => questMark(g), player: () => player, dlg: () => dlg, bubble: () => bubble, mobs: () => mobs });
   const drawObject = (o, t) => SCENERY.drawObject(o, t);
 
   function shadow(x, y, r) { shadowAt(x * TILE - cam.x, y * TILE - cam.y, r * TILE, r * TILE * 0.35); }

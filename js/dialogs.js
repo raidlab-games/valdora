@@ -11,7 +11,6 @@ window.ValdoraDialogs = (() => {
     bank: { title: "Cofre da vila", talk: "Clique num item da mochila para guardar; clique no cofre para retirar." },
     furnace: { title: "Fornalha", talk: "Funda minério em barras. Fique ao lado enquanto trabalha." },
     anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras. A peça pronta vai para a mochila: clique nela para vestir." },
-    auction: { title: "Casa de Leilões", talk: "", tabs: [["buy", "Lotes"], ["sell", "Vender"], ["mine", "Meus lotes"]] }, // rodada 114
     warden: { title: "Guardião", talk: "" }, // rodada 114: guardiões das vilas novas (título = nome do NPC)
     craft: { title: "Artesanato", talk: "Crie bolsas e acessórios com o que tem na mochila, em qualquer lugar do reino." },
     bard: { title: "Tomé, o bardo", talk: "" },
@@ -156,8 +155,6 @@ window.ValdoraDialogs = (() => {
         const S = api.stoneDlg(); talk = S.talk; html = S.html;
       } else if (dlg.kind === "warden" && dlg.obj) { // rodada 114: guardião da vila (missões do bioma até o chefe)
         talk = `"${dlg.obj.hello}"`; html = questHtml(dlg.obj.giver) || `<p class="empty">Você já fez tudo o que havia por aqui. O bioma inteiro lhe deve um favor.</p>`;
-      } else if (dlg.kind === "auction" && api.auction) { // rodada 114: Casa de Leilões (js/auction.js)
-        talk = api.auction.talk(dlg); html = api.auction.html(dlg);
       } else if (dlg.kind === "home" && api.homeDlg) { // rodada 100
         const H = api.homeDlg(); talk = H.talk; html = H.html;
       } else if (dlg.kind === "pet" && api.petDlg) { // rodada 96

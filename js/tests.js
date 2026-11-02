@@ -41,9 +41,15 @@
     for (const g of ["w_breu", "w_escarpa", "w_oasis", "w_degelo"]) { const last = Q.filter(([, q]) => q.giver === g).pop(); if (!last || !last[1].steps.some((s) => /^kill:/.test(s.ev || "") && MOBS[s.ev.slice(5)] && MOBS[s.ev.slice(5)].boss)) bad.push(g + ": sem chefe no fim"); }
     return Q.length >= 24 ? miss(bad) : "poucas missões: " + Q.length;
   });
+  test("rodada 116: filtros do mercado — toda categoria e classe vêm de um item real", () => {
+    const A = ValdoraAuction.create({ player: () => ({ name: "t", inv: [], coins: 0, hero: "hero_1", auction: { lots: [], bought: {} } }), lv: () => 200, addItem: () => true, dropItem() {}, log() {}, sound() {}, dirty() {}, bang() {} });
+    const cats = new Set(Object.values(ITEMS).filter((it) => it.price > 0 && !it.quest).map((it) => A.catOf(it))), cls = new Set(Object.values(ITEMS).map((it) => A.classOf(it)));
+    const missing = ["armas", "armaduras", "secundarias", "roupas", "acessorios", "mochilas", "ferramentas", "consumiveis", "materiais", "regiao"].filter((c) => !cats.has(c));
+    return missing.length ? "categoria vazia: " + missing.join(", ") : ["hero_1", "hero_2", "hero_3"].every((c) => cls.has(c)) || "classe sem item";
+  });
   test("rodada 114: Casa de Leilões tem arte, leiloeira e lotes válidos", () => {
     const A = ValdoraAuction.create({ player: () => ({ name: "t", inv: [], coins: 0, auction: { lots: [], bought: {} } }), lv: () => 50, addItem: () => true, dropItem() {}, log() {}, sound() {}, dirty() {}, bang() {} });
-    const O = A.offers(); return (ASSETS.house_auction && ASSETS.npc_auctioneer && O.list.length === 6 && O.list.every((o) => ITEMS[o.name] && o.price > 0)) || "faltando";
+    const O = A.offers(); return (ASSETS.house_auction && ASSETS.auction_desk && ASSETS.npc_auctioneer && O.list.length >= 30 && O.list.every((o) => ITEMS[o.name] && o.price > 0)) || "faltando";
   });
   // rodada 113: ninja encapuzado (emboscada)
   test("rodada 113: ninja tem arte 3D e é agressivo sem recompensa de caçada", () => (MOBS.ninja && ASSETS.mob_ninja && MOBS.ninja.ambush && MOBS.ninja.aggro > 0 && MOBS.ninja.noBounty) || "ninja incompleto");

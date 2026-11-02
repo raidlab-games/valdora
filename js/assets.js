@@ -234,6 +234,9 @@ SPRITE_SIZE.deco_crack_open = [2.8, 1.87]; SPRITE_SIZE.deco_crack_scar = [2.8, 1
 ASSETS.mob_goblin_boss = "assets/flow/mob_goblin_boss.png"; SPRITE_SIZE.mob_goblin_boss = [1.75, 1.75];
 // rodada 114/115: Casa de Leilões (a casa vermelha da vila com o martelo de leilão montado na cumeeira; tools/auction_art.py)
 ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auction = [3.4, 3.4 * 296 / 256];
+// rodada 116: balcão montado com as texturas da casa (tools/auction_art.py; 164 x 113 px na escala da casa, 75 px por tile);
+// (ax, ay) = meio da borda de baixo da frente, no chão; (nx, ny) = onde a leiloeira pisa atrás dele, em tiles a partir daí
+ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75]; window.AUCTION_DESK = { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 };
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];

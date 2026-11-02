@@ -722,3 +722,36 @@ button.link:hover { color: #cfe3ff; }
 #dlg .row.auc span { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
 #dlg .row.auc small { opacity: .7; } #dlg .row.auc em { opacity: .6; font-style: normal; font-size: 12px; }
 #dlg .row.auc.sold { opacity: .55; } #dlg .row.auc .gold { color: #ffd84a; }
+/* rodada 116: Casa de Leilões em tela cheia (como o mapa no M) */
+#market { position: absolute; inset: 0; z-index: 90; display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; background: #1b1610f4; color: var(--text); zoom: var(--ui, 1); }
+#market[hidden] { display: none; }
+#game.market-open > :not(#market) { visibility: hidden; }
+#market .mk-head { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #6b4f2a; padding-bottom: 8px; }
+#market .mk-head b { font-size: 22px; color: var(--gold); letter-spacing: 2px; text-shadow: 2px 2px 0 #000; }
+#market .mk-npc { color: #e8b4ff; opacity: .9; flex: 1; }
+#market #mk-coins { display: flex; align-items: center; gap: 6px; font-weight: bold; color: var(--gold); } #market #mk-coins img { width: 20px; height: 20px; }
+#market button { font: inherit; background: #3a2a1a; color: #e8dcc0; border: 1px solid #6b4f2a; padding: 6px 12px; cursor: pointer; }
+#market button:hover:not(:disabled) { background: #5a4024; color: #fff; } #market button:disabled { opacity: .45; cursor: default; }
+#market .mk-tabs { display: flex; gap: 6px; } #market .mk-tabs button.on { background: #6b4f2a; color: #ffd84a; }
+#mk-body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 8px; }
+#market .mk-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px; background: #0005; border: 1px solid #6b4f2a88; }
+#market input, #market select { font: inherit; background: #120e0a; color: #e8dcc0; border: 1px solid #6b4f2a; padding: 5px 7px; }
+#market #mk-q { flex: 1 1 220px; } #market input[type=number] { width: 72px; } #market label { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+#market .mk-info { margin: 0; opacity: .75; font-size: 13px; }
+#market .mk-table { display: flex; flex-direction: column; }
+#market .mk-row { display: grid; grid-template-columns: minmax(220px, 3fr) 1.6fr .6fr .8fr 1fr 1fr 110px; gap: 8px; align-items: center; padding: 5px 6px; border-bottom: 1px solid #ffffff12; }
+#market .mk-row:hover { background: #ffffff0a; } #market .mk-row.mine { background: #e8b4ff12; }
+#market .mk-th { position: sticky; top: 0; background: #1b1610; font-size: 12px; opacity: .8; text-transform: uppercase; letter-spacing: 1px; }
+#market .mk-item { display: flex; align-items: center; gap: 8px; } #market .mk-item img { width: 32px; height: 32px; } #market .mk-item small { opacity: .65; font-size: 11px; }
+#market .mk-price { display: flex; flex-direction: column; color: #ffd84a; font-weight: bold; } #market .mk-price small { color: #e8dcc0; font-weight: normal; opacity: .65; font-size: 11px; }
+#market .gold { color: #ffd84a; } #market .empty { opacity: .7; padding: 16px; }
+#market .mk-sell { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.2fr); gap: 18px; }
+#market .mk-sell h3 { margin: 0 0 6px; color: var(--gold); font-size: 15px; }
+#market .mk-inv { display: grid; grid-template-columns: repeat(auto-fill, 48px); gap: 4px; }
+#market .mk-inv .slot { width: 48px; height: 48px; position: relative; background: #0006; border: 1px solid #6b4f2a; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+#market .mk-inv .slot img { width: 36px; height: 36px; } #market .mk-inv .slot span { position: absolute; right: 2px; bottom: 0; font-size: 11px; text-shadow: 1px 1px 0 #000; }
+#market .mk-inv .slot.on { border-color: #ffd84a; box-shadow: 0 0 0 2px #ffd84a66; }
+#market .mk-sellform { display: flex; flex-direction: column; gap: 8px; padding: 12px; background: #0005; border: 1px solid #6b4f2a88; }
+#market .mk-sellform > img { width: 48px; height: 48px; } #market .mk-sellform small { opacity: .7; } #market .mk-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 760px) { #market .mk-row { grid-template-columns: 1fr auto auto; } #market .mk-row > span:nth-child(2), #market .mk-row > span:nth-child(4), #market .mk-row > span:nth-child(5) { display: none; } #market .mk-sell { grid-template-columns: 1fr; } }
+#market label.chk { white-space: nowrap; } #market label.chk input { margin: 0; }
