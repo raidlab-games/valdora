@@ -41,7 +41,10 @@ window.ValdoraOverlay = (() => {
       g.drawImage(miniBase, 0, 0, mc.width, mc.height); g.imageSmoothingEnabled = false;
       const sx = mc.width / W, sy = mc.height / H;
       const dot = (x, y, r, col) => { g.fillStyle = "#140c06"; g.beginPath(); g.arc(x, y, r + 1, 0, 6.29); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 6.29); g.fill(); };
-      for (const m of mobs) if (!m.dead) { // rodada 71: pontos redondos com contorno escuro (antes quadradinhos sem contorno)
+      // rodada 105: só os monstros da área da tela (o quadrado branco) e um pouco além (4 tiles); os longe aparecem ao chegar perto.
+      // O eco desperto (evento) continua aparecendo de longe, com o anel pulsando.
+      const NEAR = 4, vx0 = cam.x / TILE - NEAR, vy0 = cam.y / TILE - NEAR, vx1 = (cam.x + canvas.width) / TILE + NEAR, vy1 = (cam.y + canvas.height) / TILE + NEAR;
+      for (const m of mobs) if (!m.dead && (m.d.echo || (m.px >= vx0 && m.px <= vx1 && m.py >= vy0 && m.py <= vy1))) { // rodada 71: pontos redondos com contorno escuro
         dot((m.px + 0.5) * sx, (m.py + 0.5) * sy, m.d.boss ? 3 : 1.6, m.d.echo ? "#7fe8ff" : m.d.boss ? "#c48cff" : m.aggro ? "#ff5a4a" : "#c03030");
         if (m.d.echo) { const r = 5 + (performance.now() / 160) % 6; g.strokeStyle = "#7fe8ff"; g.lineWidth = 1; g.beginPath(); g.arc((m.x + 0.5) * sx, (m.y + 0.5) * sy, r, 0, 6.29); g.stroke(); } // rodada 23: anel pulsando no eco desperto
       }

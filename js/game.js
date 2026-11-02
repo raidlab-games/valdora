@@ -1765,10 +1765,25 @@
   // ---------- Janelas: loja, guarda, cofre, fornalha, bigorna, quadro ----------
   const DLG = ValdoraDialogs.DLG; // títulos e falas das janelas (js/dialogs.js)
   let dlg = null; // { kind, obj, tab }
+  // rodada 105: a janela abre embaixo do cartão do personagem e acima do registro; sem espaço ali, abre ao lado do cartão.
+  // Nunca cobre o cartão, o registro nem o painel da direita.
+  function placeDlg() {
+    const d = $("dlg"); if (d.hidden) return;
+    const z = parseFloat(getComputedStyle(d).zoom) || 1, card = $("me-card").getBoundingClientRect(), logR = $("log").getBoundingClientRect();
+    const hud = $("hud") && $("hud").getBoundingClientRect(), right = hud && hud.width ? hud.left : innerWidth;
+    const lz = parseFloat(getComputedStyle($("log")).zoom) || 1, logTop = logR.bottom - (parseFloat(getComputedStyle($("log")).maxHeight) || 168) * lz; // altura máxima do registro
+    const below = logTop - 8 - (card.bottom + 8);
+    let top, left, maxH;
+    if (below >= 260) { top = card.bottom + 8; left = card.left; maxH = below; }
+    else { top = card.top; left = card.right + 10; maxH = logTop - 8 - top; } // ao lado do cartão
+    d.style.top = top / z + "px"; d.style.left = left / z + "px"; d.style.maxHeight = Math.max(200, maxH) / z + "px";
+    d.style.width = `min(${d.classList.contains("wide") ? 560 : 360}px, ${Math.max(240, right - left - 12) / z}px)`;
+  }
+  addEventListener("resize", () => placeDlg());
   function openDlg(kind, obj) {
     dlg = { kind, obj, tab: kind === "shop" && questMark("shop") === "?" ? "orders" : (DLG[kind].tabs || [[null]])[0][0] }; // missão do Bento pronta para entregar abre direto nas encomendas (missão nova não: o tutorial manda vender)
     if (kind === "guard") emit("talk");
-    $("dlg").hidden = false; $("dlg").classList.toggle("wide", kind === "char"); renderDlg();
+    $("dlg").hidden = false; $("dlg").classList.toggle("wide", kind === "char"); renderDlg(); placeDlg();
   }
   function closeDlg() { dlg = null; $("dlg").hidden = true; }
   // rodada 54: o desenho da janela (título, abas, fala e corpo) mora em js/dialogs.js; os cliques continuam aqui

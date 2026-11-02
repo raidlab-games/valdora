@@ -204,7 +204,7 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 @keyframes bannerM { 0% { opacity: 0; transform: translate(0, 10px); } 12%, 70% { opacity: 1; transform: translate(0, 0); } 100% { opacity: 0; } } /* rodada 32: celular */
 
 /* ---------- Janelas (loja, guarda, cofre, fornalha, bigorna) ---------- */
-#dlg { position: absolute; left: 10px; top: 50px; width: min(360px, calc(100% - 20px)); max-height: calc(100% - 240px); min-height: 220px;
+#dlg { position: absolute; left: 10px; top: 120px; /* rodada 105: o placeDlg() do game.js ajusta para não cobrir o cartão nem o registro */ width: min(360px, calc(100% - 20px)); max-height: calc(100% - 240px); min-height: 220px;
   display: flex; flex-direction: column; background: var(--wood); border: 3px solid var(--edge); box-shadow: 0 0 0 3px #000, 0 10px 40px #000c; font-size: 12px; }
 .dlg-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 2px solid var(--edge); }
 .dlg-head b { flex: 1; color: var(--gold); font-size: 12px; }
