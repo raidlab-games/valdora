@@ -4,7 +4,7 @@
 window.ValdoraRender = (() => {
   "use strict";
   // boca da chaminé de cada casa (fração da arte), medida nos PNGs
-  const CHIMNEY = { house_red: [0.71, 0.02], house_blue: [0.555, 0.02], house_green: [0.745, 0.025] };
+  const CHIMNEY = { house_auction: [0.71, (0.02 * 256 + 40) / 296], house_red: [0.71, 0.02], house_blue: [0.555, 0.02], house_green: [0.745, 0.025] };
 
   function create({ ctx, cam, TILE, W, AM, ANIMS, hash, inTown, rand, burst }) {
     const flashTmp = document.createElement("canvas"), flashCtx = flashTmp.getContext("2d");

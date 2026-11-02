@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.13", "Casa de Leilões e guardiões das vilas", ["Casa de Leilões na Lumeira: a leiloeira Celeste, atrás do balcão, tem lotes novos a cada 15 minutos e leiloa os seus itens",
+      "Cada vila nova tem um guardião como o Ivo, com missões do bioma inteiro até derrotar o chefe: Lúcio (Breu), Tobias (Escarpa), Samira (Oásis) e Edda (Degelo)",
+      "Cada toque em W/A/S/D anda só 1 quadrado; segurando a tecla, o herói continua andando"]],
     ["v1.12", "Ninjas encapuzados e menu dos itens", ["Ninjas encapuzados podem surgir enquanto você farma ou luta — bem mais com a mochila pesada. Eles têm o seu nível, não desistem e só somem quando você entra numa vila",
       "Clique num item da mochila para ver as opções: equipar, comer, beber, assar, guardar no cofre, vender, examinar, largar 1 ou tudo",
       "Passe o mouse num item para ver o resumo: o que ele dá e quanto ganha ou perde em relação ao que você está usando",

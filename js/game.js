@@ -6,6 +6,8 @@
   let W = ValdoraWorld.W, H = ValdoraWorld.H; const TILE = 48; // rodada 105: continente (o quadro antigo é 96 x 72)
   const TICK = 0.5;        // pulso do jogo (s): ações, combate e IA acontecem em ticks
   const STEP = 0.24;       // tempo para andar 1 tile (s)
+  const KEY_REPEAT = 0.45; // rodada 114: segurando W/A/S/D, o 2º passo só sai depois disto (um toque rápido anda 1 tile)
+  let keyHoldT = 0, keySteps = 0;
   const MOB_STEP = 0.42;
   const SLOTS = 20, BANK_SLOTS = 48, SAVE_KEY = "valdora.save.v2";
   const FISH_TICKS = 5; // rodada 112: uma tentativa de pesca a cada 2,5 s (antes 1 s: o peixe vinha rápido demais)
@@ -171,7 +173,9 @@
     // vila: praça calçada + construções
     for (let y = TOWN.y0; y <= TOWN.y1; y++) for (let x = TOWN.x0; x <= TOWN.x1; x++) map[y][x] = (x === 48 || x === 49 || y === 36 || y === 37) ? "path" : "stone";
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
-    deco("house", "house_red", 42, 30, 3, 2); deco("house", "house_blue", 53, 30, 3, 2); deco("house", "house_green", 42, 41, 3, 2);
+    // rodada 114: no lugar da casa vermelha, a Casa de Leilões (um tile acima e à esquerda) com a banca e a leiloeira na frente
+    deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "stall_auction", 41, 31, 2, 1, { name: "Celeste" });
+    deco("house", "house_blue", 53, 30, 3, 2); deco("house", "house_green", 42, 41, 3, 2);
     npc.stall = deco("stall", "stall", 51, 33, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 53, 33, 1, 1, { name: "Bento" });
     npc.guard = deco("guard", "npc_guard", 46, 34, 1, 1, { name: "Ivo" });
@@ -528,6 +532,10 @@
     }
     // vilas novas: a mesma planta da Lumeira (casas, banca e mercador, cofre, fornalha, bigorna, fogueira, poço, quadro e a Pedra)
     const MERCH = { breu: "Saulo", oasis: "Zaíra", escarpa: "Dagoberto", degelo: "Ilka" };
+    const WARDENS = { breu: ["Vigia Lúcio", "Lúcio", "A mata escuta. Se veio ajudar, tenho trabalho para você."],
+      escarpa: ["Sargento Tobias", "Tobias", "Firme, soldado! A montanha não perdoa quem chega despreparado."],
+      oasis: ["Guardiã Samira", "Samira", "Que o sol lhe seja leve, viajante. O deserto precisa de braços fortes."],
+      degelo: ["Patrulheira Edda", "Edda", "Bem-vindo ao Degelo. Aqui, quem não ajuda congela."] };
     const HOUSES = { breu: ["house_green", "house_blue", "house_green"], oasis: ["house_red", "house_red", "house_blue"], escarpa: ["house_blue", "house_blue", "house_red"], degelo: ["house_blue", "house_green", "house_blue"] };
     for (const v of G.VILLAGES) {
       if (v.main) { // Lumeira: a Pedra entra num tile livre da praça
@@ -546,6 +554,8 @@
         deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(9, 2)); deco("well", "well", ...at(3, 6)); deco("fire", "campfire", ...at(4, 10));
         deco("barrel", "barrel", ...at(9, 4)); deco("barrel", "barrel", ...at(14, 10)); deco("barrel", "barrel", ...at(5, 10));
         v.stone = { x: v.x0 + 6, y: v.y0 + 5 };
+        const WD = WARDENS[v.key]; // rodada 114: guardião da vila, no estilo do Ivo, com as missões do bioma
+        if (WD) (npc.wardens = npc.wardens || {})["w_" + v.key] = deco("warden", "npc_warden_" + v.key, ...at(5, 6), 1, 1, { name: WD[0], short: WD[1], hello: WD[2], giver: "w_" + v.key, village: v.key });
         for (const [x, y] of [at(-1, -1), at(17, -1), at(-1, 16), at(17, 16)]) if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water") deco("prop", SPR.deco_lamppost ? "deco_lamppost" : "deco_sign", x, y);
       }
       if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
@@ -695,7 +705,7 @@
   // rodada 73: ronda do Ivo pela praça (pontos em volta de casa, um por saída; volta para casa entre eles)
   const PATROL = [[3, 2], [-2, 3], [2, -1], [-1, -2]];
   // rodada 34/35: reação ao entregar missão/encomenda — Ivo bate continência ("salute"), Bento faz joinha ("thumbs"); segura o último quadro 0,6 s
-  const REACT = { guard: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
+  const REACT = { guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
   const reactDur = (o) => { const R = ANIMS[o.spr] && ANIMS[o.spr].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; };
   function react(o) {
     const row = o && REACT[o.type]; if (!row || !ANIMS[o.spr] || !ANIMS[o.spr].rows[row]) return;
@@ -937,6 +947,7 @@
     player.spawnStone = player.stones.includes(data.spawnStone) ? data.spawnStone : "lumeira"; player.village = null;
     player.pet = data.pet && typeof data.pet === "object" ? { name: RULES.petName(data.pet.name) || RULES.PET.name, kills: Math.max(0, data.pet.kills | 0), hp: Math.max(0, data.pet.hp | 0), rest: Math.max(0, Math.min(RULES.PET.rest, +data.pet.rest || 0)), named: data.pet.named ? 1 : 0, seenBond: Math.max(1, data.pet.seenBond | 0 || RULES.petBond(data.pet.kills | 0)) } : null; pet = null; // rodada 95; rodada 96: vida, descanso, nome
     player.echo = typeof data.echo === "object" && data.echo ? { ...data.echo } : {}; // semana da última vitória sobre cada eco
+    player.auction = AUCTION.sanitize(data.auction); // rodada 114: lotes na Casa de Leilões
     for (const k of EQUIP_KEYS) { // aceita o formato antigo (só o nome) e o novo ({ name, aff })
       const e = data.equip && data.equip[k], name = e && (typeof e === "string" ? e : e.name);
       if (name && ITEMS[name] && ITEMS[name].slot === k) { player.equip[k] = { name }; const aff = validAff(e.aff); if (aff && aff.length) player.equip[k].aff = aff; if (e.master) player.equip[k].master = 1; }
@@ -1158,7 +1169,7 @@
   function goTo(goal) { player.goal = goal; player.path = findPath(player.x, player.y, goal) || []; return player.path.length > 0 || goal(player.x, player.y); }
 
   // ---------- Entrada ----------
-  const INTERACT_TEXT = { shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
+  const INTERACT_TEXT = { warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
     anvil: "usar a bigorna", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
@@ -1215,7 +1226,10 @@
       if (best) setTarget({ kind: "mob", ref: best }); else log(near.length ? "Nenhum monstro alcançável por perto." : "Nenhum monstro por perto.", "dim");
     },
   });
-  const shortcut = INPUT.shortcut, keyDir = INPUT.keyDir, keyVec = INPUT.keyVec; // rodada 104: keyVec = passo em 8 direções
+  const shortcut = INPUT.shortcut; // rodada 104: keyVec = passo em 8 direções
+  // rodada 114: toque rápido (soltou antes de dar o passo, ex.: enquanto o herói virava) ainda anda 1 tile
+  let tapVec = null, lastVec = null;
+  const keyVec = () => INPUT.keyVec() || tapVec, keyDir = () => { const v = keyVec(); return v ? window.DIR_AT(v[0], v[1]) : null; };
 
   const canvas = $("canvas"), ctx = canvas.getContext("2d");
   const cam = { x: 0, y: 0 };
@@ -1240,7 +1254,7 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
+  const STATIONS = { warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1414,7 +1428,7 @@
     const onPlant = t.kind === "res" && isPlant(r) && player.x === r.x && player.y === r.y; // rodada 112: em cima da planta também colhe
     if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
     if (!onPlant) faceRect(r);
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "auction", "warden"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
     if (t.kind === "crypt") { player.target = null; return enterCrypt(r); }
@@ -2269,6 +2283,9 @@
 
   // ---------- Janelas: loja, guarda, cofre, fornalha, bigorna, quadro ----------
   const DLG = ValdoraDialogs.DLG; // títulos e falas das janelas (js/dialogs.js)
+  // rodada 114: Casa de Leilões (js/auction.js)
+  const AUCTION = ValdoraAuction.create({ player: () => player, lv: (s) => lv(s), addItem: (...a) => addItem(...a), dropItem: (n, q) => dropItem(n, q, player.x, player.y),
+    log: (m, c) => log(m, c), sound: (k) => SND.play(k), dirty: () => { hudDirty = true; }, bang: () => { if (npc.auction) npc.auction.bangT = performance.now() / 1000; } });
   let dlg = null; // { kind, obj, tab }
   // rodada 105: a janela abre embaixo do cartão do personagem e acima do registro; sem espaço ali, abre ao lado do cartão.
   // Nunca cobre o cartão, o registro nem o painel da direita.
@@ -2304,6 +2321,7 @@
     const b = e.target.closest("button, .slot[data-dep], .slot[data-wd]"); if (!b) return;
     const ds = b.dataset; SND.play("ui");
     if (DLG_VIEW.uiClick(b, dlg)) return; // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
+    if (dlg.kind === "auction" && AUCTION.act(ds)) { renderDlg(); save(); return; } // rodada 114
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
     renderDlg(); save();
   });
@@ -2389,7 +2407,7 @@
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect });
   const DLG_VIEW = ValdoraDialogs.create({ player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
-    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
+    dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg(), auction: AUCTION }); // rodada 78/79; rodada 96: filhote
 
   // ---------- HUD ----------
   let hudDirty = true, hudTab = "inv";
@@ -2579,13 +2597,15 @@
     const kd = keyDir(), prevDir = player.dir;
     let nx, ny;
     if (kd) {
+      // rodada 114: cada toque em W/A/S/D anda só 1 tile; segurando, o herói segue andando depois de KEY_REPEAT s
+      if (keySteps >= 1 && keyHoldT < KEY_REPEAT) return false;
       if (player.act && player.act.key !== "rod") cancelAct(); // apertar uma direção cancela o golpe, mesmo contra um obstáculo
       player.path = []; player.target = null; player.goal = null; player.job = null; player.dir = kd;
       const [vx, vy] = keyVec(); nx = player.x + vx; ny = player.y + vy;
       if (!canStep(player.x, player.y, nx, ny)) { // diagonal bloqueada: escorrega pelo lado que estiver livre
         if (vx && vy && canStep(player.x, player.y, player.x + vx, player.y)) ny = player.y;
         else if (vx && vy && canStep(player.x, player.y, player.x, player.y + vy)) nx = player.x;
-        else { thorns(nx, ny); return false; } // rodada 111: andou contra o cacto
+        else { thorns(nx, ny); tapVec = null; return false; } // rodada 111: andou contra o cacto (114: o toque se gasta na batida)
       }
     } else if (player.path.length) {
       [nx, ny] = player.path[0];
@@ -2597,6 +2617,7 @@
       player.path.shift();
       faceTo(nx, ny);
     } else return false;
+    if (kd) { keySteps++; tapVec = null; }
     player.stepLen = nx !== player.x && ny !== player.y ? Math.SQRT2 : 1; // rodada 104: passo diagonal é mais comprido
     player.fx = player.x; player.fy = player.y; player.x = nx; player.y = ny;
     if (player.dir !== prevDir) dustAtFeet(3); // poeira ao mudar de direção correndo
@@ -2627,6 +2648,8 @@
     // movimento contínuo do jogador (tile a tile, com sobra de tempo aproveitada)
     // velocidade constante entre tiles, com arrancada e frenagem suaves; passos encadeados sem parar
     if (player.dash) updateDash(dt);
+    const held = INPUT.keyVec(); // rodada 114: toque = 1 tile (ver nextStep)
+    if (held) { keyHoldT += dt; lastVec = held; } else { if (lastVec && keySteps === 0 && !tapVec) tapVec = lastVec; lastVec = null; keyHoldT = 0; if (!tapVec) keySteps = 0; }
     const wasMoving = !player.dash && player.prog < 1;
     if (player.turnT > 0) player.turnT -= dt;
     let rate = 1;
@@ -2761,6 +2784,7 @@
     petTick(); // rodada 95
     CAMPAIGN_RT.tick(tickN); // rodada 78: bênção do marco
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
+    if (tickN % 10 === 0) { AUCTION.tick(); if (dlg && dlg.kind === "auction") renderDlg(); } // rodada 114: lotes que terminaram (e o relógio da janela)
   }
   // IA e animação dos monstros (js/mobs.js)
   const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
@@ -3011,7 +3035,7 @@
       const data = ({ v: 2, wv: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, auction: player.auction, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

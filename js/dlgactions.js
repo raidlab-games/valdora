@@ -43,7 +43,7 @@ window.ValdoraDlgActions = (() => {
     }
     function dlgQuest(ds) { // missões (Ivo, Bento, Tomé)
       const player = api.player(), dlg = api.dlg();
-      const QS = VD.QUESTS, npcOf = (g) => g === "guard" ? api.npc().guard : g === "shop" ? api.npc().merchant : g === "bard" ? api.npc().bard : g === "herb" ? api.npc().herb : g === "carto" ? api.npc().carto : g === "miner" ? api.npc().miner : null;
+      const QS = VD.QUESTS, npcOf = (g) => g === "guard" ? api.npc().guard : g === "shop" ? api.npc().merchant : g === "bard" ? api.npc().bard : g === "herb" ? api.npc().herb : g === "carto" ? api.npc().carto : g === "miner" ? api.npc().miner : (api.npc().wardens || {})[g] || null; // rodada 114: guardiões
       // rodada 78: passo com cena (campanha): fecha a janela, toca a cena e só no fim muda o estado da missão
       const viaScene = (sid, fn) => { if (sid && api.scene) { api.close(); api.scene(sid, fn); return "stop"; } fn(); };
       const stepOf = (id) => QUEST.stepOf ? QUEST.stepOf(id) : null, whoOf = (id, st) => (st && st.to) || (QS[id] && QS[id].giver);

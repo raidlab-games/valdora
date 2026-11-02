@@ -718,3 +718,7 @@ button.link:hover { color: #cfe3ff; }
 /* rodada 113: comparação no resumo do item (verde = ganha, vermelho = perde) */
 #tip .tip-cmp { margin-top: 3px; padding-top: 3px; border-top: 1px solid #6b4f2a88; }
 #tip b.up { color: #7dff9a; } #tip b.down { color: #ff6b5a; }
+/* rodada 114: Casa de Leilões */
+#dlg .row.auc span { flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+#dlg .row.auc small { opacity: .7; } #dlg .row.auc em { opacity: .6; font-style: normal; font-size: 12px; }
+#dlg .row.auc.sold { opacity: .55; } #dlg .row.auc .gold { color: #ffd84a; }

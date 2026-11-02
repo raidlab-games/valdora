@@ -232,6 +232,11 @@ SPRITE_SIZE.deco_lumita_marker_lit = [2.1, 2.1]; SPRITE_SIZE.deco_lumita_marker_
 ASSETS.deco_crack_open = "assets/flow/deco_crack_open.png"; ASSETS.deco_crack_scar = "assets/flow/deco_crack_scar.png"; ASSETS.deco_crack_open_glow = "assets/flow/deco_crack_open_glow.png";
 SPRITE_SIZE.deco_crack_open = [2.8, 1.87]; SPRITE_SIZE.deco_crack_scar = [2.8, 1.87]; SPRITE_SIZE.deco_crack_open_glow = [2.8, 1.87];
 ASSETS.mob_goblin_boss = "assets/flow/mob_goblin_boss.png"; SPRITE_SIZE.mob_goblin_boss = [1.75, 1.75];
+// rodada 114: Casa de Leilões (artes da vila: casa vermelha com o martelo na cumeeira e a banca com toldo vinho e dourado; tools/auction_art.py)
+ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auction = [3.4, 3.4 * 296 / 256];
+ASSETS.stall_auction = "assets/flow/stall_auction.png"; SPRITE_SIZE.stall_auction = [2.3, 2.3];
+ASSETS.stall_auction_front = "assets/flow/stall_auction_front.png"; SPRITE_SIZE.stall_auction_front = [2.3, 2.3];
+ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];
 // rodada 80: Ato III (arte do Flow, lote 1): Odília, a tenda dela (3x2 tiles, como a cabana da Juna) e 4 estelas com runas (lua, olho,
@@ -287,7 +292,9 @@ ASSETS.icon_home = "assets/flow/icon_home.png"; ASSETS.icon_rested = "assets/flo
 // Personagens disponíveis no lobby
 // Personagens 3D (Blender, tools/char3d.py): NPCs na mesma escala dos heróis — 1,45 tile para 1,75 m de altura.
 // Cada um tem a altura do próprio modelo (o Bento é mais baixo, o Ivo mais alto); npc_X_walk6 = caminhada nas 4 direções.
-for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras"]) {
+// rodada 114: guardiões das vilas novas (Blender, no estilo do Ivo)
+for (const v of ["breu", "oasis", "escarpa", "degelo"]) { const k = "npc_warden_" + v; ASSETS[k] = `assets/flow/${k}.png`; ASSETS[k + "_sheet"] = `assets/flow/${k}_sheet.png`; }
+for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo"]) {
   for (const suf of ["", "_look", "_walk6"]) SPRITE_SIZE[k + suf] = [1.45, 1.45];
   SPRITE_SIZE[k + "_sheet"] = [3 * 1.45, 4 * 1.45];
 }

@@ -6,7 +6,8 @@
 // e recompensa que libera algo no mundo (reward.unlock, só texto: o efeito vem do estado das missões).
 window.ValdoraQuests = (() => {
   "use strict";
-  const NPC_NAME = { guard: "Ivo", bard: "Tomé", shop: "Bento", herb: "Juna", carto: "Odília", miner: "Brás" }; // rodada 79: Juna, a raizeira
+  const NPC_NAME = { guard: "Ivo", bard: "Tomé", shop: "Bento", herb: "Juna", carto: "Odília", miner: "Brás", // rodada 79: Juna, a raizeira
+    w_breu: "Lúcio (Breu)", w_escarpa: "Tobias (Escarpa)", w_oasis: "Samira (Oásis)", w_degelo: "Edda (Degelo)" }; // rodada 114: guardiões das vilas novas
   const ROMAN = ["", "I", "II", "III", "IV", "V"];
   function create(api) {
     const { QUESTS, TUTORIAL } = VD, esc = ValdoraUI.esc;

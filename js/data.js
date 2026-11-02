@@ -1130,6 +1130,93 @@ window.VD = (() => {
   }
   const CARRY = { base: 50, perVit: 0.4, heavy: 1, crawl: 1.3 };
 
+
+  // ---------- rodada 114: guardiões das vilas novas (no estilo do Ivo): 6 missões por bioma, de caçar cada criatura e
+  // coletar cada recurso de lá até derrubar o chefe da masmorra. Cada missão libera a seguinte (after).
+  const WARD = (g, name, list) => list.forEach(([id, title, min, intro, steps, outro, reward], i) => {
+    QUESTS[id] = { giver: g, name: title, ...(i ? { after: list[i - 1][0] } : { minCombat: min }), intro, outro, reward,
+      steps: [...steps.map(([text, ev, n]) => ({ text, ev, n })), { text: `Volte e fale com ${name}.`, talk: true }] };
+  });
+  WARD("w_breu", "o Vigia Lúcio", [
+    ["breu1", "Uivos entre as árvores", 28, "Desde que a floresta escureceu, os lobos das sombras e as aranhas da mata cercam o Breu. Abra caminho para os lenhadores.",
+      [["Derrote 8 lobos das sombras.", "kill:shade_wolf", 8], ["Derrote 8 aranhas da mata.", "kill:wood_spider", 8]],
+      "A trilha respira de novo. Tome, para a próxima ronda.", { coins: 400, xp: { combate: 2500 }, items: { "Essência sombria": 3, "Poção de vida": 3 } }],
+    ["breu2", "Ébano, obsidiana e cogumelos", 0, "A vila precisa de ébano para as paliçadas, obsidiana para as pontas de lança e cogumelo-sombra para os curandeiros.",
+      [["Corte 10 madeiras de ébano.", "gather:Madeira de ébano", 10], ["Minere 8 obsidianas.", "gather:Obsidiana", 8], ["Colha 6 cogumelos-sombra.", "gather:Cogumelo-sombra", 6]],
+      "Com isso o Breu aguenta o inverno. Você conhece a mata melhor que muitos daqui.", { coins: 600, xp: { corte: 2000, mineracao: 2000, herbalismo: 1500 } }],
+    ["breu3", "Os mortos da floresta", 0, "Goblins da sombra andam saqueando as covas antigas, e os esqueletos podres levantam atrás deles. Ponha um fim nisso.",
+      [["Derrote 10 goblins da sombra.", "kill:shade_goblin", 10], ["Derrote 10 esqueletos podres.", "kill:rot_skeleton", 10]],
+      "As covas estão quietas outra vez. Leve este anel: foi forjado aqui, com obsidiana do Breu.", { coins: 900, xp: { combate: 5000 }, item: "Anel de obsidiana", aff: 1 }],
+    ["breu4", "A forja da noite", 0, "Antes de entrar no Covil, você vai precisar de equipamento à altura. Funda obsidiana e traga a flor que só abre à noite.",
+      [["Funda 4 barras de obsidiana.", "smelt:Barra de obsidiana", 4], ["Colha 4 flores-da-noite.", "gather:Flor-da-noite", 4]],
+      "Agora sim, você pode forjar peças de obsidiana na bigorna. O Covil não perdoa quem entra mal armado.", { coins: 1000, xp: { ferraria: 3000, herbalismo: 2000 }, items: { "Essência sombria": 6 } }],
+    ["breu5", "Espectros, ents e o alfa", 0, "Os espectros sombrios guardam o caminho do Covil, os ents corrompidos fecham as trilhas e um Alfa da noite comanda a matilha.",
+      [["Derrote 8 espectros sombrios.", "kill:shade_wraith", 8], ["Derrote 6 ents corrompidos.", "kill:corrupt_ent", 6], ["Derrote 2 Alfas da noite.", "kill:night_alpha", 2]],
+      "O caminho do Covil das Sombras está aberto. Só falta quem reina lá dentro.", { coins: 1500, xp: { combate: 9000 }, item: "Manto de obsidiana", aff: 1 }],
+    ["breu6", "O Rei das Sombras", 0, "Desça ao Covil das Sombras e derrube o Rei das Sombras. Enquanto ele reinar, a floresta não verá o sol.",
+      [["Derrote o Rei das Sombras no Covil das Sombras.", "kill:shadow_king", 1]],
+      "A floresta clareou! O Breu inteiro vai cantar o seu nome. Este amuleto era do primeiro vigia da vila: agora é seu.", { coins: 3500, xp: { combate: 18000 }, item: "Amuleto de obsidiana", aff: 2 }],
+  ]);
+  WARD("w_escarpa", "o Sargento Tobias", [
+    ["esc1", "Feras da encosta", 62, "Lobos cinzentos e javalis de pedra atacam as carroças que sobem para a Escarpa. Limpe a estrada.",
+      [["Derrote 10 lobos cinzentos.", "kill:gray_wolf", 10], ["Derrote 8 javalis de pedra.", "kill:stone_boar", 8]],
+      "Estrada limpa, soldado! Isso merece pagamento.", { coins: 900, xp: { combate: 6000 }, items: { "Lasca de rocha-viva": 3, "Poção de força": 3 } }],
+    ["esc2", "Pinho, mitril e musgo", 0, "As minas da Escarpa precisam de escoras de pinho, o ferreiro quer mitril e o curandeiro, musgo-de-rocha.",
+      [["Corte 10 madeiras de pinho.", "gather:Madeira de pinho", 10], ["Minere 8 mitris.", "gather:Mitril", 8], ["Colha 6 musgos-de-rocha.", "gather:Musgo-de-rocha", 6]],
+      "As minas voltam a funcionar. Bom trabalho.", { coins: 1200, xp: { corte: 4000, mineracao: 5000, herbalismo: 3000 } }],
+    ["esc3", "Golens e goblins", 0, "Golens de granito despertaram nas pedreiras e goblins das cavernas roubam o minério. Dê um jeito nos dois.",
+      [["Derrote 10 golens de granito.", "kill:granite_golem", 10], ["Derrote 10 goblins das cavernas.", "kill:cave_goblin", 10]],
+      "Pedreiras seguras. Este anel de mitril é da guarda: use com honra.", { coins: 1600, xp: { combate: 10000 }, item: "Anel de mitril", aff: 1 }],
+    ["esc4", "Aço das alturas", 0, "Para a Forja Abandonada, só mitril serve. Funda as barras e traga edelvais e adamante dos picos.",
+      [["Funda 4 barras de mitril.", "smelt:Barra de mitril", 4], ["Colha 4 edelvais.", "gather:Edelvais", 4], ["Minere 4 adamantes.", "gather:Adamante", 4]],
+      "Material de primeira. A bigorna da vila já pode forjar o seu mitril.", { coins: 1800, xp: { ferraria: 6000, mineracao: 4000 }, items: { "Lasca de rocha-viva": 6 } }],
+    ["esc5", "Sentinelas, aranhas e o colosso", 0, "As sentinelas de rocha e as aranhas das grutas guardam a subida da Forja, e um Colosso de ferro anda pelos picos.",
+      [["Derrote 8 sentinelas de rocha.", "kill:rock_sentinel", 8], ["Derrote 8 aranhas das grutas.", "kill:cave_spider", 8], ["Derrote 2 Colossos de ferro.", "kill:iron_colossus", 2]],
+      "A subida está livre. Só resta o Rei da Montanha.", { coins: 2500, xp: { combate: 16000 }, item: "Manto de mitril", aff: 1 }],
+    ["esc6", "O Rei da Montanha", 0, "Na Forja Abandonada mora o Rei da Montanha. Derrube-o e a Escarpa volta a ser nossa.",
+      [["Derrote o Rei da Montanha na Forja Abandonada.", "kill:mountain_king", 1]],
+      "Pelos picos de ferro! A Escarpa deve tudo a você. Fique com o amuleto do comandante.", { coins: 6000, xp: { combate: 30000 }, item: "Amuleto de mitril", aff: 2 }],
+  ]);
+  WARD("w_oasis", "a Guardiã Samira", [
+    ["oas1", "Areia viva", 98, "Slimes de areia e escorpiões rubros cercam o Oásis à noite. Proteja as cisternas.",
+      [["Derrote 10 slimes de areia.", "kill:sand_slime", 10], ["Derrote 10 escorpiões rubros.", "kill:red_scorpion", 10]],
+      "As cisternas estão salvas. Que o sol lhe seja leve.", { coins: 1500, xp: { combate: 12000 }, items: { "Escaravelho dourado": 3, "Poção de vida": 4 } }],
+    ["oas2", "Palmas, ouro e cacto", 0, "Precisamos de palmeiras para os toldos, ouro solar para as trocas e polpa de cacto para a água das caravanas.",
+      [["Corte 10 madeiras de palmeira.", "gather:Madeira de palmeira", 10], ["Minere 8 ouros solares.", "gather:Ouro solar", 8], ["Colha 6 polpas de cacto (cuidado com os espinhos).", "gather:Polpa de cacto", 6]],
+      "As caravanas vão sair cheias. Você é bem-vindo no Oásis.", { coins: 2000, xp: { corte: 7000, mineracao: 8000, herbalismo: 6000 } }],
+    ["oas3", "Javalis e múmias", 0, "Javalis das dunas pisoteiam as hortas e as múmias saem das tumbas ao entardecer.",
+      [["Derrote 10 javalis das dunas.", "kill:dune_boar", 10], ["Derrote 10 múmias.", "kill:mummy", 10]],
+      "As hortas e as tumbas estão em paz. Este anel solar é um presente da vila.", { coins: 2800, xp: { combate: 18000 }, item: "Anel solar", aff: 1 }],
+    ["oas4", "O ouro que arde", 0, "A Tumba do Faraó só se abre para quem leva o sol consigo. Funda barras solares e traga rosas e rubis do deserto.",
+      [["Funda 4 barras solares.", "smelt:Barra solar", 4], ["Colha 4 rosas-do-deserto.", "gather:Rosa-do-deserto", 4], ["Minere 4 rubis do deserto.", "gather:Rubi do deserto", 4]],
+      "Com isso a bigorna forja o seu equipamento solar.", { coins: 3200, xp: { ferraria: 9000, mineracao: 6000 }, items: { "Escaravelho dourado": 6 } }],
+    ["oas5", "Golens, saqueadores e a serpente", 0, "Golens de arenito guardam as ruínas, goblins saqueadores atacam as caravanas e uma Serpente das dunas ronda a tumba.",
+      [["Derrote 8 golens de arenito.", "kill:sandstone_golem", 8], ["Derrote 8 goblins saqueadores do deserto.", "kill:raider_goblin", 8], ["Derrote 2 Serpentes das dunas.", "kill:dune_serpent", 2]],
+      "A entrada da tumba está livre. O Faraó espera.", { coins: 4500, xp: { combate: 28000 }, item: "Manto solar", aff: 1 }],
+    ["oas6", "O Faraó de Areia", 0, "Desça à Tumba do Faraó e derrube o Faraó de Areia. O deserto inteiro respira quando ele dorme.",
+      [["Derrote o Faraó de Areia na Tumba do Faraó.", "kill:sand_pharaoh", 1]],
+      "O sol voltou a ser só sol! O Oásis lhe deve a vida. Leve o amuleto das guardiãs.", { coins: 9000, xp: { combate: 50000 }, item: "Amuleto solar", aff: 2 }],
+  ]);
+  WARD("w_degelo", "a Patrulheira Edda", [
+    ["deg1", "Lobos e slimes de gelo", 136, "Lobos do gelo e slimes de gelo rondam o Degelo. A patrulha precisa de reforço.",
+      [["Derrote 10 lobos do gelo.", "kill:ice_wolf", 10], ["Derrote 10 slimes de gelo.", "kill:frost_slime", 10]],
+      "A patrulha agradece. Aqueça-se e leve isto.", { coins: 2500, xp: { combate: 25000 }, items: { "Floco eterno": 3, "Poção de pedra": 4 } }],
+    ["deg2", "Pinho, gelo e flor", 0, "O Degelo precisa de pinho nevado para a lenha, gelo eterno para as runas e flor-de-gelo para os unguentos.",
+      [["Corte 10 pinhos nevados.", "gather:Pinho nevado", 10], ["Minere 8 gelos eternos.", "gather:Gelo eterno", 8], ["Colha 6 flores-de-gelo.", "gather:Flor-de-gelo", 6]],
+      "Ninguém vai passar frio este ano. Obrigada.", { coins: 3200, xp: { corte: 12000, mineracao: 14000, herbalismo: 10000 } }],
+    ["deg3", "Espectros e golens", 0, "Espectros da nevasca e golens de gelo atacam quem cruza a geleira.",
+      [["Derrote 10 espectros da nevasca.", "kill:blizzard_wraith", 10], ["Derrote 10 golens de gelo.", "kill:ice_golem", 10]],
+      "A travessia está segura. Este anel glacial é seu.", { coins: 4500, xp: { combate: 35000 }, item: "Anel glacial", aff: 1 }],
+    ["deg4", "O frio que corta", 0, "Para a Gruta do Gelo Eterno, só o glacial aguenta. Funda as barras e traga gelo astral e a flor-aurora.",
+      [["Funda 4 barras glaciais.", "smelt:Barra glacial", 4], ["Minere 4 gelos astrais.", "gather:Gelo astral", 4], ["Colha 4 flores-aurora.", "gather:Flor-aurora", 4]],
+      "Com isso a bigorna forja o seu equipamento glacial.", { coins: 5000, xp: { ferraria: 15000, mineracao: 10000 }, items: { "Floco eterno": 6 } }],
+    ["deg5", "Sentinelas, esqueletos e o alfa", 0, "Sentinelas glaciais e esqueletos congelados guardam a gruta, e o Alfa da nevasca comanda os lobos do norte.",
+      [["Derrote 8 sentinelas glaciais.", "kill:glacial_sentinel", 8], ["Derrote 8 esqueletos congelados.", "kill:frozen_skeleton", 8], ["Derrote 2 Alfas da nevasca.", "kill:blizzard_alpha", 2]],
+      "O caminho da gruta está aberto. Só resta a Serpente.", { coins: 7000, xp: { combate: 50000 }, item: "Manto glacial", aff: 1 }],
+    ["deg6", "A Serpente do Gelo Eterno", 0, "No fundo da Gruta do Gelo Eterno dorme a Serpente. Derrube-a e o norte inteiro volta a respirar.",
+      [["Derrote a Serpente do Gelo Eterno na Gruta do Gelo Eterno.", "kill:frost_serpent", 1]],
+      "A geleira está livre! Os sinos do Degelo vão tocar por você. Leve o amuleto da patrulha.", { coins: 14000, xp: { combate: 80000 }, item: "Amuleto glacial", aff: 2 }],
+  ]);
   return { mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

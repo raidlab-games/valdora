@@ -20,6 +20,23 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 114 (v1.13) — Casa de Leilões, guardiões das vilas, 1 tile por toque
+- **Casa de Leilões** na Lumeira (no lugar da casa vermelha, um tile acima e à esquerda), com as artes da própria vila
+  (`tools/auction_art.py`): a casa vermelha com um martelo de leilão na cumeeira (`deco_gavel` em `gear_icons.py`) e a banca do
+  Bento com toldo vinho e dourado, em duas camadas (`stall_auction` + `stall_auction_front`) para a leiloeira **Celeste**
+  (`npc_auctioneer`, Blender: cartola, colete, monóculo, martelinho; linha `gavel`) ficar atrás do balcão.
+- `js/auction.js`: 6 lotes a cada 15 min (peças das três classes no degrau do Combate, mochilas, itens de região, barras,
+  poções; 130–190% do valor); leiloar uma pilha (taxa 5%, até 5 lotes, 3–8 min no relógio real, 85% arrematado por 100–180%);
+  receber moedas ou o lote de volta; aviso no registro quando um lote termina. Salvo em `player.auction`.
+- **Guardiões das vilas novas** (no estilo do Ivo, lança e continência; Blender): Vigia Lúcio (Breu), Sargento Tobias
+  (Escarpa), Guardiã Samira (Oásis) e Patrulheira Edda (Degelo). Cada um passa 6 missões em sequência: caçar todas as
+  criaturas do bioma, coletar madeira, minério e ervas de lá, fundir a barra do bioma e, por fim, derrubar o chefe da
+  masmorra (Rei das Sombras, Rei da Montanha, Faraó de Areia, Serpente do Gelo Eterno). Recompensas: moedas, XP, itens de
+  região e peças do conjunto do bioma (anel, manto, amuleto).
+- **1 tile por toque** em W/A/S/D (`KEY_REPEAT` 0,45 s): segurando, o herói segue andando; um toque rápido, mesmo durante a
+  virada, ainda dá o passo (`tapVec`).
+- Testes: +2 (missões dos guardiões até o chefe; Casa de Leilões).
+
 ## Rodada 113 (v1.12) — ninjas encapuzados, menu e resumo dos itens, perseguição sem pausas
 - **Ninja encapuzado** (`mob_ninja`, Blender em `tools/b3d/mobs_hum.py`: capuz, máscara, olhos acesos, ataduras, faixa
   vermelha e lâmina curta; 5 vistas). Emboscada (`ambushRoll`): cada golpe em monstro e cada batida de coleta tem 1,5% de

@@ -30,6 +30,21 @@
     return bad.length ? "sem peso: " + bad.join(", ") : grow || "mochilas fora de ordem";
   });
   test("rodada 112: a Mochila de pano está à venda e tem a camada no herói", () => SHOP_ITEMS.includes("Mochila de pano") && ITEMS["Mochila de pano"].look[0] === "backpack" || "faltando");
+  // rodada 114: guardiões das vilas novas e Casa de Leilões
+  test("rodada 114: missões dos guardiões apontam para monstros, itens e recompensas que existem, até o chefe", () => {
+    const bad = [], Q = Object.entries(VD.QUESTS).filter(([, q]) => /^w_/.test(q.giver));
+    for (const [id, q] of Q) {
+      for (const s of q.steps) if (s.ev) { const [k, v] = s.ev.split(":"); if ((k === "kill" && !MOBS[v]) || ((k === "gather" || k === "smelt") && !ITEMS[v])) bad.push(id + ":" + s.ev); }
+      const r = q.reward || {}; if (r.item && !ITEMS[r.item]) bad.push(id + ":" + r.item); for (const k of Object.keys(r.items || {})) if (!ITEMS[k]) bad.push(id + ":" + k);
+      if (q.after && !VD.QUESTS[q.after]) bad.push(id + ":after");
+    }
+    for (const g of ["w_breu", "w_escarpa", "w_oasis", "w_degelo"]) { const last = Q.filter(([, q]) => q.giver === g).pop(); if (!last || !last[1].steps.some((s) => /^kill:/.test(s.ev || "") && MOBS[s.ev.slice(5)] && MOBS[s.ev.slice(5)].boss)) bad.push(g + ": sem chefe no fim"); }
+    return Q.length >= 24 ? miss(bad) : "poucas missões: " + Q.length;
+  });
+  test("rodada 114: Casa de Leilões tem arte, leiloeira e lotes válidos", () => {
+    const A = ValdoraAuction.create({ player: () => ({ name: "t", inv: [], coins: 0, auction: { lots: [], bought: {} } }), lv: () => 50, addItem: () => true, dropItem() {}, log() {}, sound() {}, dirty() {}, bang() {} });
+    const O = A.offers(); return (ASSETS.house_auction && ASSETS.stall_auction_front && ASSETS.npc_auctioneer && O.list.length === 6 && O.list.every((o) => ITEMS[o.name] && o.price > 0)) || "faltando";
+  });
   // rodada 113: ninja encapuzado (emboscada)
   test("rodada 113: ninja tem arte 3D e é agressivo sem recompensa de caçada", () => (MOBS.ninja && ASSETS.mob_ninja && MOBS.ninja.ambush && MOBS.ninja.aggro > 0 && MOBS.ninja.noBounty) || "ninja incompleto");
   test("rodada 113: ninja no nível do herói tem a força de um monstro comum do mesmo nível", () => {
@@ -154,7 +169,7 @@
     return (h.split('class="tip-aff"').length === 3 && h.includes(ASSETS.badge_ferocious) && h.includes("+2 dano") && h.includes("+4% coleta")) || h; });
   test("dica escapa HTML do texto de ajuda", () => !UI.itemTip({ name: "Anel do caçador" }, "<b>x</b>").includes("<b>x</b>") || "não escapou");
   test("missões: passos válidos (itens, monstros e quem entrega)", () => miss(Object.entries(VD.QUESTS).flatMap(([id, q]) => [
-    ...(["guard", "bard", "shop", "herb", "carto", "miner"].includes(q.giver) ? [] : [id + ":giver"]), ...(q.reward.item && !ITEMS[q.reward.item] ? [id + ":" + q.reward.item] : []),
+    ...(["guard", "bard", "shop", "herb", "carto", "miner", "w_breu", "w_escarpa", "w_oasis", "w_degelo"].includes(q.giver) ? [] : [id + ":giver"]), ...(q.reward.item && !ITEMS[q.reward.item] ? [id + ":" + q.reward.item] : []),
     ...Object.keys(q.reward.items || {}).filter((i) => !ITEMS[i]).map((i) => id + ":" + i), ...(q.after && !VD.QUESTS[q.after] ? [id + ":after"] : []),
     ...q.steps.flatMap((s) => Object.keys(s.deliver || {}).filter((i) => !ITEMS[i])).map((i) => id + ":" + i),
     ...q.steps.filter((s) => s.ev && s.ev.startsWith("kill:") && !MOBS[s.ev.slice(5)]).map((s) => id + ":" + s.ev)])));
