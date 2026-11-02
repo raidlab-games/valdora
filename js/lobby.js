@@ -5,6 +5,15 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const G = window.ValdoraGame;
+  // rodada 111: o jogo não carregou (em geral, cópia velha da página presa no cache logo depois de uma publicação):
+  // recarrega uma vez com um endereço novo, que traz a página e os scripts atuais; se mesmo assim falhar, avisa
+  const fresh = new URL(location.href);
+  if (!G) {
+    if (!fresh.searchParams.has("fresh")) { fresh.searchParams.set("fresh", Date.now()); location.replace(fresh.href); }
+    else addEventListener("DOMContentLoaded", () => { const m = document.createElement("p"); m.className = "acct-msg err"; m.textContent = "O jogo não carregou. Aperte Ctrl + F5 para recarregar."; document.body.prepend(m); });
+    return;
+  }
+  if (fresh.searchParams.has("fresh")) { fresh.searchParams.delete("fresh"); history.replaceState(null, "", fresh.href); }
   const LORE = {
     hero_1: "Veio das montanhas do norte. Confia no aço, no escudo e na própria teimosia.",
     hero_2: "Cresceu na mata de Lumeira. Acerta o lobo antes que ele chegue perto e nunca sai sem a aljava cheia.",
