@@ -18,6 +18,7 @@
       "Passar por cima de um item no chão já pega (antes só parando em cima)",
       "Segure o botão esquerdo do mouse no chão: o herói vai andando atrás do cursor e, ao soltar, segue até o ponto onde você soltou",
       "Plantas de coleta redesenhadas para combinar com cada região",
+      "Os peixes dos cardumes saltam de frente (antes saltavam de costas)",
       "Fogueira, braseiro e tocha: só a chama se mexe"]],
     ["v1.03", "Arqueiro, equipamento de verdade e plantas", ["Novo herói: o Arqueiro (no lugar do Marinheiro) atira flechas de longe; com arco equipado, qualquer herói atira",
       "Todos começam só de roupa de baixo; o que você veste aparece no personagem (camisa, placas, calça, botas, capuz, elmo, capa, aljava e arma)",

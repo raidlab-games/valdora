@@ -31,6 +31,9 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
 - **Ações de qualquer ângulo:** encostar vale na diagonal (`adjacent`/`adjRect`) para coletar, cozinhar, falar, abrir e lutar; na
   diagonal, golpe só se um dos tiles do meio não for parede/água. Monstros andam e atacam na diagonal (sem cortar quina) e o passo
   diagonal dura √2; moradores passeiam na diagonal. Saiu a espera da "dança da diagonal" (rodadas 48/83).
+- **Peixes saltando de frente:** o salto que fica tocando nos cardumes (`fx_fishspot`, `fx_fishspot_deep`) usava o ícone virado para a
+  esquerda num arco para a direita (saltava de costas); agora espelha o peixe e o nariz segue a tangente do arco, como o `fish_jump`.
+- **Publicação:** `tools/publicar.ps1` põe `?v=<data>` nos scripts e no estilo das páginas, para o navegador não misturar versões.
 - **Fogo:** fogueira, braseiro e tocha deixam pedras, lenha e ferro iguais à arte parada; só a chama e as fagulhas mudam (`fire_only`).
 - **Ctrl + clique (modo de ataque):** segurando Ctrl o cursor vira mira e o monstro mais perto do ponto (até 4 tiles) ganha contorno
   vermelho; o clique ataca esse monstro (`nearestMob`). No Mac, Ctrl+clique chega como clique direito e também vale.
