@@ -17,6 +17,8 @@ window.ValdoraDlgActions = (() => {
     }
     function dlgBank(ds) { // cofre: guardar, retirar, organizar
       const player = api.player(), dlg = api.dlg();
+      if (ds.bankup && api.bankUp) api.bankUp(); // rodada 117: ampliar o cofre
+      if (ds.potion && api.brewPotion) api.brewPotion(ds.potion, +ds.n || 1); // rodada 117: poções da Morgana
       if (ds.dep) moveStack(player.inv, +ds.dep, player.bank);
       if (ds.wd) moveStack(player.bank, +ds.wd, player.inv);
       if (ds.sortbank) { // rodada 44: comida → materiais → barras → raros (acessórios, raros e itens com afixo), e nome dentro do grupo

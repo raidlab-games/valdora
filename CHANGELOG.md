@@ -20,6 +20,20 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 117 (v1.16) — meio passo, cofre que cresce, bancada da feiticeira e Alquimia
+- **Meio passo**: um toque em W/A/S/D anda meio tile e o herói para no meio (`halfStop`); outro toque termina o tile, a direção
+  oposta volta e clique/alvo/outra direção terminam o passo antes de seguir; segurando, anda direto e para no meio-tile mais perto.
+- **Mercado** com 2 cm de borda (o jogo aparece em volta); acima da interface (`z-index` 95; a regra geral do `#game` punha 2).
+- **Cofre**: começa com 15 espaços; cada ampliação dá +2 e custa 20% a mais do preço inicial (300, 360, 420...; até 99).
+  Saves antigos ganham as ampliações necessárias para tudo o que já estava guardado (`bankUps`).
+- **Balcão da Celeste** virado para a direita (espelhado); a **casa azul** subiu um tile e foi um à direita; abaixo dela, a
+  **bancada de poções** (mesmas texturas da casa, de frente para a esquerda; caldeirão com poção verde, frascos, almofariz,
+  ervas e vela) com a **Feiticeira Morgana** (Blender: chapéu pontudo, manto roxo, colar de cristal, concha; linha `brew`).
+  `window.DESKS` guarda a âncora e o lugar do NPC de cada balcão.
+- **Alquimia** (habilidade nova): 9 receitas na Morgana, da Poção de vida simples (Alquimia 1: erva-cidreira + gosma) à Poção
+  de vida da aurora (Alquimia 150), passando pelas poções de força e pedra e pelas de vida com as ervas de cada bioma; fazer 1 ou ×5.
+- Testes: +1 (poções em ordem de nível e de cura, ingredientes que existem).
+
 ## Rodada 116 (v1.15) — balcão da leiloeira com as texturas da vila e mercado em tela cheia
 - **Balcão** montado em 2D com as texturas da própria casa vermelha (`tools/auction_art.py`, `desk()`): a face esquerda da casa
   é "endireitada" (inclinação 0,43) para tirar pedra, tábuas com ferragens, esteios e viga; a frente, o tampo e a lateral

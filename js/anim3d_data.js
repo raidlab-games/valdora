@@ -7951,6 +7951,144 @@ window.ANIM3D = {
    }
   },
   "b3d": true
+ },
+ "npc_witch": {
+  "src": "assets/flow/anim3d/npc_witch.png",
+  "cell": 205,
+  "px": 128,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "talk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 8,
+    "loop": true
+   },
+   "walk": {
+    "row": 2,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "brew": {
+    "row": 3,
+    "frames": 6,
+    "fps": 8,
+    "loop": false
+   }
+  },
+  "b3d": true
+ },
+ "npc_witch_look": {
+  "src": "assets/flow/anim3d/npc_witch_look.png",
+  "cell": 102,
+  "px": 64,
+  "rows": {
+   "idle_left": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_right": {
+    "row": 1,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_up": {
+    "row": 2,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_downleft": {
+    "row": 3,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_downright": {
+    "row": 4,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_upleft": {
+    "row": 5,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "idle_upright": {
+    "row": 6,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   }
+  },
+  "b3d": true
+ },
+ "npc_witch_walk6": {
+  "src": "assets/flow/anim3d/npc_witch_walk6.png",
+  "cell": 102,
+  "px": 64,
+  "rows": {
+   "walk_down": {
+    "row": 0,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_left": {
+    "row": 1,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_right": {
+    "row": 2,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_up": {
+    "row": 3,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_downleft": {
+    "row": 4,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_downright": {
+    "row": 5,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_upleft": {
+    "row": 6,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   },
+   "walk_upright": {
+    "row": 7,
+    "frames": 6,
+    "fps": 10,
+    "loop": true
+   }
+  },
+  "b3d": true
  }
 };
 window.ROD_TIP3D = {"hero_1": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_2": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_3": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}};

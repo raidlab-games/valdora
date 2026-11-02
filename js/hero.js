@@ -109,7 +109,7 @@ window.ValdoraHero = (() => {
         drawAnim(HA, row, Math.min(R.frames - 1, Math.floor(k * R.fps)), Math.round(player.px * TILE - cam.x + TILE / 2), Math.round((player.py + 1) * TILE - cam.y), false);
         ctx.globalAlpha = 1; return;
       }
-      const [vx, vy] = DIR_VEC[player.dir], pose = heroPose(), moving = player.prog < 1;
+      const [vx, vy] = DIR_VEC[player.dir], pose = heroPose(), moving = player.prog < 1 && !player.halfStop; // rodada 117: parado no meio do tile
       const fw = sheet ? sheet.width / HERO_SHEET.cols : TILE, fh = sheet ? sheet.height / HERO_SHEET.rows.length : TILE;
       // rodada 72: a folha de caminhada tem só 2 passadas + o quadro neutro; o corpo sobe ~2 px no neutro (passagem) e desce na
       // passada, no meio de cada quadro, para o passo ter peso. u = quadros andados (2 por tile)

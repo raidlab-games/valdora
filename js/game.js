@@ -10,6 +10,9 @@
   let keyHoldT = 0, keySteps = 0;
   const MOB_STEP = 0.42;
   const SLOTS = 20, BANK_SLOTS = 48, SAVE_KEY = "valdora.save.v2";
+  // rodada 117: o cofre começa com 15 espaços; cada ampliação dá +2 e custa 20% a mais do preço inicial (300, 360, 420...), até 99
+  const BANK = { start: 15, step: 2, max: 99, cost: 300 };
+  const bankSize = (ups) => Math.min(BANK.max, BANK.start + BANK.step * ups), bankUpCost = (ups) => Math.round(BANK.cost * (1 + 0.2 * ups));
   const FISH_TICKS = 5; // rodada 112: uma tentativa de pesca a cada 2,5 s (antes 1 s: o peixe vinha rápido demais)
   const RULES = ValdoraRules, MAX_LVL = RULES.MAX_LVL;
   const WORLD_G = ValdoraWorld; let WORLD = WORLD_G, TOWN = WORLD.TOWN, SPAWN = WORLD.SPAWN, TOWNS = WORLD.VILLAGES; // desenho do mundo e masmorras (js/world.js)
@@ -176,7 +179,8 @@
     // rodada 114: no lugar da casa vermelha, a Casa de Leilões (um tile acima e à esquerda) com a banca e a leiloeira na frente
     // rodada 116: a leiloeira encostada na frente da casa, atrás do balcão de juiz (clicar nela ou no balcão abre o mercado)
     deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "auction_desk", 41, 31, 3, 1, { name: "Celeste", npcSpr: "npc_auctioneer" });
-    deco("house", "house_blue", 53, 30, 3, 2); deco("house", "house_green", 42, 41, 3, 2);
+    // rodada 117: a casa azul sobe um tile e vai um à direita; abaixo dela, a bancada de poções da Feiticeira Morgana
+    deco("house", "house_blue", 54, 29, 3, 2); npc.witch = deco("witch", "witch_desk", 54, 31, 3, 1, { name: "Morgana", npcSpr: "npc_witch" }); deco("house", "house_green", 42, 41, 3, 2);
     npc.stall = deco("stall", "stall", 51, 33, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 53, 33, 1, 1, { name: "Bento" });
     npc.guard = deco("guard", "npc_guard", 46, 34, 1, 1, { name: "Ivo" });
@@ -706,7 +710,7 @@
   // rodada 73: ronda do Ivo pela praça (pontos em volta de casa, um por saída; volta para casa entre eles)
   const PATROL = [[3, 2], [-2, 3], [2, -1], [-1, -2]];
   // rodada 34/35: reação ao entregar missão/encomenda — Ivo bate continência ("salute"), Bento faz joinha ("thumbs"); segura o último quadro 0,6 s
-  const REACT = { auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
+  const REACT = { witch: "brew", auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
   const reactDur = (o) => { const S = o.npcSpr || o.spr, R = ANIMS[S] && ANIMS[S].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; }; // rodada 116: npcSpr = NPC desenhado junto de um objeto
   function react(o) {
     const S = o && (o.npcSpr || o.spr), row = o && REACT[o.type]; if (!row || !ANIMS[S] || !ANIMS[S].rows[row]) return;
@@ -720,7 +724,7 @@
       if (!B.rise.moved && B.rise.t * R.fps >= 2) { B.rise.moved = true; standUp(B); if (B.sitT > 0) B.rise = null; } // sem tile livre: continua sentado
       if (B.rise && B.rise.t * R.fps >= R.frames) { B.rise = null; B.react = { row: "bow", t: 0 }; }
     }
-    for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, ...Object.values(npc.wardens || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
+    for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, npc.witch, ...Object.values(npc.wardens || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
       const R = ANIMS[o.npcSpr || o.spr] && ANIMS[o.npcSpr || o.spr].rows[o.react.row], before = o.react.t;
       if ((o.react.t += dt) > reactDur(o)) { o.react = null; continue; }
       const SP = { merchant: [-0.25, -0.4], guard: [0.05, -1.05], bard: [0.3, -0.1] }[o.type]; // centro do brilho (tiles; y já desconta o meio do quadro)
@@ -936,7 +940,10 @@
       quests: Object.fromEntries(Object.entries((data.quests && typeof data.quests === "object") ? data.quests : {}).filter(([id]) => QUESTS[id])),
       path: [], goal: null, target: null, job: null, actT: 0, lastHurt: -99, xp, gear,
       bags: Array.isArray(data.bags) ? data.bags.filter((n) => CRAFT[n] && CRAFT[n].bag) : [],
-      bank: slotsFrom(data.bank, BANK_SLOTS),
+      bank: (() => { // rodada 117: guarda tudo o que já estava no cofre (saves antigos ganham as ampliações que precisam)
+        const items = slotsFrom(data.bank, BANK_SLOTS).filter(Boolean), ups = Number.isInteger(data.bankUps) ? data.bankUps : Math.max(0, Math.ceil((items.length - BANK.start) / BANK.step));
+        const size = Math.max(bankSize(ups), items.length); return [...items, ...Array(size - items.length).fill(null)]; })(),
+      bankUps: Number.isInteger(data.bankUps) ? Math.max(0, data.bankUps) : null,
       coins: Math.max(0, Math.floor(+data.coins || 0)), offered: Math.max(0, Math.floor(+data.offered || 0)), votiveT: Math.max(0, +data.votiveT || 0), votives: Math.max(0, Math.floor(+data.votives || 0)), style: STYLES[data.style] ? data.style : "preciso", region: null,
       kills: typeof data.kills === "object" && data.kills ? { ...data.kills } : {}, seen: typeof data.seen === "object" && data.seen ? { ...data.seen } : {},
       buffs: {}, equip: Object.fromEntries(EQUIP_KEYS.map((k) => [k, null])), ach: { ...(data.ach || {}) },
@@ -949,6 +956,7 @@
     player.pet = data.pet && typeof data.pet === "object" ? { name: RULES.petName(data.pet.name) || RULES.PET.name, kills: Math.max(0, data.pet.kills | 0), hp: Math.max(0, data.pet.hp | 0), rest: Math.max(0, Math.min(RULES.PET.rest, +data.pet.rest || 0)), named: data.pet.named ? 1 : 0, seenBond: Math.max(1, data.pet.seenBond | 0 || RULES.petBond(data.pet.kills | 0)) } : null; pet = null; // rodada 95; rodada 96: vida, descanso, nome
     player.echo = typeof data.echo === "object" && data.echo ? { ...data.echo } : {}; // semana da última vitória sobre cada eco
     player.auction = AUCTION.sanitize(data.auction); // rodada 114: lotes na Casa de Leilões
+    if (player.bankUps == null) player.bankUps = Math.max(0, Math.ceil((player.bank.length - BANK.start) / BANK.step)); // rodada 117
     for (const k of EQUIP_KEYS) { // aceita o formato antigo (só o nome) e o novo ({ name, aff })
       const e = data.equip && data.equip[k], name = e && (typeof e === "string" ? e : e.name);
       if (name && ITEMS[name] && ITEMS[name].slot === k) { player.equip[k] = { name }; const aff = validAff(e.aff); if (aff && aff.length) player.equip[k].aff = aff; if (e.master) player.equip[k].master = 1; }
@@ -1170,7 +1178,7 @@
   function goTo(goal) { player.goal = goal; player.path = findPath(player.x, player.y, goal) || []; return player.path.length > 0 || goal(player.x, player.y); }
 
   // ---------- Entrada ----------
-  const INTERACT_TEXT = { warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
+  const INTERACT_TEXT = { witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
     anvil: "usar a bigorna", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
@@ -1255,7 +1263,7 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
+  const STATIONS = { witch: "witch", warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1285,7 +1293,10 @@
     for (let y = ty; y <= ty + 4; y++) for (let x = tx - 2; x <= tx + 2; x++) {
       const o = inside(x, y) && occ[y * W + x]; if (!o || seen.has(o)) continue; seen.add(o);
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type]; if (!kind) continue;
-      if (o.type === "auction" && fx >= o.x + 0.7 && fx <= o.x + 2.9 && fy >= o.y - 0.75 && fy <= o.y + 1.1) { if (!best || o.y + o.h > best.ref.y + best.ref.h) best = { kind, ref: o, tx: o.x, ty: o.y }; continue; } // rodada 116: leiloeira + balcão
+      const DK = (o.type === "auction" || o.type === "witch") && (window.DESKS || {})[o.spr]; // rodada 116/117: NPC atrás do balcão
+      if (DK) { const [w, h] = SPRITE_SIZE[o.spr], cx = o.x + 1.5;
+        if (fx >= cx - DK.ax * w && fx <= cx + (1 - DK.ax) * w && fy >= o.y + 1 - DK.ay * h - 0.7 && fy <= o.y + 1 + (1 - DK.ay) * h) { if (!best || o.y + o.h > best.ref.y + best.ref.h) best = { kind, ref: o, tx: o.x, ty: o.y }; }
+        continue; }
       const img = o.spr && SPR[o.spr]; if (!img) continue;
       const sx = o.x * TILE + (o.w * TILE - img.width) / 2, sy = (o.y + o.h) * TILE - img.height * (1 - ((window.SPRITE_SINK || {})[o.spr] || 0));
       if (solidPx(img, fx * TILE - sx, fy * TILE - sy) && (!best || o.y + o.h > best.ref.y + best.ref.h)) best = { kind, ref: o, tx: o.x, ty: o.y };
@@ -1431,7 +1442,7 @@
     if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
     if (!onPlant) faceRect(r);
     if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
     if (t.kind === "crypt") { player.target = null; return enterCrypt(r); }
@@ -2314,7 +2325,7 @@
   // rodada 54: o desenho da janela (título, abas, fala e corpo) mora em js/dialogs.js; os cliques continuam aqui
   function renderDlg() { DLG_VIEW.render(dlg); }
   // rodada 56/57: o que cada botão faz mora em js/dlgactions.js (testado em tests.html com um jogador de mentira)
-  const DLG_ACT = ValdoraDlgActions.create({ player: () => player, dlg: () => dlg, npc: () => npc, shrine: () => SHRINE_RT, dirty: () => { hudDirty = true; },
+  const DLG_ACT = ValdoraDlgActions.create({ brewPotion: (n, q) => brewPotion(n, q), bankUp: () => bankUp(), player: () => player, dlg: () => dlg, npc: () => npc, shrine: () => SHRINE_RT, dirty: () => { hudDirty = true; },
     sell: (n, q) => sell(n, q), buy: (n) => buy(n), deliver: (i) => deliver(i), newOrder: (o) => newOrder(o), moveStack: (f, i, t) => moveStack(f, i, t),
     takeFx: (o, n) => takeFx(o, n), storeFx: (o, n) => storeFx(o, n), log: (m, c, i) => log(m, c, i), craft: (n) => craft(n), QUEST, react: (o) => react(o), rand, SND,
     addFloat: (...a) => addFloat(...a), claimBounty: (i) => claimBounty(i), wakeEcho: (k) => wakeEcho(k), newBounty: (t) => newBounty(t), emit: (e) => emit(e), accName,
@@ -2378,6 +2389,31 @@
   function applyBankFilter() { DLG_VIEW.applyBankFilter(dlg); } // rodada 43: filtro do cofre; rodada 55: ele e o campo de texto moram em js/dialogs.js
 
 
+  // rodada 117: Alquimia na bancada da Feiticeira Morgana
+  function potionHtml() {
+    const L = lv("alquimia");
+    return `<p class="desc">Alquimia ${L}. Cada poção pede um nível de Alquimia e as ervas do Herbalismo (as melhores vêm dos biomas).</p>` + Object.entries(VD.POTIONS).map(([n, R]) => {
+      const it = ITEMS[n], lock = L < R.lvl, can = !lock && hasMats(R.mats);
+      const mats = Object.entries(R.mats).map(([k, q]) => `<span class="${count(k) >= q ? "" : "miss"}">${count(k)}/${q} ${esc(k)}</span>`).join(" · ");
+      return `<div class="row${lock ? " locked" : ""}">${iconImg(n)}<span class="grow"><b>${esc(n)}</b>${it.heal ? ` <small>cura ${it.heal}</small>` : it.buff ? ` <small>${esc(BUFFS[it.buff].name)}</small>` : ""}<br><small>${lock ? `requer Alquimia ${R.lvl} · ` : ""}${mats} · +${R.xp} xp</small></span>`
+        + `<button data-potion="${esc(n)}" data-n="1" ${can ? "" : "disabled"}>Fazer</button><button data-potion="${esc(n)}" data-n="5" ${can ? "" : "disabled"}>×5</button></div>`;
+    }).join("");
+  }
+  function brewPotion(name, n) {
+    const R = VD.POTIONS[name]; if (!R || lv("alquimia") < R.lvl) return;
+    let made = 0;
+    for (let k = 0; k < n && hasMats(R.mats) && canAdd(name); k++) { for (const [m, q] of Object.entries(R.mats)) removeItem(m, q); addItem(name); gainXp("alquimia", R.xp); made++; }
+    if (!made) { log(canAdd(name) ? "Faltam ingredientes." : "Sua mochila está cheia.", "warn"); return; }
+    react(npc.witch); SND.play("drink"); log(`Morgana mexe o caldeirão... ${made}x ${name} pront${made > 1 ? "as" : "a"}! (+${R.xp * made} xp de Alquimia)`, "gold");
+    if (npc.witch) burst(npc.witch.x + 1.9, npc.witch.y + 0.2, ["#8fe08a", "#d6b4ff", "#ffffff"], 16, 2.5);
+  }
+  function bankUp() { // rodada 117: amplia o cofre em 2 espaços
+    const c = bankUpCost(player.bankUps);
+    if (player.bank.length >= BANK.max) { log("O cofre já está no tamanho máximo.", "dim"); return; }
+    if (player.coins < c) { log(`Ampliar o cofre custa ${c} moedas.`, "warn"); return; }
+    player.coins -= c; player.bankUps++; while (player.bank.length < bankSize(player.bankUps)) player.bank.push(null);
+    log(`Cofre ampliado: ${player.bank.length} espaços (-${c} moedas).`, "gold"); SND.play("coin"); hudDirty = true; save();
+  }
   function moveStack(from, i, to) {
     const s = from[i]; if (!s) return;
     if (!addTo(to, s.name, s.n, s.aff)) { log(to === player.bank ? "O cofre está cheio." : "Sua mochila está cheia.", "warn"); return; }
@@ -2407,8 +2443,8 @@
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect });
-  const DLG_VIEW = ValdoraDialogs.create({ player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
-    tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
+  const DLG_VIEW = ValdoraDialogs.create({ potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+    tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
   // ---------- HUD ----------
@@ -2619,7 +2655,7 @@
       player.path.shift();
       faceTo(nx, ny);
     } else return false;
-    if (kd) { keySteps++; tapVec = null; }
+    if (kd) { keySteps++; tapVec = null; } player.kstep = !!kd; player.halfStop = false; // rodada 117: passo de teclado (pode parar no meio)
     player.stepLen = nx !== player.x && ny !== player.y ? Math.SQRT2 : 1; // rodada 104: passo diagonal é mais comprido
     player.fx = player.x; player.fy = player.y; player.x = nx; player.y = ny;
     if (player.dir !== prevDir) dustAtFeet(3); // poeira ao mudar de direção correndo
@@ -2655,13 +2691,24 @@
     const wasMoving = !player.dash && player.prog < 1;
     if (player.turnT > 0) player.turnT -= dt;
     let rate = 1;
-    if (wasMoving) {
+    // rodada 117: meio passo. Um toque em W/A/S/D anda meio tile e o herói para no meio dele; o próximo toque na mesma direção
+    // termina o tile, na direção oposta ele volta, e qualquer outra direção, clique ou alvo termina o passo antes de seguir.
+    if (player.halfStop) {
+      const kv = INPUT.keyVec(), dx = player.x - player.fx, dy = player.y - player.fy;
+      if (kv && kv[0] === -dx && kv[1] === -dy && canStep(player.x, player.y, player.fx, player.fy)) {
+        [player.x, player.fx] = [player.fx, player.x]; [player.y, player.fy] = [player.fy, player.y]; player.prog = 1 - player.prog;
+        player.dir = window.DIR_AT(-dx, -dy) || player.dir; player.halfStop = false; keySteps = 1;
+      } else if (kv || tapVec || player.path.length || player.target || player.goal || player.deadT > 0) { player.halfStop = false; keySteps = 1; tapVec = null; }
+    }
+    if (wasMoving && !player.halfStop) {
+      const before = player.prog;
       player.moveT += dt;
       if (player.moveT < 0.14) rate = 0.62 + 0.38 * ease.outQuad(player.moveT / 0.14);
       if (!player.path.length && !keyDir()) rate *= 1 - 0.42 * player.prog; // último passo: desacelera
       rate *= loadRate(); // rodada 112: peso
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
-    } else if (player.turnT <= 0) player.prog = 1;
+      if (player.kstep && !INPUT.keyVec() && keySteps <= 1 && before < 0.5 && player.prog >= 0.5) { player.prog = 0.5; player.halfStop = true; } // toque: para no meio
+    } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
       const over = wasMoving ? player.prog - 1 : 0;
       const nd = !wasMoving && nextDir();
@@ -3037,7 +3084,7 @@
       const data = ({ v: 2, wv: 2, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, auction: player.auction, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

@@ -11,6 +11,7 @@ window.ValdoraDialogs = (() => {
     bank: { title: "Cofre da vila", talk: "Clique num item da mochila para guardar; clique no cofre para retirar." },
     furnace: { title: "Fornalha", talk: "Funda minério em barras. Fique ao lado enquanto trabalha." },
     anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras. A peça pronta vai para a mochila: clique nela para vestir." },
+    witch: { title: "Feiticeira Morgana", talk: "\"Ervas certas, fogo baixo e paciência. Traga os ingredientes e eu ensino o resto.\"" }, // rodada 117
     warden: { title: "Guardião", talk: "" }, // rodada 114: guardiões das vilas novas (título = nome do NPC)
     craft: { title: "Artesanato", talk: "Crie bolsas e acessórios com o que tem na mochila, em qualquer lugar do reino." },
     bard: { title: "Tomé, o bardo", talk: "" },
@@ -60,7 +61,7 @@ window.ValdoraDialogs = (() => {
     const $ = (id) => document.getElementById(id);
     const { ITEMS, TUTORIAL, TIPS, GEAR, REGIONS, STYLES, BUFFS, SKILLS, RES, ACHIEVEMENTS, BARD_SONGS, MOBS } = VD;
     const { iconImg, itemTip, accName, affBadges, accBonus } = ValdoraUI, RULES = ValdoraRules, { level, xpFor, MAX_LVL, bonusText } = RULES;
-    const { SHOP, CRAFTING, SHRINE, questHtml, echoHtml, combatStats, tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK } = api;
+    const { SHOP, CRAFTING, SHRINE, questHtml, echoHtml, combatStats, tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, TICK, bankUpCost, bankMax } = api;
     // rodada 55: o que é só de interface — fechar, trocar de aba e o filtro do cofre (acentos e maiúsculas não importam)
     const norm = (t) => String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     function applyBankFilter(dlg) {
@@ -103,7 +104,8 @@ window.ValdoraDialogs = (() => {
       } else if (dlg.kind === "bank") {
         const grid = (arr, attr) => { const first = arr.findIndex(Boolean); return arr.map((s, i) => s ? `<div class="slot${ITEMS[s.name].rare ? " rare" : ""}" tabindex="${i === first ? 0 : -1}" role="button" data-${attr}="${i}" title="${esc(s.name)}">${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}</div>` : `<div class="slot"></div>`).join(""); }; // rodada 41: um espaço no Tab por grade
         html = `<div class="bank-head">Mochila <button data-depall="1" title="Guarda tudo menos comida, poções e acessórios">${ASSETS.icon_bank_move ? `<img src="${ASSETS.icon_bank_move}" alt="">` : ""}Guardar materiais</button></div><div class="grid">${grid(player.inv, "dep")}</div>
-          <div class="bank-head">Cofre <small>${player.bank.filter(Boolean).length}/${BANK_SLOTS}</small>
+          <div class="bank-head">Cofre <small>${player.bank.filter(Boolean).length}/${player.bank.length}</small>
+            ${player.bank.length < (bankMax || 99) ? `<button data-bankup="1" ${player.coins < bankUpCost() ? "disabled" : ""} title="Cada ampliação dá +2 espaços; o preço sobe 20% do inicial a cada vez">Ampliar +2 · ${bankUpCost()} moedas</button>` : ""}
             <input id="bank-filter" type="search" placeholder="filtrar" aria-label="Filtrar o cofre" value="${esc(dlg.filter || "")}">
             <button data-sortbank="1" title="Organiza o cofre: comida, materiais, barras e raros, cada grupo em ordem alfabética">${ASSETS.icon_bank_sort ? `<img src="${ASSETS.icon_bank_sort}" alt="">` : ""}Organizar</button>
             <button data-takefood="1" title="Tira a comida que couber na mochila, da que mais cura para a que menos cura">${ASSETS.icon_bank_take ? `<img src="${ASSETS.icon_bank_take}" alt="">` : ""}Retirar comida</button></div>
@@ -153,6 +155,8 @@ window.ValdoraDialogs = (() => {
         html = questHtml("herb") + (api.alchemyHtml ? api.alchemyHtml() : "");
       } else if (dlg.kind === "waystone" && api.stoneDlg) { // rodada 105
         const S = api.stoneDlg(); talk = S.talk; html = S.html;
+      } else if (dlg.kind === "witch" && api.potionHtml) { // rodada 117: Alquimia
+        html = api.potionHtml();
       } else if (dlg.kind === "warden" && dlg.obj) { // rodada 114: guardião da vila (missões do bioma até o chefe)
         talk = `"${dlg.obj.hello}"`; html = questHtml(dlg.obj.giver) || `<p class="empty">Você já fez tudo o que havia por aqui. O bioma inteiro lhe deve um favor.</p>`;
       } else if (dlg.kind === "home" && api.homeDlg) { // rodada 100

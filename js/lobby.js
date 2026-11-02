@@ -20,6 +20,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.16", "Feiticeira, Alquimia e cofre que cresce", ["Nova habilidade: Alquimia. A Feiticeira Morgana, na bancada abaixo da casa azul, ensina poções da vida simples até a da aurora",
+      "O cofre começa com 15 espaços e você amplia de 2 em 2 (cada ampliação custa um pouco mais)",
+      "Cada toque em W/A/S/D anda meio quadrado",
+      "O mercado abre com uma borda e o jogo continua aparecendo em volta"]],
     ["v1.15", "Mercado da Casa de Leilões", ["A Celeste agora atende atrás de um balcão feito com a mesma madeira, pedra e ferragens das casas da vila",
       "O mercado abre em tela cheia, com busca e filtros por categoria, classe, raridade, nível e preço",
       "Venda seus itens escolhendo a quantidade, o preço e a duração do leilão (o jogo mostra a chance de vender)"]],

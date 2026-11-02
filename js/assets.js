@@ -236,7 +236,11 @@ ASSETS.mob_goblin_boss = "assets/flow/mob_goblin_boss.png"; SPRITE_SIZE.mob_gobl
 ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auction = [3.4, 3.4 * 296 / 256];
 // rodada 116: balcão montado com as texturas da casa (tools/auction_art.py; 164 x 113 px na escala da casa, 75 px por tile);
 // (ax, ay) = meio da borda de baixo da frente, no chão; (nx, ny) = onde a leiloeira pisa atrás dele, em tiles a partir daí
-ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75]; window.AUCTION_DESK = { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 };
+// rodada 117: o da Celeste virou de frente para a direita (espelhado); a bancada de poções da Morgana fica de frente para a esquerda
+ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
+ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
+ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
+window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17 }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 } };
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 ASSETS.npc_juna = "assets/flow/npc_juna.png"; SPRITE_SIZE.npc_juna = [1.3, 1.3]; ASSETS.npc_juna_sheet = "assets/flow/npc_juna_sheet.png"; SPRITE_SIZE.npc_juna_sheet = [3.9, 5.2]; SPRITE_SIZE.npc_juna_look = [1.3, 1.3];
@@ -295,7 +299,7 @@ ASSETS.icon_home = "assets/flow/icon_home.png"; ASSETS.icon_rested = "assets/flo
 // Cada um tem a altura do próprio modelo (o Bento é mais baixo, o Ivo mais alto); npc_X_walk6 = caminhada nas 4 direções.
 // rodada 114: guardiões das vilas novas (Blender, no estilo do Ivo)
 for (const v of ["breu", "oasis", "escarpa", "degelo"]) { const k = "npc_warden_" + v; ASSETS[k] = `assets/flow/${k}.png`; ASSETS[k + "_sheet"] = `assets/flow/${k}_sheet.png`; }
-for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo"]) {
+for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo", "npc_witch"]) {
   for (const suf of ["", "_look", "_walk6"]) SPRITE_SIZE[k + suf] = [1.45, 1.45];
   SPRITE_SIZE[k + "_sheet"] = [3 * 1.45, 4 * 1.45];
 }

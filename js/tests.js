@@ -41,6 +41,11 @@
     for (const g of ["w_breu", "w_escarpa", "w_oasis", "w_degelo"]) { const last = Q.filter(([, q]) => q.giver === g).pop(); if (!last || !last[1].steps.some((s) => /^kill:/.test(s.ev || "") && MOBS[s.ev.slice(5)] && MOBS[s.ev.slice(5)].boss)) bad.push(g + ": sem chefe no fim"); }
     return Q.length >= 24 ? miss(bad) : "poucas missões: " + Q.length;
   });
+  test("rodada 117: poções da Morgana usam itens que existem, sobem de nível e começam pela poção de vida simples", () => {
+    const P = Object.entries(VD.POTIONS), bad = P.flatMap(([n, R]) => [!ITEMS[n] && n, ...Object.keys(R.mats).filter((m) => !ITEMS[m])].filter(Boolean));
+    const up = P.every(([, R], i) => !i || R.lvl > P[i - 1][1].lvl), heals = P.map(([n]) => ITEMS[n].heal).filter(Boolean);
+    return bad.length ? "faltando: " + bad.join(", ") : P[0][0] === "Poção de vida simples" && up && heals.every((h, i) => !i || h > heals[i - 1]) && !!SKILLS.alquimia || "ordem errada";
+  });
   test("rodada 116: filtros do mercado — toda categoria e classe vêm de um item real", () => {
     const A = ValdoraAuction.create({ player: () => ({ name: "t", inv: [], coins: 0, hero: "hero_1", auction: { lots: [], bought: {} } }), lv: () => 200, addItem: () => true, dropItem() {}, log() {}, sound() {}, dirty() {}, bang() {} });
     const cats = new Set(Object.values(ITEMS).filter((it) => it.price > 0 && !it.quest).map((it) => A.catOf(it))), cls = new Set(Object.values(ITEMS).map((it) => A.classOf(it)));

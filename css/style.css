@@ -723,9 +723,9 @@ button.link:hover { color: #cfe3ff; }
 #dlg .row.auc small { opacity: .7; } #dlg .row.auc em { opacity: .6; font-style: normal; font-size: 12px; }
 #dlg .row.auc.sold { opacity: .55; } #dlg .row.auc .gold { color: #ffd84a; }
 /* rodada 116: Casa de Leilões em tela cheia (como o mapa no M) */
-#market { position: absolute; inset: 0; z-index: 90; display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; background: #1b1610f4; color: var(--text); zoom: var(--ui, 1); }
+#market { position: absolute; inset: 2cm; z-index: 90; border: 3px solid var(--edge); box-shadow: 0 0 0 3px #000, 0 10px 40px #000c; display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; background: #1b1610f4; color: var(--text); zoom: var(--ui, 1); }
 #market[hidden] { display: none; }
-#game.market-open > :not(#market) { visibility: hidden; }
+/* rodada 117: o jogo continua visível em volta (2 cm de cada lado) */
 #market .mk-head { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #6b4f2a; padding-bottom: 8px; }
 #market .mk-head b { font-size: 22px; color: var(--gold); letter-spacing: 2px; text-shadow: 2px 2px 0 #000; }
 #market .mk-npc { color: #e8b4ff; opacity: .9; flex: 1; }
@@ -755,3 +755,7 @@ button.link:hover { color: #cfe3ff; }
 #market .mk-sellform > img { width: 48px; height: 48px; } #market .mk-sellform small { opacity: .7; } #market .mk-quick { display: flex; gap: 6px; flex-wrap: wrap; }
 @media (max-width: 760px) { #market .mk-row { grid-template-columns: 1fr auto auto; } #market .mk-row > span:nth-child(2), #market .mk-row > span:nth-child(4), #market .mk-row > span:nth-child(5) { display: none; } #market .mk-sell { grid-template-columns: 1fr; } }
 #market label.chk { white-space: nowrap; } #market label.chk input { margin: 0; }
+@media (max-width: 700px), (max-height: 520px) { #market { inset: 8px; } } /* tela pequena: borda menor para caber */
+/* rodada 117: Alquimia */
+#dlg .row.locked { opacity: .55; } #dlg .row .miss { color: #ff8a7a; }
+#game > #market:not(#canvas):not(#lowhp) { z-index: 95; } /* rodada 117: acima da interface (a regra geral do #game põe tudo em 2) */

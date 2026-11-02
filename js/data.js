@@ -1,7 +1,7 @@
 // Dados de jogo do Valdora: itens, recursos, monstros, equipamentos, receitas e tutorial.
 // Tudo aqui é configuração: dá para equilibrar o jogo mexendo só neste arquivo.
 window.VD = (() => {
-  const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo" }; // rodada 104: plantas e flores com a foice
+  const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia" }; // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
 
   // Raridade dos acessórios (cor usada no inventário, no chão e nos textos)
   const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" } };
@@ -1217,6 +1217,29 @@ window.VD = (() => {
       [["Derrote a Serpente do Gelo Eterno na Gruta do Gelo Eterno.", "kill:frost_serpent", 1]],
       "A geleira está livre! Os sinos do Degelo vão tocar por você. Leve o amuleto da patrulha.", { coins: 14000, xp: { combate: 80000 }, item: "Amuleto glacial", aff: 2 }],
   ]);
-  return { mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  // ---------- rodada 117: Alquimia com a Feiticeira Morgana (bancada ao lado da casa azul da Lumeira) ----------
+  // Poções de vida cada vez mais fortes, com as ervas de cada bioma; a força e a pedra entram no caminho. XP em Alquimia.
+  const PV = (heal, price, filter) => ({ icon: "item_potion", price, heal, filter });
+  Object.assign(ITEMS, {
+    "Poção de vida simples": PV(10, 3, "saturate(0.55) brightness(1.18)"),
+    "Poção de vida forte": PV(40, 20, "hue-rotate(-12deg) saturate(1.5) brightness(0.95)"),
+    "Poção de vida grande": PV(80, 45, "hue-rotate(250deg) saturate(1.3) brightness(0.9)"),
+    "Poção de vida superior": PV(150, 90, "hue-rotate(200deg) saturate(1.4) brightness(1.05)"),
+    "Poção de vida solar": PV(250, 160, "hue-rotate(35deg) saturate(2.2) brightness(1.15)"),
+    "Poção de vida da aurora": PV(400, 260, "hue-rotate(150deg) saturate(1.6) brightness(1.3)"),
+  });
+  const POTIONS = {
+    "Poção de vida simples": { mats: { "Erva-cidreira": 1, "Gosma": 1 }, lvl: 1, xp: 8 },
+    "Poção de vida": { mats: { "Erva-cidreira": 2, "Flor-de-mel": 1 }, lvl: 6, xp: 18 },
+    "Poção de força": { mats: { "Flor-de-mel": 2, "Lírio-da-lua": 1 }, lvl: 12, xp: 35 },
+    "Poção de pedra": { mats: { "Erva-cidreira": 2, "Flor de cristal": 1 }, lvl: 18, xp: 50 },
+    "Poção de vida forte": { mats: { "Lírio-da-lua": 2, "Pó de lumita": 1 }, lvl: 25, xp: 80 },
+    "Poção de vida grande": { mats: { "Cogumelo-sombra": 2, "Flor-da-noite": 1 }, lvl: 45, xp: 150 },
+    "Poção de vida superior": { mats: { "Musgo-de-rocha": 2, "Edelvais": 1 }, lvl: 75, xp: 260 },
+    "Poção de vida solar": { mats: { "Rosa-do-deserto": 2, "Lótus solar": 1, "Polpa de cacto": 1 }, lvl: 110, xp: 420 },
+    "Poção de vida da aurora": { mats: { "Flor-de-gelo": 2, "Flor-aurora": 1 }, lvl: 150, xp: 650 },
+  };
+
+  return { POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();
