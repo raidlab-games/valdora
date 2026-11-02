@@ -78,7 +78,7 @@ window.ValdoraMobs = (() => {
       if (!mobCan(m, x, y)) return false;
       if (x !== m.x && y !== m.y && !canStep(m.x, m.y, x, y)) return false; // diagonal sem cortar quina
       faceAt(m, x, y);
-      m.fx = m.x; m.fy = m.y; m.x = x; m.y = y; m.prog = 0; return true;
+      m.fx = m.x; m.fy = m.y; m.x = x; m.y = y; m.prog = 0; if (api.reindex) api.reindex(m); return true;
     }
     function mobStepToward(m, tx, ty) {
       const dx = Math.sign(tx - m.x), dy = Math.sign(ty - m.y);

@@ -24,10 +24,16 @@ window.ValdoraOverlay = (() => {
       // e sem os pontinhos brancos das pedras (só árvores, casas e enfeites grandes); o minimapa reduz com filtro
       const S = W > 200 ? 2 : 4; miniS = S; miniBase = document.createElement("canvas"); miniBase.width = W * S; miniBase.height = H * S; // rodada 105: continente a 2 px por tile
       const g = miniBase.getContext("2d"), img = g.createImageData(W * S, H * S), d = img.data, T = window.ValdoraTerrain;
-      const WF = T && T.makeField ? T.makeField(W, H, (x, y) => map[y][x] === "water", 31) : null;
+      const big = W > 200, WF = !big && T && T.makeField ? T.makeField(W, H, (x, y) => map[y][x] === "water", 31) : null; // rodada 106: continente sem o contorno suave (pesado)
       const rgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
       const COL = {}; for (const k in GROUND_COLOR) COL[k] = rgb(GROUND_COLOR[k]);
-      for (let py = 0; py < H * S; py++) for (let px = 0; px < W * S; px++) {
+      if (big) { // um tile = S x S pixels da mesma cor (com a tinta de manchas do chão)
+        const tintOk = T && T.tintAt;
+        for (let ty = 0; ty < H; ty++) { const row = map[ty]; for (let tx = 0; tx < W; tx++) {
+          const k = row[tx], c = COL[k] || (k.startsWith("cliff") || k.startsWith("stairs") ? [96, 92, 88] : [0, 0, 0]), tn = tintOk && k !== "void" && k !== "water" ? T.tintAt(tx, ty) * 10 : 0;
+          const r = Math.max(0, Math.min(255, c[0] + tn)), gg = Math.max(0, Math.min(255, c[1] + tn)), b = Math.max(0, Math.min(255, c[2] + tn * 0.6));
+          for (let sy = 0; sy < S; sy++) { let i = ((ty * S + sy) * W * S + tx * S) * 4; for (let sx = 0; sx < S; sx++, i += 4) { d[i] = r; d[i + 1] = gg; d[i + 2] = b; d[i + 3] = 255; } } } }
+      } else for (let py = 0; py < H * S; py++) for (let px = 0; px < W * S; px++) {
         const fx = (px + 0.5) / S, fy = (py + 0.5) / S, tx = Math.floor(fx), ty = Math.floor(fy), k = map[ty][tx];
         let c = COL[k] || [0, 0, 0];
         if (WF) { const v = WF.at(fx, fy); if (v >= 0.5) c = v < 0.58 ? [150, 205, 235] : COL.water; else if (k === "water") c = COL.sand; }

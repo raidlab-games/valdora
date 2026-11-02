@@ -297,10 +297,10 @@
   function genWorld() {
     const Gw = WORLD_G, Lw = Gw.local();
     WORLD = Lw; TOWN = Lw.TOWN; SPAWN = Lw.SPAWN; TOWNS = [Lw.TOWN]; W = Lw.W; H = Lw.H; HOME = HOME_L;
-    try { genLocal(); } finally { WORLD = Gw; TOWN = Gw.TOWN; SPAWN = Gw.SPAWN; TOWNS = Gw.VILLAGES; W = Gw.W; H = Gw.H; HOME = ValdoraHome; }
-    embedLocal(Gw.OX, Gw.OY);
+    mobIdx.clear(); try { genLocal(); } finally { WORLD = Gw; TOWN = Gw.TOWN; SPAWN = Gw.SPAWN; TOWNS = Gw.VILLAGES; W = Gw.W; H = Gw.H; HOME = ValdoraHome; }
+    embedLocal(Gw.OX, Gw.OY); indexMobs();
     genContinent();
-    finishWorld();
+    finishWorld(); indexMobs();
   }
   function embedLocal(OX, OY) {
     const Lw = WORLD_G.local(), lw = Lw.W, lh = Lw.H, old = map;
@@ -502,7 +502,7 @@
   function genCrypt(kind = "crypt") { // masmorra instanciada (js/world.js: DUNGEONS)
     const D = WORLD.DUNGEONS[kind];
     map = Array.from({ length: H }, () => Array(W).fill("void")); occ = new Array(W * H).fill(null);
-    objects = []; resources = []; mobs = []; groundItems = []; lakes = []; npc = {}; RENDER.clearOnce();
+    objects = []; resources = []; mobs = []; groundItems = []; lakes = []; npc = {}; RENDER.clearOnce(); mobIdx.clear();
     const floor = D.floor.map((k, i) => SPR[k] || !D.fallbackFloor ? k : D.fallbackFloor[i]); // chão próprio quando a arte existe
     const carve = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) map[y][x] = noise(x, y, 3, D.seed) > 0.62 ? floor[0] : floor[1]; };
     D.rooms.forEach((b) => carve(...b)); D.halls.forEach((b) => carve(...b)); // salas e corredores
@@ -542,7 +542,7 @@
   function leaveCrypt() {
     if (!inCrypt) return;
     ({ map, occ, objects, resources, mobs, lakes, ground, groundItems, npc } = overworld);
-    inCrypt = false; buildMinimap();
+    inCrypt = false; buildMinimap(); indexMobs();
   }
   function exitCrypt() {
     const ret = overworld.ret; leaveCrypt(); closeDlg();
@@ -722,6 +722,7 @@
         hp: d.hp, aggro: false, atkT: 0, flash: 0, face: -1, dead: false, respawnT: 0, lunge: 0, kb: 0, prep: 0, dist: 0, phase: rand() * 6, swings: 0, windup: 0, ...extra };
       const i = old ? mobs.indexOf(old) : -1;
       if (i >= 0) mobs[i] = m; else mobs.push(m);
+      mobIdx.set(y * W + x, m);
       return m;
     }
     return null;
@@ -729,7 +730,11 @@
 
   const inside = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
   const isBlockingObj = (o) => o && o.solid && !(o.type === "res" && o.respawn > 0);
-  const mobAt = (x, y) => mobs.find((m) => !m.dead && m.x === x && m.y === y);
+  // rodada 106: índice de monstros por tile (refeito no começo de cada quadro e atualizado quando um monstro anda ou nasce);
+  // a entrada velha de quem saiu do tile é descartada pela conferência de posição
+  const mobIdx = new Map();
+  function indexMobs() { mobIdx.clear(); for (const m of mobs) if (!m.dead) mobIdx.set(m.y * W + m.x, m); }
+  const mobAt = (x, y) => { const m = mobIdx.get(y * W + x); return m && !m.dead && m.x === x && m.y === y ? m : undefined; };
   const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]) && !mobAt(x, y);
   // rodada 105: encostar vale nas 8 direções. Na diagonal, pelo menos um dos dois tiles do meio precisa estar livre de parede/água
   // (não se golpeia através de uma quina fechada); monstros e o herói no meio não atrapalham.
@@ -766,7 +771,12 @@
     await assetsReady; await animsReady; await heroAnims(HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id); // rodada 105
     if (document.fonts) await Promise.race([document.fonts.load('12px "Valdora Pixel"'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {}); // rodada 79: o canvas só usa a fonte depois de carregada fx.setDigits(SPR.ui_digits); UI.setTitleFont(SPR.ui_font_title); // rodadas 67-68: números e títulos em pixel art
     $("play").disabled = $("continue").disabled = false;
+    { // rodada 106: aviso enquanto o continente é montado (deixa o navegador pintar antes do trabalho pesado)
+      let ld = $("loading"); if (!ld) { ld = document.createElement("div"); ld.id = "loading"; document.body.appendChild(ld); }
+      ld.textContent = "Preparando o mundo..."; ld.hidden = false; await new Promise((r) => setTimeout(r, 40));
+    }
     genWorld();
+    $("loading").hidden = true;
     const xp = {}, gear = {};
     for (const k of Object.keys(SKILLS)) xp[k] = Math.max(0, +data.xp?.[k] || 0);
     for (const k of Object.keys(GEAR)) gear[k] = clamp(Math.floor(+data.gear?.[k] || 0), 0, GEAR[k].tiers.length - 1);
@@ -2296,7 +2306,11 @@
     return true;
   }
 
+  // rodada 106: só o que está na área do minimapa (e um pouco além) pensa e se anima; o resto do continente espera parado
+  const ACTIVE_X = 62, ACTIVE_Y = 48;
+  const activeMob = (m) => m.aggro || m.temp || inCrypt || (Math.abs(m.x - player.x) <= ACTIVE_X && Math.abs(m.y - player.y) <= ACTIVE_Y);
   function update(dt) {
+    indexMobs();
     AMBIENT.update(dt, cam, canvas.width, canvas.height, player.region, LIGHT.darkness(player.dayT), inCrypt); // rodada 66: vento e vagalumes
     CAMPAIGN_RT.update(dt); // rodada 78: onda no marco, Capataz e viagem
     SHRINE_RT.update(dt); // santuário: velas, moedas, chama votiva e faíscas da Lenda (js/shrine.js)
@@ -2386,6 +2400,7 @@
     updateChatter(dt);
 
     for (const m of mobs) {
+      if (!m.dead && m.prog >= 1 && !activeMob(m)) continue; // rodada 106: longe da área do minimapa: parado
       if (m.dead) {
         const mk = m.d.marker; // aviso do renascimento (fogo-fátuo, pedras rolando): marca o lugar nos segundos finais
         if (!m.temp && !m.respawnAt && mk && m.respawnT <= mk.t && RISES(m) && ANIMS[mk.fx]) { m.respawnAt = spawnSpot(m.reg, m.home || { x: m.hx, y: m.hy }); m.markT = 0; }
@@ -2430,13 +2445,13 @@
       if (--player.buffs[k] <= 0) { delete player.buffs[k]; log(`O efeito ${BUFFS[k].name} acabou.`, "dim"); }
       if (tickN % 2 === 0) hudDirty = true;
     }
-    for (const m of mobs) if (!m.dead) mobTick(m);
+    for (const m of mobs) if (!m.dead && activeMob(m)) mobTick(m);
     petTick(); // rodada 95
     CAMPAIGN_RT.tick(tickN); // rodada 78: bênção do marco
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },

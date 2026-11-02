@@ -650,3 +650,8 @@ img.eicon { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; 
 .pet-name input:focus-visible { outline: 2px solid #ffd84a; }
 /* rodada 104: quantidade de flechas na aljava (espaço de munição do Arqueiro) */
 .dslot .aff.ammo { font: bold 11px "Valdora Pixel", monospace; color: #ffe8a0; text-shadow: 0 1px 0 #000, 1px 0 0 #000; bottom: 12px; }
+
+/* rodada 106: aviso enquanto o continente é montado */
+#loading { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: #0c0906d0;
+  color: var(--gold); font: bold 22px "Valdora Pixel", "Courier New", monospace; letter-spacing: 2px; text-shadow: 2px 2px 0 #000; }
+#loading[hidden] { display: none; }
