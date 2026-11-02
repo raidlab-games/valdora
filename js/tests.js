@@ -13,6 +13,23 @@
     const srcs = [...get("index.html").matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]).filter((s) => !/^https?:/.test(s));
     return miss(srcs.filter((s) => { try { new Function(get(s)); return false; } catch (e) { return true; } }));
   });
+  // rodada 112: itens das três classes subindo com o nível, saque por tipo de monstro, item de região, mochilas e peso
+  test("rodada 112: as três classes têm secundária em todos os níveis de monstro (até o 150)", () => miss(["escudo", "flecha", "orbe", "tomo"].flatMap((k) =>
+    VD.LADDER[k].length === VD.TIER_LVL.length && VD.LADDER[k].every((n) => ITEMS[n] && ITEMS[n].slot === "municao") ? [] : [k])));
+  test("rodada 112: peças dos biomas pedem Combate e têm receita no Artesanato", () => miss(VD.SETS.flatMap((S) => Object.values(VD.LADDER).map((l) => l[VD.SETS.indexOf(S) + 3]))
+    .filter((n) => !ITEMS[n] || !ITEMS[n].need || !CRAFT[n] || Object.keys(CRAFT[n].mats).some((m) => !ITEMS[m]))));
+  test("rodada 112: todo monstro comum solta peças do tipo dele no nível dele", () => miss(Object.entries(MOBS).filter(([, d]) => !d.summon && !d.echo && !d.temp).filter(([, d]) => {
+    const names = new Set(d.drops.map((x) => x[0])), tier = VD.TIER_LVL.reduce((b, v, i) => (d.lvl >= v ? i : b), 0);
+    return !Object.values(VD.LADDER).some((l) => names.has(l[Math.min(l.length - 1, tier)]));
+  }).map(([k]) => k)));
+  test("rodada 112: toda região com monstros tem item de região", () => miss(Object.keys(VD.REGIONS).filter((r) => r !== "town" && !VD.REGION_DROP(r, { lvl: 1 }))));
+  test("rodada 112: item de região existe e o chefe sempre solta", () => { const r = VD.REGION_DROP("snow", { boss: true }); return r && ITEMS[r[0]] && r[1] === 1 || "neve sem item garantido no chefe"; });
+  test("rodada 112: todo item tem peso (missões pesam 0) e mochilas crescem", () => {
+    const bad = Object.keys(ITEMS).filter((n) => { const w = VD.weightOf(n); return !(w >= 0) || (w === 0 && !ITEMS[n].quest); });
+    const P = VD.PACKS.map((p) => ITEMS[p[0]].pack); const grow = P.every((p, i) => !i || (p.slots > P[i - 1].slots && p.cap > P[i - 1].cap));
+    return bad.length ? "sem peso: " + bad.join(", ") : grow || "mochilas fora de ordem";
+  });
+  test("rodada 112: a Mochila de pano está à venda e tem a camada no herói", () => SHOP_ITEMS.includes("Mochila de pano") && ITEMS["Mochila de pano"].look[0] === "backpack" || "faltando");
   test("todo item tem ícone registrado em ASSETS", () => miss(Object.entries(ITEMS).filter(([, it]) => !ASSETS[it.icon]).map(([n]) => n)));
   test("drops de monstros usam itens existentes", () => miss(Object.values(MOBS).flatMap((d) => d.drops.map(([i]) => i)).filter((i) => !ITEMS[i])));
   test("monstros têm arte registrada", () => miss(Object.values(MOBS).map((d) => d.spr).filter((k) => !ASSETS[k])));
@@ -1018,7 +1035,8 @@
       const chance = RU.gatherChance(lvl, R.req, toolTier);
       // tentativas a cada 2 ticks; cada recurso rende ~C itens e some por ~Rsp s; supõe 3 recursos ao alcance e 3 s de caminhada por troca
       const C = (R.charges[0] + R.charges[1]) / 2, Rsp = R.respawn ? (R.respawn[0] + R.respawn[1]) / 2 : 0;
-      const perItem = (2 * TICK) / chance + 3 / C, cap = Rsp ? 3 * C * 3600 / (Rsp + C * (2 * TICK) / chance) : Infinity;
+      const ticks = R.skill === "pesca" ? 5 : 2; // rodada 112: pesca a cada 5 ticks (FISH_TICKS no game.js)
+      const perItem = (ticks * TICK) / chance + 3 / C, cap = Rsp ? 3 * C * 3600 / (Rsp + C * (ticks * TICK) / chance) : Infinity;
       const items = Math.min(3600 / perItem, cap);
       // rodada 26: peixes como no gather.js (com 2+ opções, metade das vezes o melhor peixe); antes usava sempre o lambari e o cardume fundo saía igual ao raso
       const fo = R.fish && R.fish.filter((f) => lvl >= f.req), avg = (g) => fo.length > 1 ? (g(fo[0]) + g(fo[fo.length - 1])) / 2 : g(fo[0]);

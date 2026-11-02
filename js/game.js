@@ -8,6 +8,7 @@
   const STEP = 0.24;       // tempo para andar 1 tile (s)
   const MOB_STEP = 0.42;
   const SLOTS = 20, BANK_SLOTS = 48, SAVE_KEY = "valdora.save.v2";
+  const FISH_TICKS = 5; // rodada 112: uma tentativa de pesca a cada 2,5 s (antes 1 s: o peixe vinha rápido demais)
   const RULES = ValdoraRules, MAX_LVL = RULES.MAX_LVL;
   const WORLD_G = ValdoraWorld; let WORLD = WORLD_G, TOWN = WORLD.TOWN, SPAWN = WORLD.SPAWN, TOWNS = WORLD.VILLAGES; // desenho do mundo e masmorras (js/world.js)
   // rodada 105: a casa do herói é desenhada no quadro antigo; no continente, as coordenadas dela andam (OX, OY)
@@ -859,7 +860,10 @@
   }
 
   const inside = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
-  const isBlockingObj = (o) => o && o.solid && !(o.type === "res" && o.respawn > 0);
+  // rodada 112: plantas e arbustos (moitas de ervas, flores, cogumelos, arbustos de enfeite) não barram o caminho: o herói e os
+  // monstros passam por cima. O cacto continua barrando (espinhos).
+  const isPlant = (o) => (o.type === "res" ? RES[o.kind] && RES[o.kind].skill === "herbalismo" && o.kind !== "cactus" : /(^|_)bush/.test(o.spr || ""));
+  const isBlockingObj = (o) => o && o.solid && !(o.type === "res" && o.respawn > 0) && !isPlant(o);
   // rodada 106: índice de monstros por tile (refeito no começo de cada quadro e atualizado quando um monstro anda ou nasce);
   // a entrada velha de quem saiu do tile é descartada pela conferência de posição
   const mobIdx = new Map();
@@ -933,12 +937,12 @@
     player.spawnStone = player.stones.includes(data.spawnStone) ? data.spawnStone : "lumeira"; player.village = null;
     player.pet = data.pet && typeof data.pet === "object" ? { name: RULES.petName(data.pet.name) || RULES.PET.name, kills: Math.max(0, data.pet.kills | 0), hp: Math.max(0, data.pet.hp | 0), rest: Math.max(0, Math.min(RULES.PET.rest, +data.pet.rest || 0)), named: data.pet.named ? 1 : 0, seenBond: Math.max(1, data.pet.seenBond | 0 || RULES.petBond(data.pet.kills | 0)) } : null; pet = null; // rodada 95; rodada 96: vida, descanso, nome
     player.echo = typeof data.echo === "object" && data.echo ? { ...data.echo } : {}; // semana da última vitória sobre cada eco
-    player.inv = slotsFrom(data.inv, SLOTS + 4 * player.bags.length);
     for (const k of EQUIP_KEYS) { // aceita o formato antigo (só o nome) e o novo ({ name, aff })
       const e = data.equip && data.equip[k], name = e && (typeof e === "string" ? e : e.name);
       if (name && ITEMS[name] && ITEMS[name].slot === k) { player.equip[k] = { name }; const aff = validAff(e.aff); if (aff && aff.length) player.equip[k].aff = aff; if (e.master) player.equip[k].master = 1; }
       if (k === "municao" && player.equip.municao && ITEMS[player.equip.municao.name].ammo) { const n = Math.floor(+e.n || 0); if (n > 0) player.equip.municao.n = n; else player.equip.municao = null; }
     }
+    player.inv = slotsFrom(data.inv, invSize()); // rodada 112: + os espaços da mochila vestida
     if (data.gear && !data.itemized) { // rodada 104: save antigo — os níveis presos ao herói viram itens (nada se perde)
       const mk = (k) => { const g = GEAR[k], i = clamp(Math.floor(+data.gear[k] || 0), 0, g.tiers.length - 1), t = g.tiers[i];
         const e = { name: k === "espada" && isArcher() && t.bow ? t.bow : t.name }; if ((data.master || {})[k]) e.master = 1;
@@ -986,6 +990,36 @@
   }
 
   // ---------- Inventário (20 espaços) e banco: itens empilham ----------
+  // rodada 112: mochila vestida (espaços e carga) e peso do que o herói leva (mochila + corpo; o cofre não conta)
+  const packOf = () => { const e = player.equip.mochila, it = e && ITEMS[e.name]; return (it && it.pack) || { slots: 0, cap: 0 }; };
+  const invSize = (pack = packOf()) => SLOTS + 4 * player.bags.length + pack.slots;
+  const carried = () => {
+    let w = 0;
+    for (const s of player.inv) if (s) w += VD.weightOf(s.name) * s.n;
+    for (const e of Object.values(player.equip)) if (e) w += VD.weightOf(e.name) * (e.n || 1);
+    return Math.round(w * 10) / 10;
+  };
+  const capacity = () => Math.round(VD.CARRY.base + lv("vitalidade") * VD.CARRY.perVit + packOf().cap);
+  const loadState = () => { const w = carried(), cap = capacity(), r = w / cap; return { w, cap, r, k: r > VD.CARRY.crawl ? 2 : r > VD.CARRY.heavy ? 1 : 0 }; };
+  let loadK = 0, loadCache = null, loadT = -1;
+  function loadNow() { // calculado no máximo uma vez por tick (a mochila muda pouco)
+    if (!loadCache || tickN !== loadT) { loadCache = loadState(); loadT = tickN;
+      if (loadCache.k !== loadK) {
+        if (loadCache.k > loadK) log(loadCache.k === 2 ? `Peso demais (${loadCache.w}/${loadCache.cap} kg): você anda igual a uma tartaruga. Guarde ou venda itens.` : `Mochila pesada (${loadCache.w}/${loadCache.cap} kg): você anda mais devagar.`, "warn");
+        else log(loadCache.k === 1 ? "Ainda pesado, mas já anda um pouco melhor." : "Carga leve de novo: passo normal.", "dim");
+        loadK = loadCache.k; hudDirty = true;
+      } }
+    return loadCache;
+  }
+  const loadRate = () => [1, 0.7, 0.3][loadNow().k]; // ritmo do passo: normal, pesado, tartaruga
+  // muda o tamanho da mochila: itens que ficariam fora descem para espaços livres (false se não couberem)
+  function resizeInv(n) {
+    const inv = player.inv, extra = inv.slice(n).filter(Boolean), free = inv.slice(0, n).filter((s) => !s).length;
+    if (extra.length > free) return false;
+    const keep = inv.slice(0, n); for (const s of extra) keep[keep.indexOf(null)] = s;
+    while (keep.length < n) keep.push(null);
+    player.inv = keep; loadCache = null; hudDirty = true; return true;
+  }
   const findStack = (arr, name) => arr.findIndex((s) => s && s.name === name && !s.aff); // peças com afixo não empilham
   const count = (name) => { const i = findStack(player.inv, name); return i < 0 ? 0 : player.inv[i].n; };
   const canAdd = (name) => findStack(player.inv, name) >= 0 || player.inv.includes(null);
@@ -1377,8 +1411,9 @@
     }
     if (t.kind === "loot") { if (player.x === r.x && player.y === r.y) { pickupAt(r.x, r.y, true); player.target = null; } else if (!goTo((x, y) => x === r.x && y === r.y)) player.target = null; return; }
     if (t.kind === "res" && r.respawn > 0) { player.target = null; return; }
-    if (!adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
-    faceRect(r);
+    const onPlant = t.kind === "res" && isPlant(r) && player.x === r.x && player.y === r.y; // rodada 112: em cima da planta também colhe
+    if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
+    if (!onPlant) faceRect(r);
     if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
@@ -1395,7 +1430,7 @@
     if (t.kind === "res" && !ensureTool(RES[r.kind].tool)) { // rodada 104: sem a ferramenta certa na mochila
       const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
     }
-    if (t.kind === "res") { gather(r); player.actT = 2; }
+    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS : 2; } // rodada 112: pesca mais lenta
     else if (t.kind === "fire") { cook(r); player.actT = 3; }
   }
 
@@ -1922,7 +1957,8 @@
     const DL = player.daily; if (DL && DL.type === m.type && !DL.claimed && DL.have < DL.n && ++DL.have === DL.n) { log(`✔ Caçada do dia concluída: ${DL.n}x ${d.name}. Receba no quadro da vila.`, "gold"); SND.play("quest"); } // rodada 80
     if (firstKill) bestiaryCheck(); // rodada 80: recompensas do bestiário
     for (const b of player.bounties) if (b.type === m.type && b.have < b.n && ++b.have === b.n) { log(`✔ Caçada concluída: ${b.n}x ${d.name}. Receba no quadro da vila.`, "gold"); SND.play("quest"); }
-    for (const [item, p, a = 1, b = a] of d.drops) {
+    const regDrop = !m.temp && !d.summon && VD.REGION_DROP(m.reg, d); // rodada 112: item da região (qualquer monstro dela)
+    for (const [item, p, a = 1, b = a] of regDrop ? [...d.drops, regDrop] : d.drops) {
       if (rand() >= p) continue;
       const q = ri(a, b), aff = ITEMS[item].slot && (d.boss || m.reg === "crypt") ? RULES.rollAffixes(rand() < (d.boss ? 0.45 : 0.25) ? 2 : 1, d.lvl >= 28 ? 1 : 0, rand) : undefined;
       dropItem(item, q, m.x, m.y, { x: m.px, y: m.py - 0.6 }, aff);
@@ -2007,6 +2043,15 @@
   function equip(i, quiet) {
     const s = player.inv[i], it = ITEMS[s.name], old = player.equip[it.slot];
     if (it.gear) { const g = GEAR[it.gear], t = g.tiers[it.tier]; if (lv(g.skill) < (t.req || 0)) { log(`${s.name} pede ${SKILLS[g.skill]} ${t.req}.`, "warn"); return; } }
+    if (it.need && lv("combate") < it.need) { log(`${s.name} pede Combate ${it.need}.`, "warn"); return; } // rodada 112: peças dos biomas
+    if (it.pack) { // rodada 112: troca de mochila — o que estiver nos espaços que somem precisa caber no resto
+      const n = invSize(it.pack), used = player.inv.filter(Boolean).length - (s.n > 1 ? 0 : 1) + (old ? 1 : 0);
+      if (used > n) { log("Não cabe: esvazie alguns espaços antes de trocar para uma mochila menor.", "warn"); return; }
+      if (s.n > 1) s.n--; else player.inv[i] = null;
+      player.equip.mochila = { name: s.name }; resizeInv(Math.max(n, player.inv.length)); if (old) addItem(old.name, 1); resizeInv(n);
+      log(`Você vestiu a ${s.name}: ${player.inv.length} espaços na mochila e ${capacity()} kg de carga.`, "gold"); SND.play("pickup");
+      refreshOutfit(); burst(player.px + 0.5, player.py + 0.3, [itemColor(s.name), "#ffffff"], 14, 2.5); hudDirty = true; save(); return;
+    }
     if (it.onlyHero && it.onlyHero !== player.hero) { // rodada 105: montante só o Guerreiro
       log(`${s.name} é arma de duas mãos do Guerreiro.`, "warn"); return;
     }
@@ -2038,6 +2083,12 @@
   }
   function unequip(slot) {
     const e = player.equip[slot]; if (!e) return;
+    if (slot === "mochila") { // rodada 112: a mochila sai só se o que está nela couber na mochila base
+      const n = invSize({ slots: 0, cap: 0 });
+      if (player.inv.filter(Boolean).length + 1 > n) { log("Esvazie alguns espaços antes de tirar a mochila: o que está nela não cabe sem ela.", "warn"); return; }
+      player.equip.mochila = null; resizeInv(n); addItem(e.name, 1);
+      log(`Você tirou a ${e.name}: ${player.inv.length} espaços, ${capacity()} kg de carga.`, "dim"); hudDirty = true; save(); refreshOutfit(); return;
+    }
     if (!addItem(e.name, e.n || 1, e.aff, e.master)) { log("Sua mochila está cheia. Guarde itens no cofre ou venda ao Bento.", "warn"); return; }
     player.equip[slot] = null; player.hp = Math.min(player.hp, maxHp()); log(`Você guardou ${accName(e)} na mochila.`, "dim"); hudDirty = true; save(); refreshOutfit();
   }
@@ -2304,7 +2355,7 @@
   for (const b of document.querySelectorAll("#panel .tabs button")) b.onclick = () => { hudTab = b.dataset.tab; hudDirty = true; };
   $("quest").onclick = () => { hudTab = "journal"; hudDirty = true; };
   // painel lateral (js/hud.js)
-  const HUD = ValdoraHud.create({ QUEST, TICK, echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
+  const HUD = ValdoraHud.create({ QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
     tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96
@@ -2503,6 +2554,7 @@
       player.moveT += dt;
       if (player.moveT < 0.14) rate = 0.62 + 0.38 * ease.outQuad(player.moveT / 0.14);
       if (!player.path.length && !keyDir()) rate *= 1 - 0.42 * player.prog; // último passo: desacelera
+      rate *= loadRate(); // rodada 112: peso
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
     } else if (player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida

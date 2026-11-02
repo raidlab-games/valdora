@@ -37,7 +37,10 @@ window.ValdoraHud = (() => {
       const face = $("me-img"); // rodada 105: cartão do personagem (retrato vestido, nível e ouro)
       if (face) { const src = ValdoraOutfit.face() || ASSETS[player.hero]; if (face.getAttribute("src") !== src) face.src = src;
         $("me-lvl").textContent = "Nv. " + totalLevel(); $("me-gold-n").textContent = player.coins.toLocaleString("pt-BR");
-        if (!$("me-coin").getAttribute("src")) $("me-coin").src = ASSETS.coin; }
+        if (!$("me-coin").getAttribute("src")) $("me-coin").src = ASSETS.coin;
+        const L = api.load && api.load(), lb = $("me-load"); // rodada 112: peso carregado / carga
+        if (L && lb) { lb.className = ["", "heavy", "crawl"][L.k]; lb.firstChild.style.width = Math.min(100, L.r * 100) + "%"; lb.lastChild.textContent = `${L.w.toLocaleString("pt-BR")}/${L.cap} kg`;
+          lb.title = L.k === 2 ? "Peso demais: anda igual a uma tartaruga. Guarde ou venda itens." : L.k === 1 ? "Pesado: anda mais devagar." : "Peso: leve"; } }
       $("player-info").innerHTML = `<div class="who"><b${PR ? ` style="color:${PR.color}" title="${esc(PR.title)}"` : ""}>${PR && ValdoraShrine.badge(PR) ? `<img class="tbadge" src="${ValdoraShrine.badge(PR)}" alt="">` : ""}${esc(player.name)}</b><span class="lvl" title="Nível total (soma das habilidades)">${player.name.length + (PR ? 2 : 0) > 13 ? "Nv." : "Nível total"} ${totalLevel()}</span></div>
         <div class="bar hp"><i style="width:${Math.min(100, (hp / mh) * 100)}%"></i><em>${hp} / ${mh}</em>${vm ? `<span class="votive" title="Chama votiva: mais ${vm} min">${ASSETS.icon_votive_hud ? `<img src="${ASSETS.icon_votive_hud_32 || ASSETS.icon_votive_hud}" alt="">` : "✦"}<span class="vm">${vm} min</span></span>` : ""}</div>
         ${PT ? `<button type="button" class="petline${PT.down ? " down" : ""}" title="${esc(PT.tip)}">${ASSETS.icon_pet ? `<img src="${ASSETS.icon_pet}" alt="">` : ""}<span class="pn">${esc(PT.name)}</span><span class="bar pethp"><i style="width:${PT.pct}%"></i><em>${esc(PT.label)}</em></span></button>` : ""}
@@ -91,7 +94,7 @@ window.ValdoraHud = (() => {
           <p class="desc">${esc(STYLES[player.style].desc)}${passiveHtml(STYLES[player.style])}</p>
           <button class="wide char-btn">Ficha do personagem (P)</button>
           <div class="stats"><span>Acerto <b>${st.acc}</b></span><span>Dano máx. <b>${st.maxHit}</b></span><span>Defesa <b>${st.def}</b></span><span>Vida máx. <b>${maxHp()}</b></span></div>
-          <div class="doll">${["capacete", "amuleto", "armadura", "calca", "botas"].map(dollSlot).join("")}<img class="dhero" src="${ValdoraOutfit.doll() || ASSETS[player.hero]}" alt="">${["capa", "arma", "municao", "anel", "bracelete"].map(dollSlot).join("")}</div>
+          <div class="doll">${["capacete", "amuleto", "armadura", "calca", "botas", "mochila"].map(dollSlot).join("")}<img class="dhero" src="${ValdoraOutfit.doll() || ASSETS[player.hero]}" alt="">${["capa", "arma", "municao", "anel", "bracelete"].map(dollSlot).join("")}</div>
           ${Object.keys(VD.EQUIP_SLOTS).filter((k) => player.equip[k]).map((k) => { const e = player.equip[k]; // rodada 104: só as peças vestidas (as vazias aparecem no boneco)
             return `<div class="gear acc" data-unequip="${k}" data-tip="${esc(itemTip(e, "clique para guardar na mochila"))}">${iconImg(e.name)}<span style="color:${e.aff ? "#ffd84a" : itemColor(e.name)}">${esc(accName(e))}<small>${bonusText(accBonus(e))}</small></span>${affBadges(e)}</div>`; }).join("")}`;
       } else {

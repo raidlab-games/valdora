@@ -20,6 +20,29 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 112 (v1.11) — itens das três classes por nível, saque por monstro e região, mochila e peso
+- **Letreiro** de troca de mapa e de eventos com metade do tamanho (título 24 px, placa, ícones e espaços pela metade).
+- **Plantas e arbustos** (moitas de ervas, flores, cogumelos, arbustos de enfeite) não barram o caminho (`isPlant`); dá para
+  colher de cima da planta. O cacto continua barrando.
+- **Monstro agressivo** (`d.aggro > 0`) mostra a barra de vida sempre, com borda vermelha (`hpBar` em `actors.js`).
+- **Pesca** a cada 5 ticks (`FISH_TICKS`, 2,5 s; antes 1 s); a tabela de equilíbrio dos testes acompanha.
+- **Conjuntos dos biomas** (obsidiana 45, mitril 78, solar 112, glacial 150): escudo, flechas, orbe e códice (as secundárias
+  das três classes) + elmo, grevas, botas, manto, bracelete, anel e amuleto; pedem Combate (`need`) e saem no Artesanato com a
+  barra e o item da região. `VD.LADDER` = escada de 7 degraus de cada peça (`TIER_LVL` 1/10/20/45/78/112/150).
+- **Saque por tipo de monstro** (`VD.FAMILY`): cada família solta as peças dela no degrau do nível do monstro (slime: orbe e
+  anel; lobo: capa e botas; javali: grevas e escudo; goblin: flechas e bracelete; esqueleto: elmo e escudo; golem: bracelete e
+  amuleto; aranha: flechas e botas; espectro: códice e amuleto; serpente: anel e capa; chefes humanoides: as 4 secundárias).
+  Espada, arco, montante e peitoral da forja também caem (1/320; chefe 8%) no tier que o nível alcança.
+- **Item da região** (`VD.REGION_ITEM`, `REGION_DROP`): 12% em qualquer monstro da região (chefe sempre, 1–4): Trevo da sorte,
+  Bolota dourada, Tufo de pelo prateado, Pó de lumita, Relíquia esquecida, Essência sombria, Lasca de rocha-viva,
+  Escaravelho dourado e Floco eterno (neve). Masmorras contam como a região delas.
+- **Mochila** (espaço novo `mochila` no boneco): pano (Bento, +4 espaços/+15 kg), couro, explorador, expedição e dunas e gelo
+  (+12/+90 kg). Camada `gear_backpack` renderizada no Blender (`layered.py`, só o passe `backpack`) e ícone `item_backpack`.
+  Trocar ou tirar a mochila só se o que está nela couber (`resizeInv`).
+- **Peso** (`VD.weightOf`, `VD.CARRY`): mochila + corpo; carga 50 kg + 0,4 por nível de Vitalidade + mochila. Acima de 100%
+  passo a 70%; acima de 130%, 30% (tartaruga). Barra embaixo do retrato (verde, amarela, vermelha pulsando) e aviso no registro.
+- Testes: +7 (secundárias das três classes até o 150, receitas dos conjuntos, saque por família, item de região, peso, mochilas).
+
 ## Rodada 111 (v1.10) — alcance do cacto, do clique e da coleta
 - **Pé das artes do Blender:** `SPRITE_SINK` de cacto (0,362), rochas (0,457) e minérios (0,411) põe o pé rente à borda de baixo
   do tile, como o pé dos personagens; antes ficava no meio do tile e a arte parecia meio tile acima do herói e do tile clicável.

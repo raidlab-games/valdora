@@ -6,6 +6,14 @@ window.ValdoraActors = (() => {
     const { ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt, whiteOf } = api;
     // rodada 25: cópia tingida de cada folha, feita uma vez (ctx.filter a cada quadro custava ~13% do quadro com um eco na tela)
     const tintCache = new WeakMap();
+    // rodada 112: barra de vida sobre a cabeça. Monstro agressivo (ataca quem chega perto) mostra a barra sempre, com borda vermelha
+    function hpBar(cx, top, k, hostile, col) {
+      const bw = TILE - 12, x = Math.round(cx - bw / 2), y = Math.round(top - 6);
+      ctx.fillStyle = hostile ? "#e8382a" : "#000"; ctx.fillRect(x - 2, y - 2, bw + 4, 8);
+      if (hostile) { ctx.fillStyle = "#000"; ctx.fillRect(x - 1, y - 1, bw + 2, 6); }
+      ctx.fillStyle = hostile ? "#4a1410" : "#c0392b"; ctx.fillRect(x, y, bw, 4);
+      ctx.fillStyle = col; ctx.fillRect(x, y, Math.round(bw * Math.max(0, Math.min(1, k))), 4);
+    }
     // rodada 105: vista do monstro pela direção (8). De frente, de costas e nas diagonais a folha é outra ("<spr>@<vista>",
     // carregada só quando o monstro está por perto); o lado direito é o esquerdo espelhado. Enquanto a vista carrega, ou em
     // linhas que não giram (uivo, fúria...), usa a folha de lado virada para o lado do jogador.
@@ -59,10 +67,7 @@ window.ValdoraActors = (() => {
       if (m.flash > 0) { const wimg = whiteOf(d.spr); if (wimg) { ctx.globalAlpha = Math.min(1, m.flash / 0.16) * 0.85; ctx.drawImage(wimg, -w / 2, -h, w, h); ctx.globalAlpha = 1; } }
       ctx.restore();
       const top = by - h * sy;
-      if ((m.hp < d.hp || m.aggro) && !d.boss) {
-        const bw = TILE - 12; ctx.fillStyle = "#000"; ctx.fillRect(cx - bw / 2 - 1, top - 7, bw + 2, 6);
-        ctx.fillStyle = "#c0392b"; ctx.fillRect(cx - bw / 2, top - 6, bw, 4); ctx.fillStyle = "#3fd05a"; ctx.fillRect(cx - bw / 2, top - 6, bw * m.hp / d.hp, 4);
-      }
+      if ((m.hp < d.hp || m.aggro || d.aggro > 0) && !d.boss) hpBar(cx, top, m.hp / d.hp, d.aggro > 0, "#3fd05a");
       if (d.boss && !m.aggro) tags.push([d.name, m.px + 0.5, (top + cam.y) / TILE - 0.05, "#c79bff"]); // rodada 70: em luta o nome fica na barra do topo
     }
     function drawMobAnim(m, t) {
@@ -93,9 +98,8 @@ window.ValdoraActors = (() => {
       if (d.alpha) ctx.globalAlpha /= d.alpha;
       const top = footY - h;
       if (m.windup > 0 && SPR.icon_dodge_64) { const ic = SPR.icon_dodge_64, bob = Math.sin(t * 9) * 3; ctx.drawImage(ic, footX - ic.width / 2, top - ic.height - 26 + bob); } // "saia do círculo"
-      if ((m.hp < d.hp || m.aggro) && !d.boss && !(m.pet && m.down)) { // rodada 97: dormindo na vila, sem barra
-        const bw = TILE - 12; ctx.fillStyle = "#000"; ctx.fillRect(footX - bw / 2 - 1, top - 7, bw + 2, 6);
-        ctx.fillStyle = "#c0392b"; ctx.fillRect(footX - bw / 2, top - 6, bw, 4); ctx.fillStyle = m.pet ? "#6fc3ff" : "#3fd05a"; ctx.fillRect(footX - bw / 2, top - 6, bw * Math.max(0, m.hp) / d.hp, 4); // rodada 96: filhote em azul
+      if ((m.hp < d.hp || m.aggro || (d.aggro > 0 && !m.pet)) && !d.boss && !(m.pet && m.down)) { // rodada 97: dormindo na vila, sem barra
+        hpBar(footX, top, Math.max(0, m.hp) / d.hp, d.aggro > 0 && !m.pet, m.pet ? "#6fc3ff" : "#3fd05a"); // rodada 96: filhote em azul
       }
       if (d.boss && !m.aggro) tags.push([d.name, m.px + 0.5, (top + cam.y) / TILE - 0.05, "#c79bff"]); // rodada 70: em luta o nome fica na barra do topo
       if (m.stun > 0) drawStun(footX, top - 6, t);

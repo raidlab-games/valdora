@@ -308,7 +308,7 @@ for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_r
 
 // rodada 105: ícones da secundária (escudos, orbes) e dos braceletes
 for (const k of ["item_shield_wood", "item_shield_iron", "item_shield_lumita", "item_orb_quartz", "item_orb_amber", "item_orb_lumita",
-  "item_bracelet_leather", "item_bracelet_iron", "item_bracelet_lumita", "item_book_apprentice", "item_book_amber", "item_book_lumita", "item_greatsword"]) ASSETS[k] = `assets/flow/${k}.png`;
+  "item_bracelet_leather", "item_bracelet_iron", "item_bracelet_lumita", "item_book_apprentice", "item_book_amber", "item_book_lumita", "item_greatsword", "item_backpack"]) ASSETS[k] = `assets/flow/${k}.png`;
 // rodada 105: chão dos biomas novos (texturas pintadas recoloridas: neve, areia rubra, rocha e mata escura)
 for (const k of ["snow", "snow_2", "sand_2", "rockg", "rockg_2", "grass_night", "grass_night_2"]) ASSETS[k] = `assets/flow/${k}.png`;
 // rodada 105: cenário dos biomas novos (a partir da arte pintada do mapa 1; Pedra no Blender), gemas e flores raras

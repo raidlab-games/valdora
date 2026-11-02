@@ -20,6 +20,12 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.11", "Mochila, peso e itens para todas as classes", ["Mochila no personagem: mais espaços e mais carga (a de pano o Bento vende; as outras você cria no Artesanato)",
+      "Peso: tudo o que você leva pesa. A barra embaixo do retrato mostra a carga; pesado demais, o herói anda igual a uma tartaruga",
+      "Cada tipo de monstro solta peças próprias no nível dele, com itens das três classes (escudo, flechas, orbe e códice) até o nível 150",
+      "Item da região: qualquer monstro de uma região pode soltar o item dela (ex.: Floco eterno na neve), usado nas mochilas e nos conjuntos",
+      "Monstros agressivos mostram a vida com borda vermelha; plantas e arbustos não bloqueiam mais o caminho",
+      "Pesca mais lenta e letreiros de troca de mapa com metade do tamanho"]],
     ["v1.10", "Alcance do cacto e da coleta", ["O cacto só espeta quando você anda contra ele; passar ou parar ao lado não machuca mais",
       "Cacto, rochas e minérios ficam no tile certo, na altura dos pés do herói",
       "Clicar em qualquer parte do cacto, minério ou planta já seleciona (antes só a área abaixo dele)",

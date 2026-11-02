@@ -25,6 +25,9 @@ window.ValdoraUI = (() => {
     const it = ITEMS[s.name], col = s.aff ? "#ffd84a" : it.rarity ? RARITY[it.rarity].color : "#fff";
     return `<b style="color:${col}">${esc(s.name)}</b>` + (it.rarity ? `<br><small>${it.slot && VD.EQUIP_SLOTS[it.slot] ? esc(VD.EQUIP_SLOTS[it.slot].name) + " · " : ""}${esc(RARITY[it.rarity].name)}${s.aff ? " · peça única" : ""}</small>` : "")
       + (it.bonus ? `<div>${esc(bonusText(it.bonus))}</div>` : "")
+      + (it.pack ? `<div>+${it.pack.slots} espaços na mochila · +${it.pack.cap} kg de carga</div>` : "") // rodada 112
+      + (it.need ? `<small>requer Combate ${it.need}</small><br>` : "")
+      + (VD.weightOf ? `<small>peso ${String(VD.weightOf(s.name)).replace(".", ",")} kg</small>` : "")
       + (s.aff || []).map((a) => `<div class="tip-aff">${badgeImg(a.id)}${esc(affLine(a))}</div>`).join("")
       + (hint ? `<small class="tip-hint">${esc(hint)}</small>` : "");
   }

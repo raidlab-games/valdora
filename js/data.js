@@ -120,6 +120,7 @@ window.VD = (() => {
     botas: { name: "Botas", empty: "▂" }, capa: { name: "Capa", empty: "▽" }, anel: { name: "Anel", empty: "○" },
     bracelete: { name: "Bracelete", empty: "◎" }, // rodada 105
     municao: { name: "Secundária", empty: "◈", sec: true }, // rodada 105: escudo (Guerreiro), flechas (Arqueiro) ou orbe (Místico) — VD.SEC
+    mochila: { name: "Mochila", empty: "▤" }, // rodada 112: mais espaços e mais carga (aparece nas costas do herói)
   };
 
   // Recursos: nível exigido, XP, cargas (quantas vezes rende antes de esgotar) e tempo para voltar (s)
@@ -597,7 +598,8 @@ window.VD = (() => {
   };
   const SHOP_ITEMS = ["Poção de vida", "Poção de força", "Poção de pedra", "Flecha de madeira", // rodada 104: flechas em maço de 10
     "Túnica do guerreiro", "Capa de viagem", "Manto do místico", "Capuz do místico", "Roupa de caçador", "Chapéu de caçador", // e as roupas dos heróis
-    "Escudo de madeira", "Orbe de quartzo", "Tomo do aprendiz", "Bracelete de couro"]; // rodada 105: secundárias e bracelete
+    "Escudo de madeira", "Orbe de quartzo", "Tomo do aprendiz", "Bracelete de couro", // rodada 105: secundárias e bracelete
+    "Mochila de pano"]; // rodada 112
 
   // Artesanato (aba "Criar" da mochila, em qualquer lugar). bag = aumenta a mochila em 4 espaços (uma vez cada)
   const CRAFT = {
@@ -996,6 +998,134 @@ window.VD = (() => {
     { at: 10000, title: "Guardião da chama", color: "#ffa64a", perk: "nome cor de brasa e halo quente à noite", halo: "rgba(255,170,80,A)" },
     { at: 25000, title: "Lenda de Lumeira", color: "#8fe8ff", perk: "nome de lumita, halo ciano à noite e faíscas de cristal", halo: "rgba(110,230,255,A)", sparks: true }] };
 
-  return { EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  // ---------- rodada 112: itens de região, conjuntos dos biomas para as três classes, saque por tipo de monstro, mochilas e peso ----------
+  // Item da região: cai de qualquer monstro daquela região (masmorras contam como a região delas). Serve de material das mochilas e
+  // dos conjuntos dos biomas, e vende bem.
+  const REGION_ITEM = {
+    fields: ["Trevo da sorte", "item_herb", "hue-rotate(25deg) saturate(1.8) brightness(1.1)", 6],
+    east: ["Bolota dourada", "item_amber", "sepia(0.7) saturate(1.5) brightness(1.05)", 10],
+    south: ["Tufo de pelo prateado", "item_pelt", "grayscale(1) brightness(1.35)", 16],
+    west: ["Pó de lumita", "item_lumita", "brightness(1.45) saturate(0.55)", 22],
+    ruins: ["Relíquia esquecida", "item_fragment", "sepia(0.85) brightness(0.95)", 26],
+    darkwood: ["Essência sombria", "item_core", "hue-rotate(220deg) brightness(0.6) saturate(1.8)", 70],
+    mountains: ["Lasca de rocha-viva", "item_fragment", "grayscale(0.7) brightness(0.85) contrast(1.2)", 120],
+    desert: ["Escaravelho dourado", "item_amber", "sepia(1) saturate(3) hue-rotate(5deg) brightness(1.15)", 180],
+    snow: ["Floco eterno", "item_echo_crystal", "saturate(0.3) brightness(1.6)", 260],
+  };
+  const REGION_OF = { crypt: "ruins", den: "south", rift: "west", dg_darkwood: "darkwood", dg_mountains: "mountains", dg_desert: "desert", dg_snow: "snow" };
+  for (const [name, icon, filter, price] of Object.values(REGION_ITEM)) ITEMS[name] = { icon, filter, price, region: true };
+  const regionItem = (reg) => { const r = REGION_ITEM[reg] || REGION_ITEM[REGION_OF[reg]]; return r && r[0]; };
+  const bonusTxt = (b) => Object.entries(b).map(([k, v]) => `+${v} ${{ acc: "acerto", dmg: "dano", def: "defesa", gather: "% coleta" }[k] || k}`).join(", ");
+
+  // Conjuntos dos biomas (Combate 45, 78, 112 e 150, como as armas forjadas): a secundária de cada classe (escudo do Guerreiro,
+  // flechas do Arqueiro, orbe e códice do Místico) e as peças que todos usam. Ícones da lumita tingidos com o filtro do bioma.
+  const SETS = [
+    { m: "de obsidiana", fp: "de obsidiana", lvl: 45, bar: "Barra de obsidiana", reg: "darkwood", col: "#6a5a8a", k: 1.6, craft: 28 },
+    { m: "de mitril", fp: "de mitril", lvl: 78, bar: "Barra de mitril", reg: "mountains", col: "#b8e0ff", k: 2.2, craft: 42 },
+    { m: "solar", fp: "solares", lvl: 112, bar: "Barra solar", reg: "desert", col: "#ffd66a", k: 2.9, craft: 56 },
+    { m: "glacial", fp: "glaciais", lvl: 150, bar: "Barra glacial", reg: "snow", col: "#f0fbff", k: 3.7, craft: 70 },
+  ];
+  // [chave, nome (S = conjunto), espaço, ícone, bônus de base (o épico de lumita), camada no herói, extra]
+  const PIECES = [
+    ["escudo", (S) => `Escudo ${S.m}`, "municao", "item_shield_lumita", { def: 6, dmg: 1 }, "shield", { sec: "escudo" }],
+    ["orbe", (S) => `Orbe ${S.m}`, "municao", "item_orb_lumita", { acc: 4, dmg: 3 }, "orb", { sec: "orbe" }],
+    ["tomo", (S) => `Códice ${S.m}`, "municao", "item_book_lumita", { acc: 3, def: 4, dmg: 2 }, "book", { sec: "orbe" }],
+    ["flecha", (S) => `Flecha ${S.m}`, "municao", "item_arrows_lumita", { dmg: 2, acc: 2 }, null, { sec: "flecha", ammo: true }],
+    ["capacete", (S) => `Elmo ${S.m}`, "capacete", "item_helm_lumita", { def: 4, acc: 2 }, "helm", {}],
+    ["calca", (S) => `Grevas ${S.fp}`, "calca", "item_pants_lumita", { def: 4, dmg: 1 }, "greaves", {}],
+    ["botas", (S) => `Botas ${S.fp}`, "botas", "item_boots_lumita", { def: 3, acc: 2 }, "bootsplate", {}],
+    ["capa", (S) => `Manto ${S.m}`, "capa", "item_cape_ruins", { dmg: 2, def: 3, acc: 1 }, "cape", {}],
+    ["bracelete", (S) => `Bracelete ${S.m}`, "bracelete", "item_bracelet_lumita", { acc: 2, dmg: 2, def: 1 }, null, {}],
+    ["anel", (S) => `Anel ${S.m}`, "anel", "item_ring_ancient", { acc: 5, dmg: 3 }, null, {}],
+    ["amuleto", (S) => `Amuleto ${S.m}`, "amuleto", "item_amulet_echo", { acc: 3, dmg: 3, def: 5 }, null, {}],
+  ];
+  // escada de cada peça: as três de antes (comum, raro, épico) e as dos quatro biomas; TIER_LVL = nível do monstro que já solta a peça
+  const TIER_LVL = [1, 10, 20, 45, 78, 112, 150];
+  const LADDER = {
+    escudo: ["Escudo de madeira", "Escudo de ferro", "Escudo de lumita"], orbe: ["Orbe de quartzo", "Orbe de âmbar", "Orbe de lumita"],
+    tomo: ["Tomo do aprendiz", "Grimório de âmbar", "Códice de lumita"], flecha: ["Flecha de madeira", "Flecha de ferro", "Flecha de lumita"],
+    capacete: ["Capuz de couro", "Elmo de ferro", "Elmo de lumita"], calca: ["Calça de couro", "Grevas de ferro", "Grevas de lumita"],
+    botas: ["Botas de couro", "Botas de viajante", "Botas de lumita"], capa: ["Capa de pele", "Capa do caçador", "Manto das ruínas"],
+    bracelete: ["Bracelete de couro", "Bracelete de ferro", "Bracelete de lumita"], anel: ["Anel de cobre", "Anel do caçador", "Anel ancestral"],
+    amuleto: ["Amuleto de âmbar", "Amuleto de âmbar", "Amuleto de musgo"],
+  };
+  SETS.forEach((S, k) => {
+    const token = regionItem(S.reg), filter = HIGH[k][7];
+    for (const [key, nameOf, slot, icon, base, layer, extra] of PIECES) {
+      const name = nameOf(S), mult = extra.ammo ? 1 + (S.k - 1) * 0.6 : slot === "anel" || slot === "amuleto" ? S.k * 0.8 : S.k;
+      const bonus = Object.fromEntries(Object.entries(base).map(([b, v]) => [b, Math.max(1, Math.round(v * mult))]));
+      ITEMS[name] = { icon, filter, price: extra.ammo ? 10 + k * 6 : [700, 1400, 2600, 4400][k], slot, rarity: "epico", bonus, need: S.lvl, ...extra,
+        ...(layer ? { look: [layer, S.col] } : {}) };
+      const small = slot === "anel" || slot === "amuleto" || slot === "bracelete";
+      CRAFT[name] = extra.ammo ? { mats: { "Madeira de carvalho": 2, [S.bar]: 1, [token]: 1 }, lvl: S.craft, xp: 60 + k * 30, n: 15, desc: `15 flechas · Combate ${S.lvl} · ${bonusTxt(bonus)}` }
+        : { mats: { [S.bar]: small ? 1 : 2, [token]: 3 }, lvl: S.craft, xp: [300, 450, 650, 900][k], desc: `${EQUIP_SLOTS[slot].name.toLowerCase()} · Combate ${S.lvl} · ${bonusTxt(bonus)}` };
+      LADDER[key].push(name);
+    }
+  });
+
+  // Mochilas (espaço "mochila"): espaços a mais na mochila e carga a mais (kg). A de pano o Bento vende; as outras, no Artesanato.
+  const PACKS = [ // [nome, raridade, espaços, carga, cor no herói, preço, materiais (null = loja), nível de Artesanato]
+    ["Mochila de pano", "comum", 4, 15, "#c8b48a", 40, null, 0],
+    ["Mochila de couro", "raro", 6, 30, "#9a6438", 260, { "Couro de javali": 6, "Trevo da sorte": 3, "Bolota dourada": 2 }, 8],
+    ["Mochila de explorador", "raro", 8, 45, "#5f7a4a", 700, { "Pele de lobo": 6, "Tufo de pelo prateado": 4, "Relíquia esquecida": 2, "Barra de ferro": 2 }, 18],
+    ["Mochila de expedição", "epico", 10, 65, "#6a5a8a", 2400, { "Essência sombria": 6, "Lasca de rocha-viva": 4, "Barra de obsidiana": 2 }, 40],
+    ["Mochila das dunas e do gelo", "epico", 12, 90, "#e8d8a8", 6000, { "Escaravelho dourado": 5, "Floco eterno": 5, "Barra solar": 2 }, 62],
+  ];
+  for (const [name, rarity, slots, cap, col, price, mats, lvl] of PACKS) {
+    ITEMS[name] = { icon: "item_backpack", price, slot: "mochila", rarity, pack: { slots, cap }, look: ["backpack", col], ...(mats ? {} : { buy: 120 }) };
+    if (mats) CRAFT[name] = { mats, lvl, xp: 40 + lvl * 8, desc: `mochila · +${slots} espaços, +${cap} kg de carga` };
+  }
+
+  // Saque por tipo de monstro: cada família solta as peças "dela", no nível do monstro (a mais alta que o nível já alcança).
+  // As três classes aparecem: escudo (javali, esqueleto), flechas (goblin, aranha), orbe (slime) e códice (espectro).
+  const FAMILY = [[/slime/, "slime", ["orbe", "anel"]], [/wolf/, "wolf", ["capa", "botas"]], [/boar/, "boar", ["calca", "escudo"]], [/goblin/, "goblin", ["flecha", "bracelete"]],
+    [/skeleton/, "skeleton", ["capacete", "escudo"]], [/golem|colossus|sentinel/, "golem", ["bracelete", "amuleto"]], [/spider/, "spider", ["flecha", "botas"]],
+    [/wraith/, "wraith", ["tomo", "amuleto"]], [/serpent/, "serpent", ["anel", "capa"]]];
+  const familyOf = (d) => { const f = FAMILY.find(([re]) => re.test(d.spr || "")); return f ? f[1] : null; };
+  const tierFor = (lvl) => TIER_LVL.reduce((best, v, i) => (lvl >= v ? i : best), 0);
+  // armas e peitorais da forja também caem, raramente, no tier que o nível do monstro alcança (espada, arco, montante e peitoral)
+  const forgeTierFor = (g, lvl) => g.tiers.reduce((best, t, i) => (!t.rolls && (t.req || 0) <= lvl ? i : best), 0);
+  for (const d of Object.values(MOBS)) {
+    if (d.summon || d.echo || d.temp) continue;
+    // sem família (chefes humanoides, guarda da cripta): a secundária das três classes
+    const fam = FAMILY.find(([re]) => re.test(d.spr || "")) || [null, "boss", ["escudo", "flecha", "orbe", "tomo"]], lvl = d.lvl || 1, have = new Set((d.drops = d.drops || []).map((x) => x[0]));
+    const big = d.boss || d.mini || (d.k || 1) > 1;
+    const add = (row) => { if (!have.has(row[0])) { have.add(row[0]); d.drops.push(row); } };
+    for (const key of fam[2]) {
+      const name = LADDER[key][Math.min(LADDER[key].length - 1, tierFor(lvl))];
+      add(key === "flecha" ? [name, big ? 0.6 : 0.14, 4, d.boss ? 30 : 10] : [name, d.boss ? 0.3 : big ? 1 / 12 : 1 / 45]);
+    }
+    const tw = forgeTierFor(GEAR.espada, lvl), ta = forgeTierFor(GEAR.armadura, lvl), T = GEAR.espada.tiers[tw];
+    if (tw > 0) for (const name of [T.name, T.bow, T.two]) if (name) add([name, d.boss ? 0.08 : 1 / 320]);
+    if (ta > 0) add([GEAR.armadura.tiers[ta].name, d.boss ? 0.08 : 1 / 320]);
+  }
+  const REGION_DROP = (reg, d) => { const n = regionItem(reg); return n ? [n, d.boss ? 1 : d.mini ? 0.5 : 0.12, 1, d.boss ? 4 : 1] : null; };
+
+  // Peso (kg). Pesa tudo o que vai na mochila e no corpo; o cofre não. Carga = 50 kg + 0,4 por nível de Vitalidade + a mochila.
+  // Acima de 100% o herói anda mais devagar; acima de 130%, igual a uma tartaruga.
+  const RES_SKILL = {};
+  for (const R of Object.values(RES)) { if (R.item) RES_SKILL[R.item] = R.skill; for (const f of R.fish || []) RES_SKILL[f.item] = "pesca"; }
+  const SLOT_W = { armadura: 7, arma: 3.5, capacete: 2, calca: 2.5, botas: 1.5, capa: 1, anel: 0.1, amuleto: 0.2, bracelete: 0.3, mochila: 1.5 };
+  function weightOf(name) {
+    const it = ITEMS[name]; if (!it) return 0;
+    if (it.w != null) return it.w;
+    if (it.quest) return 0;
+    if (it.ammo) return 0.05;
+    if (it.slot === "municao") return it.sec === "escudo" ? 4 : 1;
+    if (it.slot === "armadura") return it.gear ? (it.tier <= 1 ? 3 : 7) : 2.5;
+    if (it.slot === "arma") return it.twoH ? 6 : it.gear === "espada" ? (it.bow ? 2 : 3.5) : 2.5;
+    if (it.slot) return SLOT_W[it.slot] || 1;
+    if (/^Barra/.test(name)) return 1.5;
+    const sk = RES_SKILL[name];
+    if (sk === "mineracao") return 1.5;
+    if (sk === "corte") return 1;
+    if (sk === "pesca" || it.cook) return 0.8;
+    if (sk === "herbalismo") return 0.1;
+    if (it.heal) return 0.4;
+    return 0.3;
+  }
+  const CARRY = { base: 50, perVit: 0.4, heavy: 1, crawl: 1.3 };
+
+  return { REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();
