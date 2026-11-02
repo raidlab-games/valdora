@@ -174,7 +174,8 @@
     for (let y = TOWN.y0; y <= TOWN.y1; y++) for (let x = TOWN.x0; x <= TOWN.x1; x++) map[y][x] = (x === 48 || x === 49 || y === 36 || y === 37) ? "path" : "stone";
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
     // rodada 114: no lugar da casa vermelha, a Casa de Leilões (um tile acima e à esquerda) com a banca e a leiloeira na frente
-    deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "stall_auction", 41, 31, 2, 1, { name: "Celeste" });
+    // rodada 115: sem a banca; a leiloeira fica sozinha, de frente, um tile à frente da casa (clicar nela abre o leilão)
+    deco("house", "house_auction", 41, 29, 3, 2); npc.auction = deco("auction", "npc_auctioneer", 42, 32, 1, 1, { name: "Celeste" });
     deco("house", "house_blue", 53, 30, 3, 2); deco("house", "house_green", 42, 41, 3, 2);
     npc.stall = deco("stall", "stall", 51, 33, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 53, 33, 1, 1, { name: "Bento" });
@@ -705,7 +706,7 @@
   // rodada 73: ronda do Ivo pela praça (pontos em volta de casa, um por saída; volta para casa entre eles)
   const PATROL = [[3, 2], [-2, 3], [2, -1], [-1, -2]];
   // rodada 34/35: reação ao entregar missão/encomenda — Ivo bate continência ("salute"), Bento faz joinha ("thumbs"); segura o último quadro 0,6 s
-  const REACT = { guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
+  const REACT = { auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
   const reactDur = (o) => { const R = ANIMS[o.spr] && ANIMS[o.spr].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; };
   function react(o) {
     const row = o && REACT[o.type]; if (!row || !ANIMS[o.spr] || !ANIMS[o.spr].rows[row]) return;
@@ -719,11 +720,11 @@
       if (!B.rise.moved && B.rise.t * R.fps >= 2) { B.rise.moved = true; standUp(B); if (B.sitT > 0) B.rise = null; } // sem tile livre: continua sentado
       if (B.rise && B.rise.t * R.fps >= R.frames) { B.rise = null; B.react = { row: "bow", t: 0 }; }
     }
-    for (const o of [npc.guard, npc.merchant, npc.bard]) if (o && o.react) { // rodada 36/37: brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
+    for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, ...Object.values(npc.wardens || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
       const R = ANIMS[o.spr] && ANIMS[o.spr].rows[o.react.row], before = o.react.t;
       if ((o.react.t += dt) > reactDur(o)) { o.react = null; continue; }
       const SP = { merchant: [-0.25, -0.4], guard: [0.05, -1.05], bard: [0.3, -0.1] }[o.type]; // centro do brilho (tiles; y já desconta o meio do quadro)
-      if (R && before * R.fps < 3 && o.react.t * R.fps >= 3) RENDER.playOnce("fx_thumbs_spark", o.x + SP[0], o.y + SP[1]);
+      if (SP && R && before * R.fps < 3 && o.react.t * R.fps >= 3) RENDER.playOnce("fx_thumbs_spark", o.x + SP[0], o.y + SP[1]);
     }
     for (const o of [npc.guard, npc.merchant, npc.bard]) {
       if (!o || !ANIMS[o.spr] || !ANIMS[o.spr].rows.walk) continue;
@@ -2285,7 +2286,7 @@
   const DLG = ValdoraDialogs.DLG; // títulos e falas das janelas (js/dialogs.js)
   // rodada 114: Casa de Leilões (js/auction.js)
   const AUCTION = ValdoraAuction.create({ player: () => player, lv: (s) => lv(s), addItem: (...a) => addItem(...a), dropItem: (n, q) => dropItem(n, q, player.x, player.y),
-    log: (m, c) => log(m, c), sound: (k) => SND.play(k), dirty: () => { hudDirty = true; }, bang: () => { if (npc.auction) npc.auction.bangT = performance.now() / 1000; } });
+    log: (m, c) => log(m, c), sound: (k) => SND.play(k), dirty: () => { hudDirty = true; }, bang: () => react(npc.auction) }); // rodada 115: bate o martelinho (linha "gavel")
   let dlg = null; // { kind, obj, tab }
   // rodada 105: a janela abre embaixo do cartão do personagem e acima do registro; sem espaço ali, abre ao lado do cartão.
   // Nunca cobre o cartão, o registro nem o painel da direita.

@@ -20,6 +20,8 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.14", "Casa de Leilões caprichada", ["O martelo da Casa de Leilões foi refeito: montado na cumeeira, no mesmo desenho da casa",
+      "A leiloeira Celeste agora fica na frente da casa: clique nela para abrir o leilão"]],
     ["v1.13", "Casa de Leilões e guardiões das vilas", ["Casa de Leilões na Lumeira: a leiloeira Celeste, atrás do balcão, tem lotes novos a cada 15 minutos e leiloa os seus itens",
       "Cada vila nova tem um guardião como o Ivo, com missões do bioma inteiro até derrotar o chefe: Lúcio (Breu), Tobias (Escarpa), Samira (Oásis) e Edda (Degelo)",
       "Cada toque em W/A/S/D anda só 1 quadrado; segurando a tecla, o herói continua andando"]],

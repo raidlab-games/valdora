@@ -20,6 +20,15 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 115 (v1.14) — martelo refeito na cumeeira, leiloeira na frente da casa
+- **Martelo da Casa de Leilões refeito**: `tools/b3d/roof_gavel.py` renderiza o martelo já na perspectiva da casa vermelha
+  (cumeeira subindo ~18°), deitado sobre dois calços de madeira com cavilhas de ferro e o cabo descendo pela água da frente;
+  `tools/auction_art.py` reduz para pixel art com rampas de 4 tons tiradas da casa (madeira das vigas e latão), contorno escuro
+  igual ao da arte e sombra curta nas telhas.
+- **Banca removida**: a Celeste fica sozinha, de frente, a um tile da casa (tipo `auction`, idle/fala animados como os outros
+  NPCs); clicar nela abre o leilão. Bater o martelinho usa o `react` (linha `gavel`), que agora também anda para a leiloeira e
+  os guardiões das vilas.
+
 ## Rodada 114 (v1.13) — Casa de Leilões, guardiões das vilas, 1 tile por toque
 - **Casa de Leilões** na Lumeira (no lugar da casa vermelha, um tile acima e à esquerda), com as artes da própria vila
   (`tools/auction_art.py`): a casa vermelha com um martelo de leilão na cumeeira (`deco_gavel` em `gear_icons.py`) e a banca do

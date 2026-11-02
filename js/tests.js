@@ -43,7 +43,7 @@
   });
   test("rodada 114: Casa de Leilões tem arte, leiloeira e lotes válidos", () => {
     const A = ValdoraAuction.create({ player: () => ({ name: "t", inv: [], coins: 0, auction: { lots: [], bought: {} } }), lv: () => 50, addItem: () => true, dropItem() {}, log() {}, sound() {}, dirty() {}, bang() {} });
-    const O = A.offers(); return (ASSETS.house_auction && ASSETS.stall_auction_front && ASSETS.npc_auctioneer && O.list.length === 6 && O.list.every((o) => ITEMS[o.name] && o.price > 0)) || "faltando";
+    const O = A.offers(); return (ASSETS.house_auction && ASSETS.npc_auctioneer && O.list.length === 6 && O.list.every((o) => ITEMS[o.name] && o.price > 0)) || "faltando";
   });
   // rodada 113: ninja encapuzado (emboscada)
   test("rodada 113: ninja tem arte 3D e é agressivo sem recompensa de caçada", () => (MOBS.ninja && ASSETS.mob_ninja && MOBS.ninja.ambush && MOBS.ninja.aggro > 0 && MOBS.ninja.noBounty) || "ninja incompleto");
