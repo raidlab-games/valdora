@@ -1,13 +1,13 @@
 // Valdora — mouse e toque no mapa (rodada 15: saiu do game.js). Clique escolhe alvo ou anda; no celular, tocar = clicar e
-// segurar = andar seguindo o dedo. O minimapa também leva o herói até o ponto clicado. Ctrl + clique ataca o monstro mais perto.
+// segurar = andar seguindo o dedo. O minimapa também leva o herói até o ponto clicado. Ctrl + botão direito ataca o monstro mais perto.
 window.ValdoraPointer = (() => {
   "use strict";
   function create(api) {
     const { canvas, cam, TILE, W, H, closeDlg, pick, log, goTo, adjRect, clickFx, setTarget, walkable, inside } = api;
     const $ = (id) => document.getElementById(id);
     const st = { mouse: null, hover: null, attack: false };
-    // rodada 105: segurando Ctrl entra no modo de ataque: o clique golpeia o monstro mais perto do ponto clicado (não precisa
-    // acertar o monstro em si). Sem monstro por perto do ponto, anda até lá como um clique comum.
+    // rodada 105: segurando Ctrl entra no modo de ataque (mira): Ctrl + botão DIREITO golpeia o monstro mais perto do ponto
+    // clicado (não precisa acertar o monstro em si). Ctrl + botão esquerdo é um clique comum.
     const setAttack = (on) => { st.attack = !!on; };
     window.addEventListener("keydown", (e) => { if (e.key === "Control") setAttack(true); });
     window.addEventListener("keyup", (e) => { if (e.key === "Control") setAttack(false); });
@@ -18,21 +18,21 @@ window.ValdoraPointer = (() => {
       closeDlg(); api.player().job = null; setTarget({ kind: "mob", ref: m }); clickFx(m.px + 0.5, m.py + 0.6, "#ff5a4a");
       return true;
     }
-    canvas.addEventListener("contextmenu", (e) => { // no Mac, Ctrl+clique chega como clique direito
-      if (!e.ctrlKey || !api.running() || api.player().deadT > 0) return;
-      e.preventDefault(); attackClick(e);
+    canvas.addEventListener("contextmenu", (e) => { // Ctrl + botão direito: ataca o monstro mais perto do ponto
+      if (!e.ctrlKey || !api.running()) return;
+      e.preventDefault(); if (!(api.player().deadT > 0)) attackClick(e);
     });
     canvas.addEventListener("mousemove", (e) => { st.mouse = { x: e.clientX / api.zoom(), y: e.clientY / api.zoom() }; });
     canvas.addEventListener("mouseleave", () => { st.mouse = null; st.hover = null; });
     // ---------- Segurar para andar: toque (celular) ou botão esquerdo do mouse ----------
     // tocar/clicar = interagir; segurar (mais de 0,26 s) = andar seguindo o dedo/cursor; ao soltar, vai até o ponto onde soltou.
-    // rodada 105: o mouse também (só quando o botão desce no chão, sem Ctrl; em monstro/objeto o clique continua sendo clique).
+    // rodada 105: o mouse também (só quando o botão esquerdo desce no chão; em monstro/objeto o clique continua sendo clique).
     let touch = null, suppressClick = false;
     const at = (e) => ({ x: e.clientX / api.zoom(), y: e.clientY / api.zoom() });
     canvas.addEventListener("pointerdown", (e) => {
       if (!api.running()) return;
       if (e.pointerType === "touch") { touch = { ...at(e), t0: performance.now(), hold: false, last: 0, mouse: false }; return; }
-      if (e.button !== 0 || e.ctrlKey || st.attack) return;
+      if (e.button !== 0) return;
       const p = at(e), k = pick(p.x, p.y);
       if (k && k.kind === "tile") touch = { ...p, t0: performance.now(), hold: false, last: 0, mouse: true };
     });
@@ -59,7 +59,6 @@ window.ValdoraPointer = (() => {
       if (!api.running()) return;
       if (suppressClick) { suppressClick = false; return; }
       if (api.player().deadT > 0) return;
-      if ((e.ctrlKey || st.attack) && attackClick(e)) return;
       closeDlg(); api.player().job = null;
       const p = pick(e.clientX / api.zoom(), e.clientY / api.zoom()); if (!p) return;
       if (p.kind === "sign") { log(`Placa: ${p.ref.label}`, "dim"); return; }

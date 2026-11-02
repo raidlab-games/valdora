@@ -35,8 +35,8 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   esquerda num arco para a direita (saltava de costas); agora espelha o peixe e o nariz segue a tangente do arco, como o `fish_jump`.
 - **Publicação:** `tools/publicar.ps1` põe `?v=<data>` nos scripts e no estilo das páginas, para o navegador não misturar versões.
 - **Fogo:** fogueira, braseiro e tocha deixam pedras, lenha e ferro iguais à arte parada; só a chama e as fagulhas mudam (`fire_only`).
-- **Ctrl + clique (modo de ataque):** segurando Ctrl o cursor vira mira e o monstro mais perto do ponto (até 4 tiles) ganha contorno
-  vermelho; o clique ataca esse monstro (`nearestMob`). No Mac, Ctrl+clique chega como clique direito e também vale.
+- **Ctrl + botão direito (modo de ataque):** segurando Ctrl o cursor vira mira e o monstro mais perto do ponto (até 4 tiles) ganha
+  contorno vermelho; Ctrl + botão direito ataca esse monstro (`nearestMob`). Ctrl + botão esquerdo é um clique comum.
 - **Luta por clique:** um clique no monstro basta — o herói segue batendo até ele morrer, o herói morrer ou o jogador andar.
   Saiu o "revida sozinho": depois de matar, não puxa outro monstro sem um novo clique.
 - **Itens no chão:** passar por cima já pega (no meio do passo), não só parando no tile.
