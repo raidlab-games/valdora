@@ -3089,8 +3089,8 @@ window.ANIM3D = {
  },
  "mob_golem": {
   "src": "assets/flow/anim3d/mob_golem.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -3139,6 +3139,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -3148,8 +3149,8 @@ window.ANIM3D = {
  },
  "mob_boss_golem": {
   "src": "assets/flow/anim3d/mob_boss_golem.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -3192,6 +3193,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -3253,8 +3255,8 @@ window.ANIM3D = {
  },
  "mob_lumita_colossus": {
   "src": "assets/flow/anim3d/mob_lumita_colossus.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -3297,6 +3299,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -5187,8 +5190,8 @@ window.ANIM3D = {
  },
  "mob_golem@down": {
   "src": "assets/flow/anim3d/mob_golem__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5231,12 +5234,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem@downleft": {
   "src": "assets/flow/anim3d/mob_golem__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5279,12 +5283,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem@upleft": {
   "src": "assets/flow/anim3d/mob_golem__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5327,12 +5332,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem@up": {
   "src": "assets/flow/anim3d/mob_golem__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5375,12 +5381,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_golem@down": {
   "src": "assets/flow/anim3d/mob_boss_golem__down.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -5423,12 +5430,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_golem@downleft": {
   "src": "assets/flow/anim3d/mob_boss_golem__downleft.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -5471,12 +5479,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_golem@upleft": {
   "src": "assets/flow/anim3d/mob_boss_golem__upleft.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -5519,12 +5528,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_golem@up": {
   "src": "assets/flow/anim3d/mob_boss_golem__up.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -5567,7 +5577,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crypt_guardian@down": {
   "src": "assets/flow/anim3d/mob_crypt_guardian__down.png",
@@ -5735,8 +5746,8 @@ window.ANIM3D = {
  },
  "mob_lumita_colossus@down": {
   "src": "assets/flow/anim3d/mob_lumita_colossus__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5779,12 +5790,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_lumita_colossus@downleft": {
   "src": "assets/flow/anim3d/mob_lumita_colossus__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5827,12 +5839,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_lumita_colossus@upleft": {
   "src": "assets/flow/anim3d/mob_lumita_colossus__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5875,12 +5888,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_lumita_colossus@up": {
   "src": "assets/flow/anim3d/mob_lumita_colossus__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5923,7 +5937,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf_moon@down": {
   "src": "assets/flow/anim3d/mob_wolf_moon__down.png",
@@ -13992,8 +14007,8 @@ window.ANIM3D = {
  },
  "mob_ent": {
   "src": "assets/flow/anim3d/mob_ent.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14036,6 +14051,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -14045,8 +14061,8 @@ window.ANIM3D = {
  },
  "mob_ent@down": {
   "src": "assets/flow/anim3d/mob_ent__down.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14089,12 +14105,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ent@downleft": {
   "src": "assets/flow/anim3d/mob_ent__downleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14137,12 +14154,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ent@upleft": {
   "src": "assets/flow/anim3d/mob_ent__upleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14185,12 +14203,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ent@up": {
   "src": "assets/flow/anim3d/mob_ent__up.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14233,7 +14252,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf_night": {
   "src": "assets/flow/anim3d/mob_wolf_night.png",
@@ -15544,8 +15564,8 @@ window.ANIM3D = {
  },
  "mob_golem_granite": {
   "src": "assets/flow/anim3d/mob_golem_granite.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -15588,6 +15608,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -15597,8 +15618,8 @@ window.ANIM3D = {
  },
  "mob_golem_granite@down": {
   "src": "assets/flow/anim3d/mob_golem_granite__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -15641,12 +15662,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_granite@downleft": {
   "src": "assets/flow/anim3d/mob_golem_granite__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -15689,12 +15711,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_granite@upleft": {
   "src": "assets/flow/anim3d/mob_golem_granite__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -15737,12 +15760,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_granite@up": {
   "src": "assets/flow/anim3d/mob_golem_granite__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -15785,7 +15809,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_kobold_bomber": {
   "src": "assets/flow/anim3d/mob_kobold_bomber.png",
@@ -17369,8 +17394,8 @@ window.ANIM3D = {
  },
  "mob_colossus_iron": {
   "src": "assets/flow/anim3d/mob_colossus_iron.png",
-  "cell": 540,
-  "px": 338,
+  "cell": 296,
+  "px": 185,
   "rows": {
    "idle": {
     "row": 0,
@@ -17413,6 +17438,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -17422,8 +17448,8 @@ window.ANIM3D = {
  },
  "mob_colossus_iron@down": {
   "src": "assets/flow/anim3d/mob_colossus_iron__down.png",
-  "cell": 540,
-  "px": 338,
+  "cell": 296,
+  "px": 185,
   "rows": {
    "idle": {
     "row": 0,
@@ -17466,12 +17492,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_colossus_iron@downleft": {
   "src": "assets/flow/anim3d/mob_colossus_iron__downleft.png",
-  "cell": 540,
-  "px": 338,
+  "cell": 296,
+  "px": 185,
   "rows": {
    "idle": {
     "row": 0,
@@ -17514,12 +17541,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_colossus_iron@upleft": {
   "src": "assets/flow/anim3d/mob_colossus_iron__upleft.png",
-  "cell": 540,
-  "px": 338,
+  "cell": 296,
+  "px": 185,
   "rows": {
    "idle": {
     "row": 0,
@@ -17562,12 +17590,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_colossus_iron@up": {
   "src": "assets/flow/anim3d/mob_colossus_iron__up.png",
-  "cell": 540,
-  "px": 338,
+  "cell": 296,
+  "px": 185,
   "rows": {
    "idle": {
     "row": 0,
@@ -17610,12 +17639,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mountain_king": {
   "src": "assets/flow/anim3d/mob_mountain_king.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -17658,6 +17688,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -17667,8 +17698,8 @@ window.ANIM3D = {
  },
  "mob_mountain_king@down": {
   "src": "assets/flow/anim3d/mob_mountain_king__down.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -17711,12 +17742,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mountain_king@downleft": {
   "src": "assets/flow/anim3d/mob_mountain_king__downleft.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -17759,12 +17791,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mountain_king@upleft": {
   "src": "assets/flow/anim3d/mob_mountain_king__upleft.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -17807,12 +17840,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mountain_king@up": {
   "src": "assets/flow/anim3d/mob_mountain_king__up.png",
-  "cell": 692,
-  "px": 432,
+  "cell": 380,
+  "px": 238,
   "rows": {
    "idle": {
     "row": 0,
@@ -17855,7 +17889,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_slime_sand": {
   "src": "assets/flow/anim3d/mob_slime_sand.png",
@@ -19539,8 +19574,8 @@ window.ANIM3D = {
  },
  "mob_golem_sandstone": {
   "src": "assets/flow/anim3d/mob_golem_sandstone.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -19583,6 +19618,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -19592,8 +19628,8 @@ window.ANIM3D = {
  },
  "mob_golem_sandstone@down": {
   "src": "assets/flow/anim3d/mob_golem_sandstone__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -19636,12 +19672,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_sandstone@downleft": {
   "src": "assets/flow/anim3d/mob_golem_sandstone__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -19684,12 +19721,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_sandstone@upleft": {
   "src": "assets/flow/anim3d/mob_golem_sandstone__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -19732,12 +19770,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_sandstone@up": {
   "src": "assets/flow/anim3d/mob_golem_sandstone__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -19780,7 +19819,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_goblin_raider": {
   "src": "assets/flow/anim3d/mob_goblin_raider.png",
@@ -22030,8 +22070,8 @@ window.ANIM3D = {
  },
  "mob_golem_ice": {
   "src": "assets/flow/anim3d/mob_golem_ice.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -22074,6 +22114,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -22083,8 +22124,8 @@ window.ANIM3D = {
  },
  "mob_golem_ice@down": {
   "src": "assets/flow/anim3d/mob_golem_ice__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -22127,12 +22168,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_ice@downleft": {
   "src": "assets/flow/anim3d/mob_golem_ice__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -22175,12 +22217,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_ice@upleft": {
   "src": "assets/flow/anim3d/mob_golem_ice__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -22223,12 +22266,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_ice@up": {
   "src": "assets/flow/anim3d/mob_golem_ice__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -22271,7 +22315,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bear_polar": {
   "src": "assets/flow/anim3d/mob_bear_polar.png",
