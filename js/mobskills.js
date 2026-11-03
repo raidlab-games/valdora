@@ -2,8 +2,9 @@
 // (js/data.js) decide mais do que "andar até o herói e bater". Recargas em segundos (cd); chances de 0 a 1 (p).
 //   leap   { range, cd, cry }        salto com aviso: marca o tile do herói, voa e desce; quem sai do tile escapa
 //   charge { range, cd }             investida: risca a linha até o herói e dispara por ela; quem sai da linha escapa
-//   ranged { range, proj, kite, eff } atira de longe (flecha, pedra, feitiço, teia, cuspe, bomba, bola de neve...): o
-//                                    projétil voa até onde o herói ESTAVA (dá para desviar andando); kite = recua se encostado
+//   ranged { range, proj, kite, eff } atira de longe (flecha, pedra, feitiço, teia, cuspe, bomba, bola de neve...): rodada 136:
+//                                    o projétil é teleguiado (segue o herói e sempre acerta, a não ser que ele entre numa vila
+//                                    antes de o tiro chegar); kite = recua se encostado
 //   summon { type, n, cd, max, cry } chama ajudantes temporários (o tipo vem dos dados), no máximo `max` vivos
 //   heal   { pct, cd, r }            cura o aliado mais ferido por perto (ou a si mesmo)
 //   roar   { r, cd, eff, cry }       rugido/nova em área com aviso no chão: dano leve e o efeito (lento)
@@ -82,27 +83,31 @@ window.ValdoraMobSkills = (() => {
     // ---------- tiro ----------
     function shoot(m, p) {
       const d = m.d, R = d.skills.ranged, st = api.combatStats(); api.faceAt(m, p.x, p.y);
-      const pe = { shot: { tx: p.px, ty: p.py, kind: R.proj || "arrow", eff: R.eff, hit: rand() < api.hitChance(d.atk, st.def), dmg: ri(1, d.maxHit) } };
+      const pe = { shot: { tx: p.px, ty: p.py, kind: R.proj || "arrow", eff: R.eff, hit: true, dmg: ri(1, d.maxHit) } }; // rodada 136: teleguiado, sempre acerta
       if (api.hasRow(m, "attack")) { m.an = { s: "attack", t: 0, still: 0 }; m.pending = pe; } else fire(m, pe);
       m.atkT = d.speed;
     }
     function fire(m, pe) { // quadro de impacto da folha de ataque: o projétil sai da mão
       const s = pe.shot, P = PROJ[s.kind] || PROJ.arrow, sx = m.px + 0.5 + (m.face || 0) * 0.3, sy = m.py - 0.55;
       const dist = Math.hypot(s.tx + 0.5 - sx, s.ty + 0.3 - sy);
-      shots.push({ x: sx, y: sy, x0: sx, y0: sy, tx: s.tx + 0.5, ty: s.ty + 0.3, t: 0, T: Math.max(0.15, dist / P.sp), kind: s.kind, m, hit: s.hit, dmg: s.dmg, eff: s.eff });
+      shots.push({ x: sx, y: sy, x0: sx, y0: sy, tx: s.tx + 0.5, ty: s.ty + 0.3, t: 0, T: Math.max(0.15, dist / P.sp), kind: s.kind, m, hit: s.hit, dmg: s.dmg, eff: s.eff, sp: P.sp, life: 0 });
       api.SND.play(s.kind === "arrow" || s.kind === "javelin" ? "bow" : "swing");
     }
     function update(dt) {
       const p = api.player();
       for (let i = shots.length - 1; i >= 0; i--) {
-        const s = shots[i]; s.t += dt; const k = Math.min(1, s.t / s.T), P = PROJ[s.kind] || PROJ.arrow;
-        s.x = s.x0 + (s.tx - s.x0) * k; s.y = s.y0 + (s.ty - s.y0) * k - (P.arc ? Math.sin(Math.PI * k) * P.arc : 0);
-        if (k < 1) continue;
+        // rodada 136: teleguiado. O alvo acompanha o herói a cada quadro e o tiro voa direto para ele (o arco das bombas e bolas
+        // de neve fica por cima); só some se o herói entrar numa vila (ou cair) antes de o tiro chegar.
+        const s = shots[i], P = PROJ[s.kind] || PROJ.arrow; s.life += dt;
+        if (p.deadT > 0 || (api.inTown && api.inTown(p.x, p.y)) || s.life > 8) { shots.splice(i, 1); api.puff(s.x, s.y, P.c); continue; }
+        s.tx = p.px + 0.5; s.ty = p.py + 0.3;
+        const gx = s.gx ?? s.x0, gy = s.gy ?? s.y0, dx = s.tx - gx, dy = s.ty - gy, L = Math.hypot(dx, dy), step = (s.sp || P.sp) * dt;
+        s.gx = L <= step ? s.tx : gx + dx / L * step; s.gy = L <= step ? s.ty : gy + dy / L * step;
+        s.t = Math.min(s.T, s.t + dt); const k = Math.min(1, s.t / s.T);
+        s.x = s.gx; s.y = s.gy - (P.arc ? Math.sin(Math.PI * k) * P.arc * Math.min(1, L) : 0);
+        if (L > step) continue;
         shots.splice(i, 1);
-        if (P.fuse) { blasts.push({ x: Math.floor(s.tx), y: Math.floor(s.ty), t: 0, T: 0.8, m: s.m, dmg: Math.ceil(s.dmg * 1.6), r: 1 }); continue; } // bomba: cai e explode depois
-        const hitP = Math.hypot(p.px + 0.5 - s.tx, p.py + 0.3 - s.ty) < 0.62 && p.deadT <= 0;
-        if (!hitP) { api.puff(s.tx, s.ty, P.c); continue; }
-        if (!s.hit) { api.addFloat(p.px + 0.5, p.py - 0.4, "errou", "#c8c8d0", 0.8, 12); continue; }
+        if (P.fuse) { api.boom(s.tx, s.ty); api.hurtPlayer(s.m, Math.ceil(s.dmg * 1.6), { heavy: true, color: "#ff9040" }); continue; } // bomba: explode no herói
         api.hurtPlayer(s.m, s.dmg, { color: P.c }); applyEff(s.m, s.eff);
       }
       for (let i = blasts.length - 1; i >= 0; i--) { // bomba no chão: pisca e explode
@@ -117,7 +122,7 @@ window.ValdoraMobSkills = (() => {
         const P = PROJ[s.kind] || PROJ.arrow, x = s.x * TILE - cam.x, y = s.y * TILE - cam.y;
         if (P.glow) { ctx.globalAlpha = 0.35; ctx.fillStyle = P.c; ctx.beginPath(); ctx.arc(x, y, TILE * (P.r || 0.15) * 2.2, 0, 6.29); ctx.fill(); ctx.globalAlpha = 1; }
         if (P.len) { // dardo: haste na direção do voo e ponta
-          const a = Math.atan2(s.ty - s.y0, s.tx - s.x0), L = P.len * TILE, cx = Math.cos(a), cy = Math.sin(a);
+          const a = Math.atan2(s.ty - s.y, s.tx - s.x), L = P.len * TILE, cx = Math.cos(a), cy = Math.sin(a);
           ctx.strokeStyle = "#1a1418"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - cx * L, y - cy * L); ctx.lineTo(x, y); ctx.stroke();
           ctx.strokeStyle = P.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - cx * L, y - cy * L); ctx.lineTo(x, y); ctx.stroke();
           ctx.fillStyle = P.tip || P.c; ctx.fillRect(Math.round(x - 2), Math.round(y - 2), 4, 4);

@@ -3130,7 +3130,10 @@
         if ((m.respawnT -= dt) <= 0) respawnMob(m); continue;
       }
       if (m.appear != null && (m.appear += dt) >= APPEAR) m.appear = null; // eco surgindo da névoa
-      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.fly ? 0.22 : m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) / (m.fly ? 1 : m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; if (m.prog >= 1) m.fly = false; } // rodada 105: passo diagonal mais longo; 133: voo do salto
+      // rodada 136: quem luta corpo a corpo corre atrás do herói (quase a velocidade dele: magos e arqueiros não ficam mais
+      // batendo de longe sem nunca serem alcançados); quem atira de longe anda no passo normal
+      const mstep = m.fly ? 0.22 : (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) * (m.sprint ? 0.64 : 1);
+      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / mstep / (m.fly ? 1 : m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; if (m.prog >= 1) m.fly = false; } // rodada 105: passo diagonal mais longo; 133: voo do salto
       if (m.aggro && m.prog >= 1 && activeMob(m)) MOBAI.chase(m); // rodada 113: emenda o passo / golpeia sem esperar o tick
       // slime: agacha, salta e aterrissa; os outros andam com easing (perseguindo, em ritmo constante)
       const k = m.d.squish ? (m.prog < 0.2 ? 0 : m.prog > 0.8 ? 1 : ease.inOutSine((m.prog - 0.2) / 0.6)) : m.aggro ? m.prog : ease.inOutSine(m.prog);
@@ -3175,7 +3178,7 @@
     if (tickN % 10 === 0) AUCTION.tick(); // rodada 114/116: lotes que terminaram (e o relógio da janela do mercado)
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MSKILL = ValdoraMobSkills.create({ rand, ri, TICK, player: () => player, mobs: () => mobs, mobCan: (m, x, y) => MOBAI.mobCan(m, x, y), mobAt: (x, y) => mobAt(x, y),
+  const MSKILL = ValdoraMobSkills.create({ inTown: (x, y) => inTown(x, y), rand, ri, TICK, player: () => player, mobs: () => mobs, mobCan: (m, x, y) => MOBAI.mobCan(m, x, y), mobAt: (x, y) => mobAt(x, y),
     mobStepToward: (m, x, y) => MOBAI.mobStepToward(m, x, y), faceAt: (m, x, y) => MOBAI.faceAt(m, x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m),
     hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d) => hitChance(a, d),
     SND, addFloat: (...a) => addFloat(...a), log: (...a) => log(...a), applyMobHit: (m, pe) => applyMobHit(m, pe), mark: (x, y, r) => fx.mark(x, y, r),

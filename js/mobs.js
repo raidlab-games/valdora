@@ -76,6 +76,7 @@ window.ValdoraMobs = (() => {
     // no mesmo quadro em que fica ao lado do herói (o tempo entre golpes continua o mesmo).
     function chase(m) {
       const player = api.player(), d = m.d;
+      m.sprint = !!(m.aggro && !m.dead && !(d.skills && d.skills.ranged) && !adjacent(m, player)); // rodada 136: corre atrás do herói
       if (!m.aggro || m.dead || m.prog < 1 || m.stun > 0 || m.windup > 0 || m.appear != null || m.sleeping || m.stuck || player.deadT > 0) return; // preso: o tick resolve
       if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage" || m.an.s === "special")) return;
       if (api.petFoe && api.petFoe(m, Math.abs(m.x - player.x) + Math.abs(m.y - player.y))) return; // brigando com o filhote: fica com o tick
@@ -102,11 +103,31 @@ window.ValdoraMobs = (() => {
       faceAt(m, x, y);
       m.fx = m.x; m.fy = m.y; m.x = x; m.y = y; m.prog = 0; if (api.reindex) api.reindex(m); return true;
     }
+    // rodada 136: primeiro passo do caminho mais curto até perto do alvo (busca em largura de até 600 tiles, raio 12):
+    // o monstro contorna pedra, árvore e cerca em vez de ficar empacado do outro lado
+    function pathStep(m, tx, ty) {
+      const key = (x, y) => (y << 12) | x, seen = new Map([[key(m.x, m.y), null]]), q = [[m.x, m.y]];
+      for (let h = 0; h < q.length && q.length < 600; h++) {
+        const [x, y] = q[h];
+        if (Math.max(Math.abs(x - tx), Math.abs(y - ty)) <= 1 && (x !== m.x || y !== m.y)) {
+          let c = [x, y], prev = seen.get(key(x, y));
+          while (prev && (prev[0] !== m.x || prev[1] !== m.y)) { c = prev; prev = seen.get(key(c[0], c[1])); }
+          return c;
+        }
+        for (const [ax, ay] of DIRS8V) {
+          const nx = x + ax, ny = y + ay, kk = key(nx, ny);
+          if (seen.has(kk) || Math.abs(nx - m.x) > 12 || Math.abs(ny - m.y) > 12 || !mobCan(m, nx, ny) || (ax && ay && !canStep(x, y, nx, ny))) continue;
+          seen.set(kk, [x, y]); q.push([nx, ny]);
+        }
+      }
+      return null;
+    }
     function mobStepToward(m, tx, ty) {
       const dx = Math.sign(tx - m.x), dy = Math.sign(ty - m.y);
       const first = Math.abs(tx - m.x) >= Math.abs(ty - m.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
       if (dx && dy) first.unshift([dx, dy]); // rodada 105: vai direto na diagonal quando dá
       for (const [ax, ay] of first) if ((ax || ay) && mobMove(m, m.x + ax, m.y + ay)) { m.stuck = 0; return; }
+      if (m.aggro) { const st = pathStep(m, tx, ty); if (st && mobMove(m, st[0], st[1])) { m.stuck = 0; return; } } // rodada 136: dá a volta
       // rodada 45: preso na diagonal (os dois tiles do meio bloqueados): tenta um passo de lado; depois de ~5 s desiste e volta para casa
       m.stuck = (m.stuck || 0) + 1;
       if (m.stuck >= 3) { const side = dx && dy ? [[-dx, 0], [0, -dy]] : dx ? [[0, 1], [0, -1]] : [[1, 0], [-1, 0]]; for (const [ax, ay] of side.sort(() => rand() - 0.5)) if (mobMove(m, m.x + ax, m.y + ay)) return; }
