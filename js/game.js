@@ -206,10 +206,10 @@
         const x = npc.dummy.x + dx, y = npc.dummy.y + dy;
         if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water" && map[y][x] !== "path") { npc.post = deco("sign", "deco_training_post", x, y, 1, 1, { label: "Treino: golpeie o boneco e saia da área vermelha antes do revide." }); break; }
       }
-    deco("fire", "campfire", 48, 49);
+    deco("fire", "campfire", 46, 50); // rodada 121: à esquerda do varal e abaixo do Tomé (antes ficava atrás dos dois)
     if (SPR.deco_meat_rack) for (const [x, y] of [[49, 50], [50, 49], [47, 50]]) // rodada 31: varal de carne (onde se faz o espetinho); deixa livres os lados do fogo
       if (!occ[y * W + x] && map[y][x] !== "path" && map[y][x] !== "water") { npc.rack = deco("rack", "deco_meat_rack", x, y, 1, 1); break; }
-    if (SPR.deco_campfire_log) for (const [x, y] of [[48, 50], [47, 50]]) // rodada 32: tronco-banco abaixo do fogo
+    if (SPR.deco_campfire_log) for (const [x, y] of [[47, 50], [46, 51]]) // rodada 32: tronco-banco ao lado do fogo
       if (!occ[y * W + x] && map[y][x] !== "path" && map[y][x] !== "water") { npc.log = deco("bench", "deco_campfire_log", x, y, 1, 1); break; }
     npc.bard = deco("bard", "npc_bard", 47, 48, 1, 1, { name: "Tomé" });
     if (SPR.deco_shrine_offering) { // rodada 49: santuário 2x1 na praça, com a linha de cima livre (a arte tem 2 de altura) e a frente andável

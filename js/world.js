@@ -227,9 +227,9 @@ window.ValdoraWorld = (() => {
   const DOCK_NAMES = { 1: [["Porto de Lumeira", "Mestre Anselmo"], ["Cais da Ponta Oeste", "Marujo Faustino"]], 2: [["Cais do Breu", "Barqueira Iolanda"], ["Cais da Névoa", "Velho Teodoro"]],
     3: [["Porto da Escarpa", "Contramestre Bruno"], ["Cais do Norte", "Pescadora Rute"]], 4: [["Porto do Sal", "Capitã Yara"], ["Cais das Dunas", "Marujo Kadu"]],
     5: [["Porto do Degelo", "Mestre Haldor"], ["Cais da Aurora", "Pescadora Sigrid"]] };
-  function dockSpots(b) {
+  function dockSpots(b, st = 2) {
     const out = [], sea = (x, y) => x >= 0 && y >= 0 && x < CW && y < CH && !BIOME[y * CW + x];
-    for (let y = 8; y < CH - 8; y += 2) for (let x = 8; x < CW - 8; x += 2) {
+    for (let y = 8; y < CH - 8; y += st) for (let x = 8; x < CW - 8; x += st) {
       if (BIOME[y * CW + x] !== b || !MAIN[y * CW + x] || inOld(x, y) || VILLAGES.some((v) => x > v.x0 - 14 && x < v.x1 + 14 && y > v.y0 - 14 && y < v.y1 + 14)) continue;
       for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
         if (!sea(x + dx, y + dy)) continue;
@@ -241,12 +241,18 @@ window.ValdoraWorld = (() => {
     }
     return out;
   }
+  // rodada 121: no litoral sul, Breu, Névoa e Dunas ficavam colados; o segundo cais da Mata Sombria vai para o meio da costa dela
+  // e o do deserto para a ponta leste da costa sul (o ponto válido mais perto do alvo, varrendo tile a tile)
+  const DOCK_AT = { 2: [304, 492], 4: [516, 464] };
   const DOCKS = [], SPOTS = {};
   for (const B of BIOMES) {
     const c = SPOTS[B.n] = dockSpots(B.n); if (!c.length) continue;
     const v = VILLAGES.find((V) => V.biome === B.n), vx = (v.x0 + v.x1) / 2, vy = (v.y0 + v.y1) / 2;
     const a = c.reduce((p, q) => (Math.hypot(q.x - vx, q.y - vy) < Math.hypot(p.x - vx, p.y - vy) ? q : p));
-    const far = c.filter((q) => Math.hypot(q.x - a.x, q.y - a.y) > 36), z = far.length ? far.reduce((p, q) => (Math.hypot(q.x - a.x, q.y - a.y) > Math.hypot(p.x - a.x, p.y - a.y) ? q : p)) : null;
+    const far = c.filter((q) => Math.hypot(q.x - a.x, q.y - a.y) > 36);
+    let z = far.length ? far.reduce((p, q) => (Math.hypot(q.x - a.x, q.y - a.y) > Math.hypot(p.x - a.x, p.y - a.y) ? q : p)) : null;
+    const T = DOCK_AT[B.n], fine = T ? dockSpots(B.n, 1) : [];
+    if (fine.length) z = fine.reduce((p, q) => (Math.hypot(q.x - T[0], q.y - T[1]) < Math.hypot(p.x - T[0], p.y - T[1]) ? q : p));
     for (const [i, d] of [a, z].entries()) if (d) DOCKS.push({ ...d, biome: B.n, key: "dock_" + B.key + i, name: DOCK_NAMES[B.n][i][0], keeper: DOCK_NAMES[B.n][i][1], len: DOCK_LEN });
   }
   const EXTRA_DOCK = [["Cais do Farol", "Faroleiro Benedito"], ["Cais da Enseada", "Pescador Jonas"], ["Cais Velho", "Marujo Tibério"]];

@@ -20,6 +20,13 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 121 (v1.20) — cais do sul espaçados, fogueira do Tomé
+- Breu, Névoa e Dunas ficavam a 54 e 88 tiles um do outro no litoral sul. `DOCK_AT` em world.js escolhe o segundo cais da Mata
+  Sombria e o do deserto pelo ponto válido mais perto de um alvo (varredura tile a tile): Névoa 262 → 301, Dunas 350 → 516
+  (ponta leste da costa sul do deserto). Os outros 8 cais não mudaram; saves parados num píer antigo voltam à praça (tile não andável).
+- Fogueira de Lumeira (48,49) → (46,50): o varal de 2 tiles e o Tomé cobriam o fogo. Tronco-banco ao lado dela (47,50); o Tomé
+  continua sentando nele.
+
 ## Rodada 120 (v1.19) — mapa maior, mar em volta, cais e espécies novas
 - **Biomas 50% maiores:** o desenho do continente cresce 22% em cada lado (miolo de 634 x 488 tiles); o mapa todo tem 700 x 548.
 - **Mar nos 4 lados:** margem de mar a oeste e ao sul (antes a terra saía do mapa), litoral recortado e pontas de terra que entram no
