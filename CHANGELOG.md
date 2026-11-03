@@ -20,6 +20,17 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 130 (v1.29) — passo de meio bloco
+- O herói anda numa grade de **meio tile** (`player.gx/gy` = 2 × a posição; ímpar = entre dois tiles). Cada toque anda meio
+  tile; segurando, a velocidade é a mesma (o passo dura 0,12 s; `KEY_REPEAT` 0,12). Entre dois tiles o herói ocupa os dois, que
+  precisam estar livres; diagonal sem cortar quina. Troca de direção no meio do passo como antes.
+- O mundo continua em tiles (mapa, objetos, monstros, caminhos). Caminhos em tiles são seguidos em meios passos; o clique no chão
+  termina no meio tile clicado (`fineTo`); antes de falar, coletar ou forjar, o herói vai para o meio do tile.
+- `player.x/y` segue sendo o tile do herói (o último em que entrou); teleporte, investida, morte e carregar o jogo voltam o
+  herói ao meio do tile (`syncG`). Monstros não entram em nenhum dos tiles que o herói ocupa. Som de passo 1 vez por tile.
+- Conferido: toque = meio tile; 3× A e W = 1,5 à esquerda e 0,5 acima; segurar 1 s = 4 tiles; diagonal; volta no meio do
+  passo; clique fino; falar com o Ivo, cortar árvore e lutar a partir de um meio tile.
+
 ## Rodada 129 (v1.28) — poço e Pedra da vila maiores, vasos colados
 - **Poço:** um por cidade (Lumeira fica com o do Ivo; o da forja saiu), arte com o dobro do tamanho (3,2 tiles) e base de 2 x 1.
   `bigSpot` acha o lugar livre mais perto com espaço para o telhado e sem ficar na frente de baú, NPC ou placa.
