@@ -684,6 +684,7 @@
   function glueVase(v, host) {
     const [hl, hr] = footSpan(host.spr), [vl, vr] = footSpan(v.spr), hc = host.x + host.w / 2 + (host.ox || 0), touch = 1 / TILE;
     const c = v.x < host.x ? hc + hl - vr + touch : hc + hr - vl - touch; v.ox = c - (v.x + 0.5);
+    v.solid = false; // rodada 131: o vaso vive encostado no vizinho (que já bloqueia): o tile dele fica livre para passar
   }
   const PILES = new Set(["deco_crates", "deco_crates_green", "deco_crates_orange", "deco_barrel_stack", "deco_sacks", "deco_barrel_pile", "deco_cargo_pile", "deco_sack_pile"]);
   function placeVases(deco, x0, y0, x1, y1) {

@@ -20,6 +20,12 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 131 (v1.30) — vasos sem parede invisível
+- O vaso é desenhado colado no vizinho (rodada 129), mas o tile dele seguia bloqueado: virava parede invisível ao lado de postes e
+  pilhas. Agora o vaso colado não bloqueia (`glueVase` → `solid = false`); os 36 tiles de vaso ficaram livres.
+- Varredura de todos os objetos sólidos (desenho na faixa de baixo de cada tile ocupado): fora os vasos, só o quadro de caçadas e
+  o varal de carne (pernas finas) e o terreno vazio da casa (cercado por corda) têm pouco desenho no chão; ficam como estão.
+
 ## Rodada 130 (v1.29) — passo de meio bloco
 - O herói anda numa grade de **meio tile** (`player.gx/gy` = 2 × a posição; ímpar = entre dois tiles). Cada toque anda meio
   tile; segurando, a velocidade é a mesma (o passo dura 0,12 s; `KEY_REPEAT` 0,12). Entre dois tiles o herói ocupa os dois, que
