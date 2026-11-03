@@ -6,7 +6,7 @@
   let W = ValdoraWorld.W, H = ValdoraWorld.H; const TILE = 48; // rodada 105: continente (o quadro antigo é 96 x 72)
   const TICK = 0.5;        // pulso do jogo (s): ações, combate e IA acontecem em ticks
   const STEP = 0.24;       // tempo para andar 1 tile (s)
-  const KEY_REPEAT = 0.45; // rodada 114: segurando W/A/S/D, o 2º passo só sai depois disto (um toque rápido anda 1 tile)
+  const KEY_REPEAT = 0.17; // rodada 114: segurando W/A/S/D, o 2º passo só sai depois disto (um toque rápido anda 1 tile); rodada 125: 0,45 → 0,17 (menos que um passo: segurando, anda sem pausa)
   let keyHoldT = 0, keySteps = 0;
   const MOB_STEP = 0.42;
   const SLOTS = 20, BANK_SLOTS = 48, SAVE_KEY = "valdora.save.v2";
@@ -2865,37 +2865,32 @@
     const wasMoving = !player.dash && player.prog < 1;
     if (player.turnT > 0) player.turnT -= dt;
     let rate = 1;
-    // rodada 117: meio passo. Um toque em W/A/S/D anda meio tile e o herói para no meio dele; o próximo toque na mesma direção
-    // termina o tile. Rodada 119: qualquer outra direção sai do meio do tile direto para o vizinho daquele lado (antes ela só
-    // terminava o passo antigo e o toque se perdia: 3× A e 1× W andava 4 para a esquerda); clique ou alvo terminam o passo.
-    if (player.halfStop) {
-      const hk = INPUT.keyVec(), kv = taps[0] || (hk && keySteps === 0 ? hk : null), k0 = player.kdir || [player.x - player.fx, player.y - player.fy];
-      if (kv) {
-        if (kv === taps[0]) taps.shift(); else keySteps = 1;
-        const tx = player.x + kv[0], ty = player.y + kv[1];
-        if (kv[0] === k0[0] && kv[1] === k0[1]) player.halfStop = false; // mesma direção: termina o tile
-        else if (canStep(player.x, player.y, tx, ty)) {
-          if (player.act && player.act.key !== "rod") cancelAct();
-          player.fx = player.px; player.fy = player.py; player.x = tx; player.y = ty; player.prog = 0; player.kdir = kv;
-          player.stepLen = Math.hypot(tx - player.fx, ty - player.fy); player.dir = window.DIR_AT(kv[0], kv[1]) || player.dir;
-          player.halfStop = false; SND.play("step");
-        } else { player.dir = window.DIR_AT(kv[0], kv[1]) || player.dir; thorns(tx, ty); } // bloqueado: só vira para lá
-      } else if (player.path.length || player.target || player.goal || player.deadT > 0) player.halfStop = false;
+    // rodada 125: sem meio passo (cada toque anda 1 tile inteiro e para no centro dele) e troca de direção sem esperar o tile
+    // acabar: a tecla oposta volta na hora para o tile de onde o herói saiu; outra direção logo no começo do passo (até 20%)
+    // já sai do tile de origem para o lado novo. Depois disso a troca entra no fim do tile, sem pausa. Toques na fila (3× A e
+    // 1× W) não desviam o passo: andam um tile cada, na ordem
+    if (wasMoving && player.kstep && Number.isInteger(player.fx) && Number.isInteger(player.fy)) {
+      const hk = INPUT.keyVec(), kv = hk && keySteps === 0 && !taps.length ? hk : null, k0 = player.kdir; // só a tecla apertada agora (toques na fila seguem em ordem)
+      if (kv && k0 && (kv[0] !== k0[0] || kv[1] !== k0[1])) {
+        const use = () => { keySteps = 1; player.kdir = kv; player.dir = window.DIR_AT(kv[0], kv[1]) || player.dir; };
+        if (kv[0] === -k0[0] && kv[1] === -k0[1] && walkable(player.fx, player.fy)) {
+          [player.x, player.fx] = [player.fx, player.x]; [player.y, player.fy] = [player.fy, player.y]; player.prog = 1 - player.prog; use();
+        } else if (player.prog < 0.2) { const tx = player.fx + kv[0], ty = player.fy + kv[1];
+          if (canStep(player.fx, player.fy, tx, ty)) { player.fx = player.px; player.fy = player.py; player.x = tx; player.y = ty; player.prog = 0;
+            player.stepLen = Math.hypot(tx - player.fx, ty - player.fy); use(); } }
+      }
     }
-    if (wasMoving && !player.halfStop) {
-      const before = player.prog;
+    if (wasMoving) {
       player.moveT += dt;
-      if (player.moveT < 0.14) rate = 0.62 + 0.38 * ease.outQuad(player.moveT / 0.14);
-      if (!player.path.length && !keyDir()) rate *= 1 - 0.42 * player.prog; // último passo: desacelera
+      if (player.moveT < 0.14) rate = 0.82 + 0.18 * ease.outQuad(player.moveT / 0.14); // rodada 125: arrancada mais firme (era 0,62)
+      if (!player.path.length && !keyDir()) rate *= 1 - 0.2 * player.prog; // último passo: desacelera de leve (era 0,42: parecia escorregar)
       rate *= loadRate(); // rodada 112: peso
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
-      // toque: para no meio (só passos inteiros; segurando a mesma tecla sem toques na fila ele segue andando)
-      if (player.kstep && (player.stepLen || 1) > 0.9 && before < 0.5 && player.prog >= 0.5 && !(INPUT.keyVec() && keySteps >= 1 && !taps.length)) { player.prog = 0.5; player.halfStop = true; }
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
       const over = wasMoving ? player.prog - 1 : 0;
       const nd = !wasMoving && nextDir();
-      if (nd && nd !== player.dir) { player.dir = nd; player.turnT = 0.07; dustAtFeet(2); player.prog = 1; } // vira antes de andar
+      if (nd && nd !== player.dir && !keyDir()) { player.dir = nd; player.turnT = 0.07; dustAtFeet(2); player.prog = 1; } // vira antes de andar (rodada 125: pelo teclado vira e anda junto)
       else if (nextStep()) {
         if (player.act && player.act.key !== "rod") cancelAct(); // andar cancela a preparação (ou a finalização) do golpe
         if (!wasMoving) { player.moveT = 0; dustAtFeet(4); }

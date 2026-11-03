@@ -20,6 +20,15 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 125 (v1.24) — movimento mais fluido, peças novas no tile certo
+- Saiu o meio passo (r117): o toque anda 1 tile inteiro; a troca de lado a partir do meio do tile deslizava na diagonal.
+- KEY_REPEAT 0,45 → 0,17 s (menos que um passo de 0,24 s): segurando, anda sem pausa; um toque rápido segue andando 1 tile.
+- Tecla segurada no meio do passo: a oposta volta na hora para o tile de origem; outra direção até 20% do passo já sai para o
+  lado novo. Toques na fila não desviam o passo (3× A e 1× W = 3 à esquerda e 1 acima).
+- Pelo teclado não há mais os 0,07 s de giro parado; arrancada a 82% (era 62%) e frenagem do último passo 20% (era 42%).
+- Afundamento das peças da r123 pela regra da r111 ((chão abaixo do pé − 0,1) / tamanho): musgo-de-rocha e a pedra raspada 0,433,
+  pote 0,417, poste de trilha 0,208 (estavam meio tile acima do próprio tile); luz da lamparina acompanha.
+
 ## Rodada 124 (v1.23) — pegada real dos objetos, área de treino, praça mais viva
 - `OPEN_CELLS` + `blockAt`: o retângulo do objeto continua reservado, mas tiles sem arte no chão não bloqueiam. Casas (quina para
   a frente): cantos de baixo com 12–15% de arte na metade de baixo → livres (menos atrás dos balcões da Celeste e da Morgana);

@@ -346,9 +346,10 @@ window.SPRITE_SINK = { boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457,
 // baixa (e ela raspada depois da colheita), poste de trilha com lamparina e pote de barro
 SPRITE_SIZE.deco_board = [2.4, 2.4]; // rodada 124: quadro de caçadas 50% maior (agora com 2 tiles de base)
 ASSETS.deco_barrel_stack = "assets/flow/deco_barrel_stack.png"; SPRITE_SIZE.deco_barrel_stack = [1.6, 1.6]; // rodada 124: 3 barris empilhados (do barrel.png)
-for (const [k, s, sink] of [["boulder_moss", 2.3, 0.457], ["boulder_grass", 2.3, 0.457], ["rockmoss_bare", 1.5, 0.167], ["deco_trail_lamp", 2.4, 0.042], ["deco_clay_pot", 1.2, 0.083]]) {
+// rodada 125: afundamento = (chão abaixo do pé - 0,1) / tamanho, como os minérios: o pé fica rente à borda de baixo do tile
+for (const [k, s, sink] of [["boulder_moss", 2.3, 0.457], ["boulder_grass", 2.3, 0.457], ["rockmoss_bare", 1.5, 0.433], ["deco_trail_lamp", 2.4, 0.208], ["deco_clay_pot", 1.2, 0.417]]) {
   ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s]; window.SPRITE_SINK[k] = sink; }
-window.SPRITE_SINK.res_rockmoss = 0.167;
+window.SPRITE_SINK.res_rockmoss = 0.433;
 // rodada 110: minérios do Blender (rocha que sai do chão com o minério à mostra), 1,7 tile
 for (const k of ["rock", "rock_iron", "rock_mithril", "rock_sun", "rock_lumita", "rock_amethyst", "rock_adamant", "rock_ruby", "rock_frost", "rock_starice", "rock_obsidian"]) { SPRITE_SIZE[k] = [1.7, 1.7]; window.SPRITE_SINK[k] = 0.411; }
 // rodada 110: paredão das montanhas renderizado no Blender (8 tiles emendáveis por tema; tools/cliff_faces_pack.py)

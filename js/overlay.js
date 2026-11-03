@@ -123,7 +123,7 @@ window.ValdoraOverlay = (() => {
         else if (o.type === "fire" || o.type === "furnace") add(o.x + 0.5, o.y + 0.4, TILE * (o.brazier ? 4 : 3.6), "rgba(255,150,60,A)", true);
         else if (o.type === "house") { add(o.x + 0.7, o.y + 0.9, TILE * 1.3, "rgba(255,200,110,A)", true); add(o.x + 2.3, o.y + 0.9, TILE * 1.3, "rgba(255,200,110,A)", true); }
         else if (o.spr === "deco_lamppost") add(o.x + 0.78, o.y - 0.72, TILE * 2.8, "rgba(255,196,110,A)", true); // rodada 67: lanterna do poste
-        else if (o.spr === "deco_trail_lamp") add(o.x + 1.06, o.y - 1.15, TILE * 3.2, "rgba(255,186,96,A)", true); // rodada 123: lamparina das trilhas
+        else if (o.spr === "deco_trail_lamp") add(o.x + 1.06, o.y - 0.75, TILE * 3.2, "rgba(255,186,96,A)", true); // rodada 123: lamparina das trilhas
         else if (o.spr === "deco_plateau_cairn") add(o.x + 0.5, o.y - 0.4, TILE * 1.6, "rgba(90,220,255,A)"); // cristal do marco do Planalto
         else if (o.spr === "deco_lumita_marker_lit") add(o.x + 0.5, o.y - 0.75, TILE * 2.2, "rgba(90,220,255,A)"); // rodada 79: marco da campanha aceso
         else if (o.spr === "deco_lumita_heart_lit") add(o.x + 0.5, o.y - 0.5, TILE * 2.6, "rgba(90,220,255,A)"); // rodada 81: Coração de lumita
