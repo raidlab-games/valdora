@@ -1190,17 +1190,44 @@
     hudDirty = true; save();
   }
   // rodada 137: barra de 9 atalhos (teclas 1 a 9): comida, poções e skills, montada na aba Skills
-  const HOT_ACTIONS = () => [{ id: "eat", name: "Comer", desc: "Come a comida que mais cura da mochila.", icon: ASSETS.icon_heal_small },
-    ...["Poção de vida", "Poção de força", "Poção de pedra"].filter((n) => ITEMS[n]).map((n) => ({ id: "pot:" + n, name: n, desc: ITEMS[n].heal ? `Cura ${ITEMS[n].heal}.` : "Efeito por um tempo.", icon: ASSETS[ITEMS[n].icon], item: n })),
-    ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl }))];
+  // rodada 138: TODA ação tem nível (estilo Cambria): skills, comida, poções e as passivas dos estilos
+  const POT_LVL = { "Poção de vida": 1, "Poção de força": 10, "Poção de pedra": 20 };
+  const HOT_ACTIONS = () => [
+    ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, kind: "Skill ativa", name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl, cd: S.cd })),
+    { id: "eat", kind: "Ação", name: "Comer", desc: "Come a comida que mais cura da mochila.", icon: ASSETS.icon_heal_small, lvl: 1 },
+    ...Object.keys(POT_LVL).filter((n) => ITEMS[n]).map((n) => ({ id: "pot:" + n, kind: "Poção", name: n, desc: ITEMS[n].heal ? `Cura ${ITEMS[n].heal}.` : (BUFFS[ITEMS[n].buff] || {}).desc || "Efeito por um tempo.", icon: ASSETS[ITEMS[n].icon], item: n, lvl: POT_LVL[n] })),
+    ...Object.entries(STYLES).filter(([, s]) => s.passive).map(([k, s]) => ({ id: "passive:" + k, kind: `Passiva (estilo ${s.name})`, name: s.passive.name, desc: s.passive.desc, icon: ASSETS[s.passive.icon], lvl: 1, passive: true }))];
+  const hotUnlocked = (a) => !a.lvl || lv("combate") >= a.lvl;
   function useHot(i) {
     const a = player.hotbar[i]; if (!a) return;
+    const A = HOT_ACTIONS().find((x) => x.id === a); if (A && !hotUnlocked(A)) { log(`${A.name}: libera no Combate ${A.lvl}.`, "dim"); return; } // rodada 138
     if (a === "eat") { let best = -1; player.inv.forEach((s, j) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = j; });
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim"); }
     else if (a.startsWith("pot:")) { const pot = a.slice(4), j = player.inv.findIndex((s) => s && s.name === pot); if (j >= 0) eat(j); else log(`Sem ${pot.toLowerCase()} na mochila.`, "dim"); }
     else if (a.startsWith("skill:")) useSkill(a.slice(6));
   }
-  function setHot(i, id) { const k = player.hotbar.indexOf(id); if (k >= 0) player.hotbar[k] = null; player.hotbar[i] = id; buildSkillbar(); hudDirty = true; save(); }
+  function setHot(i, id) { // rodada 138: soltar numa casa ocupada troca as duas; id null limpa a casa
+    const k = id ? player.hotbar.indexOf(id) : -1, old = player.hotbar[i];
+    if (k >= 0 && k !== i) player.hotbar[k] = old || null;
+    player.hotbar[i] = id || null; buildSkillbar(); hudDirty = true; SND.play("ui"); save();
+  }
+  // rodada 138: arrastar da aba Skills (ou de outra casa) para a barra; clicar numa skill e depois numa casa também equipa (toque)
+  let hotPick = null;
+  $("tab-book").addEventListener("dragstart", (e) => { const c = e.target.closest("[data-skillcard]"); if (!c || c.classList.contains("locked")) { e.preventDefault(); return; }
+    e.dataTransfer.setData("text/plain", "act:" + c.dataset.skillcard); e.dataTransfer.effectAllowed = "copy"; });
+  $("skillbar").addEventListener("dragstart", (e) => { const b = e.target.closest("[data-slot]"); if (!b || !b.dataset.act) { e.preventDefault(); return; }
+    e.dataTransfer.setData("text/plain", "slot:" + b.dataset.slot); e.dataTransfer.effectAllowed = "move"; });
+  $("skillbar").addEventListener("dragover", (e) => { if (e.target.closest("[data-slot]")) { e.preventDefault(); e.target.closest("[data-slot]").classList.add("dropok"); } });
+  $("skillbar").addEventListener("dragleave", (e) => { const b = e.target.closest("[data-slot]"); if (b) b.classList.remove("dropok"); });
+  $("skillbar").addEventListener("drop", (e) => {
+    const b = e.target.closest("[data-slot]"); if (!b) return; e.preventDefault(); b.classList.remove("dropok");
+    const v = e.dataTransfer.getData("text/plain") || "", i = +b.dataset.slot;
+    if (v.startsWith("act:")) setHot(i, v.slice(4));
+    else if (v.startsWith("slot:")) { const j = +v.slice(5); if (j !== i) { const t = player.hotbar[i]; player.hotbar[i] = player.hotbar[j]; player.hotbar[j] = t; buildSkillbar(); hudDirty = true; save(); } }
+  });
+  $("skillbar").addEventListener("dragend", (e) => { // arrastou uma casa para fora da barra: tira a skill dela
+    const b = e.target.closest("[data-slot]"); if (b && e.dataTransfer.dropEffect === "none" && !document.elementFromPoint(e.clientX, e.clientY)?.closest("#skillbar")) setHot(+b.dataset.slot, null);
+  });
   const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + lv(k), 0);
   const combatStats = () => RULES.combatStats({ combate: lv("combate"), vitalidade: lv("vitalidade"), weapon: tier("espada"), armor: tier("armadura"),
     style: STYLES[player.style], buffs: Object.keys(player.buffs).map((k) => k === "descansado" ? { ...BUFFS[k], hp: ValdoraHome.restHp(ValdoraHome.shown(player.home)) } : BUFFS[k]), master: { espada: (gearItem("espada") || {}).master, armadura: (gearItem("armadura") || {}).master },
@@ -1650,10 +1677,12 @@
       if (!a) return `<button data-slot="${i}" class="empty" aria-label="Atalho ${i + 1} vazio" data-tip="${esc(`<b>Atalho ${i + 1}</b><div>Vazio: monte na aba Skills do menu.</div>`)}"><b>${i + 1}</b></button>`;
       const S = a.skill && ACTIVE[a.skill];
       const tip = S ? skillTip(S) : `<b style="color:#ffd84a">${esc(a.name)}</b> <small>(tecla ${i + 1})</small><div>${esc(a.desc)}</div>`;
-      return `<button data-slot="${i}" data-act="${esc(id)}" data-tip="${esc(tip)}" aria-label="${esc(a.name)}">${a.icon ? `<img class="ic" src="${a.icon}" alt="">` : ""}<b>${i + 1}</b><i class="cd"></i>${S ? `<small class="lock">nv ${S.lvl}</small>` : `<small class="slot-n"></small>`}</button>`;
+      return `<button data-slot="${i}" data-act="${esc(id)}" draggable="true" data-tip="${esc(tip)}" aria-label="${esc(a.name)}">${a.icon ? `<img class="ic" src="${a.icon}" alt="">` : ""}<b>${i + 1}</b><i class="cd"></i>${S ? `<small class="lock">nv ${S.lvl}</small>` : `<small class="slot-n"></small>`}</button>`;
     }).join("");
   }
-  $("skillbar").onclick = (e) => { const b = e.target.closest("[data-slot]"); if (b) useHot(+b.dataset.slot); };
+  $("skillbar").onclick = (e) => { const b = e.target.closest("[data-slot]"); if (!b) return;
+    if (hotPick) { setHot(+b.dataset.slot, hotPick); hotPick = null; hudDirty = true; return; } // rodada 138: escolhida na aba Skills (toque)
+    useHot(+b.dataset.slot); };
   function updateSkillbar() {
     for (const b of $("skillbar").children) {
       const id = b.dataset.act; if (!id) continue;
@@ -2818,11 +2847,12 @@
   for (const b of document.querySelectorAll("#menubar [data-menu]")) b.onclick = () => openTab(b.dataset.menu);
   $("panel-close").onclick = () => { hudTab = null; hudDirty = true; };
   $("quest").onclick = () => { hudTab = "journal"; hudDirty = true; };
-  $("tab-book").addEventListener("click", (e) => { const b = e.target.closest("[data-hot]"); if (b) setHot(+b.dataset.slot, b.dataset.hot); });
+  $("tab-book").addEventListener("click", (e) => { const c = e.target.closest("[data-skillcard]"); if (!c || c.classList.contains("locked") || c.dataset.passive) return;
+    hotPick = hotPick === c.dataset.skillcard ? null : c.dataset.skillcard; hudDirty = true; SND.play("ui"); });
   $("tab-coll").addEventListener("click", (e) => { const b = e.target.closest("[data-coll]"); if (b) collRegister(b.dataset.coll, b.dataset.item); });
   // painel lateral (js/hud.js)
   const HUD = ValdoraHud.create({ QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
-    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
+    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), hotUnlocked: (a) => hotUnlocked(a), hotPick: () => hotPick, dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96
   function updateHud() { hudDirty = false; HUD.render(); }

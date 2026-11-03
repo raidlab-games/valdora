@@ -109,13 +109,16 @@ window.ValdoraHud = (() => {
       const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Diário", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros" };
       $("panel").hidden = !hudTab; $("panel-title").textContent = TITLES[hudTab] || "";
       for (const b of document.querySelectorAll("#menubar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
-      if (hudTab === "book") {
-        const acts = api.hotActions(), hb = player.hotbar || [];
-        $("tab-book").innerHTML = `<small class="desc">Escolha em qual atalho (1 a 9) cada ação fica. As teclas Q, E e R continuam usando as skills.</small>` + acts.map((a) => {
-          const locked = a.lvl && level(player.xp.combate) < a.lvl;
-          return `<div class="book-row${locked ? " locked" : ""}">${a.icon ? `<img src="${a.icon}" alt="">` : `<span class="ic">•</span>`}<div><b>${esc(a.name)}</b>${a.lvl ? ` <small>Combate ${a.lvl}</small>` : ""}<br><small>${esc(a.desc)}</small></div>
-            <div class="slots">${hb.map((_, i) => `<button data-hot="${esc(a.id)}" data-slot="${i}" class="${hb[i] === a.id ? "on" : ""}" title="Pôr no atalho ${i + 1}">${i + 1}</button>`).join("")}</div></div>`;
-        }).join("");
+      if (hudTab === "book") { // rodada 138: estilo Cambria: todas as skills em ícones com o nível; liberadas arrastam para a barra
+        const acts = api.hotActions(), hb = player.hotbar || [], pick = api.hotPick && api.hotPick();
+        const groups = [...new Set(acts.map((a) => a.kind.replace(/ \(.*\)/, "")))];
+        $("tab-book").innerHTML = `<small class="desc">Arraste uma skill liberada até a barra (teclas 1 a 9) para equipar. No toque: clique na skill e depois na casa da barra. Arraste uma casa para fora da barra para tirar.</small>`
+          + groups.map((g) => `<div class="sk-group"><div class="sk-h">${esc(g === "Passiva" ? "Passivas" : g === "Skill ativa" ? "Skills de combate" : g === "Poção" ? "Poções" : "Ações")}</div><div class="sk-grid">${acts.filter((a) => a.kind.replace(/ \(.*\)/, "") === g).map((a) => {
+            const ok = api.hotUnlocked(a), on = hb.includes(a.id);
+            const tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)} · nível ${a.lvl || 1}${a.cd ? ` · recarga ${a.cd} s` : ""}</small><div>${esc(a.desc)}</div>${ok ? (a.passive ? "<small>Ativa sozinha com o estilo escolhido</small>" : "<small>Arraste para a barra</small>") : `<small style="color:#ff9a7a">Libera no Combate ${a.lvl}</small>`}`;
+            return `<div class="sk-card${ok ? "" : " locked"}${on ? " on" : ""}${pick === a.id ? " pick" : ""}" data-skillcard="${esc(a.id)}" ${a.passive ? 'data-passive="1"' : ""} draggable="${ok && !a.passive ? "true" : "false"}" data-tip="${esc(tip)}">
+              ${a.icon ? `<img src="${a.icon}" alt="" draggable="false">` : `<span class="ic">•</span>`}<b class="lv">${a.lvl || 1}</b>${ok ? "" : `<i class="lock">🔒</i>`}${on ? `<i class="eq">${hb.indexOf(a.id) + 1}</i>` : ""}<small>${esc(a.name)}</small></div>`;
+          }).join("")}</div></div>`).join("");
       } else if (hudTab === "coll") {
         const C = VD.COLLECTIONS || [], st = player.coll || {}, cnt = (n) => player.inv.reduce((t, s) => t + (s && s.name === n ? s.n : 0), 0);
         const done = C.filter((c) => Object.entries(c.items).every(([n, q]) => (st[c.id] || {})[n] >= q)).length;

@@ -810,6 +810,24 @@ button.link:hover { color: #cfe3ff; }
 .lv-mob .dl span b { font-weight: normal; opacity: .75; }
 .lv-item { padding: 3px 4px; border-bottom: 1px solid #ffffff10; font-size: 11px; }
 .lv-item b { font-size: 12px; }
+/* rodada 138: aba Skills no estilo Cambria */
+.sk-group { display: flex; flex-direction: column; gap: 4px; }
+.sk-h { color: var(--gold); font-size: 12px; border-bottom: 1px solid var(--edge-dim); padding-bottom: 2px; }
+.sk-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.sk-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 2px 3px; background: #2a2010; border: 2px solid var(--edge-dim);
+  cursor: grab; user-select: none; }
+.sk-card:hover { border-color: var(--gold); }
+.sk-card img, .sk-card .ic { width: 40px; height: 40px; image-rendering: auto; font-size: 26px; text-align: center; }
+.sk-card small { font-size: 10px; line-height: 11px; text-align: center; }
+.sk-card .lv { position: absolute; left: 2px; top: 1px; font-size: 10px; color: #ffe680; text-shadow: 1px 1px 0 #000; }
+.sk-card .eq { position: absolute; right: 2px; top: 1px; font-size: 10px; font-style: normal; color: #9fe08a; text-shadow: 1px 1px 0 #000; }
+.sk-card .lock { position: absolute; top: 14px; font-style: normal; font-size: 16px; }
+.sk-card.locked { cursor: not-allowed; }
+.sk-card.locked img { filter: grayscale(1) brightness(.5); }
+.sk-card.on { border-color: #6fbf5a; }
+.sk-card.pick { border-color: var(--gold); box-shadow: 0 0 8px #f1c40f; }
+.sk-card[data-passive] { cursor: help; }
+#skillbar button.dropok { border-color: var(--gold); box-shadow: 0 0 10px #f1c40f; }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }
