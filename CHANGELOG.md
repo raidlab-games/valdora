@@ -20,6 +20,12 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 128 (v1.27) — vasos pequenos e sempre junto de algo
+- Vasos cinzas com metade do tamanho (0,6 e 0,53 tile), encostados no vizinho (`ox`), não no meio do tile.
+- Nenhum vaso sozinho: saiu o grupo de vaso solto. Ficam ao pé de ~35% dos postes, ao lado de ~18% das pilhas e em cima da tampa
+  de ~22% dos barris soltos (`deco_barrel_vase` / `deco_barrel_plant`, montados em `tools/clutter_compose.py`).
+  `placeVases` roda depois das pilhas. Nas 5 vilas: 35 vasos no chão e 18 barris com vaso; conferido que nenhum fica solto.
+
 ## Rodada 127 (v1.26) — sacos empilhados direito
 - O saco que fica ao lado dos caixotes foi modelado no Blender (`tools/b3d/sacks.py`) com a **própria arte** dele como textura
   (`tools/sack_texture.py` recorta de `deco_crates.png`; pixel a pixel, projetada como a câmera do jogo vê). Assim ele deita e

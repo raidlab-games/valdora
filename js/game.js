@@ -262,10 +262,10 @@
       ["deco_lamppost", 47, 45], ["deco_lamppost", 66, 45], ["deco_crates", 42, 35], ["deco_crates", 71, 57], ["deco_crates", 59, 39], ["deco_crates", 68, 50],
       ["deco_bench", 47, 57], ["deco_bench", 52, 47], ["deco_bench", 61, 47], ["deco_bench", 51, 36], ["deco_haycart", 61, 56], ["deco_haycart", 42, 57]])
       if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([dx, dy]) => !occ[(y + dy) * W + x + dx])) deco("prop", spr, x, y);
-    placeVases(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 126
-    placeBarricades(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1);
+    placeBarricades(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 126
     placeClutter(deco, objects.filter((o) => o.type === "house" && inTown(o.x, o.y))); // rodada 124
     placeClutterArea(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1, 12);
+    placeVases(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 128: depois das pilhas
     // portal de boas-vindas na entrada sul (não bloqueia: passa-se por baixo da tábua)
     if (ASSETS.deco_town_sign) place({ type: "gate", spr: "deco_town_sign", x: RCX - 1, y: TOWN.y1 + 1, w: 3, h: 1, ox: 0.45, solid: false });
     homeObjs = null; { const H = HOME; // rodada 100: lote/casa, 9 pedestais, cama do filhote, banco e vaso (aparecem conforme o save)
@@ -605,13 +605,13 @@
     for (const c of own) { const X = c % W, Y = (c / W) | 0;
       for (const [ax, ay] of DIRS8V) { const N = (Y + ay) * W + X + ax; if (own.has(N)) continue;
         if (!inside(X + ax, Y + ay)) return false; const o = occ[N]; if (o && !ringOk(o)) return false; } }
-    for (const [dx, dy, spr, w = 1] of cells) deco("prop", spr, x + dx, y + dy, w, 1);
+    for (const [dx, dy, spr, w = 1] of cells) deco("prop", spr, x + dx, y + dy, w, 1, VASE.has(spr) ? { ox: cells.some((c) => c[1] === dy && c[0] + (c[3] || 1) === dx) ? -0.24 : 0.24 } : {}); // vaso pequeno encosta no vizinho
     return true;
   }
   const CARGO_SMALL = [[[0, 0, "deco_crates"]], [[0, 0, "deco_sacks"]], [[0, 0, "deco_barrel_stack"]], [[0, 0, "deco_crates_orange"], [1, 0, "deco_sack_pair"]],
-    [[0, 0, "barrel"], [1, 0, "deco_vase_gray"]], [[0, 0, "deco_crates_green"]], [[0, 0, "deco_sack_pair"], [1, 0, "barrel"]], [[0, 0, "deco_vase_plant"]]];
+    [[0, 0, "barrel"], [1, 0, "deco_barrel_vase"]], [[0, 0, "deco_crates_green"]], [[0, 0, "deco_sack_pair"], [1, 0, "barrel"]]]; // rodada 128: nenhum vaso sozinho
   const CARGO_BIG = [[[0, 0, "deco_barrel_pile", 2], [2, 0, "deco_vase_gray"]], [[0, 0, "deco_cargo_pile", 2]], [[0, 0, "deco_barrel_stack"], [1, 0, "barrel"], [0, 1, "deco_sacks"]],
-    [[0, 0, "deco_crates_orange"], [1, 0, "deco_crates_green"], [2, 0, "deco_vase_plant"]], [[0, 0, "deco_crates"], [1, 0, "deco_barrel_stack"], [1, 1, "deco_sack_pair"]],
+    [[0, 0, "deco_crates_orange"], [1, 0, "deco_crates_green"], [2, 0, "deco_barrel_plant"]], [[0, 0, "deco_crates"], [1, 0, "deco_barrel_stack"], [1, 1, "deco_sack_pair"]],
     [[0, 0, "deco_barrel_pile", 2]], [[0, 0, "deco_sacks"], [1, 0, "deco_crates"], [2, 0, "deco_sacks"]], [[0, 0, "deco_sack_pile", 2], [2, 0, "deco_crates_orange"]]]; // rodada 127: pirâmide de sacos
   // encostado nas laterais das casas: 1 ou 2 grupos pequenos por casa
   function placeClutter(deco, houses) {
@@ -652,18 +652,24 @@
       }
     }
   }
-  // vasos cinzas na beira da rua, ao lado de parte dos postes (no tile vizinho que encosta na estrada) e junto de caixas e barris soltos
+  // rodada 128: vasos pequenos (meio tile), nunca soltos e não em tudo: ao lado de parte dos postes da rua, em cima de alguns barris
+  // soltos (a arte do barril com o vaso na tampa) e ao lado de uma ou outra pilha. O vaso fica encostado no vizinho (ox), não no
+  // meio do tile. Junto de alguns caixotes, um par de sacos
+  const VASE = new Set(["deco_vase_gray", "deco_vase_plant"]);
+  const PILES = new Set(["deco_crates", "deco_crates_green", "deco_crates_orange", "deco_barrel_stack", "deco_sacks", "deco_barrel_pile", "deco_cargo_pile", "deco_sack_pile"]);
   function placeVases(deco, x0, y0, x1, y1) {
     if (!SPR.deco_vase_gray) return;
-    const near = (x, y) => DIRS.some(([dx, dy]) => inside(x + dx, y + dy) && map[y + dy][x + dx] === "path");
     const fits = (x, y, host) => cargoCell(x, y) && !hidesUse(x, y) && DIRS8V.every(([dx, dy]) => { const o = occ[(y + dy) * W + x + dx]; return !o || o === host; });
     for (const o of objects.slice()) {
-      if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1 || o.w !== 1) continue;
-      const lamp = o.spr === "deco_lamppost", crate = o.spr === "deco_crates" || o.spr === "barrel" && o.type === "barrel";
-      if (!lamp && !crate || hash(o.x, o.y, 47) > (lamp ? 0.6 : 0.45)) continue;
-      const opts = [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) => [o.x + dx, o.y + dy]).sort((a, b) => near(b[0], b[1]) - near(a[0], a[1]));
-      const at = opts.find(([x, y]) => fits(x, y, o)); if (!at) continue;
-      deco("prop", crate && hash(o.x, o.y, 48) < 0.5 ? "deco_sack_pair" : hash(o.x, o.y, 49) < 0.65 ? "deco_vase_gray" : "deco_vase_plant", ...at);
+      if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1) continue;
+      const h = hash(o.x, o.y, 47), kind = o.spr === "deco_lamppost" ? "lamp" : o.spr === "barrel" ? "barrel" : PILES.has(o.spr) ? "pile" : null;
+      if (!kind) continue;
+      if (kind === "barrel") { if (h < 0.22 && SPR.deco_barrel_vase) { o.spr = h < 0.15 ? "deco_barrel_vase" : "deco_barrel_plant"; } continue; } // vaso na tampa
+      const sacks = kind === "pile" && o.spr === "deco_crates" && h > 0.8;
+      if (!sacks && h > (kind === "lamp" ? 0.35 : 0.18)) continue;
+      const at = [[o.x - 1, o.y], [o.x + o.w, o.y]].sort((a, b) => hash(a[0], a[1], 50) - hash(b[0], b[1], 50)).find(([x, y]) => fits(x, y, o)); if (!at) continue;
+      if (sacks) { deco("prop", "deco_sack_pair", ...at); continue; }
+      deco("prop", hash(o.x, o.y, 49) < 0.65 ? "deco_vase_gray" : "deco_vase_plant", ...at, 1, 1, { ox: at[0] < o.x ? 0.24 : -0.24 });
     }
   }
   function genContinent() {
@@ -763,9 +769,9 @@
           ["deco_planter", 6, 18], ["deco_planter", 30, 24], ["deco_planter", 12, 29], ["deco_crates", 2, 18], ["deco_crates", 31, 9], ["deco_crates", 20, 27],
           ["deco_bench", 11, 9], ["deco_bench", 22, 18], ["deco_bench", 12, 20], ["deco_haycart", 29, 20], ["deco_haycart", 4, 13]]) {
           const [x, y] = at(dx, dy); if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([ax, ay]) => !occ[(y + ay) * W + x + ax])) deco("prop", spr, x, y); }
-        placeVases(deco, v.x0, v.y0, v.x1, v.y1); placeBarricades(deco, v.x0, v.y0, v.x1, v.y1); // rodada 126
+        placeBarricades(deco, v.x0, v.y0, v.x1, v.y1); // rodada 126
         placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
-        placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7);
+        placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7); placeVases(deco, v.x0, v.y0, v.x1, v.y1); // rodada 128
       }
       if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
     }
