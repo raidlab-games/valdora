@@ -927,6 +927,20 @@ window.VD = (() => {
     echo_serpent: { poison: { p: 0.45 }, charge: { range: 5, cd: 9 } }, boss_golem: { charge: { range: 4, cd: 10 }, block: { p: 0.2 } }, echo_golem: { charge: { range: 4, cd: 9 }, block: { p: 0.25 } },
     boss: { block: { p: 0.2 }, charge: { range: 4, cd: 10 } }, echo_ruins: { block: { p: 0.25 }, charge: { range: 4, cd: 9 }, blink: { cd: 10 } }, ninja: { blink: { cd: 7 }, bleed: { p: 0.35 } },
   })) if (MOBS[k]) MOBS[k].skills = Object.assign({}, MOBS[k].skills, s);
+  // ----- rodada 138: cada espécie tem um nível só dela (nunca duas espécies diferentes no mesmo nível). Na ordem do nível,
+  // quem repete o nível de outra sobe para o próximo livre, e vida, ataque, defesa e dano acompanham o nível novo.
+  {
+    const used = new Set(), list = Object.entries(MOBS).filter(([, d]) => !d.summon && !d.temp && !d.echo && !d.mini).sort((a, b) => a[1].lvl - b[1].lvl || (a[1].boss ? 1 : 0) - (b[1].boss ? 1 : 0) || a[0].localeCompare(b[0]));
+    for (const [, d] of list) {
+      let l = d.lvl; while (used.has(l)) l++;
+      if (l !== d.lvl) {
+        const A = mobStats(d.lvl), B = mobStats(l), r = (k) => (A[k] > 0 ? B[k] / A[k] : 1);
+        d.hp = Math.round(d.hp * r("hp")); d.atk = Math.round(d.atk * r("atk")); d.def = Math.round(d.def * r("def")); d.maxHit = Math.max(1, Math.round(d.maxHit * r("maxHit")));
+        d.lvl = l;
+      }
+      used.add(l);
+    }
+  }
   // ----- rodada 137: ajustes de combate de todos os monstros -----
   for (const [k, d] of Object.entries(MOBS)) {
     d.maxHit = Math.ceil(d.maxHit * 1.25); d.atk = Math.ceil(d.atk * 1.1);                  // batem um pouco mais forte e acertam mais
