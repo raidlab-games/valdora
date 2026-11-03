@@ -2776,8 +2776,8 @@ window.ANIM3D = {
  },
  "mob_boar": {
   "src": "assets/flow/anim3d/mob_boar.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -2813,6 +2813,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -4182,8 +4183,8 @@ window.ANIM3D = {
  },
  "mob_boar@down": {
   "src": "assets/flow/anim3d/mob_boar__down.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -4219,12 +4220,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar@downleft": {
   "src": "assets/flow/anim3d/mob_boar__downleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -4260,12 +4262,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar@upleft": {
   "src": "assets/flow/anim3d/mob_boar__upleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -4301,12 +4304,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar@up": {
   "src": "assets/flow/anim3d/mob_boar__up.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -4342,7 +4346,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf@down": {
   "src": "assets/flow/anim3d/mob_wolf__down.png",
@@ -8585,8 +8590,8 @@ window.ANIM3D = {
  },
  "mob_deer": {
   "src": "assets/flow/anim3d/mob_deer.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -8622,6 +8627,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -8631,8 +8637,8 @@ window.ANIM3D = {
  },
  "mob_deer@down": {
   "src": "assets/flow/anim3d/mob_deer__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -8668,12 +8674,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer@downleft": {
   "src": "assets/flow/anim3d/mob_deer__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -8709,12 +8716,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer@upleft": {
   "src": "assets/flow/anim3d/mob_deer__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -8750,12 +8758,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer@up": {
   "src": "assets/flow/anim3d/mob_deer__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -8791,7 +8800,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bear": {
   "src": "assets/flow/anim3d/mob_bear.png",
@@ -9261,8 +9271,8 @@ window.ANIM3D = {
  },
  "mob_hare": {
   "src": "assets/flow/anim3d/mob_hare.png",
-  "cell": 192,
-  "px": 120,
+  "cell": 106,
+  "px": 66,
   "rows": {
    "idle": {
     "row": 0,
@@ -9298,6 +9308,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -9307,8 +9318,8 @@ window.ANIM3D = {
  },
  "mob_hare@down": {
   "src": "assets/flow/anim3d/mob_hare__down.png",
-  "cell": 192,
-  "px": 120,
+  "cell": 106,
+  "px": 66,
   "rows": {
    "idle": {
     "row": 0,
@@ -9344,12 +9355,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_hare@downleft": {
   "src": "assets/flow/anim3d/mob_hare__downleft.png",
-  "cell": 192,
-  "px": 120,
+  "cell": 106,
+  "px": 66,
   "rows": {
    "idle": {
     "row": 0,
@@ -9385,12 +9397,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_hare@upleft": {
   "src": "assets/flow/anim3d/mob_hare__upleft.png",
-  "cell": 192,
-  "px": 120,
+  "cell": 106,
+  "px": 66,
   "rows": {
    "idle": {
     "row": 0,
@@ -9426,12 +9439,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_hare@up": {
   "src": "assets/flow/anim3d/mob_hare__up.png",
-  "cell": 192,
-  "px": 120,
+  "cell": 106,
+  "px": 66,
   "rows": {
    "idle": {
     "row": 0,
@@ -9467,7 +9481,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bee": {
   "src": "assets/flow/anim3d/mob_bee.png",
@@ -10771,8 +10786,8 @@ window.ANIM3D = {
  },
  "mob_crystal_lizard": {
   "src": "assets/flow/anim3d/mob_crystal_lizard.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -10808,6 +10823,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -10817,8 +10833,8 @@ window.ANIM3D = {
  },
  "mob_crystal_lizard@down": {
   "src": "assets/flow/anim3d/mob_crystal_lizard__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -10854,12 +10870,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crystal_lizard@downleft": {
   "src": "assets/flow/anim3d/mob_crystal_lizard__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -10895,12 +10912,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crystal_lizard@upleft": {
   "src": "assets/flow/anim3d/mob_crystal_lizard__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -10936,12 +10954,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crystal_lizard@up": {
   "src": "assets/flow/anim3d/mob_crystal_lizard__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -10977,7 +10996,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wisp": {
   "src": "assets/flow/anim3d/mob_wisp.png",
@@ -12106,8 +12126,8 @@ window.ANIM3D = {
  },
  "mob_deer_dark": {
   "src": "assets/flow/anim3d/mob_deer_dark.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -12143,6 +12163,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -12152,8 +12173,8 @@ window.ANIM3D = {
  },
  "mob_deer_dark@down": {
   "src": "assets/flow/anim3d/mob_deer_dark__down.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -12189,12 +12210,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer_dark@downleft": {
   "src": "assets/flow/anim3d/mob_deer_dark__downleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -12230,12 +12252,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer_dark@upleft": {
   "src": "assets/flow/anim3d/mob_deer_dark__upleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -12271,12 +12294,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_deer_dark@up": {
   "src": "assets/flow/anim3d/mob_deer_dark__up.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -12312,7 +12336,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_spider_wood": {
   "src": "assets/flow/anim3d/mob_spider_wood.png",
@@ -15194,8 +15219,8 @@ window.ANIM3D = {
  },
  "mob_boar_stone": {
   "src": "assets/flow/anim3d/mob_boar_stone.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -15231,6 +15256,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -15240,8 +15266,8 @@ window.ANIM3D = {
  },
  "mob_boar_stone@down": {
   "src": "assets/flow/anim3d/mob_boar_stone__down.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -15277,12 +15303,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_stone@downleft": {
   "src": "assets/flow/anim3d/mob_boar_stone__downleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -15318,12 +15345,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_stone@upleft": {
   "src": "assets/flow/anim3d/mob_boar_stone__upleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -15359,12 +15387,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_stone@up": {
   "src": "assets/flow/anim3d/mob_boar_stone__up.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -15400,7 +15429,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_harpy": {
   "src": "assets/flow/anim3d/mob_harpy.png",
@@ -18794,8 +18824,8 @@ window.ANIM3D = {
  },
  "mob_boar_dune": {
   "src": "assets/flow/anim3d/mob_boar_dune.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -18831,6 +18861,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -18840,8 +18871,8 @@ window.ANIM3D = {
  },
  "mob_boar_dune@down": {
   "src": "assets/flow/anim3d/mob_boar_dune__down.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -18877,12 +18908,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_dune@downleft": {
   "src": "assets/flow/anim3d/mob_boar_dune__downleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -18918,12 +18950,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_dune@upleft": {
   "src": "assets/flow/anim3d/mob_boar_dune__upleft.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -18959,12 +18992,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_dune@up": {
   "src": "assets/flow/anim3d/mob_boar_dune__up.png",
-  "cell": 312,
-  "px": 195,
+  "cell": 172,
+  "px": 108,
   "rows": {
    "idle": {
     "row": 0,
@@ -19000,7 +19034,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_lizardman": {
   "src": "assets/flow/anim3d/mob_lizardman.png",
@@ -21510,8 +21545,8 @@ window.ANIM3D = {
  },
  "mob_elk_ice": {
   "src": "assets/flow/anim3d/mob_elk_ice.png",
-  "cell": 380,
-  "px": 238,
+  "cell": 210,
+  "px": 131,
   "rows": {
    "idle": {
     "row": 0,
@@ -21547,6 +21582,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -21556,8 +21592,8 @@ window.ANIM3D = {
  },
  "mob_elk_ice@down": {
   "src": "assets/flow/anim3d/mob_elk_ice__down.png",
-  "cell": 380,
-  "px": 238,
+  "cell": 210,
+  "px": 131,
   "rows": {
    "idle": {
     "row": 0,
@@ -21593,12 +21629,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_elk_ice@downleft": {
   "src": "assets/flow/anim3d/mob_elk_ice__downleft.png",
-  "cell": 380,
-  "px": 238,
+  "cell": 210,
+  "px": 131,
   "rows": {
    "idle": {
     "row": 0,
@@ -21634,12 +21671,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_elk_ice@upleft": {
   "src": "assets/flow/anim3d/mob_elk_ice__upleft.png",
-  "cell": 380,
-  "px": 238,
+  "cell": 210,
+  "px": 131,
   "rows": {
    "idle": {
     "row": 0,
@@ -21675,12 +21713,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_elk_ice@up": {
   "src": "assets/flow/anim3d/mob_elk_ice__up.png",
-  "cell": 380,
-  "px": 238,
+  "cell": 210,
+  "px": 131,
   "rows": {
    "idle": {
     "row": 0,
@@ -21716,7 +21755,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_owl": {
   "src": "assets/flow/anim3d/mob_owl.png",
@@ -24024,6 +24064,2156 @@ window.ANIM3D = {
   "b3d": true,
   "lazy": true,
   "half": true
+ },
+ "mob_toad": {
+  "src": "assets/flow/anim3d/mob_toad.png",
+  "cell": 110,
+  "px": 69,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_toad@down": {
+  "src": "assets/flow/anim3d/mob_toad__down.png",
+  "cell": 110,
+  "px": 69,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_toad@downleft": {
+  "src": "assets/flow/anim3d/mob_toad__downleft.png",
+  "cell": 110,
+  "px": 69,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_toad@upleft": {
+  "src": "assets/flow/anim3d/mob_toad__upleft.png",
+  "cell": 110,
+  "px": 69,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_toad@up": {
+  "src": "assets/flow/anim3d/mob_toad__up.png",
+  "cell": 110,
+  "px": 69,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_moth": {
+  "src": "assets/flow/anim3d/mob_moth.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_moth@down": {
+  "src": "assets/flow/anim3d/mob_moth__down.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_moth@downleft": {
+  "src": "assets/flow/anim3d/mob_moth__downleft.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_moth@upleft": {
+  "src": "assets/flow/anim3d/mob_moth__upleft.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_moth@up": {
+  "src": "assets/flow/anim3d/mob_moth__up.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_cactus": {
+  "src": "assets/flow/anim3d/mob_cactus.png",
+  "cell": 220,
+  "px": 138,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_cactus@down": {
+  "src": "assets/flow/anim3d/mob_cactus__down.png",
+  "cell": 220,
+  "px": 138,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_cactus@downleft": {
+  "src": "assets/flow/anim3d/mob_cactus__downleft.png",
+  "cell": 220,
+  "px": 138,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_cactus@upleft": {
+  "src": "assets/flow/anim3d/mob_cactus__upleft.png",
+  "cell": 220,
+  "px": 138,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_cactus@up": {
+  "src": "assets/flow/anim3d/mob_cactus__up.png",
+  "cell": 220,
+  "px": 138,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_sand_crab": {
+  "src": "assets/flow/anim3d/mob_sand_crab.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_sand_crab@down": {
+  "src": "assets/flow/anim3d/mob_sand_crab__down.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_sand_crab@downleft": {
+  "src": "assets/flow/anim3d/mob_sand_crab__downleft.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_sand_crab@upleft": {
+  "src": "assets/flow/anim3d/mob_sand_crab__upleft.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_sand_crab@up": {
+  "src": "assets/flow/anim3d/mob_sand_crab__up.png",
+  "cell": 132,
+  "px": 82,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_ram": {
+  "src": "assets/flow/anim3d/mob_ram.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_ram@down": {
+  "src": "assets/flow/anim3d/mob_ram__down.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_ram@downleft": {
+  "src": "assets/flow/anim3d/mob_ram__downleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_ram@upleft": {
+  "src": "assets/flow/anim3d/mob_ram__upleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_ram@up": {
+  "src": "assets/flow/anim3d/mob_ram__up.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_eagle": {
+  "src": "assets/flow/anim3d/mob_eagle.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_eagle@down": {
+  "src": "assets/flow/anim3d/mob_eagle__down.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_eagle@downleft": {
+  "src": "assets/flow/anim3d/mob_eagle__downleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_eagle@upleft": {
+  "src": "assets/flow/anim3d/mob_eagle__upleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_eagle@up": {
+  "src": "assets/flow/anim3d/mob_eagle__up.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_mammoth": {
+  "src": "assets/flow/anim3d/mob_mammoth.png",
+  "cell": 254,
+  "px": 159,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_mammoth@down": {
+  "src": "assets/flow/anim3d/mob_mammoth__down.png",
+  "cell": 254,
+  "px": 159,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_mammoth@downleft": {
+  "src": "assets/flow/anim3d/mob_mammoth__downleft.png",
+  "cell": 254,
+  "px": 159,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_mammoth@upleft": {
+  "src": "assets/flow/anim3d/mob_mammoth__upleft.png",
+  "cell": 254,
+  "px": 159,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_mammoth@up": {
+  "src": "assets/flow/anim3d/mob_mammoth__up.png",
+  "cell": 254,
+  "px": 159,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_frost_imp": {
+  "src": "assets/flow/anim3d/mob_frost_imp.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_frost_imp@down": {
+  "src": "assets/flow/anim3d/mob_frost_imp__down.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_frost_imp@downleft": {
+  "src": "assets/flow/anim3d/mob_frost_imp__downleft.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_frost_imp@upleft": {
+  "src": "assets/flow/anim3d/mob_frost_imp__upleft.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_frost_imp@up": {
+  "src": "assets/flow/anim3d/mob_frost_imp__up.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_scarecrow": {
+  "src": "assets/flow/anim3d/mob_scarecrow.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_scarecrow@down": {
+  "src": "assets/flow/anim3d/mob_scarecrow__down.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_scarecrow@downleft": {
+  "src": "assets/flow/anim3d/mob_scarecrow__downleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_scarecrow@upleft": {
+  "src": "assets/flow/anim3d/mob_scarecrow__upleft.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_scarecrow@up": {
+  "src": "assets/flow/anim3d/mob_scarecrow__up.png",
+  "cell": 166,
+  "px": 104,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_beetle": {
+  "src": "assets/flow/anim3d/mob_beetle.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "half": true,
+  "fine": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_beetle@down": {
+  "src": "assets/flow/anim3d/mob_beetle__down.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_beetle@downleft": {
+  "src": "assets/flow/anim3d/mob_beetle__downleft.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_beetle@upleft": {
+  "src": "assets/flow/anim3d/mob_beetle__upleft.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
+ },
+ "mob_beetle@up": {
+  "src": "assets/flow/anim3d/mob_beetle__up.png",
+  "cell": 120,
+  "px": 75,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "lazy": true,
+  "half": true,
+  "fine": true
  }
 };
 window.ROD_TIP3D = {"hero_1": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_2": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_3": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}};

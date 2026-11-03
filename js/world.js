@@ -275,21 +275,22 @@ window.ValdoraWorld = (() => {
     r *= 1.15; const p = findBox(XU(u), YV(v), Math.ceil(r * 2), Math.ceil(r * 2.4), b); // rodada 120: lagos acompanham os biomas maiores if (!inOld(p.x0, p.y0) && !inOld(p.x0 + r * 2, p.y0 + r * 2.4)) LAKES_G.push([p.x0 + r, p.y0 + r * 1.2, r, b >= 3 ? "fishspot_deep" : "fishspot", 2]);
   }
   // ---------- monstros dos biomas novos: [tipo, quantos]; cada tipo em 2-3 bandos; os de nível baixo mais perto do Campo ----------
+  // rodada 136: 2 espécies novas por bioma e 35% mais monstros nos bandos (os raros ficam iguais)
   const BIOME_MOBS = {
     // rodada 120: com as espécies novas (raposas, cervos, ursos), na ordem do nível
     // rodada 134: 12 a 13 espécies por bioma, cada uma com arte e jeito de lutar próprios (js/mobskills.js)
-    darkwood: [["shade_wolf", 14], ["dark_deer", 10], ["wood_spider", 12], ["vampire_bat", 10], ["shade_goblin", 12], ["plague_shroom", 8], ["rot_skeleton", 12], ["shadow_cultist", 3],
-      ["shade_wraith", 10], ["dark_bear", 7], ["corrupt_ent", 8], ["night_alpha", 4]],
-    desert: [["sand_slime", 14], ["sand_fox", 10], ["red_scorpion", 12], ["vulture", 10], ["dune_boar", 12], ["lizardman", 10], ["mummy", 12], ["scarab", 14], ["sandstone_golem", 9],
-      ["raider_goblin", 10], ["mummy_priest", 3], ["dune_serpent", 3]],
-    mountains: [["gray_wolf", 14], ["rock_fox", 10], ["stone_boar", 12], ["harpy", 10], ["granite_golem", 10], ["kobold_bomber", 10], ["cave_goblin", 12], ["mountain_bear", 7],
-      ["rock_sentinel", 9], ["mountain_troll", 6], ["cave_spider", 10], ["kobold_shaman", 3], ["iron_colossus", 3]],
-    snow: [["ice_wolf", 14], ["arctic_fox", 10], ["frost_slime", 12], ["snow_owl", 10], ["ice_elk", 8], ["blizzard_wraith", 10], ["ice_golem", 9], ["polar_bear", 7],
-      ["glacial_sentinel", 9], ["yeti", 6], ["frozen_skeleton", 12], ["ice_witch", 3], ["blizzard_alpha", 3]],
+    darkwood: [["shade_wolf", 19], ["dark_deer", 14], ["wood_spider", 16], ["vampire_bat", 14], ["shade_goblin", 16], ["plague_shroom", 11], ["rot_skeleton", 16], ["shadow_cultist", 3],
+      ["shade_wraith", 14], ["dark_bear", 9], ["corrupt_ent", 11], ["night_alpha", 4], ["bog_toad", 16], ["shade_moth", 14]],
+    desert: [["sand_slime", 19], ["sand_fox", 14], ["red_scorpion", 16], ["vulture", 14], ["dune_boar", 16], ["lizardman", 14], ["mummy", 16], ["scarab", 19], ["sandstone_golem", 12],
+      ["raider_goblin", 14], ["mummy_priest", 3], ["dune_serpent", 3], ["walking_cactus", 14], ["sand_crab", 16]],
+    mountains: [["gray_wolf", 19], ["rock_fox", 14], ["stone_boar", 16], ["harpy", 14], ["granite_golem", 14], ["kobold_bomber", 14], ["cave_goblin", 16], ["mountain_bear", 9],
+      ["rock_sentinel", 12], ["mountain_troll", 8], ["cave_spider", 14], ["kobold_shaman", 3], ["iron_colossus", 3], ["rock_ram", 16], ["cliff_eagle", 14]],
+    snow: [["ice_wolf", 19], ["arctic_fox", 14], ["frost_slime", 16], ["snow_owl", 14], ["ice_elk", 11], ["blizzard_wraith", 14], ["ice_golem", 12], ["polar_bear", 9],
+      ["glacial_sentinel", 12], ["yeti", 8], ["frozen_skeleton", 16], ["ice_witch", 3], ["blizzard_alpha", 3], ["snow_mammoth", 9], ["frost_imp", 14]],
   };
   // bandos extras do Campo crescido (fora do quadro antigo): os mesmos monstros, espalhados nas regiões esticadas
   // rodada 120: 60% a mais (biomas maiores e mais gente online)
-  const CAMPO_EXTRA = { fields: [["slime", 32], ["slime_blue", 16], ["fox", 12], ["hare", 12], ["bee", 8], ["kobold", 8]], east: [["boar", 22], ["goblin", 16], ["goblin_archer", 6], ["goblin_shaman", 2], ["deer", 12], ["fox", 6]],
+  const CAMPO_EXTRA = { fields: [["slime", 38], ["slime_blue", 20], ["fox", 15], ["hare", 15], ["bee", 10], ["kobold", 10], ["scarecrow", 10], ["horn_beetle", 14]], // rodada 136: mais e 2 espécies novas east: [["boar", 22], ["goblin", 16], ["goblin_archer", 6], ["goblin_shaman", 2], ["deer", 12], ["fox", 6]],
     south: [["wolf", 28], ["wolf_alpha", 6], ["deer", 8], ["bear", 7], ["weaver", 10], ["ghoul", 8]],
     west: [["golem", 16], ["slime_crystal", 13], ["crystal_lizard", 8], ["wisp", 8]], ruins: [["skeleton", 19], ["skeleton_archer", 8], ["necromancer", 2], ["cursed_knight", 4]] };
   function homesFor(b, n, seed) { // n pontos de bando no bioma, ordenados do mais perto do Campo ao mais fundo
