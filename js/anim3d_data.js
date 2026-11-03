@@ -2982,8 +2982,8 @@ window.ANIM3D = {
  },
  "mob_skeleton": {
   "src": "assets/flow/anim3d/mob_skeleton.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -3025,6 +3025,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -3034,8 +3035,8 @@ window.ANIM3D = {
  },
  "mob_boss_ruins": {
   "src": "assets/flow/anim3d/mob_boss_ruins.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -3084,6 +3085,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -3207,8 +3209,8 @@ window.ANIM3D = {
  },
  "mob_crypt_guardian": {
   "src": "assets/flow/anim3d/mob_crypt_guardian.png",
-  "cell": 384,
-  "px": 240,
+  "cell": 212,
+  "px": 132,
   "rows": {
    "idle": {
     "row": 0,
@@ -3250,6 +3252,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -3513,8 +3516,8 @@ window.ANIM3D = {
  },
  "mob_light_wraith": {
   "src": "assets/flow/anim3d/mob_light_wraith.png",
-  "cell": 268,
-  "px": 168,
+  "cell": 148,
+  "px": 92,
   "rows": {
    "idle": {
     "row": 0,
@@ -3550,6 +3553,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -4857,8 +4861,8 @@ window.ANIM3D = {
  },
  "mob_skeleton@down": {
   "src": "assets/flow/anim3d/mob_skeleton__down.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -4894,12 +4898,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton@downleft": {
   "src": "assets/flow/anim3d/mob_skeleton__downleft.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -4935,12 +4940,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton@upleft": {
   "src": "assets/flow/anim3d/mob_skeleton__upleft.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -4976,12 +4982,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton@up": {
   "src": "assets/flow/anim3d/mob_skeleton__up.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -5017,12 +5024,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_ruins@down": {
   "src": "assets/flow/anim3d/mob_boss_ruins__down.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5065,12 +5073,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_ruins@downleft": {
   "src": "assets/flow/anim3d/mob_boss_ruins__downleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5113,12 +5122,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_ruins@upleft": {
   "src": "assets/flow/anim3d/mob_boss_ruins__upleft.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5161,12 +5171,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_ruins@up": {
   "src": "assets/flow/anim3d/mob_boss_ruins__up.png",
-  "cell": 500,
-  "px": 312,
+  "cell": 276,
+  "px": 172,
   "rows": {
    "idle": {
     "row": 0,
@@ -5209,7 +5220,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem@down": {
   "src": "assets/flow/anim3d/mob_golem__down.png",
@@ -5605,8 +5617,8 @@ window.ANIM3D = {
  },
  "mob_crypt_guardian@down": {
   "src": "assets/flow/anim3d/mob_crypt_guardian__down.png",
-  "cell": 384,
-  "px": 240,
+  "cell": 212,
+  "px": 132,
   "rows": {
    "idle": {
     "row": 0,
@@ -5642,12 +5654,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crypt_guardian@downleft": {
   "src": "assets/flow/anim3d/mob_crypt_guardian__downleft.png",
-  "cell": 384,
-  "px": 240,
+  "cell": 212,
+  "px": 132,
   "rows": {
    "idle": {
     "row": 0,
@@ -5683,12 +5696,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crypt_guardian@upleft": {
   "src": "assets/flow/anim3d/mob_crypt_guardian__upleft.png",
-  "cell": 384,
-  "px": 240,
+  "cell": 212,
+  "px": 132,
   "rows": {
    "idle": {
     "row": 0,
@@ -5724,12 +5738,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_crypt_guardian@up": {
   "src": "assets/flow/anim3d/mob_crypt_guardian__up.png",
-  "cell": 384,
-  "px": 240,
+  "cell": 212,
+  "px": 132,
   "rows": {
    "idle": {
     "row": 0,
@@ -5765,7 +5780,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_lumita_colossus@down": {
   "src": "assets/flow/anim3d/mob_lumita_colossus__down.png",
@@ -6661,8 +6677,8 @@ window.ANIM3D = {
  },
  "mob_light_wraith@down": {
   "src": "assets/flow/anim3d/mob_light_wraith__down.png",
-  "cell": 268,
-  "px": 168,
+  "cell": 148,
+  "px": 92,
   "rows": {
    "idle": {
     "row": 0,
@@ -6698,12 +6714,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_light_wraith@downleft": {
   "src": "assets/flow/anim3d/mob_light_wraith__downleft.png",
-  "cell": 268,
-  "px": 168,
+  "cell": 148,
+  "px": 92,
   "rows": {
    "idle": {
     "row": 0,
@@ -6739,12 +6756,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_light_wraith@upleft": {
   "src": "assets/flow/anim3d/mob_light_wraith__upleft.png",
-  "cell": 268,
-  "px": 168,
+  "cell": 148,
+  "px": 92,
   "rows": {
    "idle": {
     "row": 0,
@@ -6780,12 +6798,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_light_wraith@up": {
   "src": "assets/flow/anim3d/mob_light_wraith__up.png",
-  "cell": 268,
-  "px": 168,
+  "cell": 148,
+  "px": 92,
   "rows": {
    "idle": {
     "row": 0,
@@ -6821,7 +6840,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boss_serpent@down": {
   "src": "assets/flow/anim3d/mob_boss_serpent__down.png",
@@ -11041,8 +11061,8 @@ window.ANIM3D = {
  },
  "mob_wisp": {
   "src": "assets/flow/anim3d/mob_wisp.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -11078,6 +11098,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -11087,8 +11108,8 @@ window.ANIM3D = {
  },
  "mob_wisp@down": {
   "src": "assets/flow/anim3d/mob_wisp__down.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -11124,12 +11145,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wisp@downleft": {
   "src": "assets/flow/anim3d/mob_wisp__downleft.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -11165,12 +11187,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wisp@upleft": {
   "src": "assets/flow/anim3d/mob_wisp__upleft.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -11206,12 +11229,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wisp@up": {
   "src": "assets/flow/anim3d/mob_wisp__up.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -11247,12 +11271,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_archer": {
   "src": "assets/flow/anim3d/mob_skeleton_archer.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -11288,6 +11313,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -11297,8 +11323,8 @@ window.ANIM3D = {
  },
  "mob_skeleton_archer@down": {
   "src": "assets/flow/anim3d/mob_skeleton_archer__down.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -11334,12 +11360,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_archer@downleft": {
   "src": "assets/flow/anim3d/mob_skeleton_archer__downleft.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -11375,12 +11402,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_archer@upleft": {
   "src": "assets/flow/anim3d/mob_skeleton_archer__upleft.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -11416,12 +11444,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_archer@up": {
   "src": "assets/flow/anim3d/mob_skeleton_archer__up.png",
-  "cell": 278,
-  "px": 174,
+  "cell": 152,
+  "px": 95,
   "rows": {
    "idle": {
     "row": 0,
@@ -11457,12 +11486,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_necromancer": {
   "src": "assets/flow/anim3d/mob_necromancer.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -11505,6 +11535,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -11514,8 +11545,8 @@ window.ANIM3D = {
  },
  "mob_necromancer@down": {
   "src": "assets/flow/anim3d/mob_necromancer__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -11558,12 +11589,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_necromancer@downleft": {
   "src": "assets/flow/anim3d/mob_necromancer__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -11606,12 +11638,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_necromancer@upleft": {
   "src": "assets/flow/anim3d/mob_necromancer__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -11654,12 +11687,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_necromancer@up": {
   "src": "assets/flow/anim3d/mob_necromancer__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -11702,7 +11736,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_cursed_knight": {
   "src": "assets/flow/anim3d/mob_cursed_knight.png",
@@ -12596,8 +12631,8 @@ window.ANIM3D = {
  },
  "mob_bat": {
   "src": "assets/flow/anim3d/mob_bat.png",
-  "cell": 264,
-  "px": 165,
+  "cell": 146,
+  "px": 91,
   "rows": {
    "idle": {
     "row": 0,
@@ -12633,6 +12668,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -12642,8 +12678,8 @@ window.ANIM3D = {
  },
  "mob_bat@down": {
   "src": "assets/flow/anim3d/mob_bat__down.png",
-  "cell": 264,
-  "px": 165,
+  "cell": 146,
+  "px": 91,
   "rows": {
    "idle": {
     "row": 0,
@@ -12679,12 +12715,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bat@downleft": {
   "src": "assets/flow/anim3d/mob_bat__downleft.png",
-  "cell": 264,
-  "px": 165,
+  "cell": 146,
+  "px": 91,
   "rows": {
    "idle": {
     "row": 0,
@@ -12720,12 +12757,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bat@upleft": {
   "src": "assets/flow/anim3d/mob_bat__upleft.png",
-  "cell": 264,
-  "px": 165,
+  "cell": 146,
+  "px": 91,
   "rows": {
    "idle": {
     "row": 0,
@@ -12761,12 +12799,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bat@up": {
   "src": "assets/flow/anim3d/mob_bat__up.png",
-  "cell": 264,
-  "px": 165,
+  "cell": 146,
+  "px": 91,
   "rows": {
    "idle": {
     "row": 0,
@@ -12802,7 +12841,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_goblin_shade_archer": {
   "src": "assets/flow/anim3d/mob_goblin_shade_archer.png",
@@ -13231,8 +13271,8 @@ window.ANIM3D = {
  },
  "mob_skeleton_rot": {
   "src": "assets/flow/anim3d/mob_skeleton_rot.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13274,6 +13314,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -13283,8 +13324,8 @@ window.ANIM3D = {
  },
  "mob_skeleton_rot@down": {
   "src": "assets/flow/anim3d/mob_skeleton_rot__down.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13320,12 +13361,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_rot@downleft": {
   "src": "assets/flow/anim3d/mob_skeleton_rot__downleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13361,12 +13403,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_rot@upleft": {
   "src": "assets/flow/anim3d/mob_skeleton_rot__upleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13402,12 +13445,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_rot@up": {
   "src": "assets/flow/anim3d/mob_skeleton_rot__up.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13443,12 +13487,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_cultist": {
   "src": "assets/flow/anim3d/mob_cultist.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -13491,6 +13536,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -13500,8 +13546,8 @@ window.ANIM3D = {
  },
  "mob_cultist@down": {
   "src": "assets/flow/anim3d/mob_cultist__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -13544,12 +13590,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_cultist@downleft": {
   "src": "assets/flow/anim3d/mob_cultist__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -13592,12 +13639,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_cultist@upleft": {
   "src": "assets/flow/anim3d/mob_cultist__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -13640,12 +13688,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_cultist@up": {
   "src": "assets/flow/anim3d/mob_cultist__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -13688,12 +13737,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_shade": {
   "src": "assets/flow/anim3d/mob_wraith_shade.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13729,6 +13779,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -13738,8 +13789,8 @@ window.ANIM3D = {
  },
  "mob_wraith_shade@down": {
   "src": "assets/flow/anim3d/mob_wraith_shade__down.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13775,12 +13826,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_shade@downleft": {
   "src": "assets/flow/anim3d/mob_wraith_shade__downleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13816,12 +13868,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_shade@upleft": {
   "src": "assets/flow/anim3d/mob_wraith_shade__upleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13857,12 +13910,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_shade@up": {
   "src": "assets/flow/anim3d/mob_wraith_shade__up.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -13898,7 +13952,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_bear_dark": {
   "src": "assets/flow/anim3d/mob_bear_dark.png",
@@ -14588,8 +14643,8 @@ window.ANIM3D = {
  },
  "mob_shadow_king": {
   "src": "assets/flow/anim3d/mob_shadow_king.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14638,6 +14693,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -14647,8 +14703,8 @@ window.ANIM3D = {
  },
  "mob_shadow_king@down": {
   "src": "assets/flow/anim3d/mob_shadow_king__down.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14691,12 +14747,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_shadow_king@downleft": {
   "src": "assets/flow/anim3d/mob_shadow_king__downleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14739,12 +14796,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_shadow_king@upleft": {
   "src": "assets/flow/anim3d/mob_shadow_king__upleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14787,12 +14845,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_shadow_king@up": {
   "src": "assets/flow/anim3d/mob_shadow_king__up.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -14835,7 +14894,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf_gray": {
   "src": "assets/flow/anim3d/mob_wolf_gray.png",
@@ -15484,8 +15544,8 @@ window.ANIM3D = {
  },
  "mob_harpy": {
   "src": "assets/flow/anim3d/mob_harpy.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -15521,6 +15581,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -15530,8 +15591,8 @@ window.ANIM3D = {
  },
  "mob_harpy@down": {
   "src": "assets/flow/anim3d/mob_harpy__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -15567,12 +15628,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_harpy@downleft": {
   "src": "assets/flow/anim3d/mob_harpy__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -15608,12 +15670,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_harpy@upleft": {
   "src": "assets/flow/anim3d/mob_harpy__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -15649,12 +15712,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_harpy@up": {
   "src": "assets/flow/anim3d/mob_harpy__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -15690,7 +15754,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_granite": {
   "src": "assets/flow/anim3d/mob_golem_granite.png",
@@ -18684,8 +18749,8 @@ window.ANIM3D = {
  },
  "mob_vulture": {
   "src": "assets/flow/anim3d/mob_vulture.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -18721,6 +18786,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -18730,8 +18796,8 @@ window.ANIM3D = {
  },
  "mob_vulture@down": {
   "src": "assets/flow/anim3d/mob_vulture__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -18767,12 +18833,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_vulture@downleft": {
   "src": "assets/flow/anim3d/mob_vulture__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -18808,12 +18875,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_vulture@upleft": {
   "src": "assets/flow/anim3d/mob_vulture__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -18849,12 +18917,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_vulture@up": {
   "src": "assets/flow/anim3d/mob_vulture__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -18890,7 +18959,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_boar_dune": {
   "src": "assets/flow/anim3d/mob_boar_dune.png",
@@ -20214,8 +20284,8 @@ window.ANIM3D = {
  },
  "mob_mummy_priest": {
   "src": "assets/flow/anim3d/mob_mummy_priest.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -20258,6 +20328,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -20267,8 +20338,8 @@ window.ANIM3D = {
  },
  "mob_mummy_priest@down": {
   "src": "assets/flow/anim3d/mob_mummy_priest__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -20311,12 +20382,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mummy_priest@downleft": {
   "src": "assets/flow/anim3d/mob_mummy_priest__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -20359,12 +20431,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mummy_priest@upleft": {
   "src": "assets/flow/anim3d/mob_mummy_priest__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -20407,12 +20480,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_mummy_priest@up": {
   "src": "assets/flow/anim3d/mob_mummy_priest__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -20455,7 +20529,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_serpent_dune": {
   "src": "assets/flow/anim3d/mob_serpent_dune.png",
@@ -20704,8 +20779,8 @@ window.ANIM3D = {
  },
  "mob_pharaoh": {
   "src": "assets/flow/anim3d/mob_pharaoh.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -20754,6 +20829,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -20763,8 +20839,8 @@ window.ANIM3D = {
  },
  "mob_pharaoh@down": {
   "src": "assets/flow/anim3d/mob_pharaoh__down.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -20807,12 +20883,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_pharaoh@downleft": {
   "src": "assets/flow/anim3d/mob_pharaoh__downleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -20855,12 +20932,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_pharaoh@upleft": {
   "src": "assets/flow/anim3d/mob_pharaoh__upleft.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -20903,12 +20981,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_pharaoh@up": {
   "src": "assets/flow/anim3d/mob_pharaoh__up.png",
-  "cell": 520,
-  "px": 325,
+  "cell": 286,
+  "px": 179,
   "rows": {
    "idle": {
     "row": 0,
@@ -20951,7 +21030,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf_ice": {
   "src": "assets/flow/anim3d/mob_wolf_ice.png",
@@ -21845,8 +21925,8 @@ window.ANIM3D = {
  },
  "mob_owl": {
   "src": "assets/flow/anim3d/mob_owl.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -21882,6 +21962,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -21891,8 +21972,8 @@ window.ANIM3D = {
  },
  "mob_owl@down": {
   "src": "assets/flow/anim3d/mob_owl__down.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -21928,12 +22009,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_owl@downleft": {
   "src": "assets/flow/anim3d/mob_owl__downleft.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -21969,12 +22051,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_owl@upleft": {
   "src": "assets/flow/anim3d/mob_owl__upleft.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -22010,12 +22093,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_owl@up": {
   "src": "assets/flow/anim3d/mob_owl__up.png",
-  "cell": 280,
-  "px": 175,
+  "cell": 154,
+  "px": 96,
   "rows": {
    "idle": {
     "row": 0,
@@ -22051,12 +22135,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_blizzard": {
   "src": "assets/flow/anim3d/mob_wraith_blizzard.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -22092,6 +22177,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -22101,8 +22187,8 @@ window.ANIM3D = {
  },
  "mob_wraith_blizzard@down": {
   "src": "assets/flow/anim3d/mob_wraith_blizzard__down.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -22138,12 +22224,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_blizzard@downleft": {
   "src": "assets/flow/anim3d/mob_wraith_blizzard__downleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -22179,12 +22266,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_blizzard@upleft": {
   "src": "assets/flow/anim3d/mob_wraith_blizzard__upleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -22220,12 +22308,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wraith_blizzard@up": {
   "src": "assets/flow/anim3d/mob_wraith_blizzard__up.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -22261,7 +22350,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_golem_ice": {
   "src": "assets/flow/anim3d/mob_golem_ice.png",
@@ -23236,8 +23326,8 @@ window.ANIM3D = {
  },
  "mob_skeleton_frost": {
   "src": "assets/flow/anim3d/mob_skeleton_frost.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -23273,6 +23363,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -23282,8 +23373,8 @@ window.ANIM3D = {
  },
  "mob_skeleton_frost@down": {
   "src": "assets/flow/anim3d/mob_skeleton_frost__down.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -23319,12 +23410,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_frost@downleft": {
   "src": "assets/flow/anim3d/mob_skeleton_frost__downleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -23360,12 +23452,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_frost@upleft": {
   "src": "assets/flow/anim3d/mob_skeleton_frost__upleft.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -23401,12 +23494,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_skeleton_frost@up": {
   "src": "assets/flow/anim3d/mob_skeleton_frost__up.png",
-  "cell": 288,
-  "px": 180,
+  "cell": 158,
+  "px": 99,
   "rows": {
    "idle": {
     "row": 0,
@@ -23442,12 +23536,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ice_witch": {
   "src": "assets/flow/anim3d/mob_ice_witch.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -23490,6 +23585,7 @@ window.ANIM3D = {
   },
   "b3d": true,
   "half": true,
+  "fine": true,
   "views": [
    "down",
    "downleft",
@@ -23499,8 +23595,8 @@ window.ANIM3D = {
  },
  "mob_ice_witch@down": {
   "src": "assets/flow/anim3d/mob_ice_witch__down.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -23543,12 +23639,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ice_witch@downleft": {
   "src": "assets/flow/anim3d/mob_ice_witch__downleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -23591,12 +23688,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ice_witch@upleft": {
   "src": "assets/flow/anim3d/mob_ice_witch__upleft.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -23639,12 +23737,13 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_ice_witch@up": {
   "src": "assets/flow/anim3d/mob_ice_witch__up.png",
-  "cell": 300,
-  "px": 188,
+  "cell": 164,
+  "px": 102,
   "rows": {
    "idle": {
     "row": 0,
@@ -23687,7 +23786,8 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true,
-  "half": true
+  "half": true,
+  "fine": true
  },
  "mob_wolf_blizzard": {
   "src": "assets/flow/anim3d/mob_wolf_blizzard.png",
