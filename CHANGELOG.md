@@ -20,6 +20,18 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 133 (v1.32) — teste do estilo novo de monstro: Gnol carniceiro
+- **Estudo (referência de estilo, sem copiar):** monstros de MMO 2D em pixel art como os do Cambria: silhueta robusta e
+  exagerada, materiais com textura, sombra com mudança de tom, muitos adornos que contam quem é o monstro; na lógica, bandos
+  com elites, emboscadas que caçam, golpes com aviso no chão, efeitos que duram (sangramento, veneno) e chefes com regras.
+- **Arte:** `tools/b3d/mobs_cambria.py` (homem-hiena: pelo malhado, juba, focinho escuro, olhos acesos, lenço, colar de ossos,
+  correias com fivela de ouro, cutelo enferrujado). `mat_tex`: textura em 3 tons + manchas e luz em 4 degraus (sombra fria,
+  brilho quente). `tools/mob3d.py`: CHUNK (pixel 2 x 2) e PALETTE (40 cores para a folha toda, sem piscar). Linhas novas: salto
+  (`leap`) e morte de joelhos (`fall="slump"`, cabe na célula). Folha de 256 px mostrada na metade (escala exata).
+- **IA:** `js/mobskills.js` — salto com aviso (marca o tile do herói, voa no meio da folha, só acerta quem ficou), sangramento
+  (3 pulsos), cerco (vai para o lado oposto de quem já bate) e, nos dados, a risada (`enrage.at` 50%, `enrage.pack` chama o bando).
+- 4 gnols no leste do Bosque dos Carvalhos (nível 10).
+
 ## Rodada 132 (v1.31) — Pedra da vila saindo do chão
 - A Pedra da vila foi refeita no Blender (`natural_props.py`, job `deco_waystone`) com a receita das pedras do mapa: obelisco
   escalonado de ardósia escura, base enterrada abaixo do chão (que só registra a sombra de contato), pedras soltas meio

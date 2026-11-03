@@ -158,6 +158,12 @@ window.VD = (() => {
       drops: [["Couro de javali", 0.7], ["Carne de javali", 0.6], ["Âmbar antigo", 1 / 60]], color: "#8a5a3a" },
     goblin: { name: "Goblin saqueador", spr: "mob_goblin", lvl: 9, hp: 20, atk: 9, def: 6, maxHit: 4, speed: 3, aggro: 2, /* rodada 60: 3 -> 2 (bando acorda menos de uma vez: 0,96 -> 0,46 morte em 30 min no robô) */ coins: [6, 14], where: "Acampamento goblin (leste)",
       drops: [["Cobre", 0.35, 1, 3], ["Barra de bronze", 0.2], ["Poção de vida", 0.08], ["Poção de força", 0.05], ["Anel do caçador", 1 / 80], ["Âmbar antigo", 1 / 45]], color: "#6fae3a" },
+    // rodada 133: primeiro monstro no estilo novo (arte com textura e pixel grosso; IA com habilidades próprias, js/mobskills.js)
+    gnoll: { name: "Gnol carniceiro", spr: "mob_gnoll", lvl: 10, hp: 34, atk: 11, def: 7, maxHit: 5, speed: 3, aggro: 4, coins: [9, 20], where: "Toca dos gnols (leste do Bosque dos Carvalhos)",
+      skills: { leap: { range: 4, cd: 8, cry: "Salto do carniceiro!" }, bleed: { p: 0.35 }, flank: true },
+      enrage: { row: "enrage", at: 0.5, cry: "HA-HA-HA!", pack: 9, log: "solta uma risada e chama o bando!" },
+      desc: "Caçador em bando: salta com o cutelo sobre quem está a poucos passos (saia do tile marcado), abre feridas que sangram, cerca a presa pelos lados e, ferido, ri e chama os outros.",
+      drops: [["Cobre", 0.3, 1, 2], ["Barra de bronze", 0.15], ["Poção de vida", 0.1], ["Anel do caçador", 1 / 60]], color: "#c49a5a" },
     wolf: { name: "Lobo sombrio", spr: "mob_wolf", lvl: 12, hp: 28, atk: 12, def: 9, maxHit: 5, speed: 3, aggro: 4, coins: [10, 24], where: "Mata Sombria",
       drops: [["Pele de lobo", 0.7], ["Presa lunar", 1 / 60]], color: "#888888" },
     wolf_alpha: { name: "Lobo alfa", spr: "mob_wolf_alpha", lvl: 15, hp: 40, atk: 15, def: 11, maxHit: 7, speed: 3, aggro: 5,

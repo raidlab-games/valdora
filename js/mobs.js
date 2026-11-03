@@ -43,6 +43,7 @@ window.ValdoraMobs = (() => {
         }
         const pf = api.petFoe && api.petFoe(m, dist); // rodada 96: ao lado do filhote e longe do herói (ou mordido por último por ele): ataca o filhote
         if (pf) { faceAt(m, pf.x, pf.y); if (m.atkT <= 0 && m.prog >= 1) { api.petAttack(m); m.atkT = spd; } return; }
+        if (api.skills && api.skills.think(m, near)) return; // rodada 133: salto, cerco (js/mobskills.js)
         engage(m, near, spd);
       } else if (m.prog >= 1 && Math.abs(m.x - m.hx) + Math.abs(m.y - m.hy) > 4) mobStepToward(m, m.hx, m.hy); // volta para casa
       else if (m.prog >= 1 && rand() < 0.12) {
@@ -77,6 +78,7 @@ window.ValdoraMobs = (() => {
       if (!m.aggro || m.dead || m.prog < 1 || m.stun > 0 || m.windup > 0 || m.appear != null || m.sleeping || m.stuck || player.deadT > 0) return; // preso: o tick resolve
       if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage" || m.an.s === "special")) return;
       if (api.petFoe && api.petFoe(m, Math.abs(m.x - player.x) + Math.abs(m.y - player.y))) return; // brigando com o filhote: fica com o tick
+      if (d.skills && api.skills && !adjacent(m, player) && api.skills.flank(m)) return; // rodada 133: cerco (o salto só no tick)
       engage(m, adjacent(m, player), m.enraged ? Math.max(2, d.speed - 2) : d.speed);
     }
     function slam(m) { // tremor em área: acerta quem estiver a até 2 tiles do golem
@@ -123,6 +125,7 @@ window.ValdoraMobs = (() => {
       }
       if (an.s === "special") {
         const R = A.rows.special, f = Math.floor(an.t * R.fps);
+        if (m.pending && m.pending.leap && !m.pending.leap.moved && f >= 3 && api.skills) api.skills.leapFly(m); // rodada 133: voa no meio do salto
         if (m.pending && f >= (R.impact ?? 6)) { const pe = m.pending; m.pending = null; if (!pe.slamAoE) api.dust(m.x + (m.face > 0 ? 0.6 : -0.6), m.y + 0.2); applyMobHit(m, pe); }
         if (f >= R.frames) { an.s = moving ? "walk" : "idle"; an.t = 0; }
         return;

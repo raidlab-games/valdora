@@ -2142,7 +2142,7 @@
       fx.sparks((player.px + m.px) / 2 + 0.5, (player.py + m.py) / 2 + 0.45, crit ? 14 : 7, crit ? ["#fff6c0", "#ffd23a"] : ["#ffffff", "#ffe6a0"], crit ? 6 : 4.5);
       hitSplat(m.px + 0.5, headY + 0.35, dmg, crit ? "#ffd23a" : "#ffffff", crit); SND.play(crit ? "crit" : "hit");
       if (crit) { hitStop = 0.09; if (SND.opts.shake) shake = Math.max(shake, 0.12); /* rodada 66: o número do crítico já diz (dourado, "!" e estrela) */ burst(m.px + 0.5, m.py + 0.4, ["#ffd23a", "#ffffff"], 12, 4); }
-      if ((d.slam || d.enrage) && !m.enraged && m.hp > 0 && m.hp <= d.hp * 0.3) enrageMob(m);
+      if ((d.slam || d.enrage) && !m.enraged && m.hp > 0 && m.hp <= d.hp * ((d.enrage && d.enrage.at) || 0.3)) enrageMob(m);
       burst(m.px + 0.5, m.py + 0.5, [d.color, "#ffffff"], 6, 3);
       const xp = STYLES[player.style].xp;
       if (!opts.pet) { gainXp("combate", Math.round(dmg * xp.combate)); gainXp("vitalidade", Math.round(dmg * xp.vitalidade)); } // rodada 95: a mordida do filhote não dá XP ao herói
@@ -2217,7 +2217,9 @@
   // fúria abaixo de 30%: ataca mais rápido (mobs.js); com "enrage" nos dados, toca a folha, mantém a aura e invoca mais mortos
   function enrageMob(m) {
     const d = m.d, E = d.enrage || {}; m.enraged = true;
-    log(`${d.name} entra em fúria e ataca mais rápido!`, "warn"); addFloat(m.px + 0.5, m.py - 2.2, "FÚRIA!", "#ff6b5a", 1.6, 18);
+    log(`${d.name} ${E.log || "entra em fúria e ataca mais rápido!"}`, "warn"); addFloat(m.px + 0.5, m.py - 2.2, E.cry || "FÚRIA!", "#ff6b5a", 1.6, 18);
+    if (E.pack) for (const o of mobs) if (o !== m && !o.dead && o.type === m.type && !o.aggro && Math.hypot(o.x - m.x, o.y - m.y) <= E.pack) { // rodada 133: o bando ouve e vem
+      o.aggro = true; o.atkT = 1; addFloat(o.px + 0.5, o.py - 1.8, "!", "#ff6b5a", 1, 18); }
     if (E.row && ANIMS[d.spr] && ANIMS[d.spr].rows[E.row] && !(m.an && m.an.s === "special")) { m.an = { s: "enrage", t: 0, still: 0 }; m.atkT = Math.max(m.atkT, 2); if (SND.opts.shake) shake = Math.max(shake, 0.25); }
     if (E.summon && d.summon) bossSummon(m, E.summon, "Ergam-se todos!");
   }
@@ -2288,6 +2290,7 @@
   }
   function applyMobHit(m, pe) {
     if (m.dead || player.deadT > 0) return;
+    if (pe.leap) return MSKILL.land(m, pe); // rodada 133: salto do gnol
     if (pe.pet) return petHurt(m, pe); // rodada 96
     if (pe.slamAoE) return slam(m);
     if (pe.heavy) fx.mark(m.px + 0.5 + Math.sign(player.x - m.x) * 0.85, m.py + 0.9 + Math.sign(player.y - m.y) * 0.85, 1.15); // rodada 68
@@ -2307,6 +2310,7 @@
       hitStop = Math.max(hitStop, pe.heavy ? 0.09 : 0.04);
       if (pe.heavy && SND.opts.shake) shake = 0.3;
       if (player.hp <= 0) return playerDied();
+      if (!blocked && MSKILL.wantsBleed(m, pe)) MSKILL.bleed(m); // rodada 133: ferida que sangra
     } else addFloat(player.px + 0.5, player.py - 0.3, "bloqueou", "#9fd0ff", 0.8, 12);
     // rodada 105: não revida sozinho — o herói só luta com o monstro que o jogador escolheu (clique, Ctrl + clique ou Espaço)
   }
@@ -3039,6 +3043,13 @@
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
     if (player.deadT > 0 && (player.deadT -= dt) <= 0) respawnAfterDeath();
+    if (player.bleed && (player.deadT > 0 || inTown(player.x, player.y))) player.bleed = null; // rodada 133: a ferida fecha na vila
+    else if (player.bleed && (player.bleed.t -= dt) <= 0) { // rodada 133: ferida do gnol, 1 pulso por segundo
+      const b = player.bleed; b.t = 1; if (--b.n <= 0) player.bleed = null;
+      player.hp -= b.dmg; player.flash = 0.1; player.lastHurt = tickN; hudDirty = true;
+      hitSplat(player.px + 0.5, player.py - 0.3, b.dmg, "#d03030"); burst(player.px + 0.5, player.py + 0.6, ["#9a1a1a", "#d03030"], 6, 1.5);
+      if (player.hp <= 0) playerDied();
+    }
     if (shots.length) updateShots(dt);
     if (player.act) { // ação em 3 tempos
       const a = player.act; a.t += dt;
@@ -3100,7 +3111,7 @@
         if ((m.respawnT -= dt) <= 0) respawnMob(m); continue;
       }
       if (m.appear != null && (m.appear += dt) >= APPEAR) m.appear = null; // eco surgindo da névoa
-      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) / (m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; } // rodada 105: passo diagonal mais longo
+      if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / (m.fly ? 0.22 : m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) / (m.fly ? 1 : m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; if (m.prog >= 1) m.fly = false; } // rodada 105: passo diagonal mais longo; 133: voo do salto
       if (m.aggro && m.prog >= 1 && activeMob(m)) MOBAI.chase(m); // rodada 113: emenda o passo / golpeia sem esperar o tick
       // slime: agacha, salta e aterrissa; os outros andam com easing (perseguindo, em ritmo constante)
       const k = m.d.squish ? (m.prog < 0.2 ? 0 : m.prog > 0.8 ? 1 : ease.inOutSine((m.prog - 0.2) / 0.6)) : m.aggro ? m.prog : ease.inOutSine(m.prog);
@@ -3145,7 +3156,12 @@
     if (tickN % 10 === 0) AUCTION.tick(); // rodada 114/116: lotes que terminaram (e o relógio da janela do mercado)
   }
   // IA e animação dos monstros (js/mobs.js)
-  const MOBAI = ValdoraMobs.create({ petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+  const MSKILL = ValdoraMobSkills.create({ rand, ri, TICK, player: () => player, mobs: () => mobs, mobCan: (m, x, y) => MOBAI.mobCan(m, x, y), mobAt: (x, y) => mobAt(x, y),
+    mobStepToward: (m, x, y) => MOBAI.mobStepToward(m, x, y), faceAt: (m, x, y) => MOBAI.faceAt(m, x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m),
+    hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d) => hitChance(a, d),
+    SND, addFloat: (...a) => addFloat(...a), log: (...a) => log(...a), applyMobHit: (m, pe) => applyMobHit(m, pe), mark: (x, y, r) => fx.mark(x, y, r),
+    dust: (x, y) => { if (!RENDER.playOnce("fx_dust_slam_light", x, y, { foot: true })) burst(x + 0.5, y + 0.6, ["#8a7a5a", "#c8b060"], 10, 2); } }); // rodada 133
+  const MOBAI = ValdoraMobs.create({ skills: { think: (m, near) => MSKILL.think(m, near), leapFly: (m) => MSKILL.leapFly(m), flank: (m) => MSKILL.flank(m) }, petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },
@@ -3223,8 +3239,8 @@
       ctx.strokeRect((o.x - 1) * TILE - cam.x + 2, (o.y - 1) * TILE - cam.y + 2, TILE * 3 - 4, TILE * 3 - 4);
       ctx.fillStyle = "#ff5a3a"; ctx.fillRect((o.x - 1) * TILE - cam.x + 3, (o.y + 2) * TILE - cam.y - 8, (TILE * 3 - 6) * (1 - k), 4); // tempo restante
     }
-    for (const m of mobs) if (!m.dead && m.windup > 0 && !m.d.slam && m.pending && m.pending.special) // golpe pesado: os 4 tiles ao redor
-      warnTiles(DIRS.map(([dx, dy]) => [m.x + dx, m.y + dy]), m.an ? m.an.t : t);
+    for (const m of mobs) if (!m.dead && m.windup > 0 && !m.d.slam && m.pending && m.pending.special) // golpe pesado: os 4 tiles ao redor (salto: o tile marcado)
+      warnTiles(m.pending.leap ? [[m.pending.leap.tx, m.pending.leap.ty]] : DIRS.map(([dx, dy]) => [m.x + dx, m.y + dy]), m.an ? m.an.t : t);
     for (const m of mobs) if (!m.dead && m.windup > 0 && m.d.slam && !(m.an && m.an.s === "special" && !m.pending)) { // área do tremor, pulsando
       const cx = (m.x + 0.5) * TILE - cam.x, cy = (m.y + 0.5) * TILE - cam.y, k = 0.5 + Math.sin(t * 14) * 0.2, tiles = [];
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if ((dx || dy) && Math.hypot(dx, dy) <= 2.3) tiles.push([m.x + dx, m.y + dy]); // os tiles que o tremor acerta

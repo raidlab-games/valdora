@@ -8842,6 +8842,252 @@ window.ANIM3D = {
   },
   "b3d": true,
   "lazy": true
+ },
+ "mob_gnoll": {
+  "src": "assets/flow/anim3d/mob_gnoll.png",
+  "cell": 256,
+  "px": 160,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "special": {
+    "row": 5,
+    "frames": 8,
+    "fps": 8,
+    "loop": false,
+    "impact": 6
+   },
+   "enrage": {
+    "row": 6,
+    "frames": 6,
+    "fps": 10,
+    "loop": false
+   }
+  },
+  "b3d": true,
+  "views": [
+   "down",
+   "downleft",
+   "upleft",
+   "up"
+  ]
+ },
+ "mob_gnoll@down": {
+  "src": "assets/flow/anim3d/mob_gnoll__down.png",
+  "cell": 256,
+  "px": 160,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "special": {
+    "row": 5,
+    "frames": 8,
+    "fps": 8,
+    "loop": false,
+    "impact": 6
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_gnoll@downleft": {
+  "src": "assets/flow/anim3d/mob_gnoll__downleft.png",
+  "cell": 256,
+  "px": 160,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "special": {
+    "row": 5,
+    "frames": 8,
+    "fps": 8,
+    "loop": false,
+    "impact": 6
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_gnoll@upleft": {
+  "src": "assets/flow/anim3d/mob_gnoll__upleft.png",
+  "cell": 256,
+  "px": 160,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "special": {
+    "row": 5,
+    "frames": 8,
+    "fps": 8,
+    "loop": false,
+    "impact": 6
+   }
+  },
+  "b3d": true,
+  "lazy": true
+ },
+ "mob_gnoll@up": {
+  "src": "assets/flow/anim3d/mob_gnoll__up.png",
+  "cell": 256,
+  "px": 160,
+  "rows": {
+   "idle": {
+    "row": 0,
+    "frames": 8,
+    "fps": 6,
+    "loop": true
+   },
+   "walk": {
+    "row": 1,
+    "frames": 8,
+    "fps": 10,
+    "loop": true
+   },
+   "attack": {
+    "row": 2,
+    "frames": 8,
+    "fps": 14,
+    "loop": false,
+    "impact": 4
+   },
+   "hit": {
+    "row": 3,
+    "frames": 4,
+    "fps": 14,
+    "loop": false
+   },
+   "death": {
+    "row": 4,
+    "frames": 8,
+    "fps": 10,
+    "loop": false
+   },
+   "special": {
+    "row": 5,
+    "frames": 8,
+    "fps": 8,
+    "loop": false,
+    "impact": 6
+   }
+  },
+  "b3d": true,
+  "lazy": true
  }
 };
 window.ROD_TIP3D = {"hero_1": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_2": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}, "hero_3": {"down": [9, -36], "left": [-55, -55], "right": [55, -62], "up": [-9, -81], "downleft": [-33, -40], "downright": [45, -45], "upleft": [-45, -72], "upright": [33, -77]}};

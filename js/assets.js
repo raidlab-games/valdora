@@ -348,7 +348,10 @@ window.SPRITE_SINK = { deco_waystone: 0.156, boulder: 0.457, boulder_snow: 0.457
 for (const [k, s, sink] of [["deco_sacks", 1.5, 0.167], ["deco_sack_pair", 1.3, 0.192], ["deco_sack_pile", 2.4, 0.104], ["deco_vase_gray", 0.6, 0.208], ["deco_vase_plant", 0.53, 0.238], ["deco_barrel_vase", 1.4, 0], ["deco_barrel_plant", 1.4, 0], /* rodada 128: vasos pela metade; barril com vaso na tampa */
   ["deco_barrel_pile", 2.4, 0.042], ["deco_cargo_pile", 2.4, 0.042], ["deco_crates_green", 1.5, 0], ["deco_crates_orange", 1.5, 0]]) {
   ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s]; if (sink) window.SPRITE_SINK[k] = sink; }
-SPRITE_SIZE.deco_board = [2.4, 2.4]; // rodada 124: quadro de caçadas 50% maior (agora com 2 tiles de base)
+SPRITE_SIZE.deco_board = [2.4, 2.4];
+// rodada 133: Gnol carniceiro (estilo novo, tools/b3d/mobs_cambria.py): folha de 256 px por quadro mostrada na metade (128 px):
+// escala exata, cada pixel de 2 x 2 da folha vira 1 pixel na tela, sem borrar
+ASSETS.mob_gnoll = "assets/flow/mob_gnoll.png"; SPRITE_SIZE.mob_gnoll = [5 / 3, 5 / 3]; // rodada 124: quadro de caçadas 50% maior (agora com 2 tiles de base)
 ASSETS.deco_barrel_stack = "assets/flow/deco_barrel_stack.png"; SPRITE_SIZE.deco_barrel_stack = [1.6, 1.6]; // rodada 124: 3 barris empilhados (do barrel.png)
 // rodada 125: afundamento = (chão abaixo do pé - 0,1) / tamanho, como os minérios: o pé fica rente à borda de baixo do tile
 for (const [k, s, sink] of [["boulder_moss", 2.3, 0.457], ["boulder_grass", 2.3, 0.457], ["rockmoss_bare", 1.5, 0.433], ["deco_trail_lamp", 2.4, 0.208], ["deco_clay_pot", 1.2, 0.417]]) {

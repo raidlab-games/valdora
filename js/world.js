@@ -33,7 +33,7 @@ window.ValdoraWorld = (() => {
     .map(([x, y, l]) => [RX(x), RY(y), l]);
   const CAMP = rm({ x: 79, y: 46 }); // acampamento goblin no bosque
   // monstros do mapa de cima: [tipo, quantidade, ponto de origem opcional]
-  const MOB_SPAWNS = { fields: [["slime", 14], ["slime_blue", 6], ["fox", 3]], east: [["boar", 9], ["slime", 2], ["goblin", 7, CAMP], ["deer", 3]], south: [["wolf", 13], ["wolf_alpha", 2], ["bear", 2]], // rodada 120: um pouco mais (campos mais largos)
+  const MOB_SPAWNS = { fields: [["slime", 14], ["slime_blue", 6], ["fox", 3]], east: [["boar", 9], ["slime", 2], ["goblin", 7, CAMP], ["deer", 3], ["gnoll", 4, rm({ x: 89, y: 38 })]], /* rodada 133: toca dos gnols */ south: [["wolf", 13], ["wolf_alpha", 2], ["bear", 2]], // rodada 120: um pouco mais (campos mais largos)
     // rodada 19: golems e slimes de lumita agrupados no meio do Planalto (antes espalhados por toda a borda oeste: o robô andava mais do que lutava)
     west: [["golem", 6, rm({ x: 12, y: 28 })], ["slime_crystal", 5, rm({ x: 12, y: 42 })], ["boss_golem", 1, rm({ x: 9, y: 14 })]], ruins: [["skeleton", 8, rm({ x: 74, y: 12 })], ["boss", 1, rm({ x: 84, y: 8 })]] }; // rodada 18: esqueletos na parte oeste das Ruínas, longe do chefe (o robô era puxado para o Senhor)
   // rodada 62: distância mínima (tiles) entre o ponto de nascimento e os Campos/vila, para quem nasce solto pela região.
