@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.21", "Sem paredes invisíveis", ["Balcões da Celeste e da Morgana, cabana da Juna e tenda da Odília bloqueiam só onde há desenho", "Dá para encostar nos balcões pelos lados"]],
     ["v1.20", "Ajustes no litoral e na praça", ["Cais da Névoa e Cais das Dunas mais espaçados no litoral sul", "Fogueira do Tomé à esquerda do varal, sem ficar escondida"]],
     ["v1.19", "Um mundo maior", ["Biomas 50% maiores e mar em volta de todo o continente", "Vilas com o dobro do tamanho", "10 cais com mestres do porto (os barcos vêm depois)", "Raposas, cervos e ursos, e mais monstros espalhados"]],
     ["v1.18", "Movimento mais preciso", ["As teclas agora são seguidas na ordem em que você aperta: 3× A e 1× W anda para a esquerda e depois sobe", "Toques rápidos não se perdem mais"]],

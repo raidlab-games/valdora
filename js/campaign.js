@@ -45,7 +45,7 @@ window.ValdoraCampaign = (() => {
     function place(deco, free, npc) { // no fim do genWorld: depois de todo o sorteio, então o mundo fixo das medições não muda
       for (const k of Object.keys(markers)) delete markers[k];
       // rodada 79: cabana da Juna (3x2, a arte sobe uma linha) e a Juna na frente
-      if (SPR.house_juna && [0, 1, 2].every((dx) => free(HUT.x + dx, HUT.y) && free(HUT.x + dx, HUT.y + 1))) deco("hut", "house_juna", HUT.x, HUT.y, 3, 2);
+      if (SPR.house_juna && [0, 1, 2].every((dx) => free(HUT.x + dx, HUT.y) && free(HUT.x + dx, HUT.y + 1))) deco("hut", "house_juna", HUT.x + 1, HUT.y, 2, 2, { ox: -0.5 }); // rodada 122: a coluna da esquerda não tem parede (só o beiral), fica livre
       if (npc && SPR.npc_juna && free(HUT.juna.x, HUT.juna.y)) npc.herb = deco("herb", "npc_juna", HUT.juna.x, HUT.juna.y, 1, 1, { name: "Juna" });
       // rodada 82: entrada da Fenda Cintilante (masmorra), no alto do Planalto
       if (SPR.deco_rift_entrance) { let done = false; for (let r = 0; r <= 4 && !done; r++) for (let dy = -r; dy <= r && !done; dy++) for (let dx = -r; dx <= r && !done; dx++) {
@@ -61,7 +61,7 @@ window.ValdoraCampaign = (() => {
       if (mc && SPR.camp_bras) deco("camp", "camp_bras", mc.x, mc.y, 3, 2);
       if (mc && npc && SPR.npc_bras) npc.miner = deco("miner", "npc_bras", mc.x + 1, mc.y + 2, 1, 1, { name: "Brás" });
       // rodada 80: tenda e Odília; inscrições nas colunas das Ruínas
-      if (SPR.tent_odilia && [0, 1, 2].every((dx) => free(TENT.x + dx, TENT.y) && free(TENT.x + dx, TENT.y + 1))) deco("tent", "tent_odilia", TENT.x, TENT.y, 3, 2);
+      if (SPR.tent_odilia && [0, 1, 2].every((dx) => free(TENT.x + dx, TENT.y) && free(TENT.x + dx, TENT.y + 1))) deco("tent", "tent_odilia", TENT.x + 1, TENT.y, 2, 2, { ox: -0.5 }); // rodada 122: a lona começa na 2ª coluna; a 1ª fica livre
       if (npc && SPR.npc_odilia && free(TENT.odilia.x, TENT.odilia.y)) npc.carto = deco("carto", "npc_odilia", TENT.odilia.x, TENT.odilia.y, 1, 1, { name: "Odília" });
       runes.length = 0;
       RUNES.forEach((R, i) => { for (let r = 0; r <= 3; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {

@@ -20,6 +20,11 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 122 (v1.21) — sem paredes invisíveis
+- Medida a base de cada arte (pixels opacos nos 0,6 tile de baixo) contra o retângulo que bloqueia. Objetos de 1 tile e casas
+  estão certos; sobravam quatro: balcão da Celeste (3º tile com 12% de arte), balcão da Morgana (1º tile com 19%), cabana da
+  Juna (23%) e tenda da Odília (0%). Agora bloqueiam 2 tiles; `dcx` (balcões) e `ox` (cabana, tenda) mantêm a arte no mesmo lugar.
+
 ## Rodada 121 (v1.20) — cais do sul espaçados, fogueira do Tomé
 - Breu, Névoa e Dunas ficavam a 54 e 88 tiles um do outro no litoral sul. `DOCK_AT` em world.js escolhe o segundo cais da Mata
   Sombria e o do deserto pelo ponto válido mais perto de um alvo (varredura tile a tile): Névoa 262 → 301, Dunas 350 → 516

@@ -182,8 +182,10 @@
     // rodada 120: Lumeira com o dobro do tamanho (32 x 30). Quatro bairros em volta do cruzamento: Leilões (noroeste), Feiticeira
     // e mercado (nordeste), fogueira do Tomé (sudoeste) e forja (sudeste); o Ivo e o cofre ficam junto do cruzamento.
     // rodada 114/116: Casa de Leilões com o balcão de juiz da Celeste na frente; rodada 117: casa azul e a bancada da Morgana
-    deco("house", "house_auction", 44, 31, 3, 2); npc.auction = deco("auction", "auction_desk", 44, 33, 3, 1, { name: "Celeste", npcSpr: "npc_auctioneer" });
-    deco("house", "house_blue", 67, 31, 3, 2); npc.witch = deco("witch", "witch_desk", 67, 33, 3, 1, { name: "Morgana", npcSpr: "npc_witch" });
+    // rodada 122: o balcão (2,2 tiles de arte) bloqueia só os 2 tiles da base; dcx = onde a arte é ancorada (antes eram 3 tiles e o
+    // terceiro, quase vazio, virava parede invisível)
+    deco("house", "house_auction", 44, 31, 3, 2); npc.auction = deco("auction", "auction_desk", 44, 33, 2, 1, { name: "Celeste", npcSpr: "npc_auctioneer", dcx: 1.5 });
+    deco("house", "house_blue", 67, 31, 3, 2); npc.witch = deco("witch", "witch_desk", 68, 33, 2, 1, { name: "Morgana", npcSpr: "npc_witch", dcx: 0.5 });
     deco("house", "house_green", 44, 53, 3, 2); deco("house", "house_red", 50, 30, 3, 2); deco("house", "house_green", 61, 30, 3, 2); deco("house", "house_red", 66, 54, 3, 2);
     npc.stall = deco("stall", "stall", 61, 37, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 63, 37, 1, 1, { name: "Bento" });
@@ -1345,7 +1347,7 @@
       const o = inside(x, y) && occ[y * W + x]; if (!o || seen.has(o)) continue; seen.add(o);
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type]; if (!kind) continue;
       const DK = (o.type === "auction" || o.type === "witch") && (window.DESKS || {})[o.spr]; // rodada 116/117: NPC atrás do balcão
-      if (DK) { const [w, h] = SPRITE_SIZE[o.spr], cx = o.x + 1.5;
+      if (DK) { const [w, h] = SPRITE_SIZE[o.spr], cx = o.x + (o.dcx ?? 1.5);
         if (fx >= cx - DK.ax * w && fx <= cx + (1 - DK.ax) * w && fy >= o.y + 1 - DK.ay * h - 0.7 && fy <= o.y + 1 + (1 - DK.ay) * h) { if (!best || o.y + o.h > best.ref.y + best.ref.h) best = { kind, ref: o, tx: o.x, ty: o.y }; }
         continue; }
       const img = o.spr && SPR[o.spr]; if (!img) continue;
@@ -2456,7 +2458,7 @@
     for (let k = 0; k < n && hasMats(R.mats) && canAdd(name); k++) { for (const [m, q] of Object.entries(R.mats)) removeItem(m, q); addItem(name); gainXp("alquimia", R.xp); made++; }
     if (!made) { log(canAdd(name) ? "Faltam ingredientes." : "Sua mochila está cheia.", "warn"); return; }
     react(npc.witch); SND.play("drink"); log(`Morgana mexe o caldeirão... ${made}x ${name} pront${made > 1 ? "as" : "a"}! (+${R.xp * made} xp de Alquimia)`, "gold");
-    if (npc.witch) burst(npc.witch.x + 1.9, npc.witch.y + 0.2, ["#8fe08a", "#d6b4ff", "#ffffff"], 16, 2.5);
+    if (npc.witch) burst(npc.witch.x + (npc.witch.dcx ?? 1.5) + 0.4, npc.witch.y + 0.2, ["#8fe08a", "#d6b4ff", "#ffffff"], 16, 2.5);
   }
   function bankUp() { // rodada 117: amplia o cofre em 2 espaços
     const c = bankUpCost(player.bankUps);

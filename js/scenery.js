@@ -60,11 +60,11 @@ window.ValdoraScenery = (() => {
       else if (o.type === "crypt_chest" && o.spr === "chest" && o.openT != null && ANIMS.chest_open && o.openT < ANIMS.chest_open.rows.open.frames / ANIMS.chest_open.rows.open.fps) {
         const R = ANIMS.chest_open.rows.open; drawAnim(ANIMS.chest_open, "open", Math.min(R.frames - 1, Math.floor(o.openT * R.fps)), Math.round((o.x + 0.5) * TILE - cam.x), Math.round((o.y + 1) * TILE - cam.y), false);
       } else if (o.type === "auction" || o.type === "witch") { // rodadas 116/117: NPC atrás do balcão, encostado na frente da casa
-        const A = ANIMS[o.npcSpr], D = (window.DESKS || {})[o.spr] || { ax: 0.5, ay: 0.76, nx: 0, ny: -0.17 }, fxN = Math.round((o.x + 1.5 + D.nx) * TILE - cam.x), fyN = Math.round((o.y + 1 + D.ny) * TILE - cam.y);
+        const A = ANIMS[o.npcSpr], D = (window.DESKS || {})[o.spr] || { ax: 0.5, ay: 0.76, nx: 0, ny: -0.17 }, fxN = Math.round((o.x + (o.dcx ?? 1.5) + D.nx) * TILE - cam.x), fyN = Math.round((o.y + 1 + D.ny) * TILE - cam.y);
         const talking = o.type === "auction" ? api.marketOpen && api.marketOpen() : dlg && dlg.kind === "witch";
         if (A) { const R = o.react && A.rows[o.react.row], row = R ? o.react.row : talking ? "talk" : "idle";
           drawAnim(A, row, R ? Math.min(R.frames - 1, Math.floor(o.react.t * R.fps)) : animFrame(A.rows[row], t + o.x * 0.37), fxN, fyN, !!D.flip); } // rodada 118: olha para a frente do balcão
-        ctx.drawImage(img, Math.round((o.x + 1.5) * TILE - cam.x - img.width * D.ax), Math.round((o.y + 1) * TILE - cam.y - img.height * D.ay));
+        ctx.drawImage(img, Math.round((o.x + (o.dcx ?? 1.5)) * TILE - cam.x - img.width * D.ax), Math.round((o.y + 1) * TILE - cam.y - img.height * D.ay));
       } else ctx.drawImage(img, sx, sy);
       if ((o.type === "marker" || o.type === "rune" || o.type === "seal") && o.fade > 0 && SPR[o.fadeFrom]) { ctx.globalAlpha = Math.min(1, o.fade); ctx.drawImage(SPR[o.fadeFrom], sx, sy); ctx.globalAlpha = 1; } // rodada 79: marco acendendo
       const OV = o.spr === "deco_shrine_offering" && ANIMS.fx_candle_flames; // rodada 50: chamas das velas (Blender), no mesmo retângulo da arte
@@ -90,7 +90,7 @@ window.ValdoraScenery = (() => {
       if (o.type === "miner") tags.push(["Brás", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#e8b070"]); // rodada 81
       if (o.type === "carto") tags.push(["Odília", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#b8c8ff"]); // rodada 80
       if (o.type === "herb") tags.push(["Juna", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#8fe08a"]); // rodada 79
-      if (o.type === "auction" || o.type === "witch") { const D = (window.DESKS || {})[o.spr] || { nx: 0 }; tags.push([o.type === "auction" ? "Celeste · Leilão" : "Morgana · Poções", o.x + 1.5 + D.nx, o.y - 0.95, o.type === "auction" ? "#e8b4ff" : "#9fe0a8"]); } // rodadas 114–117
+      if (o.type === "auction" || o.type === "witch") { const D = (window.DESKS || {})[o.spr] || { nx: 0 }; tags.push([o.type === "auction" ? "Celeste · Leilão" : "Morgana · Poções", o.x + (o.dcx ?? 1.5) + D.nx, o.y - 0.95, o.type === "auction" ? "#e8b4ff" : "#9fe0a8"]); } // rodadas 114–117
       if (o.type === "warden") tags.push([o.short || o.name, o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#9fd0ff"]); // rodada 114: guardiões
       if (o.type === "harbor") tags.push([o.name, o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#8fd8ff"]); // rodada 120: mestre do cais
       if (o.type === "guard" || o.type === "bard" || o.type === "merchant" || o.type === "herb" || o.type === "carto" || o.type === "miner" || o.type === "warden") { // "!" tutorial ou missão nova; "?" missão pronta para entregar
