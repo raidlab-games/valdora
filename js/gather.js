@@ -48,7 +48,7 @@ window.ValdoraGather = (() => {
             player.target = null; player.cast = null;
             const now = performance.now() / 1000; if (now - spotMsgT > 30) { spotMsgT = now; log("O cardume se afastou. Procure as ondulações na água.", "dim", "icon_fish_spot"); }
           }
-          else { o.respawn = ri(...R.respawn); player.target = null; burst(o.x + 0.5, o.y + 0.5, R.fx, 14, 3); log(`${R.name} esgotou. Volta em alguns segundos.`, "dim");
+          else { o.respawn = ri(...R.respawn); player.target = null; burst(o.x + 0.5, o.y + 0.5, R.fx, 14, 3); log(`${R.name} esgotou. Volta em ${o.respawn >= 120 ? `cerca de ${Math.round(o.respawn / 60)} minutos` : "alguns segundos"}.`, "dim"); // rodada 123: árvores e minérios, 10 a 20 min (sorteio a cada vez)
             if (R.skill === "corte") RENDER.playOnce("fx_leaves", o.x, o.y); } // folhas caindo do toco (Blender, toque único)
         }
       }, key === "rod" ? { prep: 0.12, strike: 0.06, rec: 0.22 } : {});

@@ -335,13 +335,18 @@ for (const k of ["snow", "snow_2", "sand_2", "rockg", "rockg_2", "grass_night", 
 for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boulder", 2.3], ["boulder_snow", 2.3], ["boulder_sand", 2.3], ["deco_waystone", 1.5],
   ["deco_bush_dark", 1.25], ["deco_bush_dry", 1.25], ["deco_bush_snow", 1.25], ["deco_bush_mountain", 1.25],
   ["rock_obsidian", 1.25], ["rock_sun", 1.25], ["rock_mithril", 1.25], ["rock_frost", 1.25], ["rock_amethyst", 1.25], ["rock_adamant", 1.25], ["rock_ruby", 1.25], ["rock_starice", 1.25],
-  ["res_shadecap", 1.2], ["res_desertrose", 1.2], ["res_rockmoss", 1.2], ["res_frostbloom", 1.2], ["res_nightbloom", 1.2], ["res_edelweiss", 1.2], ["res_sunlotus", 1.2], ["res_aurora", 1.2]]) {
+  ["res_shadecap", 1.2], ["res_desertrose", 1.2], ["res_rockmoss", 1.5], ["res_frostbloom", 1.2], ["res_nightbloom", 1.2], ["res_edelweiss", 1.2], ["res_sunlotus", 1.2], ["res_aurora", 1.2]]) {
   ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s];
 }
 // rodada 109: rochas e cacto do Blender saem de um monte de chão que passa do pé; a imagem desce esta fração da altura.
 // rodada 111: o pé fica rente à borda de baixo do tile (0,1 tile acima), como o pé dos personagens; antes ficava no meio do
 // tile e a arte parecia meio tile acima do herói, com o tile clicável abaixo dela
 window.SPRITE_SINK = { boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457, cactus: 0.362 };
+// rodada 123 (Blender, tools/b3d/natural_props.py): pedra com musgo (Mata Sombria) e com capim (Campo), musgo-de-rocha numa pedra
+// baixa (e ela raspada depois da colheita), poste de trilha com lamparina e pote de barro
+for (const [k, s, sink] of [["boulder_moss", 2.3, 0.457], ["boulder_grass", 2.3, 0.457], ["rockmoss_bare", 1.5, 0.167], ["deco_trail_lamp", 2.4, 0.042], ["deco_clay_pot", 1.2, 0.083]]) {
+  ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s]; window.SPRITE_SINK[k] = sink; }
+window.SPRITE_SINK.res_rockmoss = 0.167;
 // rodada 110: minérios do Blender (rocha que sai do chão com o minério à mostra), 1,7 tile
 for (const k of ["rock", "rock_iron", "rock_mithril", "rock_sun", "rock_lumita", "rock_amethyst", "rock_adamant", "rock_ruby", "rock_frost", "rock_starice", "rock_obsidian"]) { SPRITE_SIZE[k] = [1.7, 1.7]; window.SPRITE_SINK[k] = 0.411; }
 // rodada 110: paredão das montanhas renderizado no Blender (8 tiles emendáveis por tema; tools/cliff_faces_pack.py)

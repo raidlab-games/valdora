@@ -129,7 +129,10 @@
   function regionAt(x, y) {
     if (inCrypt) return dungeon; // "crypt" ou "den"
     if (inTown(x, y)) return "town";
-    return WORLD.regionShape(x, y);
+    const r = WORLD.regionShape(x, y); if (r !== "sea") return r;
+    // rodada 123: o píer dos cais fica no mar ("sea" não é região): vale a região da terra do cais
+    const D = (WORLD_G && WORLD_G.DOCKS || []).find((d) => Math.abs(d.x - x) + Math.abs(d.y - y) <= 10);
+    return D ? WORLD.regionShape(D.x, D.y) : "fields";
   }
 
   // ---------- Lobby: a tela inicial fica em js/lobby.js, que usa window.ValdoraGame ----------
@@ -173,9 +176,18 @@
       }
     // estradas (rodada 120: a praça dobrou; RX/RY levam as coordenadas antigas para o quadro novo)
     const RX = WORLD.RX, RY = WORLD.RY, RCX = RX(48), RCY = RY(36); // estrada vertical em RCX/RCX+1 e horizontal em RCY/RCY+1
-    const road = (x, y) => { if (map[y][x] !== "water") map[y][x] = "path"; };
-    for (let x = 0; x < W; x++) { road(x, RCY); road(x, RCY + 1); }
-    for (let y = 0; y < H; y++) { road(RCX, y); road(RCX + 1, y); }
+    const road = (x, y) => { if (inside(x, y) && map[y][x] !== "water") map[y][x] = "path"; };
+    // rodada 123: trilhas. Retas dentro da praça; a 2 tiles dela começam a serpentear (onda de dois períodos). Onde a curva cairia
+    // num lago, o desvio encolhe até achar terra; linhas seguidas se emendam (sem buraco na diagonal)
+    const wig = (t, c0, c1, s) => { const d = t < c0 ? c0 - t : t > c1 ? t - c1 : 0, k = Math.min(1, Math.max(0, (d - 2) / 8));
+      return k * (3.4 * Math.sin(t / 8.5 + s) + 1.5 * Math.sin(t / 3.9 + s * 2.3)); };
+    const lane = (t, base, c0, c1, s, at) => { let o = Math.round(wig(t, c0, c1, s));
+      while (o && [0, 1].some((j) => { const [x, y] = at(t, base + o + j); return !inside(x, y) || map[y][x] === "water"; })) o -= Math.sign(o);
+      return base + o; };
+    for (let y = 0, px = null; y < H; y++) { const x = lane(y, RCX, TOWN.y0, TOWN.y1, 1.7, (t, v) => [v, t]);
+      for (let a = Math.min(x, px ?? x); a <= Math.max(x, px ?? x); a++) { road(a, y); road(a + 1, y); } px = x; }
+    for (let x = 0, py = null; x < W; x++) { const y = lane(x, RCY, TOWN.x0, TOWN.x1, 4.1, (t, v) => [t, v]);
+      for (let a = Math.min(y, py ?? y); a <= Math.max(y, py ?? y); a++) { road(x, a); road(x, a + 1); } py = y; }
     // vila: praça calçada + construções
     for (let y = TOWN.y0; y <= TOWN.y1; y++) for (let x = TOWN.x0; x <= TOWN.x1; x++) map[y][x] = (x === RCX || x === RCX + 1 || y === RCY || y === RCY + 1) ? "path" : "stone";
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
@@ -238,7 +250,7 @@
       if (!inside(x, y + 1) || regionAt(x, y) !== "south" || occ[y * W + x] || occ[(y + 1) * W + x] || /water|sand/.test(map[y][x]) || /water/.test(map[y + 1][x])) continue;
       npc.den = deco("den", SPR[WORLD.ENTRY_SPR.den] ? WORLD.ENTRY_SPR.den : "deco_crypt", x, y, 1, 1); map[y][x] = "dirt"; map[y + 1][x] = "dirt"; done = true;
     }
-    for (const [x, y] of [[40, 28], [73, 28], [40, 59], [73, 59], [70, 44], [42, 41], [71, 42], [43, 46]]) if (!occ[y * W + x]) deco("bush", "deco_bush", x, y);
+    for (const [x, y] of [[40, 28], [73, 28], [40, 59], [73, 59], [70, 44], [42, 41], [71, 42], [43, 46]]) if (!occ[y * W + x] && map[y][x] !== "path") deco("bush", "deco_bush", x, y); // rodada 123: nunca na estrada
     for (const [x, y, label] of WORLD.SIGNS) deco("sign", "deco_sign", x, y, 1, 1, { label });
     // rodada 67: props da praça (Flow). Depois de tudo que procura lugar livre na vila, só em pedra livre e com os 4 vizinhos
     // livres (não fecham passagem nem NPC). Rodada 120: mais postes, canteiros e bancos na praça maior.
@@ -282,6 +294,7 @@
       const tab = TABLE[reg] || []; let n = rnd();
       for (const [kind, p] of tab) {
         if (n < p) {
+          const th = THIN(kind, x, y); if (th !== 1) { if (th === 2) deco("rock_wall", boulderFor(1, reg), x, y); break; } // rodada 123
           if (kind === "bush") deco("bush", "deco_bush", x, y);
           else if (kind === "rubble") place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false });
           else addResource(kind, x, y);
@@ -334,11 +347,17 @@
     for (const m of mobs) { m.x += OX; m.y += OY; m.fx += OX; m.fy += OY; m.px += OX; m.py += OY; m.hx += OX; m.hy += OY; if (m.home) m.home = homeOf.get(m.home) || { ...m.home, x: m.home.x + OX, y: m.home.y + OY }; }
     AMBIENT.setPuddles([]);
   }
+  // rodada 123: metade das árvores e dos minérios sai do mapa (sorteio fixo pela posição, não mexe no resto do mundo); de cada 4
+  // que saem, 1 vira uma pedra grande no estilo do bioma (capim no Campo, musgo na mata, rocha nua na montanha, neve, arenito)
+  const THIN = (kind, x, y) => { const R = RES[kind.replace(/^rare:/, "")]; if (!R || (R.skill !== "corte" && R.skill !== "mineracao")) return 1;
+    const h = hash(x, y, 123); return h < 0.5 ? 1 : h < 0.625 ? 2 : 0; };
+  const boulderFor = (b, reg) => { const k = b === 1 ? (reg === "west" || reg === "ruins" ? "boulder" : reg === "south" ? "boulder_moss" : "boulder_grass")
+    : { 2: "boulder_moss", 3: "boulder", 4: "boulder_sand", 5: "boulder_snow" }[b]; return SPR[k] ? k : "boulder"; };
   // chão de cada bioma novo (com reserva quando a arte não existe)
   const GROUND_OF = { darkwood: ["grass_night", "grass_night_2", "grass_dark", "grass_dark_2"], desert: ["sand_2", "sand_2", "sand", "sand"], mountains: ["rockg", "rockg_2", "dirt", "stone"], snow: ["snow", "snow_2", "stone", "stone"] };
   // recursos e enfeites por região (chance por tile livre); as do Campo são as da tabela antiga
   const TABLE_NEW = {
-    darkwood: [["tree_dark", 0.07], ["tree_cedar", 0.012], ["rock_obsidian", 0.014], ["rock_iron", 0.006], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
+    darkwood: [["boulder_biome", 0.006], ["tree_dark", 0.07], ["tree_cedar", 0.012], ["rock_obsidian", 0.014], ["rock_iron", 0.006], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
     desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.012], ["rock", 0.005], ["boulder_sand", 0.008], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
     mountains: [["tree_pine", 0.034], ["rock_mithril", 0.014], ["rock_iron", 0.01], ["boulder", 0.022], ["res_rockmoss", 0.008], ["bushv:deco_bush_mountain", 0.006], ["rare:rock_adamant", 0.004], ["rare:res_edelweiss", 0.004]],
     snow: [["tree_snowpine", 0.05], ["rock_frost", 0.014], ["rock_lumita", 0.004], ["res_frostbloom", 0.009], ["boulder_snow", 0.01], ["bushv:deco_bush_snow", 0.006], ["rare:rock_starice", 0.003], ["rare:res_aurora", 0.003]],
@@ -391,8 +410,12 @@
     const G = WORLD_G, n = W * H;
     MTN = { mask: new Uint8Array(n), theme: new Uint8Array(n), block: new Uint8Array(n), elev: new Uint8Array(n), keep: new Uint8Array(n), stairs: new Map(), list: [] }; // keep: pé e topo da escada sem objetos
     const used = new Uint8Array(n), key = (x, y) => y * W + x;
-    for (const [bs, [count, rmin, rmax]] of Object.entries(MTN_CFG)) { let theme = 0;
-      const b = +bs, B = G.BIOMES[b - 1];
+    // rodada 123: além das de antes (com escada), morros grandes e pequenos SEM escada: só paredão, ocupam o lugar das árvores
+    const PLAN = [...Object.entries(MTN_CFG).map(([b, [c, r0, r1]]) => [+b, c, r0, r1, true]),
+      ...[[1, 6, 4, 6], [2, 9, 4, 7], [3, 16, 4, 8], [4, 9, 4, 7], [5, 10, 4, 7]].map((r) => [...r, false]),
+      ...[[1, 9, 2.4, 3.6], [2, 16, 2.4, 3.6], [3, 22, 2.4, 3.8], [4, 14, 2.4, 3.6], [5, 15, 2.4, 3.6]].map((r) => [...r, false])];
+    for (const [b, count, rmin, rmax, climb] of PLAN) { let theme = 0;
+      const B = G.BIOMES[b - 1];
       for (let made = 0, tries = 0; made < count && tries < count * 60; tries++) {
         const a = rnd() * 6.283, rr = Math.sqrt(rnd()) * B.c[2] * 1.25, cx = Math.round(B.c[0] + Math.cos(a) * rr), cy = Math.round(B.c[1] + Math.sin(a) * rr);
         if (G.biomeAt(cx, cy) !== b || G.inOld(cx, cy)) continue;
@@ -402,7 +425,7 @@
           const dx = x - cx, dy = y - cy, u = (dx * ca + dy * sa) / (R * ex), v = (-dx * sa + dy * ca) / R;
           if (Math.hypot(u, v) + (noise(x, y, 3.5, seed) - 0.5) * 0.6 < 1) M.add(key(x, y));
         }
-        if (M.size < 14) continue;
+        if (M.size < (climb ? 14 : 10)) continue;
         const F = new Set(); // face: os 2 tiles abaixo de cada tile da borda sul
         for (const k of M) { const x = k % W, y = (k / W) | 0; if (!M.has(key(x, y + 1))) { F.add(key(x, y + 1)); if (!M.has(key(x, y + 2))) F.add(key(x, y + 2)); } }
         let ok = true;
@@ -412,26 +435,27 @@
           if (!ok) break; }
         if (!ok || G.DG_ENTRIES.some((E) => Math.abs(E.x - cx) < span + 5 && Math.abs(E.y - cy) < span + 5)) continue;
         const T = [...M].filter((k) => { const x = k % W, y = (k / W) | 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (!M.has(key(x + dx, y + dy))) return false; return true; });
-        if (T.length < 6) continue;
+        if (T.length < (climb ? 6 : 2)) continue;
         // escada: coluna com borda (topo logo acima), as 2 de face e chão livre embaixo
         const cand = [];
         for (const k of M) { const x = k % W, y = (k / W) | 0;
           if (!M.has(key(x, y + 1)) && F.has(key(x, y + 1)) && F.has(key(x, y + 2)) && T.includes(key(x, y - 1)) && !M.has(key(x - 1, y + 1)) && !M.has(key(x + 1, y + 1)) && !used[key(x, y + 3)]) cand.push([x, y]); }
-        if (!cand.length) continue;
+        if (climb && !cand.length) continue;
         // rodada 110: o tema da rocha e da beirada segue o chão que está de fato embaixo (terra no Campo vira rocha cinza, não capim)
         const fam = { grass: 0, dark: 0, sand: 0, snow: 0, rock: 0 };
         for (const k of M) { const g = map[(k / W) | 0][k % W]; fam[/night|dark/.test(g) ? "dark" : /^grass/.test(g) ? "grass" : /^sand/.test(g) ? "sand" : /^snow/.test(g) ? "snow" : "rock"]++; }
         const top1 = Object.entries(fam).sort((p, q) => q[1] - p[1])[0][0];
         theme = { grass: 1, dark: 2, sand: 3, snow: 4, rock: 0 }[top1];
-        const [sx, sy] = cand[Math.floor(rnd() * cand.length)], th = ["gray", "green", "dark", "sand", "snow"][theme];
+        const [sx, sy] = climb ? cand[Math.floor(rnd() * cand.length)] : [0, 0], th = ["gray", "green", "dark", "sand", "snow"][theme];
         for (const k of M) { MTN.mask[k] = 1; MTN.theme[k] = theme; MTN.block[k] = 1; }
         for (const k of F) MTN.block[k] = 1;
         for (const k of T) { MTN.block[k] = 0; MTN.elev[k] = 1; }
         for (const k of [...M, ...F]) { const x = k % W, y = (k / W) | 0; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inside(x + dx, y + dy)) used[key(x + dx, y + dy)] = 1; }
+        if (climb) { // escada e o que o topo guarda (rodada 123: os morros sem escada ficam só paredão)
         for (const [x, y] of [[sx, sy], [sx, sy + 1], [sx, sy + 2]]) { MTN.block[key(x, y)] = 0; MTN.elev[key(x, y)] = 2; }
         MTN.stairs.set(key(sx, sy + 1), { part: "t", theme: th }); MTN.stairs.set(key(sx, sy + 2), { part: "b", theme: th });
         for (const [x, y] of [[sx, sy + 3], [sx, sy + 4], [sx, sy - 1], [sx, sy - 2]]) if (inside(x, y)) MTN.keep[key(x, y)] = 1;
-        const r = rnd(); MTN.list.push({ b, top: T.map((k) => [k % W, (k / W) | 0]), kind: r < 0.38 ? "hunt" : r < 0.7 ? "ore" : "empty", stairs: { x: sx, y: sy + 3 } });
+        const r = rnd(); MTN.list.push({ b, top: T.map((k) => [k % W, (k / W) | 0]), kind: r < 0.38 ? "hunt" : r < 0.7 ? "ore" : "empty", stairs: { x: sx, y: sy + 3 } }); }
         for (const k of F) { const x = k % W, y = ((k / W) | 0) + 1; // rodada 110: cascalho no chão logo abaixo do paredão (pedras que caíram dele)
           if (inside(x, y) && !MTN.block[y * W + x] && !MTN.elev[y * W + x] && !occ[y * W + x] && rnd() < 0.45) place({ type: "decal", spr: "pebbles", x, y, w: 1, h: 1, solid: false }); }
         made++;
@@ -442,7 +466,7 @@
     const G = WORLD_G;
     for (const m of MTN.list) {
       const free = m.top.filter(([x, y]) => !occ[y * W + x] && !MTN.keep[y * W + x]);
-      if (m.kind === "ore") { const [base, rare] = MTN_ORE[m.b], k = 2 + Math.floor(rnd() * 2);
+      if (m.kind === "ore") { const [base, rare] = MTN_ORE[m.b], k = 1 + Math.floor(rnd() * 2); // rodada 123: metade dos minérios
         for (let i = 0; i < k && free.length; i++) { const [x, y] = free.splice(Math.floor(rnd() * free.length), 1)[0], kind = i === 0 && rnd() < 0.5 && RES[rare] && SPR[rare] ? rare : base; if (RES[kind] && SPR[kind]) addResource(kind, x, y); } }
       else if (m.kind === "hunt") {
         const reg = G.regionShape(m.top[0][0], m.top[0][1]), pool = m.b === 1 ? (WORLD_G.CAMPO_EXTRA[reg] || []).map((s) => s[0]) : G.BIOME_SPAWNS[G.BKEY[m.b]].map((s) => s[0]);
@@ -484,6 +508,31 @@
     const pts = []; for (let i = end; i >= 0; i = prev[i]) pts.push([i % W, (i / W) | 0]);
     return pts;
   }
+  // rodada 123: estradas viram trilhas. O caminho de menor custo sai quase reto (retas e diagonais); aqui ele é redesenhado em
+  // curvas largas: um ponto a cada 9 tiles é empurrado para o lado (onda + ruído) e os pontos são ligados por spline. Trecho
+  // que cairia na água, fora do continente, no mapa antigo ou num objeto volta ao traçado original (as pontes ficam onde estavam).
+  function meander(pts, seed, amp = 4.5) {
+    const G = WORLD_G, n = pts.length; if (n < 20) return pts;
+    const idx = []; for (let i = 0; i < n - 5; i += 9) idx.push(i); idx.push(n - 1);
+    const L = idx.length, off = idx.map((i, k) => k === 0 || k === L - 1 ? 0 : (k === 1 || k === L - 2 ? 0.5 : 1) * amp
+      * (0.75 * Math.sin(k * 1.15 + seed) + (noise(pts[i][0], pts[i][1], 17, seed) - 0.5)));
+    const at = (k) => { const a = pts[idx[Math.max(0, k - 1)]], b = pts[idx[Math.min(L - 1, k + 1)]], tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1;
+      return [pts[idx[k]][0] - (ty / l) * off[k], pts[idx[k]][1] + (tx / l) * off[k]]; };
+    const cr = (p0, p1, p2, p3, s) => [0, 1].map((j) => 0.5 * (2 * p1[j] + (p2[j] - p0[j]) * s + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * s * s + (3 * p1[j] - p0[j] - 3 * p2[j] + p3[j]) * s * s * s));
+    const seg = (k) => { const P0 = at(Math.max(0, k - 1)), P1 = at(k), P2 = at(k + 1), P3 = at(Math.min(L - 1, k + 2)), N = Math.ceil(Math.hypot(P2[0] - P1[0], P2[1] - P1[1]) * 4) + 1, out = [];
+      for (let s = 0; s <= N; s++) { const [fx, fy] = cr(P0, P1, P2, P3, s / N), X = Math.round(fx), Y = Math.round(fy), q = out[out.length - 1];
+        if (q && Math.max(Math.abs(X - q[0]), Math.abs(Y - q[1])) > 1) out.push([Math.round((X + q[0]) / 2), Math.round((Y + q[1]) / 2)]);
+        if (!q || q[0] !== X || q[1] !== Y) out.push([X, Y]); }
+      return out; };
+    const land = (x, y) => inside(x, y) && !G.inOld(x, y) && G.biomeAt(x, y) && map[y][x] !== "water" && !occ[y * W + x];
+    const good = (list) => list.every(([x, y]) => land(x, y) && land(x + 1, y) && land(x, y + 1) && land(x + 1, y + 1));
+    for (let pass = 0; pass < 4; pass++) { let bad = false;
+      for (let k = 0; k < L - 1; k++) if ((off[k] || off[k + 1]) && !good(seg(k))) { off[k] = off[k + 1] = 0; bad = true; }
+      if (!bad) break; }
+    const out = [];
+    for (let k = 0; k < L - 1; k++) { const s = off[k] || off[k + 1] ? seg(k) : pts.slice(idx[k], idx[k + 1] + 1); out.push(...(k ? s.slice(1) : s)); }
+    return out;
+  }
   // rodada 120: cais (ValdoraWorld.DOCKS). O píer de 2 x 6 tiles entra no mar (chão "pier": anda-se por cima, a água continua
   // animada embaixo e a madeira é recortada tile a tile de pier_<lado>.png); em terra, um largo de terra batida com o mestre do
   // cais (NPC para o sistema de barcos), poste, caixotes, barris e placa; uma estradinha liga o largo à estrada mais perto.
@@ -511,8 +560,25 @@
       if (free(signAt)) deco("sign", "deco_sign", ...signAt, 1, 1, { label: `${D.name}: ${D.keeper} cuida do cais. Em breve, barcos para outras costas.` });
       // estradinha até a estrada (ou vila) mais perto
       const [sx, sy] = land(3, 0);
-      const pts = routeRoad(sx, sy, (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; }, D.x + D.y);
+      const pts = meander(routeRoad(sx, sy, (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; }, D.x + D.y), D.x, 3);
       if (pts.length) paint(pts.filter(([X, Y]) => Math.hypot(X - x, Y - y) > 2.5));
+    }
+  }
+  // rodada 123: postes com lamparina ao longo das trilhas (acendem à noite), um a cada ~16 tiles, no capim ao lado da estrada;
+  // no pé de alguns, um barril ou um pote de barro (enfeite: não quebra). Fora das vilas, da praça e dos cais (que já têm poste)
+  function placeTrailLamps(deco) {
+    if (!SPR.deco_trail_lamp) return;
+    const G = WORLD_G, lamps = objects.filter((o) => o.spr === "deco_lamppost").map((o) => [o.x, o.y]), D8 = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+    const free = (x, y) => inside(x, y) && G.biomeAt(x, y) && !occ[y * W + x] && !/water|path|pier/.test(map[y][x]) && DIRS.every(([dx, dy]) => !occ[(y + dy) * W + x + dx]);
+    const far = (x, y, d) => lamps.every(([a, b]) => (a - x) ** 2 + (b - y) ** 2 > d * d);
+    for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++) {
+      if (map[y][x] !== "path" || hash(x, y, 77) > 0.3 || nearTown(x, y, 5) || G.VILLAGES.some((v) => x > v.x0 - 5 && x < v.x1 + 5 && y > v.y0 - 5 && y < v.y1 + 5) || G.DOCKS.some((D) => Math.hypot(D.x - x, D.y - y) < 12) || !far(x, y, 16)) continue;
+      const side = D8.slice(0, 4).map(([dx, dy]) => [x + dx, y + dy]).find(([X, Y]) => free(X, Y) && D8.some(([ax, ay]) => map[Y + ay][X + ax] === "path"));
+      if (!side) continue;
+      deco("prop", "deco_trail_lamp", ...side); lamps.push(side);
+      const h = hash(x, y, 78); if (h > 0.45) continue;
+      const foot = D8.map(([dx, dy]) => [side[0] + dx, side[1] + dy]).find(([X, Y]) => free(X, Y) && map[Y][X] !== "path" && D8.slice(0, 4).every(([ax, ay]) => map[Y + ay][X + ax] !== "path")); // fora da estrada
+      if (foot) deco("prop", h < 0.2 && SPR.deco_clay_pot ? "deco_clay_pot" : "barrel", ...foot);
     }
   }
   function genContinent() {
@@ -558,14 +624,14 @@
       const start = exits.slice().sort((p, q) => Math.hypot(p.x - cx, p.y - cy) - Math.hypot(q.x - cx, q.y - cy))[0];
       if (!start) continue; used.add(start);
       const goal = new Set(ends.filter(([x, y]) => inside(x, y)).map(([x, y]) => y * W + x));
-      paint(routeRoad(start.x, start.y, (i) => goal.has(i), v.key.length * 17));
+      paint(meander(routeRoad(start.x, start.y, (i) => goal.has(i), v.key.length * 17), v.key.length * 3.1));
     }
     // saída que nenhuma vila usou: trilha que se afasta do mapa antigo (sem contornar a borda dele) e acaba num acampamento
     const camps = [];
     for (const e of exits) if (!used.has(e)) {
       const ox = e.x < G.OX ? -1 : e.x >= G.OX + G.local().W ? 1 : 0, oy = e.y < G.OY ? -1 : e.y >= G.OY + G.local().H ? 1 : 0, len = 18 + rnd() * 10, side = (rnd() - 0.5) * 16;
       const tx = Math.round(e.x + ox * len + oy * side), ty = Math.round(e.y + oy * len + ox * side);
-      const pts = routeRoad(e.x, e.y, (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2, e.y); if (!pts.length) continue;
+      const pts = meander(routeRoad(e.x, e.y, (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2, e.y), e.x * 0.7, 3.5); if (!pts.length) continue;
       paint(pts); camps.push(pts[0]);
     }
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
@@ -623,6 +689,19 @@
       E.obj = deco("dungeon", SPR[spr] ? spr : "deco_crypt", E.x, E.y, 1, 1, { dungeon: E.key, label: E.name });
     }
     placeDocks(deco, paint);
+    // rodada 123: as curvas às vezes deixam dois trechos se tocando só pela quina (ou um tile de lago no meio): o tile entre eles
+    // vira estrada (ponte, se for água), para a trilha não ter buraco
+    for (let pass = 0; pass < 2; pass++) for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      if (map[y][x] !== "path" || G.inOld(x, y)) continue;
+      for (const [dx, dy] of [[1, 1], [-1, 1]]) { const X = x + dx, Y = y + dy;
+        if (map[Y][X] !== "path" || map[y][X] === "path" || map[Y][x] === "path") continue;
+        const c = [[X, y], [x, Y]].filter(([a, b]) => G.biomeAt(a, b) && !G.inOld(a, b) && !occ[b * W + a]).sort(([a, b], [c2, d]) => (map[b][a] === "water") - (map[d][c2] === "water"))[0];
+        if (c) map[c[1]][c[0]] = "path"; }
+      for (const [dx, dy] of [[1, 0], [0, 1]]) { // tile solto de lago entre dois tiles de estrada
+        const X = x + dx * 2, Y = y + dy * 2; if (!inside(X, Y) || map[Y][X] !== "path") continue;
+        const mx = x + dx, my = y + dy; if (map[my][mx] === "water" && G.biomeAt(mx, my) && !occ[my * W + mx]) map[my][mx] = "path"; }
+    }
+    placeTrailLamps(deco);
     placeMountains(rnd);
     placePOIs(rnd, deco);
     // recursos e enfeites (fora do quadro antigo)
@@ -637,12 +716,14 @@
       for (const [kind, p0] of tab) {
         const p = b > 1 && /^(tree|palm|bushv)/.test(kind) ? p0 * grove : p0;
         if (n < p) {
+          const th = THIN(kind, x, y); if (th !== 1) { if (th === 2) deco("rock_wall", boulderFor(b, reg), x, y); break; } // rodada 123
           if (kind === "bush") deco("bush", "deco_bush", x, y);
           else if (kind === "rubble") place({ type: "decal", spr: "rubble", x, y, w: 1, h: 1, solid: false });
           else if (kind.startsWith("rare:")) { const k2 = kind.slice(5); if (G.depthAt(x, y) >= 0.55 && RES[k2] && SPR[k2]) addResource(k2, x, y); } // raros: só no fundo do bioma
           else if (kind.startsWith("bushv:")) { const s = kind.slice(6); if (SPR[s]) deco("bush", s, x, y); }
           else if (kind.startsWith("deco:")) { const s = kind.slice(5); if (SPR[s]) place({ type: "bones", spr: s, x, y, w: 1, h: 1, solid: false }); }
           else if (kind === "boulder" || kind === "boulder_snow" || kind === "boulder_sand") { if (SPR[kind]) deco("rock_wall", kind, x, y); }
+          else if (kind === "boulder_biome") deco("rock_wall", boulderFor(b, reg), x, y); // rodada 123
           else if (RES[kind] && SPR[kind]) addResource(kind, x, y);
           break;
         }
@@ -673,7 +754,7 @@
     // rodada 75: pontos de poça (terra e estrada, ~4% dos tiles, pelo hash da posição: não usa o aleatório do jogo)
     const pud = []; for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++)
       if (/^(path|dirt)/.test(map[y][x]) && !occ[y * W + x] && hash(x, y, 53) < 0.04) pud.push({ x: x + 0.3 + hash(x, y, 54) * 0.4, y: y + 0.5 + hash(x, y, 55) * 0.3, r: 0.4 + hash(x, y, 56) * 0.25 });
-    const lamps = objects.filter((o) => o.spr === "deco_lamppost" || o.type === "fire");
+    const lamps = objects.filter((o) => o.spr === "deco_lamppost" || o.spr === "deco_trail_lamp" || o.type === "fire");
     for (const p of pud) { let lit = 0; for (const o of lamps) { const d = Math.hypot(o.x + 0.5 - p.x, o.y + 0.5 - p.y); if (d < 3) lit = Math.max(lit, 1 - d / 3); } p.lit = lit; }
     AMBIENT.setPuddles(pud);
     const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
@@ -3031,7 +3112,7 @@
   }
   function drawSprite(key, x, y) {
     const img = SPR[key]; if (!img) return;
-    ctx.drawImage(img, Math.round(x * TILE - cam.x - (img.width - TILE) / 2), Math.round((y + 1) * TILE - cam.y - img.height));
+    ctx.drawImage(img, Math.round(x * TILE - cam.x - (img.width - TILE) / 2), Math.round((y + 1) * TILE - cam.y - img.height * (1 - ((window.SPRITE_SINK || {})[key] || 0))));
   }
   function drawGroundItems(t, x0, y0, x1, y1) {
     const perTile = {};

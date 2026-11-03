@@ -78,19 +78,6 @@ Object.assign(window.ANIM_SHEETS = window.ANIM_SHEETS || {}, {
    }
   }
  },
- "res_rockmoss": {
-  "src": "assets/flow/anim/res_rockmoss_anim.png",
-  "cell": 154,
-  "px": 96,
-  "rows": {
-   "sway": {
-    "row": 0,
-    "frames": 16,
-    "fps": 6,
-    "loop": true
-   }
-  }
- },
  "res_frostbloom": {
   "src": "assets/flow/anim/res_frostbloom_anim.png",
   "cell": 154,

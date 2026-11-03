@@ -130,12 +130,12 @@ window.VD = (() => {
 
   // Recursos: nível exigido, XP, cargas (quantas vezes rende antes de esgotar) e tempo para voltar (s)
   const RES = {
-    tree: { name: "Árvore", skill: "corte", tool: "machado", req: 1, item: "Madeira", xp: 6, charges: [2, 5], respawn: [8, 14], empty: "stump", verb: "Cortar", fx: ["#7a5a2a", "#4c9a3c"] },
-    tree_oak: { name: "Carvalho", skill: "corte", tool: "machado", req: 8, item: "Madeira de carvalho", xp: 11, charges: [3, 6], respawn: [14, 22], empty: "stump", verb: "Cortar", fx: ["#4a2e16", "#6b9a3a"] },
-    tree_cedar: { name: "Cedro-rubro", skill: "corte", tool: "machado", req: 18, item: "Madeira de cedro", xp: 16, charges: [3, 7], respawn: [22, 32], empty: "stump", verb: "Cortar", fx: ["#7a2a1a", "#d0663a"] },
-    rock: { name: "Veio de cobre", skill: "mineracao", tool: "picareta", req: 1, item: "Cobre", xp: 7, charges: [1, 3], respawn: [7, 11], empty: "rubble", verb: "Minerar", fx: ["#b0b0b0", "#c97a3a"] },
-    rock_iron: { name: "Veio de ferro", skill: "mineracao", tool: "picareta", req: 8, item: "Ferro", xp: 12, charges: [1, 3], respawn: [12, 18], empty: "rubble", verb: "Minerar", fx: ["#9a98a0", "#9c4a2e"] },
-    rock_lumita: { name: "Veio de lumita", skill: "mineracao", tool: "picareta", req: 18, item: "Lumita", xp: 18, charges: [1, 2], respawn: [25, 35], empty: "rubble", verb: "Minerar", fx: ["#8a8a9a", "#5fe0ff"] },
+    tree: { name: "Árvore", skill: "corte", tool: "machado", req: 1, item: "Madeira", xp: 6, charges: [2, 5], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#7a5a2a", "#4c9a3c"] },
+    tree_oak: { name: "Carvalho", skill: "corte", tool: "machado", req: 8, item: "Madeira de carvalho", xp: 11, charges: [3, 6], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#4a2e16", "#6b9a3a"] },
+    tree_cedar: { name: "Cedro-rubro", skill: "corte", tool: "machado", req: 18, item: "Madeira de cedro", xp: 16, charges: [3, 7], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#7a2a1a", "#d0663a"] },
+    rock: { name: "Veio de cobre", skill: "mineracao", tool: "picareta", req: 1, item: "Cobre", xp: 7, charges: [1, 3], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#b0b0b0", "#c97a3a"] },
+    rock_iron: { name: "Veio de ferro", skill: "mineracao", tool: "picareta", req: 8, item: "Ferro", xp: 12, charges: [1, 3], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#9a98a0", "#9c4a2e"] },
+    rock_lumita: { name: "Veio de lumita", skill: "mineracao", tool: "picareta", req: 18, item: "Lumita", xp: 18, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#8a8a9a", "#5fe0ff"] },
     // rodada 104: plantas (foice). Ficam no fim das tabelas de cada região, então o resto do mapa não muda de lugar
     res_herb: { name: "Moita de ervas", skill: "herbalismo", tool: "foice", req: 1, item: "Erva-cidreira", xp: 6, charges: [2, 4], respawn: [10, 16], empty: "herb_cut", verb: "Colher", fx: ["#5aa046", "#b8e08a"] },
     res_flower: { name: "Canteiro de flor-de-mel", skill: "herbalismo", tool: "foice", req: 5, item: "Flor-de-mel", xp: 10, charges: [2, 4], respawn: [12, 18], empty: "herb_cut", verb: "Colher", fx: ["#f2c94c", "#5aa046"] },
@@ -892,13 +892,13 @@ window.VD = (() => {
     "Amuleto de gelo astral": { icon: "item_amulet_crown", price: 9000, slot: "amuleto", rarity: "epico", bonus: { def: 16, dmg: 4, acc: 4 }, filter: "saturate(0.3) brightness(1.4)" },
   });
   Object.assign(RES, {
-    rock_amethyst: { name: "Veio de ametista", skill: "mineracao", tool: "picareta", req: 60, item: "Ametista sombria", xp: 62, charges: [1, 2], respawn: [70, 100], empty: "rubble", verb: "Minerar", fx: ["#5a3a7a", "#d08aff"], rare: true },
+    rock_amethyst: { name: "Veio de ametista", skill: "mineracao", tool: "picareta", req: 60, item: "Ametista sombria", xp: 62, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#5a3a7a", "#d08aff"], rare: true },
     res_nightbloom: { name: "Flor-da-noite", skill: "herbalismo", tool: "foice", req: 58, item: "Flor-da-noite", xp: 56, charges: [1, 2], respawn: [60, 90], empty: "herb_cut", verb: "Colher", fx: ["#b090ff", "#ffffff"], rare: true },
-    rock_adamant: { name: "Veio de adamante", skill: "mineracao", tool: "picareta", req: 95, item: "Adamante", xp: 92, charges: [1, 2], respawn: [80, 110], empty: "rubble", verb: "Minerar", fx: ["#2a6a4a", "#7affb0"], rare: true },
+    rock_adamant: { name: "Veio de adamante", skill: "mineracao", tool: "picareta", req: 95, item: "Adamante", xp: 92, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#2a6a4a", "#7affb0"], rare: true },
     res_edelweiss: { name: "Edelvais", skill: "herbalismo", tool: "foice", req: 92, item: "Edelvais", xp: 86, charges: [1, 2], respawn: [70, 100], empty: "herb_cut", verb: "Colher", fx: ["#ffffff", "#f0e8a0"], rare: true },
-    rock_ruby: { name: "Veio de rubi", skill: "mineracao", tool: "picareta", req: 132, item: "Rubi do deserto", xp: 128, charges: [1, 2], respawn: [90, 120], empty: "rubble", verb: "Minerar", fx: ["#7a1a2a", "#ff5a6a"], rare: true },
+    rock_ruby: { name: "Veio de rubi", skill: "mineracao", tool: "picareta", req: 132, item: "Rubi do deserto", xp: 128, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#7a1a2a", "#ff5a6a"], rare: true },
     res_sunlotus: { name: "Lótus solar", skill: "herbalismo", tool: "foice", req: 128, item: "Lótus solar", xp: 120, charges: [1, 2], respawn: [80, 110], empty: "herb_cut", verb: "Colher", fx: ["#ffd060", "#fff0c0"], rare: true },
-    rock_starice: { name: "Veio de gelo astral", skill: "mineracao", tool: "picareta", req: 172, item: "Gelo astral", xp: 172, charges: [1, 2], respawn: [100, 140], empty: "rubble", verb: "Minerar", fx: ["#a0d0f0", "#ffffff"], rare: true },
+    rock_starice: { name: "Veio de gelo astral", skill: "mineracao", tool: "picareta", req: 172, item: "Gelo astral", xp: 172, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#a0d0f0", "#ffffff"], rare: true },
     res_aurora: { name: "Flor-aurora", skill: "herbalismo", tool: "foice", req: 168, item: "Flor-aurora", xp: 162, charges: [1, 2], respawn: [90, 130], empty: "herb_cut", verb: "Colher", fx: ["#ff90d0", "#a0ffd0"], rare: true },
   });
   Object.assign(SMELT, {
@@ -908,18 +908,18 @@ window.VD = (() => {
     "Barra glacial": { mats: { "Gelo eterno": 2, "Pinho nevado": 1 }, lvl: 150, xp: 230 },
   });
   Object.assign(RES, {
-    tree_dark: { name: "Ébano retorcido", skill: "corte", tool: "machado", req: 45, item: "Madeira de ébano", xp: 34, charges: [3, 6], respawn: [26, 36], empty: "stump", verb: "Cortar", fx: ["#2a2030", "#5a4a70"] },
-    rock_obsidian: { name: "Veio de obsidiana", skill: "mineracao", tool: "picareta", req: 45, item: "Obsidiana", xp: 36, charges: [1, 3], respawn: [26, 36], empty: "rubble", verb: "Minerar", fx: ["#3a3048", "#8a70c0"] },
+    tree_dark: { name: "Ébano retorcido", skill: "corte", tool: "machado", req: 45, item: "Madeira de ébano", xp: 34, charges: [3, 6], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#2a2030", "#5a4a70"] },
+    rock_obsidian: { name: "Veio de obsidiana", skill: "mineracao", tool: "picareta", req: 45, item: "Obsidiana", xp: 36, charges: [1, 3], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#3a3048", "#8a70c0"] },
     res_shadecap: { name: "Cogumelo-sombra", skill: "herbalismo", tool: "foice", req: 40, item: "Cogumelo-sombra", xp: 32, charges: [1, 3], respawn: [26, 36], empty: "herb_cut", verb: "Colher", fx: ["#6a4a9a", "#b0a0f0"] },
-    palm: { name: "Palmeira", skill: "corte", tool: "machado", req: 110, item: "Madeira de palmeira", xp: 72, charges: [2, 5], respawn: [30, 40], empty: "stump", verb: "Cortar", fx: ["#a07040", "#7ab050"] },
+    palm: { name: "Palmeira", skill: "corte", tool: "machado", req: 110, item: "Madeira de palmeira", xp: 72, charges: [2, 5], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#a07040", "#7ab050"] },
     cactus: { name: "Cacto", skill: "herbalismo", tool: "foice", req: 106, item: "Polpa de cacto", xp: 68, charges: [1, 3], respawn: [28, 38], empty: "herb_cut", verb: "Colher", fx: ["#4a8a40", "#c0e090"] },
-    rock_sun: { name: "Veio de ouro solar", skill: "mineracao", tool: "picareta", req: 112, item: "Ouro solar", xp: 76, charges: [1, 3], respawn: [30, 40], empty: "rubble", verb: "Minerar", fx: ["#b08a40", "#ffd860"] },
+    rock_sun: { name: "Veio de ouro solar", skill: "mineracao", tool: "picareta", req: 112, item: "Ouro solar", xp: 76, charges: [1, 3], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#b08a40", "#ffd860"] },
     res_desertrose: { name: "Rosa-do-deserto", skill: "herbalismo", tool: "foice", req: 108, item: "Rosa-do-deserto", xp: 70, charges: [1, 2], respawn: [30, 40], empty: "herb_cut", verb: "Colher", fx: ["#e07060", "#f0c090"] },
-    tree_pine: { name: "Pinheiro", skill: "corte", tool: "machado", req: 75, item: "Madeira de pinho", xp: 52, charges: [3, 6], respawn: [34, 44], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#3a6a40"] },
-    rock_mithril: { name: "Veio de mitril", skill: "mineracao", tool: "picareta", req: 78, item: "Mitril", xp: 54, charges: [1, 3], respawn: [34, 44], empty: "rubble", verb: "Minerar", fx: ["#7a8a9a", "#9ae0ff"] },
-    res_rockmoss: { name: "Musgo-de-rocha", skill: "herbalismo", tool: "foice", req: 72, item: "Musgo-de-rocha", xp: 50, charges: [1, 3], respawn: [34, 44], empty: "herb_cut", verb: "Colher", fx: ["#6a7a50", "#a0b080"] },
-    tree_snowpine: { name: "Pinheiro nevado", skill: "corte", tool: "machado", req: 148, item: "Pinho nevado", xp: 98, charges: [3, 6], respawn: [38, 48], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#e8f4ff"] },
-    rock_frost: { name: "Veio de gelo eterno", skill: "mineracao", tool: "picareta", req: 150, item: "Gelo eterno", xp: 102, charges: [1, 2], respawn: [38, 48], empty: "rubble", verb: "Minerar", fx: ["#a0c0d8", "#e8fbff"] },
+    tree_pine: { name: "Pinheiro", skill: "corte", tool: "machado", req: 75, item: "Madeira de pinho", xp: 52, charges: [3, 6], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#3a6a40"] },
+    rock_mithril: { name: "Veio de mitril", skill: "mineracao", tool: "picareta", req: 78, item: "Mitril", xp: 54, charges: [1, 3], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#7a8a9a", "#9ae0ff"] },
+    res_rockmoss: { name: "Musgo-de-rocha", skill: "herbalismo", tool: "foice", req: 72, item: "Musgo-de-rocha", xp: 50, charges: [1, 3], respawn: [34, 44], empty: "rockmoss_bare", verb: "Colher", fx: ["#6a7a50", "#a0b080"] }, // rodada 123: a pedra fica, raspada
+    tree_snowpine: { name: "Pinheiro nevado", skill: "corte", tool: "machado", req: 148, item: "Pinho nevado", xp: 98, charges: [3, 6], respawn: [600, 1200], empty: "stump", verb: "Cortar", fx: ["#5a4030", "#e8f4ff"] },
+    rock_frost: { name: "Veio de gelo eterno", skill: "mineracao", tool: "picareta", req: 150, item: "Gelo eterno", xp: 102, charges: [1, 2], respawn: [600, 1200], empty: "rubble", verb: "Minerar", fx: ["#a0c0d8", "#e8fbff"] },
     res_frostbloom: { name: "Flor-de-gelo", skill: "herbalismo", tool: "foice", req: 146, item: "Flor-de-gelo", xp: 96, charges: [1, 2], respawn: [38, 48], empty: "herb_cut", verb: "Colher", fx: ["#bfe8ff", "#ffffff"] },
   });
 

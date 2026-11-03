@@ -20,6 +20,20 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 123 (v1.22) — trilhas, paisagem mais aberta, coleta mais lenta
+- Estradas: `meander()` redesenha o caminho de menor custo em curvas (ponto a cada 9 tiles empurrado para o lado + spline);
+  trecho que cairia na água/objeto volta ao traçado original. Em Lumeira a cruz serpenteia a partir de 2 tiles da praça.
+  Passada final tapa quinas e tiles soltos de lago entre dois trechos.
+- `placeTrailLamps`: poste de madeira com lamparina (Blender) a cada ~16 tiles de trilha, com barril ou pote de barro no pé (enfeite);
+  luz âmbar à noite (overlay.js) e nas poças.
+- `THIN`: metade das árvores e minérios sai (hash fixo da posição); 1 em cada 4 vagas vira pedra do bioma (`boulder_grass` no Campo,
+  `boulder_moss` na mata, `boulder`, `boulder_snow`, `boulder_sand`). Topo de mineração com 1 a 2 veios.
+- Montanhas: além das 140 com escada, morros grandes e pequenos sem escada (215 no total, 106 só paredão).
+- Árvores e minérios voltam em 600 a 1200 s (sorteio a cada esgotamento); o aviso diz os minutos.
+- Musgo-de-rocha refeito no Blender (pedra baixa com almofadas de musgo; `rockmoss_bare` depois da colheita, sem folha de vento).
+- Correções: píer dos cais era região "sea" (inexistente) e quebrava o aviso de região; luz da tenda da Odília e da janela da
+  Juna seguem o objeto de 2 colunas (r122); arbusto fixo de Lumeira não nasce na estrada.
+
 ## Rodada 122 (v1.21) — sem paredes invisíveis
 - Medida a base de cada arte (pixels opacos nos 0,6 tile de baixo) contra o retângulo que bloqueia. Objetos de 1 tile e casas
   estão certos; sobravam quatro: balcão da Celeste (3º tile com 12% de arte), balcão da Morgana (1º tile com 19%), cabana da

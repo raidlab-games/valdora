@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.22", "Trilhas e paisagem", ["Estradas em curvas, como trilhas, com postes de lamparina que acendem à noite", "Metade das árvores e minérios; eles voltam em 10 a 20 minutos", "Mais montanhas (algumas sem escada) e pedras no estilo de cada bioma", "Musgo-de-rocha redesenhado"]],
     ["v1.21", "Sem paredes invisíveis", ["Balcões da Celeste e da Morgana, cabana da Juna e tenda da Odília bloqueiam só onde há desenho", "Dá para encostar nos balcões pelos lados"]],
     ["v1.20", "Ajustes no litoral e na praça", ["Cais da Névoa e Cais das Dunas mais espaçados no litoral sul", "Fogueira do Tomé à esquerda do varal, sem ficar escondida"]],
     ["v1.19", "Um mundo maior", ["Biomas 50% maiores e mar em volta de todo o continente", "Vilas com o dobro do tamanho", "10 cais com mestres do porto (os barcos vêm depois)", "Raposas, cervos e ursos, e mais monstros espalhados"]],
