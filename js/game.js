@@ -612,7 +612,7 @@
     [[0, 0, "barrel"], [1, 0, "deco_vase_gray"]], [[0, 0, "deco_crates_green"]], [[0, 0, "deco_sack_pair"], [1, 0, "barrel"]], [[0, 0, "deco_vase_plant"]]];
   const CARGO_BIG = [[[0, 0, "deco_barrel_pile", 2], [2, 0, "deco_vase_gray"]], [[0, 0, "deco_cargo_pile", 2]], [[0, 0, "deco_barrel_stack"], [1, 0, "barrel"], [0, 1, "deco_sacks"]],
     [[0, 0, "deco_crates_orange"], [1, 0, "deco_crates_green"], [2, 0, "deco_vase_plant"]], [[0, 0, "deco_crates"], [1, 0, "deco_barrel_stack"], [1, 1, "deco_sack_pair"]],
-    [[0, 0, "deco_barrel_pile", 2]], [[0, 0, "deco_sacks"], [1, 0, "deco_crates"], [2, 0, "deco_sacks"]]];
+    [[0, 0, "deco_barrel_pile", 2]], [[0, 0, "deco_sacks"], [1, 0, "deco_crates"], [2, 0, "deco_sacks"]], [[0, 0, "deco_sack_pile", 2], [2, 0, "deco_crates_orange"]]]; // rodada 127: pirâmide de sacos
   // encostado nas laterais das casas: 1 ou 2 grupos pequenos por casa
   function placeClutter(deco, houses) {
     for (const h of houses) { let n = 0;
@@ -635,7 +635,7 @@
   // barricadas nas saídas: na borda da vila, dos dois lados de cada estrada que sai, uma fileira de carga encostada na estrada
   function placeBarricades(deco, x0, y0, x1, y1) {
     const H_PAT = [[["deco_crates", 1], ["deco_barrel_stack", 1], ["deco_sacks", 1]], [["barrel", 1], ["deco_cargo_pile", 2]], [["deco_sacks", 1], ["deco_crates_orange", 1], ["barrel", 1], ["deco_sack_pair", 1]],
-      [["deco_barrel_pile", 2], ["deco_crates_green", 1]], [["deco_sack_pair", 1], ["deco_crates", 1], ["deco_barrel_stack", 1]]];
+      [["deco_barrel_pile", 2], ["deco_crates_green", 1]], [["deco_sack_pair", 1], ["deco_crates", 1], ["deco_barrel_stack", 1]], [["deco_crates", 1], ["deco_sack_pile", 2]]];
     const V_PAT = [["deco_crates", "deco_barrel_stack", "deco_sacks"], ["barrel", "deco_crates_orange", "deco_sack_pair"], ["deco_sacks", "deco_crates_green", "barrel"], ["deco_barrel_stack", "deco_sacks", "deco_crates"]];
     const lines = [[0, y0, 1, 0], [0, y1, 1, 0], [x0, 0, 0, 1], [x1, 0, 0, 1]]; // linha de cima, de baixo, esquerda, direita
     for (const [lx, ly, ux, uy] of lines) {

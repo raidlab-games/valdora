@@ -20,6 +20,13 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 127 (v1.26) — sacos empilhados direito
+- O saco que fica ao lado dos caixotes foi modelado no Blender (`tools/b3d/sacks.py`) com a **própria arte** dele como textura
+  (`tools/sack_texture.py` recorta de `deco_crates.png`; pixel a pixel, projetada como a câmera do jogo vê). Assim ele deita e
+  empilha com o mesmo traço e as mesmas cores.
+- Pilhas: `deco_sacks` (2 deitados e 1 no vão de cima), `deco_sack_pile` (3 + 2 + 1, 2 tiles de base, nos grupos grandes e nas
+  barricadas) e `deco_sack_pair` (um em pé, igual ao original, e um deitado na frente). Saem os sacos recortados e girados da v1.25.
+
 ## Rodada 126 (v1.25) — carga variada, barricadas e vasos nas vilas
 - **Sacos deitados:** o mesmo saco dos caixotes, recortado e girado (sem redesenhar), em pilha de 4 (`deco_sacks`) e em par
   (`deco_sack_pair`). Pilhas novas montadas com as artes da Flow em `tools/clutter_compose.py`: pirâmide de 6 barris e
