@@ -208,8 +208,8 @@
     npc.board = deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", 59, 34, ASSETS.deco_board ? 2 : 1, 1); // rodada 124: quadro maior, 2 tiles
     deco("barrel", "barrel", 60, 37); deco("barrel", "barrel", 65, 38); deco("barrel", "barrel", 66, 49); deco("barrel", "barrel", 50, 47); deco("barrel", "barrel", 70, 56);
     deco("well", "well", 51, 39); deco("well", "well", 68, 46); // o do Ivo ("ao lado do poço", no tutorial) e o da forja
-    if (SPR.deco_quest_board_ivo) for (const [x, y] of [[53, 40], [52, 41], [55, 40]]) // mural decorativo ao lado do Ivo
-      if (!occ[y * W + x] && map[y][x] !== "path") { npc.ivoBoard = deco("sign", "deco_quest_board_ivo", x, y, 1, 1, { label: "Mural do Ivo: procura-se lobos e goblins. Fale com o Ivo para ver as missões (M abre o diário)." }); break; }
+    if (SPR.deco_quest_board_ivo) for (const [x, y] of [[55, 40], [53, 40], [52, 41]]) // mural decorativo ao lado do Ivo (rodada 126: nunca na frente do cofre)
+      if (!occ[y * W + x] && map[y][x] !== "path" && ![-1, 0, 1].some((dx) => [1, 2].some((dy) => occ[(y - dy) * W + x + dx] === npc.bank))) { npc.ivoBoard = deco("sign", "deco_quest_board_ivo", x, y, 1, 1, { label: "Mural do Ivo: procura-se lobos e goblins. Fale com o Ivo para ver as missões (M abre o diário)." }); break; }
     // rodada 124: área de treino com 4 bonecos nos cantos de um quadrado (4 jogadores treinam juntos) e o poste "Treino" no meio.
     // Cada boneco tem o seu 3x3 do revide; com 4 tiles entre eles, as áreas não se encostam. Precisa de 7x7 livre na praça
     const SQ = [[0, 0], [4, 0], [0, 4], [4, 4]];
@@ -262,6 +262,8 @@
       ["deco_lamppost", 47, 45], ["deco_lamppost", 66, 45], ["deco_crates", 42, 35], ["deco_crates", 71, 57], ["deco_crates", 59, 39], ["deco_crates", 68, 50],
       ["deco_bench", 47, 57], ["deco_bench", 52, 47], ["deco_bench", 61, 47], ["deco_bench", 51, 36], ["deco_haycart", 61, 56], ["deco_haycart", 42, 57]])
       if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([dx, dy]) => !occ[(y + dy) * W + x + dx])) deco("prop", spr, x, y);
+    placeVases(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 126
+    placeBarricades(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1);
     placeClutter(deco, objects.filter((o) => o.type === "house" && inTown(o.x, o.y))); // rodada 124
     placeClutterArea(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1, 12);
     // portal de boas-vindas na entrada sul (não bloqueia: passa-se por baixo da tábua)
@@ -585,29 +587,84 @@
       if (foot) deco("prop", h < 0.2 && SPR.deco_clay_pot ? "deco_clay_pot" : "barrel", ...foot);
     }
   }
-  // rodada 124: caixas e barris encostados nas laterais das casas (1 ou 2 por casa, pela posição): caixotes, pilha de 3 barris
-  // ou barril solto. Só em tile livre com os 4 vizinhos livres (não fecham passagem) e fora da estrada. São enfeite: não quebram
+  // rodada 126: carga espalhada pelas vilas, variada: caixotes (maçã, maçã verde, laranja), barril, 3 barris, pirâmide de 6,
+  // pilhas e pares de sacos deitados, vasos cinzas. Tudo em grupos: o grupo inteiro precisa caber em chão livre fora da estrada,
+  // com 1 tile livre em volta (casa pode encostar), para não fechar passagem nem deixar buraco de 1 tile. Nada nasce até 2 tiles
+  // na frente de baú, NPC, placa ou bancada (não esconde o que se usa). Grupo = [[dx, dy, arte, largura]]
+  const CARGO_SOFT = new Set(["prop", "barrel", "bush", "rock_wall", "house", "decal", "res", "gate", "well", "bench", "fire", "ruin"]);
+  function hidesUse(x, y, w = 1) {
+    for (let dy = 1; dy <= 2; dy++) for (let dx = -1; dx <= w; dx++) { const X = x + dx, Y = y - dy;
+      if (inside(X, Y)) { const o = occ[Y * W + X]; if (o && !CARGO_SOFT.has(o.type)) return true; } }
+    return false;
+  }
+  const cargoCell = (x, y) => inside(x, y) && !occ[y * W + x] && !/water|path|pier/.test(map[y][x]);
+  function placeGroup(deco, x, y, cells, ringOk = (o) => o.type === "house") {
+    const own = new Set();
+    for (const [dx, dy, spr, w = 1] of cells) { if (!SPR[spr]) return false;
+      for (let k = 0; k < w; k++) { const X = x + dx + k, Y = y + dy; if (!cargoCell(X, Y) || hidesUse(X, Y)) return false; own.add(Y * W + X); } }
+    for (const c of own) { const X = c % W, Y = (c / W) | 0;
+      for (const [ax, ay] of DIRS8V) { const N = (Y + ay) * W + X + ax; if (own.has(N)) continue;
+        if (!inside(X + ax, Y + ay)) return false; const o = occ[N]; if (o && !ringOk(o)) return false; } }
+    for (const [dx, dy, spr, w = 1] of cells) deco("prop", spr, x + dx, y + dy, w, 1);
+    return true;
+  }
+  const CARGO_SMALL = [[[0, 0, "deco_crates"]], [[0, 0, "deco_sacks"]], [[0, 0, "deco_barrel_stack"]], [[0, 0, "deco_crates_orange"], [1, 0, "deco_sack_pair"]],
+    [[0, 0, "barrel"], [1, 0, "deco_vase_gray"]], [[0, 0, "deco_crates_green"]], [[0, 0, "deco_sack_pair"], [1, 0, "barrel"]], [[0, 0, "deco_vase_plant"]]];
+  const CARGO_BIG = [[[0, 0, "deco_barrel_pile", 2], [2, 0, "deco_vase_gray"]], [[0, 0, "deco_cargo_pile", 2]], [[0, 0, "deco_barrel_stack"], [1, 0, "barrel"], [0, 1, "deco_sacks"]],
+    [[0, 0, "deco_crates_orange"], [1, 0, "deco_crates_green"], [2, 0, "deco_vase_plant"]], [[0, 0, "deco_crates"], [1, 0, "deco_barrel_stack"], [1, 1, "deco_sack_pair"]],
+    [[0, 0, "deco_barrel_pile", 2]], [[0, 0, "deco_sacks"], [1, 0, "deco_crates"], [2, 0, "deco_sacks"]]];
+  // encostado nas laterais das casas: 1 ou 2 grupos pequenos por casa
   function placeClutter(deco, houses) {
-    const kinds = ["deco_crates", "deco_barrel_stack", "barrel", "deco_crates", "deco_barrel_stack"];
     for (const h of houses) { let n = 0;
       for (const [x, y] of [[h.x - 1, h.y + 1], [h.x + h.w, h.y + 1], [h.x - 1, h.y], [h.x + h.w, h.y], [h.x + h.w, h.y - 1], [h.x - 1, h.y - 1]]) {
         if (n >= 1 + (hash(h.x, h.y, 41) < 0.6) || hash(x, y, 42) < 0.3) continue;
-        if (!inside(x, y) || occ[y * W + x] || /water|path/.test(map[y][x]) || !DIRS.every(([dx, dy]) => inside(x + dx, y + dy) && !occ[(y + dy) * W + x + dx])) continue;
-        const k = kinds[Math.floor(hash(x, y, 43) * kinds.length)]; if (!SPR[k]) continue;
-        deco("prop", k, x, y); n++; }
+        const g = CARGO_SMALL[Math.floor(hash(x, y, 43) * CARGO_SMALL.length)], gw = Math.max(...g.map((c) => c[0] + (c[3] || 1)));
+        if (placeGroup(deco, x < h.x ? x - gw + 1 : x, y, g) || placeGroup(deco, x, y, [[0, 0, g[0][2]]])) n++; }
     }
   }
-  // rodada 124: e mais algumas pilhas pela praça, nos espaços abertos: tile e 8 vizinhos livres, sem encostar na estrada e a
-  // 4+ tiles de outra pilha (escolhidos pela posição, sempre os mesmos)
+  // pilhas pela praça nos espaços abertos (2 de cada 3 são as grandes), a 5+ tiles umas das outras; sempre os mesmos lugares
   function placeClutterArea(deco, x0, y0, x1, y1, n) {
-    const kinds = ["deco_barrel_stack", "deco_crates", "barrel", "deco_crates", "deco_barrel_stack", "barrel"], got = [], c = [];
+    const got = [], c = [];
     for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) c.push([hash(x, y, 44), x, y]);
     c.sort((a, b) => a[0] - b[0]);
-    for (const [, x, y] of c) { if (got.length >= n) break;
-      if (occ[y * W + x] || /water|path/.test(map[y][x]) || got.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 4)) continue;
-      if (!DIRS8V.every(([dx, dy]) => inside(x + dx, y + dy) && !occ[(y + dy) * W + x + dx] && map[y + dy][x + dx] !== "path")) continue;
-      const k = kinds[got.length % kinds.length]; if (!SPR[k]) continue;
-      deco("prop", k, x, y); got.push([x, y]); }
+    for (const [h, x, y] of c) { if (got.length >= n) break;
+      if (got.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 5)) continue;
+      const L = got.length % 3 === 2 ? CARGO_SMALL : CARGO_BIG, g = L[Math.floor(hash(x, y, 45) * L.length)];
+      if (placeGroup(deco, x, y, g, () => false)) got.push([x, y]); }
+  }
+  // barricadas nas saídas: na borda da vila, dos dois lados de cada estrada que sai, uma fileira de carga encostada na estrada
+  function placeBarricades(deco, x0, y0, x1, y1) {
+    const H_PAT = [[["deco_crates", 1], ["deco_barrel_stack", 1], ["deco_sacks", 1]], [["barrel", 1], ["deco_cargo_pile", 2]], [["deco_sacks", 1], ["deco_crates_orange", 1], ["barrel", 1], ["deco_sack_pair", 1]],
+      [["deco_barrel_pile", 2], ["deco_crates_green", 1]], [["deco_sack_pair", 1], ["deco_crates", 1], ["deco_barrel_stack", 1]]];
+    const V_PAT = [["deco_crates", "deco_barrel_stack", "deco_sacks"], ["barrel", "deco_crates_orange", "deco_sack_pair"], ["deco_sacks", "deco_crates_green", "barrel"], ["deco_barrel_stack", "deco_sacks", "deco_crates"]];
+    const lines = [[0, y0, 1, 0], [0, y1, 1, 0], [x0, 0, 0, 1], [x1, 0, 0, 1]]; // linha de cima, de baixo, esquerda, direita
+    for (const [lx, ly, ux, uy] of lines) {
+      const len = ux ? x1 - x0 + 1 : y1 - y0 + 1, P = (k) => ux ? [x0 + k, ly] : [lx, y0 + k];
+      const isPath = (k) => k >= 0 && k < len && map[P(k)[1]][P(k)[0]] === "path";
+      for (let k = 1; k < len - 1; k++) {
+        const sides = []; if (isPath(k) && !isPath(k - 1)) sides.push(-1); if (isPath(k) && !isPath(k + 1)) sides.push(1);
+        for (const s of sides) { // da estrada para fora
+          const hk = hash(...P(k), 46 + s), cells = [];
+          if (ux) { let o = 1; for (const [spr, w] of H_PAT[Math.floor(hk * H_PAT.length)]) { const a = s > 0 ? k + o : k - o - w + 1; cells.push([P(a)[0] - P(k)[0], 0, spr, w]); o += w; } }
+          else V_PAT[Math.floor(hk * V_PAT.length)].forEach((spr, i) => cells.push([0, s * (i + 1), spr, 1]));
+          for (let m = cells.length; m >= 2; m--) if (placeGroup(deco, P(k)[0], P(k)[1], cells.slice(0, m))) break;
+        }
+      }
+    }
+  }
+  // vasos cinzas na beira da rua, ao lado de parte dos postes (no tile vizinho que encosta na estrada) e junto de caixas e barris soltos
+  function placeVases(deco, x0, y0, x1, y1) {
+    if (!SPR.deco_vase_gray) return;
+    const near = (x, y) => DIRS.some(([dx, dy]) => inside(x + dx, y + dy) && map[y + dy][x + dx] === "path");
+    const fits = (x, y, host) => cargoCell(x, y) && !hidesUse(x, y) && DIRS8V.every(([dx, dy]) => { const o = occ[(y + dy) * W + x + dx]; return !o || o === host; });
+    for (const o of objects.slice()) {
+      if (o.x < x0 || o.x > x1 || o.y < y0 || o.y > y1 || o.w !== 1) continue;
+      const lamp = o.spr === "deco_lamppost", crate = o.spr === "deco_crates" || o.spr === "barrel" && o.type === "barrel";
+      if (!lamp && !crate || hash(o.x, o.y, 47) > (lamp ? 0.6 : 0.45)) continue;
+      const opts = [[0, -1], [0, 1], [-1, 0], [1, 0]].map(([dx, dy]) => [o.x + dx, o.y + dy]).sort((a, b) => near(b[0], b[1]) - near(a[0], a[1]));
+      const at = opts.find(([x, y]) => fits(x, y, o)); if (!at) continue;
+      deco("prop", crate && hash(o.x, o.y, 48) < 0.5 ? "deco_sack_pair" : hash(o.x, o.y, 49) < 0.65 ? "deco_vase_gray" : "deco_vase_plant", ...at);
+    }
   }
   function genContinent() {
     const G = WORLD_G, rnd = seeded(20261105), OX = G.OX, OY = G.OY;
@@ -706,8 +763,9 @@
           ["deco_planter", 6, 18], ["deco_planter", 30, 24], ["deco_planter", 12, 29], ["deco_crates", 2, 18], ["deco_crates", 31, 9], ["deco_crates", 20, 27],
           ["deco_bench", 11, 9], ["deco_bench", 22, 18], ["deco_bench", 12, 20], ["deco_haycart", 29, 20], ["deco_haycart", 4, 13]]) {
           const [x, y] = at(dx, dy); if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([ax, ay]) => !occ[(y + ay) * W + x + ax])) deco("prop", spr, x, y); }
+        placeVases(deco, v.x0, v.y0, v.x1, v.y1); placeBarricades(deco, v.x0, v.y0, v.x1, v.y1); // rodada 126
         placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
-        placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 6);
+        placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7);
       }
       if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
     }

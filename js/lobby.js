@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.25", "Vilas com mais carga", ["Pilhas variadas: pirâmide de barris, caixotes de maçã verde e laranja, sacos deitados", "Pequenas barricadas nas saídas das vilas", "Vasos cinzas ao lado dos postes; o cofre da praça não fica mais escondido"]],
     ["v1.24", "Movimento mais solto", ["Cada toque anda 1 tile inteiro; segurando, anda sem pausa", "Trocar de direção responde na hora (a tecla oposta volta no meio do passo)", "Musgo-de-rocha, pote e poste de trilha no lugar certo do tile"]],
     ["v1.23", "Praça mais viva", ["Cantos das casas livres: sem parede invisível ao lado do balcão", "Área de treino com 4 bonecos", "Quadro de caçadas maior", "Mais caixas e barris (alguns empilhados) nas vilas"]],
     ["v1.22", "Trilhas e paisagem", ["Estradas em curvas, como trilhas, com postes de lamparina que acendem à noite", "Metade das árvores e minérios; eles voltam em 10 a 20 minutos", "Mais montanhas (algumas sem escada) e pedras no estilo de cada bioma", "Musgo-de-rocha redesenhado"]],

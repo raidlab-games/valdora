@@ -344,6 +344,10 @@ for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boul
 window.SPRITE_SINK = { boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457, cactus: 0.362 };
 // rodada 123 (Blender, tools/b3d/natural_props.py): pedra com musgo (Mata Sombria) e com capim (Campo), musgo-de-rocha numa pedra
 // baixa (e ela raspada depois da colheita), poste de trilha com lamparina e pote de barro
+// rodada 126: vasos cinzas (Blender), sacos deitados (o saco dos caixotes, girado) e pilhas de carga (tools/clutter_compose.py)
+for (const [k, s, sink] of [["deco_sacks", 1.5, 0], ["deco_sack_pair", 1.3, 0], ["deco_vase_gray", 1.2, 0.208], ["deco_vase_plant", 1.05, 0.238],
+  ["deco_barrel_pile", 2.4, 0.042], ["deco_cargo_pile", 2.4, 0.042], ["deco_crates_green", 1.5, 0], ["deco_crates_orange", 1.5, 0]]) {
+  ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s]; if (sink) window.SPRITE_SINK[k] = sink; }
 SPRITE_SIZE.deco_board = [2.4, 2.4]; // rodada 124: quadro de caçadas 50% maior (agora com 2 tiles de base)
 ASSETS.deco_barrel_stack = "assets/flow/deco_barrel_stack.png"; SPRITE_SIZE.deco_barrel_stack = [1.6, 1.6]; // rodada 124: 3 barris empilhados (do barrel.png)
 // rodada 125: afundamento = (chão abaixo do pé - 0,1) / tamanho, como os minérios: o pé fica rente à borda de baixo do tile

@@ -20,6 +20,16 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 126 (v1.25) — carga variada, barricadas e vasos nas vilas
+- **Sacos deitados:** o mesmo saco dos caixotes, recortado e girado (sem redesenhar), em pilha de 4 (`deco_sacks`) e em par
+  (`deco_sack_pair`). Pilhas novas montadas com as artes da Flow em `tools/clutter_compose.py`: pirâmide de 6 barris e
+  caixotes + barril + sacos (2 tiles de base), caixotes com maçãs verdes e com laranjas.
+- **Vasos cinzas** (Blender, `natural_props.py`): vaso de cerâmica com friso azul e vaso baixo com planta.
+- **Distribuição:** grupos variados (de 1 a 4 peças) nas laterais das casas e nos espaços abertos, com 1 tile livre em volta;
+  barricadas dos dois lados de cada estrada que sai da vila; vasos ao lado de parte dos postes (na beira da rua) e de caixas e
+  barris soltos. Nada nasce até 2 tiles na frente de baú, NPC, placa ou bancada.
+- **Cofre de Lumeira:** o mural do Ivo ficava bem na frente dele; agora fica do outro lado do Ivo.
+
 ## Rodada 125 (v1.24) — movimento mais fluido, peças novas no tile certo
 - Saiu o meio passo (r117): o toque anda 1 tile inteiro; a troca de lado a partir do meio do tile deslizava na diagonal.
 - KEY_REPEAT 0,45 → 0,17 s (menos que um passo de 0,24 s): segurando, anda sem pausa; um toque rápido segue andando 1 tile.
