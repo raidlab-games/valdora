@@ -116,7 +116,7 @@ window.ValdoraOverlay = (() => {
       if (vot && !inCrypt) shrineL.push({ x: (player.px + 0.5) * TILE - cam.x, y: (player.py + 0.1) * TILE - cam.y, r: TILE * 1.6, color: "rgba(255,196,90,A)", warm: true, a: 0.1 }); // chama votiva com o herói
       // rodada 129: Pedra da vila: as runas brilham em azul forte, de dia (halo somado) e à noite (luz)
       if (stonesOf !== objects || stones.length === 0 && objects.length !== stonesN) { stones = objects.filter((o) => o.type === "waystone"); stonesOf = objects; stonesN = objects.length; }
-      for (const o of stones) { const sx = (o.x + o.w / 2 - 0.19) * TILE - cam.x, sy = (o.y - 0.5) * TILE - cam.y;
+      for (const o of stones) { const sx = (o.x + o.w / 2) * TILE - cam.x, sy = (o.y - 0.1) * TILE - cam.y; // rodada 132: runas no meio do obelisco
         if (sx > -TILE * 4 && sy > -TILE * 4 && sx < canvas.width + TILE * 4 && sy < canvas.height + TILE * 4) shrineL.push({ x: sx, y: sy, r: TILE * 2.2, color: "rgba(60,150,255,A)", a: 0.16, slow: true }); }
       if (dark <= 0.01) { if (shrineL.length) lightFx.glow(ctx, shrineL, t); return; }
       const L = [...shrineL], x0 = cam.x - TILE * 3, x1 = cam.x + canvas.width + TILE * 3, y0 = cam.y - TILE * 3, y1 = cam.y + canvas.height + TILE * 3;
@@ -129,7 +129,7 @@ window.ValdoraOverlay = (() => {
         else if (o.type === "house") { add(o.x + 0.7, o.y + 0.9, TILE * 1.3, "rgba(255,200,110,A)", true); add(o.x + 2.3, o.y + 0.9, TILE * 1.3, "rgba(255,200,110,A)", true); }
         else if (o.spr === "deco_lamppost") add(o.x + 0.78, o.y - 0.72, TILE * 2.8, "rgba(255,196,110,A)", true); // rodada 67: lanterna do poste
         else if (o.spr === "deco_trail_lamp") add(o.x + 1.06, o.y - 0.75, TILE * 3.2, "rgba(255,186,96,A)", true); // rodada 123: lamparina das trilhas
-        else if (o.type === "waystone") add(o.x + o.w / 2 - 0.19, o.y - 0.5, TILE * 3.4, "rgba(60,150,255,A)"); // rodada 129: runas da Pedra
+        else if (o.type === "waystone") add(o.x + o.w / 2, o.y - 0.1, TILE * 3.4, "rgba(60,150,255,A)"); // rodada 129: runas da Pedra
         else if (o.spr === "deco_plateau_cairn") add(o.x + 0.5, o.y - 0.4, TILE * 1.6, "rgba(90,220,255,A)"); // cristal do marco do Planalto
         else if (o.spr === "deco_lumita_marker_lit") add(o.x + 0.5, o.y - 0.75, TILE * 2.2, "rgba(90,220,255,A)"); // rodada 79: marco da campanha aceso
         else if (o.spr === "deco_lumita_heart_lit") add(o.x + 0.5, o.y - 0.5, TILE * 2.6, "rgba(90,220,255,A)"); // rodada 81: Coração de lumita

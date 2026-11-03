@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.31", "Pedra da vila no chão", ["A Pedra da vila agora sai do chão, com pedras soltas e capim em volta, como as pedras do mapa", "Runas em azul forte que tingem a rocha"]],
     ["v1.30", "Sem parede nos vasos", ["Os vasos colados em postes e pilhas não travam mais a passagem"]],
     ["v1.29", "Passo de meio bloco", ["Cada toque em W/A/S/D anda meio bloco (segurando, a mesma velocidade de antes)", "O clique no chão para no meio bloco clicado", "O herói pode parar entre dois blocos livres"]],
     ["v1.28", "Poço e Pedra maiores", ["Um poço por cidade, com o dobro do tamanho", "Pedra da vila com o dobro do tamanho, rocha mais escura e runas em azul forte que brilham", "Vasos colados no poste ou na pilha do lado"]],

@@ -20,6 +20,13 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 132 (v1.31) — Pedra da vila saindo do chão
+- A Pedra da vila foi refeita no Blender (`natural_props.py`, job `deco_waystone`) com a receita das pedras do mapa: obelisco
+  escalonado de ardósia escura, base enterrada abaixo do chão (que só registra a sombra de contato), pedras soltas meio
+  enterradas, pedrinhas e capim. Runas em azul forte (emissão) com uma luz azul que tinge a rocha.
+- Base de 1 tile (o obelisco tem ~1 tile de largura; com 2 sobrava parede invisível dos lados); brilho centrado nas runas.
+  A arte 2D da v1.28 ficou em `tools/src_art/deco_waystone_r129.png`; `tools/waystone_recolor.py` está marcado como substituído.
+
 ## Rodada 131 (v1.30) — vasos sem parede invisível
 - O vaso é desenhado colado no vizinho (rodada 129), mas o tile dele seguia bloqueado: virava parede invisível ao lado de postes e
   pilhas. Agora o vaso colado não bloqueia (`glueVase` → `solid = false`); os 36 tiles de vaso ficaram livres.

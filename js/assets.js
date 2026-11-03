@@ -332,7 +332,7 @@ for (const k of ["item_shield_wood", "item_shield_iron", "item_shield_lumita", "
 // rodada 105: chão dos biomas novos (texturas pintadas recoloridas: neve, areia rubra, rocha e mata escura)
 for (const k of ["snow", "snow_2", "sand_2", "rockg", "rockg_2", "grass_night", "grass_night_2"]) ASSETS[k] = `assets/flow/${k}.png`;
 // rodada 105: cenário dos biomas novos (a partir da arte pintada do mapa 1; Pedra no Blender), gemas e flores raras
-for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boulder", 2.3], ["boulder_snow", 2.3], ["boulder_sand", 2.3], ["deco_waystone", 3.0] /* rodada 129: o dobro, base de 2 x 1 */,
+for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boulder", 2.3], ["boulder_snow", 2.3], ["boulder_sand", 2.3], ["deco_waystone", 3.2] /* rodada 132: obelisco do Blender saindo do chão (natural_props.py) */,
   ["deco_bush_dark", 1.25], ["deco_bush_dry", 1.25], ["deco_bush_snow", 1.25], ["deco_bush_mountain", 1.25],
   ["rock_obsidian", 1.25], ["rock_sun", 1.25], ["rock_mithril", 1.25], ["rock_frost", 1.25], ["rock_amethyst", 1.25], ["rock_adamant", 1.25], ["rock_ruby", 1.25], ["rock_starice", 1.25],
   ["res_shadecap", 1.2], ["res_desertrose", 1.2], ["res_rockmoss", 1.5], ["res_frostbloom", 1.2], ["res_nightbloom", 1.2], ["res_edelweiss", 1.2], ["res_sunlotus", 1.2], ["res_aurora", 1.2]]) {
@@ -341,7 +341,7 @@ for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boul
 // rodada 109: rochas e cacto do Blender saem de um monte de chão que passa do pé; a imagem desce esta fração da altura.
 // rodada 111: o pé fica rente à borda de baixo do tile (0,1 tile acima), como o pé dos personagens; antes ficava no meio do
 // tile e a arte parecia meio tile acima do herói, com o tile clicável abaixo dela
-window.SPRITE_SINK = { boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457, cactus: 0.362 };
+window.SPRITE_SINK = { deco_waystone: 0.156, boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457, cactus: 0.362 };
 // rodada 123 (Blender, tools/b3d/natural_props.py): pedra com musgo (Mata Sombria) e com capim (Campo), musgo-de-rocha numa pedra
 // baixa (e ela raspada depois da colheita), poste de trilha com lamparina e pote de barro
 // rodada 126: vasos cinzas (Blender), sacos deitados (rodada 127: o saco dos caixotes modelado no Blender com a própria arte, tools/b3d/sacks.py) e pilhas de carga (tools/clutter_compose.py)

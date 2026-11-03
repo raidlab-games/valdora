@@ -776,7 +776,7 @@
         const cx = (TOWN.x0 + TOWN.x1) / 2, cy = (TOWN.y0 + TOWN.y1) / 2, cand = [];
         for (let y = TOWN.y0 + 1; y < TOWN.y1; y++) for (let x = TOWN.x0 + 1; x < TOWN.x1; x++) cand.push([x, y]);
         cand.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cy) - Math.hypot(q[0] - cx, q[1] - cy));
-        { const s = bigSpot(Math.round(cx), Math.round(cy), 2, 2, 12); if (s) v.stone = { x: s[0], y: s[1] }; } // rodada 129: a Pedra tem 2 tiles de base
+        { const s = bigSpot(Math.round(cx), Math.round(cy), 1, 2, 12); if (s) v.stone = { x: s[0], y: s[1] }; } // rodada 129/132: a Pedra (alta) com espaço em volta
       } else {
         // rodada 120: vila com o dobro do tamanho (34 x 32): ruas em cruz no meio, cinco casas, banca, forja, fogueira, dois poços,
         // e a praça cheia de postes, canteiros, bancos e caixotes (como a Lumeira)
@@ -790,8 +790,8 @@
         deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); { const ws = bigSpot(...at(8, 10), 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: um poço por vila deco("fire", "campfire", ...at(8, 22));
         deco("barrel", "barrel", ...at(20, 6)); deco("barrel", "barrel", ...at(25, 22)); deco("barrel", "barrel", ...at(6, 22)); deco("barrel", "barrel", ...at(30, 12));
         if (SPR.deco_campfire_log) deco("bench", "deco_campfire_log", ...at(8, 23));
-        { const s = bigSpot(v.x0 + 13, v.y0 + 19, 2, 2) || [v.x0 + 13, v.y0 + 19]; v.stone = { x: s[0], y: s[1] };
-          v.stoneObj = deco("waystone", "deco_waystone", s[0], s[1], 2, 1, { village: v.key, label: v.name }); } // já no lugar: nada nasce atrás dela
+        { const s = bigSpot(v.x0 + 13, v.y0 + 19, 1, 2) || [v.x0 + 13, v.y0 + 19]; v.stone = { x: s[0], y: s[1] };
+          v.stoneObj = deco("waystone", "deco_waystone", s[0], s[1], 1, 1, { village: v.key, label: v.name }); } // já no lugar: nada nasce atrás dela
         const WD = WARDENS[v.key]; // rodada 114: guardião da vila, no estilo do Ivo, com as missões do bioma
         if (WD) (npc.wardens = npc.wardens || {})["w_" + v.key] = deco("warden", "npc_warden_" + v.key, ...at(14, 13), 1, 1, { name: WD[0], short: WD[1], hello: WD[2], giver: "w_" + v.key, village: v.key });
         for (const [x, y] of [at(-1, -1), at(VW, -1), at(-1, VH), at(VW, VH)]) if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water") deco("prop", SPR.deco_lamppost ? "deco_lamppost" : "deco_sign", x, y);
@@ -804,7 +804,7 @@
         placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
         placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7); placeVases(deco, v.x0, v.y0, v.x1, v.y1); // rodada 128
       }
-      if (v.stone && !v.stoneObj) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 2, 1, { village: v.key, label: v.name }); // rodada 129: 2 x 1
+      if (v.stone && !v.stoneObj) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name }); // rodada 132: o obelisco tem 1 tile de base
     }
     // entradas das masmorras dos biomas
     for (const E of G.DG_ENTRIES) {
