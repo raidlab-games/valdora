@@ -66,7 +66,7 @@ window.ValdoraPointer = (() => {
         api.player().target = null;
         const { tx, ty } = p, o = p.ref;
         if (api.map()[ty][tx] === "water") { log("Para pescar, clique num cardume (as ondulações brancas na água).", "dim"); return; }
-        const ok = o && o.solid ? goTo((x, y) => adjRect(x, y, o)) : goTo((x, y) => x === tx && y === ty);
+        const ok = o && o.solid && api.blockAt(tx, ty) ? goTo((x, y) => adjRect(x, y, o)) : goTo((x, y) => x === tx && y === ty); // rodada 124: canto livre de casa é chão
         if (!ok) log("Não dá para chegar lá.", "dim");
         clickFx(tx + 0.5, ty + 0.5, "#f1c40f");
         return;

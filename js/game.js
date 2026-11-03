@@ -196,8 +196,8 @@
     // rodada 114/116: Casa de Leilões com o balcão de juiz da Celeste na frente; rodada 117: casa azul e a bancada da Morgana
     // rodada 122: o balcão (2,2 tiles de arte) bloqueia só os 2 tiles da base; dcx = onde a arte é ancorada (antes eram 3 tiles e o
     // terceiro, quase vazio, virava parede invisível)
-    deco("house", "house_auction", 44, 31, 3, 2); npc.auction = deco("auction", "auction_desk", 44, 33, 2, 1, { name: "Celeste", npcSpr: "npc_auctioneer", dcx: 1.5 });
-    deco("house", "house_blue", 67, 31, 3, 2); npc.witch = deco("witch", "witch_desk", 68, 33, 2, 1, { name: "Morgana", npcSpr: "npc_witch", dcx: 0.5 });
+    deco("house", "house_auction", 44, 31, 3, 2, { open: [[2, 1]] }); npc.auction = deco("auction", "auction_desk", 44, 33, 2, 1, { name: "Celeste", npcSpr: "npc_auctioneer", dcx: 1.5 });
+    deco("house", "house_blue", 67, 31, 3, 2, { open: [[0, 1]] }); npc.witch = deco("witch", "witch_desk", 68, 33, 2, 1, { name: "Morgana", npcSpr: "npc_witch", dcx: 0.5 });
     deco("house", "house_green", 44, 53, 3, 2); deco("house", "house_red", 50, 30, 3, 2); deco("house", "house_green", 61, 30, 3, 2); deco("house", "house_red", 66, 54, 3, 2);
     npc.stall = deco("stall", "stall", 61, 37, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 63, 37, 1, 1, { name: "Bento" });
@@ -205,21 +205,23 @@
     npc.bank = deco("bank", "chest", 53, 39, 1, 1);
     npc.furnace = deco("furnace", "furnace", 62, 49, 1, 1);
     npc.anvil = deco("anvil", "anvil", 64, 49, 1, 1);
-    npc.board = deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", 59, 34, 1, 1);
+    npc.board = deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", 59, 34, ASSETS.deco_board ? 2 : 1, 1); // rodada 124: quadro maior, 2 tiles
     deco("barrel", "barrel", 60, 37); deco("barrel", "barrel", 65, 38); deco("barrel", "barrel", 66, 49); deco("barrel", "barrel", 50, 47); deco("barrel", "barrel", 70, 56);
     deco("well", "well", 51, 39); deco("well", "well", 68, 46); // o do Ivo ("ao lado do poço", no tutorial) e o da forja
     if (SPR.deco_quest_board_ivo) for (const [x, y] of [[53, 40], [52, 41], [55, 40]]) // mural decorativo ao lado do Ivo
       if (!occ[y * W + x] && map[y][x] !== "path") { npc.ivoBoard = deco("sign", "deco_quest_board_ivo", x, y, 1, 1, { label: "Mural do Ivo: procura-se lobos e goblins. Fale com o Ivo para ver as missões (M abre o diário)." }); break; }
-    // boneco de treino (tutorial "saia da área vermelha"): precisa de um 3x3 livre e andável ao redor
-    for (const [x, y] of [[70, 49], [69, 39], [44, 47], [52, 55]]) {
-      let ok = true; for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1 && ok; dx++) if (occ[(y + dy) * W + x + dx] || map[y + dy][x + dx] === "water") ok = false;
-      if (ok && SPR.deco_dummy) { npc.dummy = deco("dummy", "deco_dummy", x, y, 1, 1); break; }
+    // rodada 124: área de treino com 4 bonecos nos cantos de um quadrado (4 jogadores treinam juntos) e o poste "Treino" no meio.
+    // Cada boneco tem o seu 3x3 do revide; com 4 tiles entre eles, as áreas não se encostam. Precisa de 7x7 livre na praça
+    const SQ = [[0, 0], [4, 0], [0, 4], [4, 4]];
+    const freeSq = (x, y) => { for (let dy = -1; dy <= 5; dy++) for (let dx = -1; dx <= 5; dx++) { const X = x + dx, Y = y + dy;
+      if (!inside(X, Y) || !inTown(X, Y) || occ[Y * W + X] || /water/.test(map[Y][X])) return false; }
+      return [...SQ, [2, 2]].every(([dx, dy]) => map[y + dy][x + dx] !== "path"); };
+    let sq = null, sd = 1e9;
+    for (let y = TOWN.y0 + 1; y <= TOWN.y1 - 5; y++) for (let x = TOWN.x0 + 1; x <= TOWN.x1 - 5; x++) if (freeSq(x, y)) { const d = Math.hypot(x + 2 - 66, y + 2 - 45); if (d < sd) { sd = d; sq = [x, y]; } }
+    if (sq && SPR.deco_dummy) {
+      npc.dummies = SQ.map(([dx, dy]) => deco("dummy", "deco_dummy", sq[0] + dx, sq[1] + dy, 1, 1)); npc.dummy = npc.dummies[0];
+      if (SPR.deco_training_post) npc.post = deco("sign", "deco_training_post", sq[0] + 2, sq[1] + 2, 1, 1, { label: "Área de treino: golpeie um boneco e saia da área vermelha antes do revide. Quatro bonecos: dá para treinar em grupo." });
     }
-    if (npc.dummy && SPR.deco_training_post) // poste "Treino" a 2 passos do boneco (fora da área do revide)
-      for (const [dx, dy] of [[-2, 0], [0, -2], [2, 0], [0, 2], [-2, -1], [-2, 1]]) {
-        const x = npc.dummy.x + dx, y = npc.dummy.y + dy;
-        if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water" && map[y][x] !== "path") { npc.post = deco("sign", "deco_training_post", x, y, 1, 1, { label: "Treino: golpeie o boneco e saia da área vermelha antes do revide." }); break; }
-      }
     deco("fire", "campfire", 46, 50); // rodada 121: à esquerda do varal e abaixo do Tomé (antes ficava atrás dos dois)
     if (SPR.deco_meat_rack) for (const [x, y] of [[49, 50], [50, 49], [47, 50]]) // rodada 31: varal de carne (onde se faz o espetinho); deixa livres os lados do fogo
       if (!occ[y * W + x] && map[y][x] !== "path" && map[y][x] !== "water") { npc.rack = deco("rack", "deco_meat_rack", x, y, 1, 1); break; }
@@ -260,6 +262,8 @@
       ["deco_lamppost", 47, 45], ["deco_lamppost", 66, 45], ["deco_crates", 42, 35], ["deco_crates", 71, 57], ["deco_crates", 59, 39], ["deco_crates", 68, 50],
       ["deco_bench", 47, 57], ["deco_bench", 52, 47], ["deco_bench", 61, 47], ["deco_bench", 51, 36], ["deco_haycart", 61, 56], ["deco_haycart", 42, 57]])
       if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([dx, dy]) => !occ[(y + dy) * W + x + dx])) deco("prop", spr, x, y);
+    placeClutter(deco, objects.filter((o) => o.type === "house" && inTown(o.x, o.y))); // rodada 124
+    placeClutterArea(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1, 12);
     // portal de boas-vindas na entrada sul (não bloqueia: passa-se por baixo da tábua)
     if (ASSETS.deco_town_sign) place({ type: "gate", spr: "deco_town_sign", x: RCX - 1, y: TOWN.y1 + 1, w: 3, h: 1, ox: 0.45, solid: false });
     homeObjs = null; { const H = HOME; // rodada 100: lote/casa, 9 pedestais, cama do filhote, banco e vaso (aparecem conforme o save)
@@ -581,6 +585,30 @@
       if (foot) deco("prop", h < 0.2 && SPR.deco_clay_pot ? "deco_clay_pot" : "barrel", ...foot);
     }
   }
+  // rodada 124: caixas e barris encostados nas laterais das casas (1 ou 2 por casa, pela posição): caixotes, pilha de 3 barris
+  // ou barril solto. Só em tile livre com os 4 vizinhos livres (não fecham passagem) e fora da estrada. São enfeite: não quebram
+  function placeClutter(deco, houses) {
+    const kinds = ["deco_crates", "deco_barrel_stack", "barrel", "deco_crates", "deco_barrel_stack"];
+    for (const h of houses) { let n = 0;
+      for (const [x, y] of [[h.x - 1, h.y + 1], [h.x + h.w, h.y + 1], [h.x - 1, h.y], [h.x + h.w, h.y], [h.x + h.w, h.y - 1], [h.x - 1, h.y - 1]]) {
+        if (n >= 1 + (hash(h.x, h.y, 41) < 0.6) || hash(x, y, 42) < 0.3) continue;
+        if (!inside(x, y) || occ[y * W + x] || /water|path/.test(map[y][x]) || !DIRS.every(([dx, dy]) => inside(x + dx, y + dy) && !occ[(y + dy) * W + x + dx])) continue;
+        const k = kinds[Math.floor(hash(x, y, 43) * kinds.length)]; if (!SPR[k]) continue;
+        deco("prop", k, x, y); n++; }
+    }
+  }
+  // rodada 124: e mais algumas pilhas pela praça, nos espaços abertos: tile e 8 vizinhos livres, sem encostar na estrada e a
+  // 4+ tiles de outra pilha (escolhidos pela posição, sempre os mesmos)
+  function placeClutterArea(deco, x0, y0, x1, y1, n) {
+    const kinds = ["deco_barrel_stack", "deco_crates", "barrel", "deco_crates", "deco_barrel_stack", "barrel"], got = [], c = [];
+    for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) c.push([hash(x, y, 44), x, y]);
+    c.sort((a, b) => a[0] - b[0]);
+    for (const [, x, y] of c) { if (got.length >= n) break;
+      if (occ[y * W + x] || /water|path/.test(map[y][x]) || got.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 4)) continue;
+      if (!DIRS8V.every(([dx, dy]) => inside(x + dx, y + dy) && !occ[(y + dy) * W + x + dx] && map[y + dy][x + dx] !== "path")) continue;
+      const k = kinds[got.length % kinds.length]; if (!SPR[k]) continue;
+      deco("prop", k, x, y); got.push([x, y]); }
+  }
   function genContinent() {
     const G = WORLD_G, rnd = seeded(20261105), OX = G.OX, OY = G.OY;
     const tile = (k, alt) => (SPR[k] ? k : alt);
@@ -666,7 +694,7 @@
         deco("house", hs[3], ...at(9, 4), 3, 2); deco("house", hs[4], ...at(26, 26), 3, 2);
         deco("stall", "stall", ...at(21, 6), 2, 1); deco("merchant", "npc_merchant", ...at(23, 6), 1, 1, { name: MERCH[v.key], village: v.key });
         deco("bank", "chest", ...at(13, 12)); deco("furnace", "furnace", ...at(21, 22)); deco("anvil", "anvil", ...at(23, 22));
-        deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12)); deco("well", "well", ...at(8, 10)); deco("well", "well", ...at(26, 19)); deco("fire", "campfire", ...at(8, 22));
+        deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); deco("well", "well", ...at(8, 10)); deco("well", "well", ...at(26, 19)); deco("fire", "campfire", ...at(8, 22));
         deco("barrel", "barrel", ...at(20, 6)); deco("barrel", "barrel", ...at(25, 22)); deco("barrel", "barrel", ...at(6, 22)); deco("barrel", "barrel", ...at(30, 12));
         if (SPR.deco_campfire_log) deco("bench", "deco_campfire_log", ...at(8, 23));
         v.stone = { x: v.x0 + 13, y: v.y0 + 19 };
@@ -678,6 +706,8 @@
           ["deco_planter", 6, 18], ["deco_planter", 30, 24], ["deco_planter", 12, 29], ["deco_crates", 2, 18], ["deco_crates", 31, 9], ["deco_crates", 20, 27],
           ["deco_bench", 11, 9], ["deco_bench", 22, 18], ["deco_bench", 12, 20], ["deco_haycart", 29, 20], ["deco_haycart", 4, 13]]) {
           const [x, y] = at(dx, dy); if (SPR[spr] && map[y][x] === "stone" && !occ[y * W + x] && DIRS.every(([ax, ay]) => !occ[(y + ay) * W + x + ax])) deco("prop", spr, x, y); }
+        placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
+        placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 6);
       }
       if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
     }
@@ -918,8 +948,8 @@
     faceRect(o); player.actT = 3;
     useTool("tool_sword", () => { o.wobbleT = 0; SND.play("hit"); addFloat(o.x + 0.5, o.y - 0.8, "tok!", "#e8d9b0", 0.6, 12); o.drill = { t: 0 }; SND.play("warn"); });
   }
-  function updateDummy(dt) {
-    const o = npc.dummy; if (!o) return;
+  function updateDummy(dt) { for (const o of npc.dummies || (npc.dummy ? [npc.dummy] : [])) updateOneDummy(o, dt); } // rodada 124: 4 bonecos
+  function updateOneDummy(o, dt) {
     if (o.wobbleT != null && (o.wobbleT += dt) > 1) o.wobbleT = null;
     if (o.swingT != null && (o.swingT += dt) * ANIMS.deco_dummy.rows.swing.fps >= ANIMS.deco_dummy.rows.swing.frames) o.swingT = null; // giro do revide terminou
     if (!o.drill) return;
@@ -950,7 +980,14 @@
     showToast("Tesouro da cripta!", `+${coins} moedas e espólios no chão.`, "#f1c40f"); log(`O selo se rompe! +${coins} moedas.`, "gold"); save();
   }
   function nearTown(x, y, m) { return !inCrypt && TOWNS.some((T) => x >= T.x0 - m && x <= T.x1 + m && y >= T.y0 - m && y <= T.y1 + m); }
+  // rodada 124: pegada real dos objetos grandes. O retângulo continua reservado (nada nasce ali), mas estes tiles [dx, dy] não
+  // bloqueiam: as casas são desenhadas com a quina para a frente, então os dois cantos de baixo só têm a parede recuando lá em
+  // cima (12 a 15% de arte na metade de baixo do tile); na cabana da Juna a fileira de baixo é só vaso e varal; na tenda da
+  // Odília, o canto do baú; no acampamento do Brás, o canto do poste
+  const OPEN_CELLS = { house_red: [[0, 1], [2, 1]], house_blue: [[0, 1], [2, 1]], house_green: [[0, 1], [2, 1]], house_auction: [[0, 1], [2, 1]],
+    house_juna: [[0, 1], [1, 1]], tent_odilia: [[1, 1]], camp_bras: [[2, 1]] };
   function place(o) {
+    if (!o.open && OPEN_CELLS[o.spr] && o.w * o.h > 1) o.open = OPEN_CELLS[o.spr];
     objects.push(o);
     for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) occ[y * W + x] = o;
     return o;
@@ -1017,10 +1054,11 @@
   const mobIdx = new Map();
   function indexMobs() { mobIdx.clear(); for (const m of mobs) if (!m.dead) mobIdx.set(m.y * W + m.x, m); }
   const mobAt = (x, y) => { const m = mobIdx.get(y * W + x); return m && !m.dead && m.x === x && m.y === y ? m : undefined; };
-  const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !(MTN && !inCrypt && MTN.block[y * W + x]) && !isBlockingObj(occ[y * W + x]) && !mobAt(x, y);
+  const blockAt = (x, y) => { const o = occ[y * W + x]; return isBlockingObj(o) && !(o.open && o.open.some(([dx, dy]) => o.x + dx === x && o.y + dy === y)); }; // rodada 124
+  const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !(MTN && !inCrypt && MTN.block[y * W + x]) && !blockAt(x, y) && !mobAt(x, y);
   // rodada 105: encostar vale nas 8 direções. Na diagonal, pelo menos um dos dois tiles do meio precisa estar livre de parede/água
   // (não se golpeia através de uma quina fechada); monstros e o herói no meio não atrapalham.
-  const open = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !isBlockingObj(occ[y * W + x]);
+  const open = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !blockAt(x, y);
   const adjacent = (a, b) => { const dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
     return Math.max(dx, dy) === 1 && (dx + dy === 1 || open(a.x, b.y) || open(b.x, a.y)); };
   function adjRect(x, y, o) { // (x,y) está encostado (também na diagonal) na área ocupada por o?
@@ -1528,7 +1566,7 @@
     tile: (x, y) => map[y] && map[y][x], tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
-  const POINTER = ValdoraPointer.create({ miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
+  const POINTER = ValdoraPointer.create({ blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
     clickFx: (...a) => clickFx(...a), setTarget: (p) => setTarget(p), nearestMob: (x, y) => nearestMob(x, y), walkable: (x, y) => walkable(x, y), inside: (x, y) => inside(x, y) });
   const PST = POINTER.st, updateTouch = POINTER.updateTouch;
@@ -1682,7 +1720,7 @@
     for (let i = 1; i < n; i++) {
       const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n);
       if ((x === x0 && y === y0) || (x === x1 && y === y1)) continue;
-      if (!inside(x, y) || map[y][x] === "void" || isBlockingObj(occ[y * W + x])) return false;
+      if (!inside(x, y) || map[y][x] === "void" || blockAt(x, y)) return false;
     }
     return true;
   }
@@ -3052,8 +3090,8 @@
       const k = 0.5 + Math.sin(phase * 14) * 0.2; ctx.fillStyle = `rgba(220,50,30,${0.16 + k * 0.14})`; ctx.strokeStyle = "#ff5a3a"; ctx.lineWidth = 2;
       for (const [x, y] of tiles) { ctx.fillRect(x * TILE - cam.x + 3, y * TILE - cam.y + 3, TILE - 6, TILE - 6); ctx.strokeRect(x * TILE - cam.x + 3, y * TILE - cam.y + 3, TILE - 6, TILE - 6); }
     };
-    if (npc.dummy && npc.dummy.drill) { // área do revide do boneco (3x3) e barra do tempo restante
-      const o = npc.dummy, k = o.drill.t / DRILL, tiles = [];
+    for (const o of npc.dummies || (npc.dummy ? [npc.dummy] : [])) if (o.drill) { // área do revide do boneco (3x3) e barra do tempo restante (rodada 124: cada boneco)
+      const k = o.drill.t / DRILL, tiles = [];
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) tiles.push([o.x + dx, o.y + dy]);
       warnTiles(tiles, o.drill.t); ctx.strokeStyle = "#ff5a3a"; ctx.lineWidth = 2;
       ctx.strokeRect((o.x - 1) * TILE - cam.x + 2, (o.y - 1) * TILE - cam.y + 2, TILE * 3 - 4, TILE * 3 - 4);

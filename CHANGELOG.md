@@ -20,6 +20,15 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 124 (v1.23) — pegada real dos objetos, área de treino, praça mais viva
+- `OPEN_CELLS` + `blockAt`: o retângulo do objeto continua reservado, mas tiles sem arte no chão não bloqueiam. Casas (quina para
+  a frente): cantos de baixo com 12–15% de arte na metade de baixo → livres (menos atrás dos balcões da Celeste e da Morgana);
+  cabana da Juna (fileira de baixo), tenda da Odília (canto do baú), acampamento do Brás (canto do poste). Clique num canto livre anda até ele.
+- Área de treino: 4 bonecos nos cantos de um quadrado de 4 tiles com o poste no meio (`npc.dummies`; cada um com o seu revide).
+- Quadro de caçadas 1,6 → 2,4 tiles e 2 tiles de base.
+- `placeClutter` (laterais das casas) e `placeClutterArea` (praça aberta): caixotes, pilha de 3 barris (`deco_barrel_stack`, do
+  barrel.png) e barris; Lumeira foi de 9 para 27, cada vila ~12.
+
 ## Rodada 123 (v1.22) — trilhas, paisagem mais aberta, coleta mais lenta
 - Estradas: `meander()` redesenha o caminho de menor custo em curvas (ponto a cada 9 tiles empurrado para o lado + spline);
   trecho que cairia na água/objeto volta ao traçado original. Em Lumeira a cruz serpenteia a partir de 2 tiles da praça.

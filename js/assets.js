@@ -344,6 +344,8 @@ for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boul
 window.SPRITE_SINK = { boulder: 0.457, boulder_snow: 0.457, boulder_sand: 0.457, cactus: 0.362 };
 // rodada 123 (Blender, tools/b3d/natural_props.py): pedra com musgo (Mata Sombria) e com capim (Campo), musgo-de-rocha numa pedra
 // baixa (e ela raspada depois da colheita), poste de trilha com lamparina e pote de barro
+SPRITE_SIZE.deco_board = [2.4, 2.4]; // rodada 124: quadro de caçadas 50% maior (agora com 2 tiles de base)
+ASSETS.deco_barrel_stack = "assets/flow/deco_barrel_stack.png"; SPRITE_SIZE.deco_barrel_stack = [1.6, 1.6]; // rodada 124: 3 barris empilhados (do barrel.png)
 for (const [k, s, sink] of [["boulder_moss", 2.3, 0.457], ["boulder_grass", 2.3, 0.457], ["rockmoss_bare", 1.5, 0.167], ["deco_trail_lamp", 2.4, 0.042], ["deco_clay_pot", 1.2, 0.083]]) {
   ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [s, s]; window.SPRITE_SINK[k] = sink; }
 window.SPRITE_SINK.res_rockmoss = 0.167;
