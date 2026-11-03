@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.33", "Bestiário novo", ["Todos os monstros redesenhados: mais pixels e detalhes, cores vivas, contorno colorido e rosto desenhado (olhos, sobrancelha, boca e presas)", "40 espécies novas: 12 a 13 por bioma grande, 5 a 7 em cada região do Campo", "Cada espécie luta do seu jeito: arqueiros e magos atiram de longe, xamãs e necromantes invocam, ursos rugem, javalis investem, morcegos roubam vida...", "Avisos no chão: saia do tile marcado, da linha da investida e da área do rugido"]],
     ["v1.32", "Teste: Gnol carniceiro", ["Novo monstro no estilo novo, na toca dos gnols (leste do Bosque dos Carvalhos, nível 10)", "Salta sobre você marcando o chão (saia do tile!), abre feridas que sangram e cerca pelos lados", "Ferido, ri e chama o bando"]],
     ["v1.31", "Pedra da vila no chão", ["A Pedra da vila agora sai do chão, com pedras soltas e capim em volta, como as pedras do mapa", "Runas em azul forte que tingem a rocha"]],
     ["v1.30", "Sem parede nos vasos", ["Os vasos colados em postes e pilhas não travam mais a passagem"]],

@@ -742,52 +742,167 @@ window.VD = (() => {
     bear: { name: "Urso pardo", spr: "mob_bear", lvl: 16, hp: 52, atk: 16, def: 12, maxHit: 7, speed: 3, aggro: 3, coins: [16, 34], where: "Mata Sombria", scale: 1,
       drops: [["Pele de urso", 0.6], ["Carne de caça", 0.6]], color: "#68462e" },
   });
-  const SH = "sepia(0.5) hue-rotate(220deg) brightness(0.55) saturate(1.6)", SAND = "sepia(0.85) saturate(1.3) brightness(1.08)", ROCK = "grayscale(0.85) brightness(0.8) contrast(1.1)", ICE = "sepia(0.4) hue-rotate(165deg) saturate(1.7) brightness(1.3)";
+  // ================= rodada 134: bestiário completo no estilo novo =================
+  // Cada espécie tem arte própria (tools/b3d/mobs_bestiary.py; nada de modelo tingido) e um jeito próprio de lutar (`skills`,
+  // js/mobskills.js). Os mais fortes de cada bioma juntam habilidades (invocar + atirar, saltar + cercar + chamar o bando...).
   const DW = [["Obsidiana", 0.18], ["Cogumelo-sombra", 0.1], ["Poção de vida", 0.06]], DS = [["Ouro solar", 0.18], ["Rosa-do-deserto", 0.1], ["Poção de vida", 0.06]];
   const MT = [["Mitril", 0.18], ["Musgo-de-rocha", 0.1], ["Poção de força", 0.06]], SN = [["Gelo eterno", 0.18], ["Flor-de-gelo", 0.1], ["Poção de pedra", 0.06]];
+  // monstro de bioma: atributos pela fórmula do nível (k = mais forte), moedas pelo nível
+  const nm = (spr, name, lvl, where, o = {}) => ({ name, spr, lvl, ...mobStats(lvl, o.k || 1), speed: o.speed || 3, aggro: o.aggro ?? 4,
+    coins: [Math.round(lvl * 1.4 * (o.k || 1)), Math.round(lvl * 2.6 * (o.k || 1))], where, drops: o.drops || [], color: o.color || "#c0c0c0", skills: o.skills, ...(o.extra || {}) });
+  // ajudante invocado ou filhote de slime: some do bestiário e das caçadas
+  const minion = (spr, name, lvl, o = {}) => ({ ...nm(spr, name, lvl, "Invocado em combate", o), minion: true, noBounty: true, respawn: 9999, coins: [0, 1], drops: [] });
+  // ----- Campo: espécies novas e o estilo de luta das antigas -----
   Object.assign(MOBS, {
-    shade_wolf: bmob("wolf", "Lobo das sombras", 32, SH, "Floresta Sombria", { drops: [["Pele de lobo", 0.5], ...DW] }),
-    wood_spider: bmob("quartz_spider", "Aranha da mata", 38, "hue-rotate(80deg) brightness(0.55) saturate(1.3)", "Floresta Sombria", { drops: DW }),
-    shade_goblin: bmob("goblin", "Goblin da sombra", 43, SH, "Floresta Sombria", { drops: DW }),
-    rot_skeleton: bmob("skeleton", "Esqueleto podre", 48, "sepia(0.6) hue-rotate(50deg) saturate(1.4) brightness(0.8)", "Floresta Sombria", { drops: DW }),
-    shade_wraith: bmob("light_wraith", "Espectro sombrio", 54, "hue-rotate(230deg) brightness(0.6) saturate(1.8)", "Floresta Sombria", { drops: DW }),
-    corrupt_ent: bmob("golem", "Ent corrompido", 60, "hue-rotate(200deg) brightness(0.55) saturate(1.3)", "Floresta Sombria", { drops: [["Madeira de ébano", 0.4], ...DW] }),
-    night_alpha: bmob("wolf_alpha", "Alfa da noite", 64, SH, "Floresta Sombria", { k: 1.6, scale: 1.15, drops: [["Barra de obsidiana", 0.3], ...DW] }),
-    shadow_king: bmob("boss", "Rei das Sombras", 70, "hue-rotate(220deg) brightness(0.6) saturate(1.8)", "Covil das Sombras (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra de obsidiana", 1, 2, 4], ["Espada de obsidiana", 0.2], ["Couraça de obsidiana", 0.15]] }),
-    sand_slime: bmob("slime_blue", "Slime de areia", 103, SAND, "Deserto Rubro", { drops: DS }),
-    red_scorpion: bmob("quartz_spider", "Escorpião rubro", 108, "sepia(1) saturate(3) hue-rotate(-25deg) brightness(0.85)", "Deserto Rubro", { drops: DS }),
-    dune_boar: bmob("boar", "Javali das dunas", 115, SAND, "Deserto Rubro", { drops: [["Couro de javali", 0.5], ...DS] }),
-    mummy: bmob("skeleton", "Múmia", 121, "sepia(0.9) brightness(1.12) saturate(0.8)", "Deserto Rubro", { drops: DS }),
-    sandstone_golem: bmob("golem", "Golem de arenito", 128, "sepia(1) saturate(1.6) hue-rotate(-10deg) brightness(1.05)", "Deserto Rubro", { drops: DS }),
-    raider_goblin: bmob("goblin", "Goblin saqueador", 134, SAND, "Deserto Rubro", { drops: DS }),
-    dune_serpent: bmob("boss_serpent", "Serpente das dunas", 139, SAND, "Deserto Rubro", { k: 1.8, scale: 0.55, drops: [["Barra solar", 0.35], ...DS] }),
-    sand_pharaoh: bmob("boss", "Faraó de Areia", 145, "sepia(1) saturate(2.4) hue-rotate(5deg) brightness(1.15)", "Tumba do Faraó (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra solar", 1, 2, 4], ["Lâmina solar", 0.2], ["Armadura solar", 0.15]] }),
-    gray_wolf: bmob("wolf", "Lobo cinzento", 67, ROCK, "Montanhas de Ferro", { drops: [["Pele de lobo", 0.5], ...MT] }),
-    stone_boar: bmob("boar", "Javali de pedra", 72, ROCK, "Montanhas de Ferro", { drops: MT }),
-    granite_golem: bmob("golem", "Golem de granito", 78, ROCK, "Montanhas de Ferro", { drops: MT }),
-    cave_goblin: bmob("goblin", "Goblin das cavernas", 84, "sepia(0.7) brightness(0.6) saturate(1.2)", "Montanhas de Ferro", { drops: MT }),
-    rock_sentinel: bmob("crystal_sentinel", "Sentinela de rocha", 90, ROCK, "Montanhas de Ferro", { drops: MT }),
-    cave_spider: bmob("quartz_spider", "Aranha das grutas", 95, "sepia(0.8) brightness(0.55) saturate(1.2)", "Montanhas de Ferro", { drops: MT }),
-    iron_colossus: bmob("crypt_colossus", "Colosso de ferro", 100, "sepia(1) hue-rotate(-20deg) saturate(1.8) brightness(0.8)", "Montanhas de Ferro", { k: 1.8, drops: [["Barra de mitril", 0.35], ...MT] }),
-    mountain_king: bmob("boss_golem", "Rei da Montanha", 106, ROCK, "Forja Abandonada (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra de mitril", 1, 2, 4], ["Espada de mitril", 0.2], ["Placas de mitril", 0.15]] }),
-    ice_wolf: bmob("wolf", "Lobo do gelo", 142, ICE, "Geleira do Norte", { drops: [["Pele de lobo", 0.5], ...SN] }),
-    frost_slime: bmob("slime_crystal", "Slime de gelo", 148, ICE, "Geleira do Norte", { drops: SN }),
-    blizzard_wraith: bmob("light_wraith", "Espectro da nevasca", 155, ICE, "Geleira do Norte", { drops: SN }),
-    ice_golem: bmob("golem", "Golem de gelo", 162, ICE, "Geleira do Norte", { drops: SN }),
-    glacial_sentinel: bmob("crystal_sentinel", "Sentinela glacial", 168, ICE, "Geleira do Norte", { drops: SN }),
-    frozen_skeleton: bmob("skeleton", "Esqueleto congelado", 174, ICE, "Geleira do Norte", { drops: SN }),
-    blizzard_alpha: bmob("wolf_moon", "Alfa da nevasca", 179, ICE, "Geleira do Norte", { k: 1.8, drops: [["Barra glacial", 0.35], ...SN] }),
-    // rodada 120: raposas, cervos e ursos nos biomas novos
-    dark_deer: bmob("deer", "Cervo sombrio", 35, SH, "Floresta Sombria", { drops: [["Galhada de cervo", 0.4], ["Carne de caça", 0.5], ...DW] }),
-    dark_bear: bmob("bear", "Urso da mata negra", 58, SH, "Floresta Sombria", { k: 1.3, drops: [["Pele de urso", 0.5], ...DW] }),
-    rock_fox: bmob("fox", "Raposa das rochas", 70, ROCK, "Montanhas de Ferro", { drops: [["Pele de raposa", 0.5], ...MT] }),
-    mountain_bear: bmob("bear", "Urso das montanhas", 88, "sepia(0.4) brightness(0.85) contrast(1.1)", "Montanhas de Ferro", { k: 1.3, drops: [["Pele de urso", 0.5], ...MT] }),
-    sand_fox: bmob("fox", "Raposa do deserto", 106, SAND, "Deserto Rubro", { drops: [["Pele de raposa", 0.5], ...DS] }),
-    arctic_fox: bmob("fox", "Raposa ártica", 145, "grayscale(1) brightness(1.7) contrast(0.9)", "Geleira do Norte", { drops: [["Pele de raposa", 0.5], ...SN] }),
-    ice_elk: bmob("deer", "Alce do gelo", 152, ICE, "Geleira do Norte", { k: 1.2, scale: 1.15, drops: [["Galhada de cervo", 0.4], ...SN] }),
-    polar_bear: bmob("bear", "Urso polar", 165, "grayscale(1) brightness(1.75) contrast(0.95)", "Geleira do Norte", { k: 1.3, drops: [["Pele de urso", 0.5], ...SN] }),
-    frost_serpent: bmob("boss_serpent", "Serpente do Gelo Eterno", 185, ICE, "Gruta do Gelo Eterno (chefe)", { k: 7, keep: ["boss", "enrage"], drops: [["Barra glacial", 1, 2, 4], ["Lâmina glacial", 0.2], ["Armadura glacial", 0.15]] }),
+    hare: { name: "Lebre-chifruda", spr: "mob_hare", lvl: 3, hp: 8, atk: 3, def: 1, maxHit: 2, speed: 3, aggro: 0, coins: [2, 5], where: "Campos de Lumeira",
+      drops: [["Carne de caça", 0.4], ["Galhada de cervo", 0.1]], color: "#b88a5c" },
+    bee: { name: "Abelhão", spr: "mob_bee", lvl: 5, hp: 10, atk: 5, def: 2, maxHit: 2, speed: 3, aggro: 3, coins: [3, 8], where: "Campos de Lumeira (flores)",
+      drops: [["Gosma", 0.3], ["Poção de vida", 0.04]], color: "#f0c040" },
+    kobold: { name: "Kobold catador", spr: "mob_kobold", lvl: 6, hp: 14, atk: 6, def: 3, maxHit: 3, speed: 3, aggro: 3, coins: [4, 11], where: "Campos de Lumeira (leste)",
+      drops: [["Cobre", 0.4, 1, 2], ["Ferro", 0.25]], color: "#c06840" },
+    goblin_archer: { name: "Goblin arqueiro", spr: "mob_goblin_archer", lvl: 8, hp: 16, atk: 9, def: 4, maxHit: 3, speed: 4, aggro: 4, coins: [6, 13], where: "Acampamento goblin (leste)",
+      drops: [["Cobre", 0.3, 1, 2], ["Poção de vida", 0.06], ["Anel do caçador", 1 / 90]], color: "#6fae3a" },
+    goblin_shaman: { name: "Goblin xamã", spr: "mob_goblin_shaman", lvl: 11, hp: 24, atk: 10, def: 6, maxHit: 4, speed: 4, aggro: 4, coins: [10, 20], where: "Acampamento goblin (leste)",
+      drops: [["Barra de bronze", 0.3], ["Poção de força", 0.1], ["Âmbar antigo", 1 / 30]], color: "#9a4ac0" },
+    weaver: { name: "Aranha-tecelã", spr: "mob_weaver", lvl: 13, hp: 26, atk: 13, def: 8, maxHit: 4, speed: 4, aggro: 4, coins: [10, 22], where: "Mata Sombria",
+      drops: [["Gosma", 0.4], ["Poção de vida", 0.06]], color: "#8a7aa0" },
+    ghoul: { name: "Carniçal", spr: "mob_ghoul", lvl: 14, hp: 34, atk: 14, def: 9, maxHit: 5, speed: 3, aggro: 4, coins: [12, 26], where: "Mata Sombria (à noite pelos caminhos)",
+      drops: [["Ferro", 0.3, 1, 2], ["Presa lunar", 1 / 80]], color: "#80907a" },
+    crystal_lizard: { name: "Lagarto de cristal", spr: "mob_crystal_lizard", lvl: 19, hp: 40, atk: 17, def: 14, maxHit: 6, speed: 4, aggro: 3, coins: [18, 40], where: "Planalto de Lumita",
+      drops: [["Lumita", 0.3], ["Fragmento ancestral", 1 / 80]], color: "#60c0d0" },
+    wisp: { name: "Fogo-fátuo de lumita", spr: "mob_wisp", lvl: 21, hp: 36, atk: 20, def: 12, maxHit: 6, speed: 4, aggro: 4, coins: [20, 44], where: "Planalto de Lumita (névoa)",
+      drops: [["Lumita", 0.4], ["Poção de força", 0.08]], color: "#90e8ff" },
+    skeleton_archer: { name: "Esqueleto arqueiro", spr: "mob_skeleton_archer", lvl: 17, hp: 30, atk: 16, def: 10, maxHit: 5, speed: 4, aggro: 4, respawn: 20, coins: [14, 30], where: "Ruínas Esquecidas",
+      drops: [["Ferro", 0.4, 1, 2], ["Fragmento ancestral", 1 / 70]], color: "#e8e0c8" },
+    necromancer: { name: "Necromante", spr: "mob_necromancer", lvl: 22, hp: 48, atk: 20, def: 14, maxHit: 7, speed: 4, aggro: 5, respawn: 40, coins: [30, 60], where: "Ruínas Esquecidas",
+      drops: [["Barra de ferro", 0.4], ["Fragmento ancestral", 1 / 25], ["Anel ancestral", 1 / 60]], color: "#9a60c0" },
+    cursed_knight: { name: "Cavaleiro amaldiçoado", spr: "mob_cursed_knight", lvl: 24, hp: 80, atk: 22, def: 22, maxHit: 9, speed: 4, aggro: 4, respawn: 40, coins: [36, 70], where: "Ruínas Esquecidas",
+      drops: [["Barra de ferro", 0.6, 1, 2], ["Anel ancestral", 1 / 40]], color: "#6a7088" },
+    // ajudantes e filhotes (não contam no bestiário)
+    slime_mini: minion("mob_slime_blue", "Slime mirim", 2, { color: "#6fb8ff", extra: { squish: true, scale: 0.6 } }),
+    sand_slime_mini: minion("mob_slime_sand", "Slime de areia mirim", 100, { color: "#e0b070", extra: { squish: true, scale: 0.6 } }),
+    cult_bat: minion("mob_bat", "Morcego do culto", 45, { color: "#704060", skills: { lifesteal: 0.4 } }),
+    kobold_minion: minion("mob_kobold", "Kobold do bando", 88, { color: "#c06840", skills: { ranged: { range: 4, proj: "stone", kite: true } } }),
+    priest_scarab: minion("mob_scarab", "Escaravelho sagrado", 122, { color: "#40a0a0", skills: { poison: { p: 0.3 } } }),
+    frost_wisp: minion("mob_wisp", "Fagulha de gelo", 165, { color: "#a0e8ff", skills: { ranged: { range: 4, proj: "frost", eff: "slow" } } }),
+    king_shade: minion("mob_wraith_shade", "Sombra do Rei", 64, { color: "#a060e0", skills: { ranged: { range: 4, proj: "bolt" }, blink: { cd: 6 } } }),
+    pharaoh_scarab: minion("mob_scarab", "Escaravelho do Faraó", 140, { color: "#40a0a0", skills: { poison: { p: 0.4 } } }),
   });
+  // ----- Floresta Sombria (nível 32-70) -----
+  const FS = "Floresta Sombria";
+  Object.assign(MOBS, {
+    shade_wolf: nm("mob_wolf_shade", "Lobo das sombras", 32, FS, { drops: [["Pele de lobo", 0.5], ...DW], color: "#5a4878", skills: { flank: true, bleed: { p: 0.25 } } }),
+    dark_deer: nm("mob_deer_dark", "Cervo sombrio", 35, FS, { aggro: 0, speed: 4, drops: [["Galhada de cervo", 0.4], ["Carne de caça", 0.5], ...DW], color: "#4e3c46", skills: { charge: { range: 4, cd: 7 } } }),
+    wood_spider: nm("mob_spider_wood", "Aranha da mata", 38, FS, { drops: DW, color: "#304028", skills: { ranged: { range: 4, proj: "web", eff: "web" }, poison: { p: 0.3 } } }),
+    vampire_bat: nm("mob_bat", "Morcego vampiro", 40, FS, { speed: 2, drops: DW, color: "#704060", skills: { lifesteal: 0.5, blink: { cd: 7 }, flank: true } }),
+    shade_goblin: nm("mob_goblin_shade_archer", "Goblin arqueiro da sombra", 43, FS, { drops: DW, color: "#5c5078", skills: { ranged: { range: 6, proj: "arrow", kite: true, eff: "poison" } } }),
+    plague_shroom: nm("mob_shroom", "Cogumelo pestilento", 46, FS, { speed: 5, aggro: 3, drops: [["Cogumelo-sombra", 0.4], ...DW], color: "#80367a",
+      extra: { squish: true }, skills: { roar: { r: 2, cd: 7, eff: "poison", cry: "Esporos!" }, spores: { r: 1 }, poison: { p: 0.5 } } }),
+    rot_skeleton: nm("mob_skeleton_rot", "Esqueleto podre", 48, FS, { drops: DW, color: "#a0a070", skills: { block: { p: 0.3 }, poison: { p: 0.3 } } }),
+    shadow_cultist: nm("mob_cultist", "Cultista das sombras", 51, FS, { aggro: 5, drops: [["Obsidiana", 0.3], ...DW], color: "#a02838",
+      skills: { summon: { type: "cult_bat", n: 2, cd: 14, max: 3, cry: "Asas da noite!" }, ranged: { range: 5, proj: "fire", kite: true } } }),
+    shade_wraith: nm("mob_wraith_shade", "Espectro sombrio", 54, FS, { drops: DW, color: "#a060e0", skills: { ranged: { range: 5, proj: "bolt", kite: true, eff: "slow" }, blink: { cd: 6 } } }),
+    dark_bear: nm("mob_bear_dark", "Urso da mata negra", 58, FS, { k: 1.3, drops: [["Pele de urso", 0.5], ...DW], color: "#2c2630", skills: { roar: { r: 2, cd: 9, cry: "RUGIDO!" }, bleed: { p: 0.3 } } }),
+    corrupt_ent: nm("mob_ent", "Ent corrompido", 60, FS, { k: 1.4, speed: 5, aggro: 3, drops: [["Madeira de ébano", 0.4], ...DW], color: "#5c4634", extra: { special: "Raízes!" },
+      skills: { roar: { r: 3, cd: 10, eff: "web", cry: "Raízes!" }, regen: 0.03, block: { p: 0.25 } } }),
+    night_alpha: nm("mob_wolf_night", "Alfa da noite", 64, FS, { k: 1.6, aggro: 6, drops: [["Barra de obsidiana", 0.3], ...DW], color: "#201c28",
+      enrage: { at: 0.5, cry: "UIVO!", pack: 10, log: "uiva e chama a alcateia!" }, skills: { flank: true, bleed: { p: 0.35 }, roar: { r: 2, cd: 11, cry: "UIVO!" } } }),
+    shadow_king: { ...nm("mob_shadow_king", "Rei das Sombras", 70, "Covil das Sombras (chefe)", { k: 7, aggro: 6, color: "#a060e0",
+      drops: [["Barra de obsidiana", 1, 2, 4], ["Espada de obsidiana", 0.2], ["Couraça de obsidiana", 0.15]],
+      skills: { summon: { type: "king_shade", n: 2, cd: 16, max: 3, cry: "Sombras, a mim!" }, blink: { cd: 8 }, charge: { range: 4, cd: 9 } } }), boss: true, respawn: 300,
+      enrage: { row: "enrage", fx: "fx_enrage_aura", light: "rgba(170,80,255,A)" } },
+  });
+  // ----- Montanhas de Ferro (nível 67-106) -----
+  const MF = "Montanhas de Ferro";
+  Object.assign(MOBS, {
+    gray_wolf: nm("mob_wolf_gray", "Lobo cinzento", 67, MF, { drops: [["Pele de lobo", 0.5], ...MT], color: "#8a8078", skills: { flank: true, bleed: { p: 0.25 } } }),
+    rock_fox: nm("mob_fox_rock", "Raposa das rochas", 70, MF, { aggro: 0, drops: [["Pele de raposa", 0.5], ...MT], color: "#8a7868", skills: { dodge: { p: 0.25 } } }),
+    stone_boar: nm("mob_boar_stone", "Javali de pedra", 72, MF, { drops: MT, color: "#767270", skills: { charge: { range: 5, cd: 7 }, block: { p: 0.2 } } }),
+    harpy: nm("mob_harpy", "Harpia", 75, MF, { speed: 3, drops: MT, color: "#b08a60", skills: { ranged: { range: 5, proj: "feather", kite: true, eff: "bleed" }, leap: { range: 4, cd: 9, cry: "Mergulho!" } } }),
+    granite_golem: nm("mob_golem_granite", "Golem de granito", 78, MF, { k: 1.2, speed: 5, aggro: 3, drops: MT, color: "#7a7a82", extra: { special: "Golpe pesado!" }, skills: { block: { p: 0.3 } } }),
+    kobold_bomber: nm("mob_kobold_bomber", "Kobold bombardeiro", 81, MF, { drops: [["Mitril", 0.25], ...MT], color: "#a07850", skills: { ranged: { range: 5, proj: "bomb", kite: true } } }),
+    cave_goblin: nm("mob_goblin_cave", "Goblin das cavernas", 84, MF, { drops: MT, color: "#787470", skills: { flank: true, bleed: { p: 0.3 } } }),
+    mountain_bear: nm("mob_bear_mountain", "Urso das montanhas", 88, MF, { k: 1.3, drops: [["Pele de urso", 0.5], ...MT], color: "#706254", skills: { roar: { r: 2, cd: 9 }, bleed: { p: 0.25 } } }),
+    rock_sentinel: nm("mob_sentinel_rock", "Sentinela de rocha", 90, MF, { k: 1.2, speed: 4, drops: MT, color: "#968c7e", extra: { special: "Golpe pesado!" }, skills: { ranged: { range: 5, proj: "rock" }, block: { p: 0.25 } } }),
+    mountain_troll: nm("mob_troll", "Troll da montanha", 93, MF, { k: 1.5, speed: 4, aggro: 4, drops: [["Barra de mitril", 0.15], ...MT], color: "#768466", extra: { slam: true },
+      skills: { regen: 0.04, charge: { range: 4, cd: 10 } } }),
+    cave_spider: nm("mob_spider_cave", "Aranha das grutas", 95, MF, { drops: MT, color: "#564234", skills: { ranged: { range: 4, proj: "web", eff: "web" }, poison: { p: 0.35 } } }),
+    kobold_shaman: nm("mob_kobold_shaman", "Xamã kobold", 97, MF, { aggro: 5, drops: [["Mitril", 0.3], ...MT], color: "#6e8296",
+      skills: { summon: { type: "kobold_minion", n: 2, cd: 15, max: 3, cry: "Bando, a mim!" }, heal: { pct: 0.2, cd: 8, r: 5 }, ranged: { range: 5, proj: "fire", kite: true } } }),
+    iron_colossus: nm("mob_colossus_iron", "Colosso de ferro", 100, MF, { k: 1.8, speed: 5, aggro: 4, drops: [["Barra de mitril", 0.35], ...MT], color: "#6e605a", extra: { special: "Golpe pesado!" },
+      skills: { charge: { range: 5, cd: 8 }, block: { p: 0.3 }, roar: { r: 2, cd: 12, cry: "TREMOR!" } } }),
+    mountain_king: { ...nm("mob_mountain_king", "Rei da Montanha", 106, "Forja Abandonada (chefe)", { k: 7, aggro: 6, speed: 5, color: "#c8c8d0",
+      drops: [["Barra de mitril", 1, 2, 4], ["Espada de mitril", 0.2], ["Placas de mitril", 0.15]],
+      skills: { charge: { range: 5, cd: 9 }, summon: { type: "kobold_minion", n: 2, cd: 18, max: 3, cry: "Forja, desperte!" }, block: { p: 0.25 } } }), boss: true, slam: true, respawn: 300,
+      enrage: { fx: "fx_enrage_aura", light: "rgba(255,170,80,A)" } },
+  });
+  // ----- Deserto Rubro (nível 103-145) -----
+  const DR = "Deserto Rubro";
+  Object.assign(MOBS, {
+    sand_slime: nm("mob_slime_sand", "Slime de areia", 103, DR, { aggro: 0, drops: DS, color: "#e0b070", extra: { squish: true }, skills: { split: { type: "sand_slime_mini", n: 2 }, slow: { p: 0.3 } } }),
+    sand_fox: nm("mob_fox_sand", "Raposa do deserto", 106, DR, { aggro: 0, drops: [["Pele de raposa", 0.5], ...DS], color: "#e0b880", skills: { dodge: { p: 0.25 }, flank: true } }),
+    red_scorpion: nm("mob_scorpion", "Escorpião rubro", 108, DR, { drops: DS, color: "#b03c28", skills: { poison: { p: 0.55 }, block: { p: 0.2 } } }),
+    vulture: nm("mob_vulture", "Abutre", 111, DR, { speed: 2, drops: DS, color: "#4a3e3a", skills: { leap: { range: 4, cd: 8, cry: "Mergulho!" }, bleed: { p: 0.3 }, flank: true } }),
+    dune_boar: nm("mob_boar_dune", "Javali das dunas", 115, DR, { drops: [["Couro de javali", 0.5], ...DS], color: "#c4965e", skills: { charge: { range: 5, cd: 6 } } }),
+    lizardman: nm("mob_lizardman", "Homem-lagarto", 118, DR, { drops: DS, color: "#608c4c", skills: { ranged: { range: 5, proj: "javelin", kite: true, eff: "bleed" } } }),
+    mummy: nm("mob_mummy", "Múmia", 121, DR, { speed: 4, drops: DS, color: "#d6c69e", skills: { slow: { p: 0.45, t: 2 }, regen: 0.02 } }),
+    scarab: nm("mob_scarab", "Escaravelho", 124, DR, { speed: 2, drops: DS, color: "#32707a", skills: { poison: { p: 0.35 }, flank: true } }),
+    sandstone_golem: nm("mob_golem_sandstone", "Golem de arenito", 128, DR, { k: 1.2, speed: 5, aggro: 3, drops: DS, color: "#cea066", extra: { special: "Golpe pesado!" },
+      skills: { block: { p: 0.3 }, roar: { r: 2, cd: 11, cry: "Tempestade de areia!", eff: "slow" } } }),
+    raider_goblin: nm("mob_goblin_raider", "Goblin saqueador do deserto", 134, DR, { drops: DS, color: "#9aa050", skills: { flank: true, bleed: { p: 0.35 }, dodge: { p: 0.15 } } }),
+    mummy_priest: nm("mob_mummy_priest", "Sacerdote múmia", 137, DR, { aggro: 5, drops: [["Ouro solar", 0.3], ...DS], color: "#e0c070",
+      skills: { summon: { type: "priest_scarab", n: 3, cd: 14, max: 4, cry: "Ergam-se da areia!" }, heal: { pct: 0.2, cd: 9, r: 5 }, ranged: { range: 5, proj: "curse", kite: true, eff: "curse" } } }),
+    dune_serpent: nm("mob_serpent_dune", "Serpente das dunas", 139, DR, { k: 1.8, aggro: 5, drops: [["Barra solar", 0.35], ...DS], color: "#cea062", extra: { slam: true },
+      skills: { poison: { p: 0.4 }, charge: { range: 5, cd: 9 } } }),
+    sand_pharaoh: { ...nm("mob_pharaoh", "Faraó de Areia", 145, "Tumba do Faraó (chefe)", { k: 7, aggro: 6, color: "#f5c26b",
+      drops: [["Barra solar", 1, 2, 4], ["Lâmina solar", 0.2], ["Armadura solar", 0.15]],
+      skills: { summon: { type: "pharaoh_scarab", n: 3, cd: 15, max: 5, cry: "Servos, despertem!" }, ranged: { range: 5, proj: "curse", eff: "curse" }, blink: { cd: 9 } } }), boss: true, respawn: 300,
+      enrage: { row: "enrage", fx: "fx_enrage_aura", light: "rgba(255,200,90,A)" } },
+  });
+  // ----- Geleira do Norte (nível 142-185) -----
+  const GN = "Geleira do Norte";
+  Object.assign(MOBS, {
+    ice_wolf: nm("mob_wolf_ice", "Lobo do gelo", 142, GN, { drops: [["Pele de lobo", 0.5], ...SN], color: "#c4d6e8", skills: { flank: true, slow: { p: 0.3 } } }),
+    arctic_fox: nm("mob_fox_arctic", "Raposa ártica", 145, GN, { aggro: 0, drops: [["Pele de raposa", 0.5], ...SN], color: "#eef2f8", skills: { dodge: { p: 0.3 } } }),
+    frost_slime: nm("mob_slime_frost", "Slime de gelo", 148, GN, { drops: SN, color: "#96d2f0", extra: { squish: true, special: "Salto gelado!" }, skills: { slow: { p: 0.5 } } }),
+    snow_owl: nm("mob_owl", "Coruja da nevasca", 150, GN, { speed: 3, drops: SN, color: "#d6deec", skills: { ranged: { range: 6, proj: "ice", kite: true, eff: "frost" }, blink: { cd: 8 } } }),
+    ice_elk: nm("mob_elk_ice", "Alce do gelo", 152, GN, { k: 1.2, aggro: 0, drops: [["Galhada de cervo", 0.4], ...SN], color: "#c4d0de", skills: { charge: { range: 5, cd: 7 } } }),
+    blizzard_wraith: nm("mob_wraith_blizzard", "Espectro da nevasca", 155, GN, { drops: SN, color: "#cee6fa", skills: { ranged: { range: 5, proj: "frost", kite: true, eff: "frost" }, blink: { cd: 6 } } }),
+    ice_golem: nm("mob_golem_ice", "Golem de gelo", 162, GN, { k: 1.2, speed: 5, aggro: 3, drops: SN, color: "#a8d6f0", extra: { special: "Golpe gelado!" }, skills: { block: { p: 0.3 }, slow: { p: 0.4 } } }),
+    polar_bear: nm("mob_bear_polar", "Urso polar", 165, GN, { k: 1.3, drops: [["Pele de urso", 0.5], ...SN], color: "#ecece4", skills: { roar: { r: 2, cd: 9 }, bleed: { p: 0.3 } } }),
+    glacial_sentinel: nm("mob_sentinel_glacial", "Sentinela glacial", 168, GN, { k: 1.2, speed: 4, drops: SN, color: "#c8ecff", extra: { special: "Rajada de gelo!" },
+      skills: { ranged: { range: 5, proj: "ice", eff: "frost" }, block: { p: 0.25 } } }),
+    yeti: nm("mob_yeti", "Yeti", 171, GN, { k: 1.6, speed: 4, aggro: 5, drops: [["Barra glacial", 0.2], ...SN], color: "#e8ecf2", extra: { slam: true },
+      enrage: { row: "enrage", at: 0.4, cry: "RRRAAH!", log: "bate no peito e fica furioso!" }, skills: { ranged: { range: 5, proj: "snowball", eff: "slow" }, roar: { r: 2, cd: 10, cry: "RUGIDO!" } } }),
+    frozen_skeleton: nm("mob_skeleton_frost", "Arqueiro congelado", 174, GN, { drops: SN, color: "#d6e8f6", skills: { ranged: { range: 6, proj: "ice", kite: true, eff: "frost" } } }),
+    ice_witch: nm("mob_ice_witch", "Feiticeira do gelo", 176, GN, { aggro: 5, drops: [["Gelo eterno", 0.3], ...SN], color: "#a0d0ff",
+      skills: { summon: { type: "frost_wisp", n: 2, cd: 15, max: 3, cry: "Fagulhas, venham!" }, roar: { r: 2, cd: 9, eff: "frost", cry: "Nova de gelo!" }, ranged: { range: 5, proj: "frost", kite: true, eff: "frost" }, blink: { cd: 9 } } }),
+    blizzard_alpha: nm("mob_wolf_blizzard", "Alfa da nevasca", 179, GN, { k: 1.8, aggro: 6, drops: [["Barra glacial", 0.35], ...SN], color: "#e2ecf8",
+      enrage: { at: 0.5, cry: "UIVO!", pack: 10, log: "uiva e chama a alcateia!" }, skills: { flank: true, slow: { p: 0.35 }, roar: { r: 2, cd: 10, cry: "UIVO!", eff: "frost" } } }),
+    frost_serpent: { ...nm("mob_frost_serpent", "Serpente do Gelo Eterno", 185, "Gruta do Gelo Eterno (chefe)", { k: 7, aggro: 6, color: "#a8e8ff",
+      drops: [["Barra glacial", 1, 2, 4], ["Lâmina glacial", 0.2], ["Armadura glacial", 0.15]],
+      skills: { summon: { type: "frost_wisp", n: 2, cd: 16, max: 3, cry: "Gelo, desperte!" }, roar: { r: 2, cd: 11, eff: "frost", cry: "Sopro gelado!" }, slow: { p: 0.4 } } }), boss: true, slam: true, respawn: 300,
+      enrage: { fx: "fx_enrage_aura", light: "rgba(120,220,255,A)" } },
+  });
+  // ----- o estilo de luta das espécies antigas do Campo e das masmorras -----
+  for (const [k, s] of Object.entries({
+    slime: { slow: { p: 0.25 } }, slime_blue: { split: { type: "slime_mini", n: 2 }, slow: { p: 0.2 } }, fox: { dodge: { p: 0.25 } }, hare: { charge: { range: 4, cd: 6 }, dodge: { p: 0.2 } },
+    bee: { ranged: { range: 3, proj: "sting", kite: true, eff: "poison" } }, kobold: { ranged: { range: 4, proj: "stone", kite: true } }, boar: { charge: { range: 4, cd: 7 } },
+    deer: { charge: { range: 4, cd: 8 } }, goblin: { flank: true, bleed: { p: 0.2 } }, goblin_archer: { ranged: { range: 5, proj: "arrow", kite: true } },
+    goblin_shaman: { summon: { type: "goblin", n: 2, cd: 15, max: 3, cry: "Irmãos, a mim!" }, heal: { pct: 0.25, cd: 8, r: 5 }, ranged: { range: 4, proj: "bolt", kite: true } },
+    wolf: { flank: true, bleed: { p: 0.2 } }, wolf_alpha: { flank: true, bleed: { p: 0.3 }, roar: { r: 2, cd: 11, cry: "UIVO!" } }, bear: { roar: { r: 2, cd: 10 }, bleed: { p: 0.25 } },
+    weaver: { ranged: { range: 5, proj: "web", kite: true, eff: "web" }, poison: { p: 0.3 } }, ghoul: { bleed: { p: 0.35 }, lifesteal: 0.4 },
+    skeleton: { block: { p: 0.3 } }, skeleton_archer: { ranged: { range: 6, proj: "arrow", kite: true } },
+    necromancer: { summon: { type: "skeleton", n: 2, cd: 14, max: 4, cry: "Levantem-se!" }, ranged: { range: 5, proj: "bolt", kite: true, eff: "slow" } },
+    cursed_knight: { block: { p: 0.35 }, charge: { range: 4, cd: 8 } }, golem: { block: { p: 0.25 } }, slime_crystal: { slow: { p: 0.3 } },
+    crystal_lizard: { ranged: { range: 4, proj: "crystal", eff: "poison" }, dodge: { p: 0.15 } }, wisp: { ranged: { range: 5, proj: "bolt", kite: true }, blink: { cd: 6 } },
+    crypt_guard: { block: { p: 0.35 }, charge: { range: 4, cd: 9 } }, crypt_colossus: { roar: { r: 2, cd: 10, cry: "TREMOR!" }, block: { p: 0.25 } },
+    wolf_moon: { flank: true, bleed: { p: 0.35 }, roar: { r: 2, cd: 10, cry: "UIVO!" } }, goblin_boss: { charge: { range: 4, cd: 9 }, bleed: { p: 0.3 } },
+    quartz_spider: { ranged: { range: 4, proj: "web", eff: "web" }, poison: { p: 0.35 } }, crystal_sentinel: { ranged: { range: 5, proj: "crystal" }, block: { p: 0.25 } },
+    light_wraith: { ranged: { range: 5, proj: "bolt", kite: true }, blink: { cd: 6 } }, boss_serpent: { poison: { p: 0.4 }, charge: { range: 5, cd: 10 } },
+    echo_serpent: { poison: { p: 0.45 }, charge: { range: 5, cd: 9 } }, boss_golem: { charge: { range: 4, cd: 10 }, block: { p: 0.2 } }, echo_golem: { charge: { range: 4, cd: 9 }, block: { p: 0.25 } },
+    boss: { block: { p: 0.2 }, charge: { range: 4, cd: 10 } }, echo_ruins: { block: { p: 0.25 }, charge: { range: 4, cd: 9 }, blink: { cd: 10 } }, ninja: { blink: { cd: 7 }, bleed: { p: 0.35 } },
+  })) if (MOBS[k]) MOBS[k].skills = Object.assign({}, MOBS[k].skills, s);
 
   const tool = (n, worn, first) => [
     { name: `${n} ${worn}`, bonus: 0 },
@@ -1111,10 +1226,13 @@ window.VD = (() => {
 
   // Saque por tipo de monstro: cada família solta as peças "dela", no nível do monstro (a mais alta que o nível já alcança).
   // As três classes aparecem: escudo (javali, esqueleto), flechas (goblin, aranha), orbe (slime) e códice (espectro).
-  const FAMILY = [[/slime/, "slime", ["orbe", "anel"]], [/wolf/, "wolf", ["capa", "botas"]], [/boar/, "boar", ["calca", "escudo"]], [/goblin/, "goblin", ["flecha", "bracelete"]],
-    [/skeleton/, "skeleton", ["capacete", "escudo"]], [/golem|colossus|sentinel/, "golem", ["bracelete", "amuleto"]], [/spider/, "spider", ["flecha", "botas"]],
+  const FAMILY = [[/slime|shroom/, "slime", ["orbe", "anel"]], [/wolf/, "wolf", ["capa", "botas"]], [/boar/, "boar", ["calca", "escudo"]], [/goblin/, "goblin", ["flecha", "bracelete"]],
+    [/skeleton/, "skeleton", ["capacete", "escudo"]], [/golem|colossus|sentinel|mob_ent|mountain_king/, "golem", ["bracelete", "amuleto"]], [/spider|weaver|scorpion|scarab/, "spider", ["flecha", "botas"]],
     [/wraith/, "wraith", ["tomo", "amuleto"]], [/serpent/, "serpent", ["anel", "capa"]],
-    [/fox/, "fox", ["capa", "anel"]], [/deer/, "deer", ["botas", "flecha"]], [/bear/, "bear", ["calca", "escudo"]]]; // rodada 120
+    [/fox|hare/, "fox", ["capa", "anel"]], [/deer|elk/, "deer", ["botas", "flecha"]], [/bear/, "bear", ["calca", "escudo"]], // rodada 120
+    // rodada 134: famílias do bestiário novo
+    [/kobold|lizard/, "kobold", ["flecha", "anel"]], [/gnoll|ghoul|troll|yeti|mob_mummy$/, "brute", ["calca", "capacete"]],
+    [/necromancer|cultist|priest|witch|shaman/, "caster", ["tomo", "orbe"]], [/bat|bee|harpy|vulture|owl|wisp/, "flyer", ["capa", "flecha"]], [/knight/, "knight", ["capacete", "escudo"]]];
   const familyOf = (d) => { const f = FAMILY.find(([re]) => re.test(d.spr || "")); return f ? f[1] : null; };
   const tierFor = (lvl) => TIER_LVL.reduce((best, v, i) => (lvl >= v ? i : best), 0);
   // armas e peitorais da forja também caem, raramente, no tier que o nível do monstro alcança (espada, arco, montante e peitoral)

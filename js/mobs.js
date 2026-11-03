@@ -13,7 +13,7 @@ window.ValdoraMobs = (() => {
       const player = api.player(), d = m.d, dist = Math.abs(m.x - player.x) + Math.abs(m.y - player.y), near = adjacent(m, player); // encostado (também na diagonal)
       if (m.stun > 0) return; // atordoado: não age
       if (m.appear != null) return; // eco ainda surgindo da névoa
-      if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage")) return; // uivando ou levantando: espera a folha terminar
+      if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage") && !(m.windup > 0)) return; // uivando ou levantando: espera a folha terminar (rodada 134: o rugido com aviso segue contando)
     if (m.sleeping) { if (dist <= 2) wake(m); return; } // lobo dormindo na toca: acorda com o uivo do Alfa, com um golpe ou com o jogador a 2 passos
       if (m.howlPending && dist <= 8 && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { // uiva ao ver o jogador, antes de atacar
         m.howlPending = false; m.an = { s: "howl", t: 0, still: 0 }; faceAt(m, player.x, player.y); api.howl(m); return;
@@ -33,7 +33,8 @@ window.ValdoraMobs = (() => {
         const spd = m.enraged ? Math.max(2, d.speed - 2) : d.speed;
         if (m.windup > 0) { // chefe preparando golpe especial
           if (--m.windup === 0) {
-            if (m.an && m.an.s === "special") { /* já resolvido no quadro de impacto da carga */ }
+            if (api.skills && api.skills.windupEnd(m)) { /* rodada 134: investida, rugido, invocação */ }
+            else if (m.an && m.an.s === "special") { /* já resolvido no quadro de impacto da carga */ }
             else if (d.slam) { if (ANIMS[d.spr]) mobAttack(m, false, true); else slam(m); }
             else if (near) mobAttack(m, true); // golpe pesado: só acerta se o jogador continuar ao lado
             else { addFloat(m.px + 0.5, m.py - 1.6, "esquivou!", "#9fe08a", 1, 14); burst(m.px + 0.5 + (player.x - m.x) * 0.6, m.py + 0.8, ["#c79bff", "#ffffff"], 10, 2); }
@@ -78,7 +79,8 @@ window.ValdoraMobs = (() => {
       if (!m.aggro || m.dead || m.prog < 1 || m.stun > 0 || m.windup > 0 || m.appear != null || m.sleeping || m.stuck || player.deadT > 0) return; // preso: o tick resolve
       if (m.an && (m.an.s === "howl" || m.an.s === "wake" || m.an.s === "rise_up" || m.an.s === "enrage" || m.an.s === "special")) return;
       if (api.petFoe && api.petFoe(m, Math.abs(m.x - player.x) + Math.abs(m.y - player.y))) return; // brigando com o filhote: fica com o tick
-      if (d.skills && api.skills && !adjacent(m, player) && api.skills.flank(m)) return; // rodada 133: cerco (o salto só no tick)
+      if (d.skills && api.skills && api.skills.think(m, adjacent(m, player), false)) return; // rodada 135: salto, investida, tiro também na perseguição
+      if (d.skills && api.skills && !adjacent(m, player) && api.skills.flank(m)) return; // rodada 133: cerco
       engage(m, adjacent(m, player), m.enraged ? Math.max(2, d.speed - 2) : d.speed);
     }
     function slam(m) { // tremor em área: acerta quem estiver a até 2 tiles do golem
@@ -126,7 +128,7 @@ window.ValdoraMobs = (() => {
       if (an.s === "special") {
         const R = A.rows.special, f = Math.floor(an.t * R.fps);
         if (m.pending && m.pending.leap && !m.pending.leap.moved && f >= 3 && api.skills) api.skills.leapFly(m); // rodada 133: voa no meio do salto
-        if (m.pending && f >= (R.impact ?? 6)) { const pe = m.pending; m.pending = null; if (!pe.slamAoE) api.dust(m.x + (m.face > 0 ? 0.6 : -0.6), m.y + 0.2); applyMobHit(m, pe); }
+        if (m.pending && f >= (R.impact ?? 6) && !m.pending.summon && !m.pending.roar && !m.pending.charge) { const pe = m.pending; m.pending = null; if (!pe.slamAoE) api.dust(m.x + (m.face > 0 ? 0.6 : -0.6), m.y + 0.2); applyMobHit(m, pe); }
         if (f >= R.frames) { an.s = moving ? "walk" : "idle"; an.t = 0; }
         return;
       }

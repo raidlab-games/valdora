@@ -33,9 +33,14 @@ window.ValdoraWorld = (() => {
     .map(([x, y, l]) => [RX(x), RY(y), l]);
   const CAMP = rm({ x: 79, y: 46 }); // acampamento goblin no bosque
   // monstros do mapa de cima: [tipo, quantidade, ponto de origem opcional]
-  const MOB_SPAWNS = { fields: [["slime", 14], ["slime_blue", 6], ["fox", 3]], east: [["boar", 9], ["slime", 2], ["goblin", 7, CAMP], ["deer", 3], ["gnoll", 4, rm({ x: 89, y: 38 })]], /* rodada 133: toca dos gnols */ south: [["wolf", 13], ["wolf_alpha", 2], ["bear", 2]], // rodada 120: um pouco mais (campos mais largos)
+  // rodada 134: espécies novas do Campo (lebres, abelhões e kobolds nos campos; arqueiros e xamã no acampamento goblin; tecelãs e
+  // carniçais na Mata; lagartos e fogos-fátuos no Planalto; arqueiros, necromante e cavaleiros nas Ruínas)
+  const MOB_SPAWNS = { fields: [["slime", 14], ["slime_blue", 6], ["fox", 3], ["hare", 5], ["bee", 4, rm({ x: 28, y: 48 })], ["kobold", 4, rm({ x: 30, y: 24 })]],
+    east: [["boar", 9], ["slime", 2], ["goblin", 7, CAMP], ["goblin_archer", 4, CAMP], ["goblin_shaman", 1, CAMP], ["deer", 3], ["gnoll", 4, rm({ x: 89, y: 38 })]], /* rodada 133: toca dos gnols */
+    south: [["wolf", 13], ["wolf_alpha", 2], ["bear", 2], ["weaver", 5], ["ghoul", 4]], // rodada 120: um pouco mais (campos mais largos)
     // rodada 19: golems e slimes de lumita agrupados no meio do Planalto (antes espalhados por toda a borda oeste: o robô andava mais do que lutava)
-    west: [["golem", 6, rm({ x: 12, y: 28 })], ["slime_crystal", 5, rm({ x: 12, y: 42 })], ["boss_golem", 1, rm({ x: 9, y: 14 })]], ruins: [["skeleton", 8, rm({ x: 74, y: 12 })], ["boss", 1, rm({ x: 84, y: 8 })]] }; // rodada 18: esqueletos na parte oeste das Ruínas, longe do chefe (o robô era puxado para o Senhor)
+    west: [["golem", 6, rm({ x: 12, y: 28 })], ["slime_crystal", 5, rm({ x: 12, y: 42 })], ["crystal_lizard", 4, rm({ x: 14, y: 34 })], ["wisp", 4, rm({ x: 10, y: 22 })], ["boss_golem", 1, rm({ x: 9, y: 14 })]],
+    ruins: [["skeleton", 8, rm({ x: 74, y: 12 })], ["skeleton_archer", 4, rm({ x: 77, y: 9 })], ["necromancer", 1, rm({ x: 80, y: 6 })], ["cursed_knight", 2, rm({ x: 82, y: 12 })], ["boss", 1, rm({ x: 84, y: 8 })]] }; // rodada 18: esqueletos na parte oeste das Ruínas, longe do chefe (o robô era puxado para o Senhor)
   // rodada 62: distância mínima (tiles) entre o ponto de nascimento e os Campos/vila, para quem nasce solto pela região.
   // Em 5 mundos, 0 a 7 dos 14 lobos nasciam a até 5 tiles dos Campos e perseguiam iniciantes para dentro deles.
   const SPAWN_EDGE = { wolf: 6, wolf_alpha: 6 };
@@ -272,15 +277,21 @@ window.ValdoraWorld = (() => {
   // ---------- monstros dos biomas novos: [tipo, quantos]; cada tipo em 2-3 bandos; os de nível baixo mais perto do Campo ----------
   const BIOME_MOBS = {
     // rodada 120: com as espécies novas (raposas, cervos, ursos), na ordem do nível
-    darkwood: [["shade_wolf", 14], ["dark_deer", 10], ["wood_spider", 12], ["shade_goblin", 12], ["rot_skeleton", 12], ["shade_wraith", 10], ["dark_bear", 7], ["corrupt_ent", 9], ["night_alpha", 4]],
-    desert: [["sand_slime", 14], ["sand_fox", 10], ["red_scorpion", 12], ["dune_boar", 12], ["mummy", 12], ["sandstone_golem", 9], ["raider_goblin", 10], ["dune_serpent", 3]],
-    mountains: [["gray_wolf", 14], ["rock_fox", 10], ["stone_boar", 12], ["granite_golem", 10], ["cave_goblin", 12], ["mountain_bear", 7], ["rock_sentinel", 9], ["cave_spider", 10], ["iron_colossus", 3]],
-    snow: [["ice_wolf", 14], ["arctic_fox", 10], ["frost_slime", 12], ["ice_elk", 8], ["blizzard_wraith", 10], ["ice_golem", 9], ["polar_bear", 7], ["glacial_sentinel", 9], ["frozen_skeleton", 12], ["blizzard_alpha", 3]],
+    // rodada 134: 12 a 13 espécies por bioma, cada uma com arte e jeito de lutar próprios (js/mobskills.js)
+    darkwood: [["shade_wolf", 14], ["dark_deer", 10], ["wood_spider", 12], ["vampire_bat", 10], ["shade_goblin", 12], ["plague_shroom", 8], ["rot_skeleton", 12], ["shadow_cultist", 3],
+      ["shade_wraith", 10], ["dark_bear", 7], ["corrupt_ent", 8], ["night_alpha", 4]],
+    desert: [["sand_slime", 14], ["sand_fox", 10], ["red_scorpion", 12], ["vulture", 10], ["dune_boar", 12], ["lizardman", 10], ["mummy", 12], ["scarab", 14], ["sandstone_golem", 9],
+      ["raider_goblin", 10], ["mummy_priest", 3], ["dune_serpent", 3]],
+    mountains: [["gray_wolf", 14], ["rock_fox", 10], ["stone_boar", 12], ["harpy", 10], ["granite_golem", 10], ["kobold_bomber", 10], ["cave_goblin", 12], ["mountain_bear", 7],
+      ["rock_sentinel", 9], ["mountain_troll", 6], ["cave_spider", 10], ["kobold_shaman", 3], ["iron_colossus", 3]],
+    snow: [["ice_wolf", 14], ["arctic_fox", 10], ["frost_slime", 12], ["snow_owl", 10], ["ice_elk", 8], ["blizzard_wraith", 10], ["ice_golem", 9], ["polar_bear", 7],
+      ["glacial_sentinel", 9], ["yeti", 6], ["frozen_skeleton", 12], ["ice_witch", 3], ["blizzard_alpha", 3]],
   };
   // bandos extras do Campo crescido (fora do quadro antigo): os mesmos monstros, espalhados nas regiões esticadas
   // rodada 120: 60% a mais (biomas maiores e mais gente online)
-  const CAMPO_EXTRA = { fields: [["slime", 32], ["slime_blue", 16], ["fox", 12]], east: [["boar", 22], ["goblin", 16], ["deer", 12], ["fox", 6]], south: [["wolf", 28], ["wolf_alpha", 6], ["deer", 8], ["bear", 7]],
-    west: [["golem", 16], ["slime_crystal", 13]], ruins: [["skeleton", 19]] };
+  const CAMPO_EXTRA = { fields: [["slime", 32], ["slime_blue", 16], ["fox", 12], ["hare", 12], ["bee", 8], ["kobold", 8]], east: [["boar", 22], ["goblin", 16], ["goblin_archer", 6], ["goblin_shaman", 2], ["deer", 12], ["fox", 6]],
+    south: [["wolf", 28], ["wolf_alpha", 6], ["deer", 8], ["bear", 7], ["weaver", 10], ["ghoul", 8]],
+    west: [["golem", 16], ["slime_crystal", 13], ["crystal_lizard", 8], ["wisp", 8]], ruins: [["skeleton", 19], ["skeleton_archer", 8], ["necromancer", 2], ["cursed_knight", 4]] };
   function homesFor(b, n, seed) { // n pontos de bando no bioma, ordenados do mais perto do Campo ao mais fundo
     const B = BIOMES[b - 1], C = BIOMES[0].c, out = [];
     for (let k = 0, t = 0; out.length < n * 6 && t < 12000; t++, k++) {
@@ -306,13 +317,13 @@ window.ValdoraWorld = (() => {
     lightsAt: [[14, 8], [8, 13], [21, 7], [31, 7], [21, 15], [31, 15], [37, 8], [47, 8], [37, 14], [47, 14], [53, 5], [66, 5], [53, 17], [66, 17]] };
   const DG_THEME = {
     dg_darkwood: { floor: ["den_floor", "den_floor_2"], fallbackFloor: ["dirt", "dirt_2"], exitSpr: "deco_den_exit", light: "deco_den_torch", foes: ["sombra", "sombras"], color: "#b78cff",
-      mobs: ["rot_skeleton", "shade_wraith", "corrupt_ent"], boss: "shadow_king", enter: "Raízes negras se fecham atrás de você. Algo respira no escuro...", leave: "Você sai do covil para a Floresta Sombria." },
+      mobs: ["rot_skeleton", "shadow_cultist", "corrupt_ent"], boss: "shadow_king", enter: "Raízes negras se fecham atrás de você. Algo respira no escuro...", leave: "Você sai do covil para a Floresta Sombria." },
     dg_desert: { floor: ["sand", "stone"], exitSpr: "deco_crypt", light: "deco_brazier", foes: ["morto do deserto", "mortos do deserto"], color: "#f5c26b",
-      mobs: ["mummy", "red_scorpion", "sandstone_golem"], boss: "sand_pharaoh", enter: "Areia escorre pelas frestas da tumba. Tochas acendem sozinhas...", leave: "Você volta ao sol do Deserto Rubro." },
+      mobs: ["mummy", "red_scorpion", "mummy_priest"], boss: "sand_pharaoh", enter: "Areia escorre pelas frestas da tumba. Tochas acendem sozinhas...", leave: "Você volta ao sol do Deserto Rubro." },
     dg_mountains: { floor: ["stone", "dirt"], exitSpr: "deco_crypt", light: "deco_brazier", foes: ["guardião de pedra", "guardiões de pedra"], color: "#c8c8d0",
-      mobs: ["granite_golem", "rock_sentinel", "cave_goblin"], boss: "mountain_king", enter: "O calor da forja antiga ainda sobe das pedras...", leave: "Você sai para o vento das Montanhas de Ferro." },
+      mobs: ["mountain_troll", "rock_sentinel", "kobold_bomber"], boss: "mountain_king", enter: "O calor da forja antiga ainda sobe das pedras...", leave: "Você sai para o vento das Montanhas de Ferro." },
     dg_snow: { floor: ["snow", "snow_2"], fallbackFloor: ["stone", "dirt"], exitSpr: "deco_rift_entrance", light: "deco_rift_brazier", foes: ["criatura do gelo", "criaturas do gelo"], color: "#a8e8ff",
-      mobs: ["frozen_skeleton", "glacial_sentinel", "ice_golem"], boss: "frost_serpent", enter: "O frio aqui embaixo morde os ossos. O gelo brilha azul...", leave: "Você volta à neve da Geleira do Norte." },
+      mobs: ["frozen_skeleton", "ice_witch", "yeti"], boss: "frost_serpent", enter: "O frio aqui embaixo morde os ossos. O gelo brilha azul...", leave: "Você volta à neve da Geleira do Norte." },
   };
   DG_DEF.forEach((G, i) => {
     const T = DG_THEME[G.key], [m1, m2, m3] = T.mobs;

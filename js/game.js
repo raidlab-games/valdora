@@ -57,6 +57,9 @@
 
   // ---------- Imagens: cada arte é rasterizada uma vez num canvas do tamanho final ----------
   const SPR = {}, WHITE = {};
+  // rodada 134: monstros no estilo novo (folha "half"): o quadro aparece na metade exata (pixel 2x2 da folha = 1 pixel na tela)
+  // e o sprite parado (caixa px) com o mesmo tamanho: px / 96 tiles
+  for (const [k, A] of Object.entries(window.ANIM3D || {})) if (A.half && !k.includes("@")) SPRITE_SIZE[k] = [A.px / 96, A.px / 96];
   const assetsReady = Promise.all(Object.entries(ASSETS).map(([key, src]) => new Promise((done) => {
     const img = new Image();
     img.onload = () => {
@@ -89,7 +92,7 @@
       const hero = HEROES.find((h) => h.id === key), isHero = !!hero; // hero_N_dash não é herói: usa SPRITE_SIZE próprio
       const host = OVERLAY_HOST[key] && (SPRITE_SIZE[OVERLAY_HOST[key]] || [1, 1]);
       const size = host ? [host[0] / AM.margin, host[1] / AM.margin] : A.fx ? [A.tiles / AM.margin, A.tiles / AM.margin] : isHero ? [(SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols, (SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols] : (SPRITE_SIZE[key] || SPRITE_SIZE[key.split("@")[0]] || [1, 1]);
-      const cw = Math.round(size[0] * TILE * AM.margin), ch = Math.round((size[1] || size[0]) * TILE * AM.margin);
+      const cw = A.half ? A.cell / 2 : Math.round(size[0] * TILE * AM.margin), ch = A.half ? A.cell / 2 : Math.round((size[1] || size[0]) * TILE * AM.margin); // rodada 134
       const cols = Math.round(img.naturalWidth / A.cell), rows = Math.round(img.naturalHeight / A.cell);
       const c = document.createElement("canvas"); c.width = cols * cw; c.height = rows * ch;
       const g = c.getContext("2d"); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, c.width, c.height);
@@ -476,7 +479,7 @@
         for (let i = 0; i < k && free.length; i++) { const [x, y] = free.splice(Math.floor(rnd() * free.length), 1)[0], kind = i === 0 && rnd() < 0.5 && RES[rare] && SPR[rare] ? rare : base; if (RES[kind] && SPR[kind]) addResource(kind, x, y); } }
       else if (m.kind === "hunt") {
         const reg = G.regionShape(m.top[0][0], m.top[0][1]), pool = m.b === 1 ? (WORLD_G.CAMPO_EXTRA[reg] || []).map((s) => s[0]) : G.BIOME_SPAWNS[G.BKEY[m.b]].map((s) => s[0]);
-        const types = [...new Set(pool)].filter((ty) => MOBS[ty] && !MOBS[ty].boss); if (!types.length) continue;
+        const types = [...new Set(pool)].filter((ty) => MOBS[ty] && !MOBS[ty].boss && !(MOBS[ty].skills && MOBS[ty].skills.summon)); if (!types.length) continue; // rodada 134: invocadores não andam em bando
         const type = types[Math.min(types.length - 1, Math.floor(types.length * (0.4 + rnd() * 0.6)))]; // do meio para o alto da faixa
         const c = m.top[Math.floor(m.top.length / 2)], home = { x: c[0], y: c[1], r: 3, elev: 1 }, n = 3 + Math.floor(rnd() * 3);
         for (let i = 0; i < n; i++) spawnMob(type, reg, home);
@@ -1377,7 +1380,7 @@
   function checkAch() { // conquistas: recompensa única em moedas
     if (!player) return;
     const st = { ...player.stats, bothBosses: !!(player.stats.bossTypes.boss && player.stats.bossTypes.boss_golem),
-      species: Object.keys(MOBS).filter((k) => player.kills[k] && !MOBS[k].echo).length, allSpecies: Object.keys(MOBS).filter((k) => !MOBS[k].echo).length, killed: player.kills,
+      species: Object.keys(MOBS).filter((k) => player.kills[k] && !MOBS[k].echo && !MOBS[k].minion).length, allSpecies: Object.keys(MOBS).filter((k) => !MOBS[k].echo && !MOBS[k].minion).length, /* rodada 134: ajudantes invocados não contam */ killed: player.kills,
       total: totalLevel(), maxSkill: Math.max(...Object.keys(SKILLS).map(lv)), petBond: player.pet ? RULES.petBond(player.pet.kills) : 0 }; // rodada 97
     for (const a of ACHIEVEMENTS) if (!player.ach[a.id] && a.check(st)) {
       player.ach[a.id] = Date.now(); player.coins += a.coins; hudDirty = true; // rodada 37: guarda quando (o lobby mostra as últimas)
@@ -1662,7 +1665,9 @@
   if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tile: (x, y) => map[y] && map[y][x], tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
-    drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM] }; // rodada 104: inspeção pelo console (só com ?debug)
+    drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM],
+    spawn: (type, x, y) => spawnMob(type, regionAt(x, y), { x, y, r: 0 }, null, { at: { x, y } }), // rodada 135: teste de comportamento de cada espécie
+    shotsN: () => MSKILL.warnTiles().length }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ fineTo: (fx, fy, tx, ty) => fineTo(fx, fy, tx, ty), blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
@@ -2122,6 +2127,7 @@
   }
   function hurtMob(m, rawDmg, crit, opts = {}) { // aplica dano, reação, números, XP e morte
     if (m.dead) return;
+    if (!opts.dot && !opts.pet) { rawDmg = MSKILL.guard(m, rawDmg); if (rawDmg <= 0) { m.aggro = true; return; } } // rodada 134: desviar, aparar, sumir e reaparecer
     const st = combatStats(), d = m.d, headY = headOf(m), dmg = Math.min(m.hp, rawDmg);
     if (opts.dot) { // pulso de sangramento: só número, gotas e XP, sem reação de golpe
       m.hp -= dmg; m.aggro = true; hitSplat(m.px + 0.5, headY + 0.45, dmg, "#ff6b5a");
@@ -2250,7 +2256,7 @@
     }
     hitStop = Math.max(hitStop, d.boss ? 0.25 : 0.05);
     if (firstKill) { showToast("Nova criatura no bestiário", `${d.name} · +${d.lvl * 8} xp de Combate`, "#7dff9a"); setTimeout(() => player && gainXp("combate", d.lvl * 8), 0); }
-    pushCorpse(m);
+    pushCorpse(m); MSKILL.onDeath(m); // rodada 134: divide (slimes) ou solta esporos
     burst(m.px + 0.5, m.py + 0.6, [d.color, "#ffffff", "#000000"], d.boss ? 50 : 18, d.boss ? 6 : 4);
     const coins = ri(...d.coins); player.coins += coins; hudDirty = true; SND.play("coin");
     addFloat(m.px + 0.5, m.py - 0.4, `+${coins} moedas`, "#f1c40f", 1.4, 14);
@@ -2291,6 +2297,8 @@
   function applyMobHit(m, pe) {
     if (m.dead || player.deadT > 0) return;
     if (pe.leap) return MSKILL.land(m, pe); // rodada 133: salto do gnol
+    if (pe.shot) return MSKILL.fire(m, pe); // rodada 134: o projétil sai da mão no quadro de impacto
+    if (pe.summon || pe.roar || pe.charge) return; // resolvidos no fim do aviso (mobskills.windupEnd)
     if (pe.pet) return petHurt(m, pe); // rodada 96
     if (pe.slamAoE) return slam(m);
     if (pe.heavy) fx.mark(m.px + 0.5 + Math.sign(player.x - m.x) * 0.85, m.py + 0.9 + Math.sign(player.y - m.y) * 0.85, 1.15); // rodada 68
@@ -2310,7 +2318,7 @@
       hitStop = Math.max(hitStop, pe.heavy ? 0.09 : 0.04);
       if (pe.heavy && SND.opts.shake) shake = 0.3;
       if (player.hp <= 0) return playerDied();
-      if (!blocked && MSKILL.wantsBleed(m, pe)) MSKILL.bleed(m); // rodada 133: ferida que sangra
+      if (!blocked) MSKILL.onHit(m, pe, pe.dmg); // rodada 133/134: ferida, veneno, lentidão, roubo de vida
     } else addFloat(player.px + 0.5, player.py - 0.3, "bloqueou", "#9fd0ff", 0.8, 12);
     // rodada 105: não revida sozinho — o herói só luta com o monstro que o jogador escolheu (clique, Ctrl + clique ou Espaço)
   }
@@ -2318,6 +2326,7 @@
     if (player.deadT > 0) return;
     player.deadT = ANIMS[player.hero] ? 1.6 : 0.01; player.hp = 0; player.path = []; player.target = null; player.job = null; player.act = null; player.cast = null;
     for (const m of mobs) { m.aggro = false; m.pending = null; }
+    player.dot = null; player.slowT = 0; MSKILL.clear(); // rodada 134
     SND.play("death"); hudDirty = true;
   }
   function respawnAfterDeath() {
@@ -3020,6 +3029,7 @@
       if (player.moveT < 0.14) rate = 0.82 + 0.18 * ease.outQuad(player.moveT / 0.14); // rodada 125: arrancada mais firme (era 0,62)
       if (!player.path.length && !keyDir()) rate *= 1 - 0.2 * player.prog; // último passo: desacelera de leve (era 0,42: parecia escorregar)
       rate *= loadRate(); // rodada 112: peso
+      if (player.slowT > 0) rate *= 0.6; // rodada 134: teia, gelo, maldição
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
@@ -3043,13 +3053,15 @@
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
     if (player.deadT > 0 && (player.deadT -= dt) <= 0) respawnAfterDeath();
-    if (player.bleed && (player.deadT > 0 || inTown(player.x, player.y))) player.bleed = null; // rodada 133: a ferida fecha na vila
-    else if (player.bleed && (player.bleed.t -= dt) <= 0) { // rodada 133: ferida do gnol, 1 pulso por segundo
-      const b = player.bleed; b.t = 1; if (--b.n <= 0) player.bleed = null;
+    if (player.dot && (player.deadT > 0 || inTown(player.x, player.y))) player.dot = null; // rodada 133/134: ferida e veneno fecham na vila
+    else if (player.dot && (player.dot.t -= dt) <= 0) { // 1 pulso por segundo
+      const b = player.dot; b.t = 1; if (--b.n <= 0) player.dot = null;
       player.hp -= b.dmg; player.flash = 0.1; player.lastHurt = tickN; hudDirty = true;
-      hitSplat(player.px + 0.5, player.py - 0.3, b.dmg, "#d03030"); burst(player.px + 0.5, player.py + 0.6, ["#9a1a1a", "#d03030"], 6, 1.5);
+      hitSplat(player.px + 0.5, player.py - 0.3, b.dmg, b.c); burst(player.px + 0.5, player.py + 0.6, [b.c, "#000000"], 6, 1.5);
       if (player.hp <= 0) playerDied();
     }
+    if (player.slowT > 0) { player.slowT -= dt; if (player.deadT > 0 || inTown(player.x, player.y)) player.slowT = 0; }
+    MSKILL.update(dt); // rodada 134: projéteis e bombas dos monstros
     if (shots.length) updateShots(dt);
     if (player.act) { // ação em 3 tempos
       const a = player.act; a.t += dt;
@@ -3149,7 +3161,7 @@
       if (--player.buffs[k] <= 0) { delete player.buffs[k]; log(`O efeito ${BUFFS[k].name} acabou.`, "dim"); }
       if (tickN % 2 === 0) hudDirty = true;
     }
-    for (const m of mobs) if (!m.dead && activeMob(m)) mobTick(m);
+    for (const m of mobs) if (!m.dead && activeMob(m)) { mobTick(m); MSKILL.tick(m); } // rodada 134: regeneração
     petTick(); // rodada 95
     CAMPAIGN_RT.tick(tickN); // rodada 78: bênção do marco
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
@@ -3158,10 +3170,32 @@
   // IA e animação dos monstros (js/mobs.js)
   const MSKILL = ValdoraMobSkills.create({ rand, ri, TICK, player: () => player, mobs: () => mobs, mobCan: (m, x, y) => MOBAI.mobCan(m, x, y), mobAt: (x, y) => mobAt(x, y),
     mobStepToward: (m, x, y) => MOBAI.mobStepToward(m, x, y), faceAt: (m, x, y) => MOBAI.faceAt(m, x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m),
-    hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d) => hitChance(a, d),
+    hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d) => hitChance(a, d),
     SND, addFloat: (...a) => addFloat(...a), log: (...a) => log(...a), applyMobHit: (m, pe) => applyMobHit(m, pe), mark: (x, y, r) => fx.mark(x, y, r),
-    dust: (x, y) => { if (!RENDER.playOnce("fx_dust_slam_light", x, y, { foot: true })) burst(x + 0.5, y + 0.6, ["#8a7a5a", "#c8b060"], 10, 2); } }); // rodada 133
-  const MOBAI = ValdoraMobs.create({ skills: { think: (m, near) => MSKILL.think(m, near), leapFly: (m) => MSKILL.leapFly(m), flank: (m) => MSKILL.flank(m) }, petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
+    dust: (x, y) => { if (!RENDER.playOnce("fx_dust_slam_light", x, y, { foot: true })) burst(x + 0.5, y + 0.6, ["#8a7a5a", "#c8b060"], 10, 2); }, // rodada 133
+    // rodada 134: o resto do bestiário (tiro, invocação, efeitos no herói)
+    mobMove: (m, x, y) => MOBAI.mobMove(m, x, y), open: (x, y) => open(x, y), tickN: () => tickN, burst: (...a) => burst(...a), shake: (v) => { if (SND.opts.shake) shake = Math.max(shake, v); },
+    sparks: (x, y) => fx.sparks(x, y, 6, ["#cfe6ff", "#ffffff"], 3), puff: (x, y, c) => burst(x, y, [c, "#ffffff"], 6, 1.5),
+    boom: (x, y) => { SND.play("slam"); if (SND.opts.shake) shake = Math.max(shake, 0.3); fx.mark(x, y + 0.4, 1.6); burst(x, y, ["#ff9040", "#ffd060", "#2a2830"], 26, 4); },
+    hurtPlayer: (m, dmg, o) => hurtPlayer(m, dmg, o), slowPlayer: (sec, m) => slowPlayer(sec, m),
+    temps: (m) => mobs.filter((o) => !o.dead && o.summoner === m).length,
+    summon: (m, type, n) => { for (let i = 0; i < n; i++) { const a = spawnMob(type, m.reg, { x: m.x, y: m.y, r: 2 }, null, { temp: true, aggro: true, atkT: 3, summoner: m }); if (a) { a.hx = m.hx; a.hy = m.hy; if (RISES(a)) riseUp(a); else burst(a.px + 0.5, a.py + 0.4, ["#b07aff", "#e0c8ff"], 14, 3); } } },
+    spawnNear: (m, type) => { const a = spawnMob(type, m.reg, { x: m.x, y: m.y, r: 1 }, null, { temp: true, aggro: true, atkT: 2 }); if (a) { a.hx = m.hx; a.hy = m.hy; burst(a.px + 0.5, a.py + 0.5, [m.d.color, "#ffffff"], 10, 2.5); } } });
+  // rodada 134: dano no herói que não depende de estar colado (tiros, bombas, rugidos, investidas)
+  function hurtPlayer(m, dmg, o = {}) {
+    if (player.deadT > 0) return;
+    if (player.style === "defensivo" && rand() < RULES.BLOCK.chance) { player.blockT = 0.22; dmg = RULES.blockDmg(dmg); addFloat(player.px + 0.5, player.py - 0.75, "aparou!", "#9fd0ff", 0.9, 13); }
+    player.hp -= dmg; player.flash = 0.18; player.hitT = 0.3; player.lastHurt = tickN; hudDirty = true;
+    hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); SND.play("hurt");
+    burst(player.px + 0.5, player.py + 0.5, [o.color || "#c0392b"], o.heavy ? 12 : 5, 2.5); if (o.heavy && SND.opts.shake) shake = Math.max(shake, 0.3);
+    if (player.hp <= 0) playerDied();
+  }
+  function slowPlayer(sec, m) {
+    if (player.deadT > 0) return;
+    if (!(player.slowT > 0)) { addFloat(player.px + 0.5, player.py - 1.1, "lento!", "#8fd8ff", 1, 13); log(`${m.d.name} deixou você lento.`, "warn"); }
+    player.slowT = Math.max(player.slowT || 0, sec);
+  }
+  const MOBAI = ValdoraMobs.create({ skills: { think: (m, near, tick) => MSKILL.think(m, near, tick), leapFly: (m) => MSKILL.leapFly(m), flank: (m) => MSKILL.hold(m), windupEnd: (m) => MSKILL.windupEnd(m) }, petFoe: (m, d) => petFoe(m, d), petAttack: (m) => petAttack(m), petSlam: (m) => petSlam(m), petAt: (x, y) => petAt(x, y), calm: (m) => CAMPAIGN_RT.calm(m), mark: (x, y, r) => fx.mark(x, y, r), echoFade: (m) => echoFade(m), giveUp: (m) => giveUp(m), ambushVanish: (m) => ambushVanish(m), ambushBlink: (m) => ambushBlink(m), ANIMS, TICK, DIRS, DIRS8V, adjacent, canStep, elevAt: (x, y) => elevAt(x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m), SND, rand, ri, hitChance, lv, inTown, walkable, regionAt, combatStats, mobAttack, applyMobHit, addFloat, burst, hitSplat,
     playerDied: () => playerDied(), player: () => player, tickN: () => tickN, dirty: () => { hudDirty = true; }, shake: (v) => { shake = v; },
     dust: (x, y) => { const reg = regionAt(Math.round(x), Math.round(y)), light = (reg === "west" || reg === "den") && ANIMS.fx_dust_slam_light;
       return RENDER.playOnce(light ? "fx_dust_slam_light" : "fx_dust_slam", x, y + 0.3, { ground: true }); },
@@ -3239,8 +3273,9 @@
       ctx.strokeRect((o.x - 1) * TILE - cam.x + 2, (o.y - 1) * TILE - cam.y + 2, TILE * 3 - 4, TILE * 3 - 4);
       ctx.fillStyle = "#ff5a3a"; ctx.fillRect((o.x - 1) * TILE - cam.x + 3, (o.y + 2) * TILE - cam.y - 8, (TILE * 3 - 6) * (1 - k), 4); // tempo restante
     }
-    for (const m of mobs) if (!m.dead && m.windup > 0 && !m.d.slam && m.pending && m.pending.special) // golpe pesado: os 4 tiles ao redor (salto: o tile marcado)
-      warnTiles(m.pending.leap ? [[m.pending.leap.tx, m.pending.leap.ty]] : DIRS.map(([dx, dy]) => [m.x + dx, m.y + dy]), m.an ? m.an.t : t);
+    for (const m of mobs) if (!m.dead && m.windup > 0 && !m.d.slam && m.pending && m.pending.special && !m.pending.summon) { // golpe pesado: os 4 tiles ao redor (salto: o tile marcado; investida: a linha; rugido: a área)
+      const P = m.pending; warnTiles(P.leap ? [[P.leap.tx, P.leap.ty]] : P.charge ? P.charge.tiles : P.roar ? P.roar.tiles : DIRS.map(([dx, dy]) => [m.x + dx, m.y + dy]), m.an ? m.an.t : t); }
+    { const bt = MSKILL.warnTiles(); if (bt.length) warnTiles(bt.map(([x, y]) => [x, y]), t); } // bombas e esporos no chão
     for (const m of mobs) if (!m.dead && m.windup > 0 && m.d.slam && !(m.an && m.an.s === "special" && !m.pending)) { // área do tremor, pulsando
       const cx = (m.x + 0.5) * TILE - cam.x, cy = (m.y + 0.5) * TILE - cam.y, k = 0.5 + Math.sin(t * 14) * 0.2, tiles = [];
       for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if ((dx || dy) && Math.hypot(dx, dy) <= 2.3) tiles.push([m.x + dx, m.y + dy]); // os tiles que o tremor acerta
@@ -3280,6 +3315,7 @@
       const mine = text === player.name || (small && text.startsWith("‹"));
       if (mine) ctx.globalAlpha = nameA; nameTag(text, x, y, c, small); ctx.globalAlpha = 1;
     } // nomes por cima de tudo
+    MSKILL.draw(ctx, cam, TILE); // rodada 134: flechas, pedras, feitiços dos monstros
     drawLights(t);
     CAMPAIGN_RT.drawOver(t); // rodada 78: luz dos marcos acesos, "!" nos objetivos e seta na borda (por cima da noite)
     AMBIENT.draw(ctx, cam, canvas.width, canvas.height, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt, true); // vagalumes e faíscas brilham por cima da noite

@@ -20,6 +20,38 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 135 (v1.33, junto com a 134) — acabamento de pixel art e rosto desenhado
+- **Cor** (`tools/b3d/pixel.py → grade`): paleta de cada folha mais viva e com mais contraste, sombra puxando para o azul-roxo e
+  luz para o amarelo. **Acabamento** (`finish_px`): limpeza de pixel solto, contorno colorido por fora (a cor de dentro
+  escurecida, mais escura longe da luz) e luz de borda em cima e à esquerda.
+- **Rosto desenhado em pixel** (`draw_face`): cada construtor registra olhos e boca (`rig.face`); o Blender projeta esses pontos
+  em todos os quadros e vistas sem renderizar (`mobrun.py ... anchors` → `face.json`; `tools/mob3d.py faces`) e o empacotador
+  desenha: olho de fera (órbita escura, íris, pupila virada para a frente, brilho e sobrancelha brava de 2 px), olho aceso com
+  halo (mortos-vivos, espectros, golens, conjuradores), olho grande de slime e boca com presas / fileira de dentes.
+- **+25% de pixels** em todos os monstros (`mob_px.json → _scale`): mais detalhe na arte, ainda em escala exata na tela.
+- Troll da montanha refeito à mão (cabeça, sobrancelha, presas, moicano, espetos de osso, braçadeiras, crânio no cinto);
+  conjuradores com mantelete, faixa bordada, amuleto e punhos; Alfa da noite mais claro (era uma mancha preta).
+- Folhas em PNG com paleta (`tools/mob_png_opt.py`, também no fim do pack): 83,5 → 31,7 MB.
+- `tools/mob_video.py`: vídeo de demonstração (MP4 pelo Blender). Teste de comportamento no jogo (`__vd.spawn`): as 98 espécies
+  nascem, perseguem, usam as habilidades (salto, tiro, bomba, investida, rugido, invocação, divisão, esporos...), causam dano e
+  morrem sem erro. Corrigidos: item inexistente no kobold, investida só em linha reta, habilidades decididas só no tick.
+
+## Rodada 134 (v1.33) — bestiário completo no estilo novo
+- **Arte:** todos os monstros no estilo novo (material com textura em 3 tons, luz em 4 degraus com sombra fria e brilho quente,
+  pixel 2x2, paleta de 40 cores por folha, mostrados na metade exata da folha: nada borra). Os antigos ganharam detalhes
+  (slimes com rosto e bolhas, coleira e espetos no alfa, lama no javali, ombreira e tinta de guerra no goblin, olhos acesos no
+  esqueleto) e as variantes de bioma deixaram de ser o mesmo modelo tingido: cada uma tem cores e modelo próprios.
+  `tools/b3d/mobs_bestiary.py` (66 folhas novas): voadores com asas nos braços (morcego, abelhão, harpia, abutre, coruja,
+  fogo-fátuo), conjuradores de manto (necromante, cultista, sacerdote múmia, feiticeira do gelo), arqueiros com o arco do herói,
+  kobolds, carniçal, cavaleiro amaldiçoado, troll, homem-lagarto, múmia, yeti, cogumelo pestilento, aranha/escorpião/escaravelho,
+  ent, golens, sentinelas, espectros, serpentes e os três reis. `tools/mob_smoke.py`: folha de contato rápida.
+- **Combate:** `js/mobskills.js` — tiro com projétil desviável e recuo (kite), invocação, cura de aliados, rugido/nova em área com
+  aviso, investida em linha com aviso, salto, sangramento e veneno, lentidão, bomba com aviso no chão, regeneração, roubo de
+  vida, aparar, desviar, sumir e reaparecer, dividir ao morrer e esporos. Toda espécie tem pelo menos um jeito próprio de lutar;
+  as mais fortes de cada bioma juntam vários (ex.: Feiticeira do gelo invoca, atira, faz nova de gelo e some).
+- **Variedade:** Campos 6, Bosque 7, Mata 6, Planalto 5, Ruínas 5; Floresta Sombria 12, Montanhas 13, Deserto 12, Geleira 13.
+  Ajudantes invocados ficam fora do bestiário e das caçadas.
+
 ## Rodada 133 (v1.32) — teste do estilo novo de monstro: Gnol carniceiro
 - **Estudo (referência de estilo, sem copiar):** monstros de MMO 2D em pixel art como os do Cambria: silhueta robusta e
   exagerada, materiais com textura, sombra com mudança de tom, muitos adornos que contam quem é o monstro; na lógica, bandos
