@@ -59,7 +59,7 @@ window.ValdoraOverlay = (() => {
       const dot = (x, y, r, col) => { g.fillStyle = "#140c06"; g.beginPath(); g.arc(x, y, r + 1, 0, 6.29); g.fill(); g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 6.29); g.fill(); };
       // rodada 105: só os monstros da área da tela (o quadrado branco) e um pouco além (4 tiles); os longe aparecem ao chegar perto.
       // O eco desperto (evento) continua aparecendo de longe, com o anel pulsando.
-      const NEAR = 4, vx0 = cam.x / TILE - NEAR, vy0 = cam.y / TILE - NEAR, vx1 = (cam.x + canvas.width) / TILE + NEAR, vy1 = (cam.y + canvas.height) / TILE + NEAR;
+      const NEAR = 4, vx0 = cam.x / TILE - NEAR, vy0 = cam.y / TILE - NEAR, vx1 = (cam.x + (canvas.width / (window.VD_SS || 1))) / TILE + NEAR, vy1 = (cam.y + (canvas.height / (window.VD_SS || 1))) / TILE + NEAR;
       for (const m of mobs) if (!m.dead && (m.d.echo || (m.px >= vx0 && m.px <= vx1 && m.py >= vy0 && m.py <= vy1))) { // rodada 71: pontos redondos com contorno escuro
         dot((m.px + 0.5) * sx, (m.py + 0.5) * sy, m.d.boss ? 3 : 1.6, m.d.echo ? "#7fe8ff" : m.d.boss ? "#c48cff" : m.aggro ? "#ff5a4a" : "#c03030");
         if (m.d.echo) { const r = 5 + (performance.now() / 160) % 6; g.strokeStyle = "#7fe8ff"; g.lineWidth = 1; g.beginPath(); g.arc((m.x + 0.5) * sx, (m.y + 0.5) * sy, r, 0, 6.29); g.stroke(); } // rodada 23: anel pulsando no eco desperto
@@ -74,7 +74,7 @@ window.ValdoraOverlay = (() => {
         g.beginPath(); g.moveTo(x, y - k - 1.5); g.lineTo(x + k + 1.5, y); g.lineTo(x, y + k + 1.5); g.lineTo(x - k - 1.5, y); g.closePath(); g.fillStyle = "#0a1a20"; g.fill();
         g.beginPath(); g.moveTo(x, y - k); g.lineTo(x + k, y); g.lineTo(x, y + k); g.lineTo(x - k, y); g.closePath(); g.fillStyle = "#7fe8ff"; g.fill(); } }
       g.strokeStyle = "#ffffff88"; g.lineWidth = 1;
-      g.strokeRect(Math.round(cam.x / TILE * sx) + 0.5, Math.round(cam.y / TILE * sy) + 0.5, Math.round(canvas.width / TILE * sx), Math.round(canvas.height / TILE * sy));
+      g.strokeRect(Math.round(cam.x / TILE * sx) + 0.5, Math.round(cam.y / TILE * sy) + 0.5, Math.round(canvas.width / (window.VD_SS || 1) / TILE * sx), Math.round(canvas.height / (window.VD_SS || 1) / TILE * sy));
       { // herói: seta branca com contorno, apontando para onde olha
         const a = { right: 0, downright: Math.PI / 4, down: Math.PI / 2, downleft: 3 * Math.PI / 4, left: Math.PI, upleft: -3 * Math.PI / 4, up: -Math.PI / 2, upright: -Math.PI / 4 }[player.dir] || 0, hx = (player.px + 0.5) * sx, hy = (player.py + 0.5) * sy;
         g.save(); g.translate(hx, hy); g.rotate(a); g.beginPath(); g.moveTo(5, 0); g.lineTo(-3.5, -3.8); g.lineTo(-1.5, 0); g.lineTo(-3.5, 3.8); g.closePath();
@@ -117,10 +117,10 @@ window.ValdoraOverlay = (() => {
       // rodada 129: Pedra da vila: as runas brilham em azul forte, de dia (halo somado) e à noite (luz)
       if (stonesOf !== objects || stones.length === 0 && objects.length !== stonesN) { stones = objects.filter((o) => o.type === "waystone"); stonesOf = objects; stonesN = objects.length; }
       for (const o of stones) { const sx = (o.x + o.w / 2) * TILE - cam.x, sy = (o.y - 0.1) * TILE - cam.y; // rodada 132: runas no meio do obelisco
-        if (sx > -TILE * 4 && sy > -TILE * 4 && sx < canvas.width + TILE * 4 && sy < canvas.height + TILE * 4) shrineL.push({ x: sx, y: sy, r: TILE * 2.2, color: "rgba(60,150,255,A)", a: 0.16, slow: true }); }
+        if (sx > -TILE * 4 && sy > -TILE * 4 && sx < (canvas.width / (window.VD_SS || 1)) + TILE * 4 && sy < (canvas.height / (window.VD_SS || 1)) + TILE * 4) shrineL.push({ x: sx, y: sy, r: TILE * 2.2, color: "rgba(60,150,255,A)", a: 0.16, slow: true }); }
       if (dark <= 0.01) { if (shrineL.length) lightFx.glow(ctx, shrineL, t); return; }
-      const L = [...shrineL], x0 = cam.x - TILE * 3, x1 = cam.x + canvas.width + TILE * 3, y0 = cam.y - TILE * 3, y1 = cam.y + canvas.height + TILE * 3;
-      const add = (wx, wy, r, color, warm) => { const sx = wx * TILE - cam.x, sy = wy * TILE - cam.y; if (sx > -r && sy > -r && sx < canvas.width + r && sy < canvas.height + r) L.push({ x: sx, y: sy, r, color, warm }); };
+      const L = [...shrineL], x0 = cam.x - TILE * 3, x1 = cam.x + (canvas.width / (window.VD_SS || 1)) + TILE * 3, y0 = cam.y - TILE * 3, y1 = cam.y + (canvas.height / (window.VD_SS || 1)) + TILE * 3;
+      const add = (wx, wy, r, color, warm) => { const sx = wx * TILE - cam.x, sy = wy * TILE - cam.y; if (sx > -r && sy > -r && sx < (canvas.width / (window.VD_SS || 1)) + r && sy < (canvas.height / (window.VD_SS || 1)) + r) L.push({ x: sx, y: sy, r, color, warm }); };
       for (const o of objects) {
         if (o.x * TILE < x0 || o.x * TILE > x1 || o.y * TILE < y0 || o.y * TILE > y1) continue;
         if (o.spr === "deco_seal_pedestal_lit") add(o.x + 0.5, o.y - 0.6, TILE * 3, "rgba(220,250,255,A)"); // rodada 83: selo refeito
@@ -150,7 +150,7 @@ window.ValdoraOverlay = (() => {
       for (const m of mobs) if (!m.dead && m.d.boss) add(m.px + 0.5, m.py + 0.3, TILE * 2.2, "rgba(160,90,255,A)");
       add(player.px + 0.5, player.py + 0.3, TILE * (inCrypt ? 3.4 : 3), "rgba(255,210,140,A)", true); // lanterna do herói
       const PR = ValdoraShrine.rankOf(player.offered || 0); if (PR && PR.halo) add(player.px + 0.5, player.py + 0.1, TILE * 1.8, PR.halo, true); // rodada 49: halo do título
-      lightFx.draw(ctx, canvas.width, canvas.height, dark, L, t);
+      lightFx.draw(ctx, (canvas.width / (window.VD_SS || 1)), (canvas.height / (window.VD_SS || 1)), dark, L, t);
     }
     const lightFx = LIGHT.create();
     // rodada 105: mapa do continente (tecla M): fundo do minimapa, nomes dos biomas e vilas, Pedras, masmorras e o herói
@@ -177,7 +177,7 @@ window.ValdoraOverlay = (() => {
       }
       const hx = X(p.px + 0.5), hy = Y(p.py + 0.5), pulse = 7 + Math.sin(performance.now() / 200) * 2;
       g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, pulse, 0, 6.29); g.stroke(); g.fillStyle = "#f1c40f"; g.beginPath(); g.arc(hx, hy, 4, 0, 6.29); g.fill();
-      g.strokeStyle = "#ffffff99"; g.lineWidth = 1; g.strokeRect(X(cam.x / TILE), Y(cam.y / TILE), canvas.width / TILE * k, canvas.height / TILE * k);
+      g.strokeStyle = "#ffffff99"; g.lineWidth = 1; g.strokeRect(X(cam.x / TILE), Y(cam.y / TILE), (canvas.width / (window.VD_SS || 1)) / TILE * k, (canvas.height / (window.VD_SS || 1)) / TILE * k);
     }
     return { buildMinimap, drawMinimap, drawLights, miniView, drawWorldMap };
   }

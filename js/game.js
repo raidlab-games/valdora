@@ -94,10 +94,11 @@
       const size = host ? [host[0] / AM.margin, host[1] / AM.margin] : A.fx ? [A.tiles / AM.margin, A.tiles / AM.margin] : isHero ? [(SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols, (SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols] : (SPRITE_SIZE[key] || SPRITE_SIZE[key.split("@")[0]] || [1, 1]);
       const cw = A.half ? A.cell / 2 : Math.round(size[0] * TILE * AM.margin), ch = A.half ? A.cell / 2 : Math.round((size[1] || size[0]) * TILE * AM.margin); // rodada 134
       const cols = Math.round(img.naturalWidth / A.cell), rows = Math.round(img.naturalHeight / A.cell);
-      const c = document.createElement("canvas"); c.width = cols * cw; c.height = rows * ch;
+      const k = A.half && A.fine && SS > 1 ? 2 : 1; // rodada 136: folha de pixel fino fica inteira (1 pixel da folha = 1 pixel da tela)
+      const c = document.createElement("canvas"); c.width = cols * cw * k; c.height = rows * ch * k;
       const g = c.getContext("2d"); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.drawImage(img, 0, 0, c.width, c.height);
       if (key === "deco_town_sign") UI.paintSignSheet(g, cw, ch, cols, AM.margin, AM.ground, "Lumeira"); // nome acompanha a tábua
-      ANIMS[key] = { c, cell: cw, cw, ch, rows: A.rows, fx: !!A.fx }; done();
+      ANIMS[key] = { c, cell: cw, cw, ch, k, rows: A.rows, fx: !!A.fx }; done();
     };
     img.onerror = () => { console.warn("Valdora: folha animada não carregou:", key); done(); };
     img.src = A.src;
@@ -1519,12 +1520,16 @@
   const RENDER = ValdoraRender.create({ ctx, cam, TILE, W, AM, ANIMS, hash, inTown: (x, y) => inTown(x, y), rand, burst: (...a) => burst(...a) });
   const { animFrame, drawFx, drawAnim, sceneryFrame, waterDraw, drawFishspot, drawSmoke } = RENDER;
   // zoom do mundo: "auto" mostra ~14 tiles na altura (telas grandes não deixam o mundo em miniatura)
-  let ZOOM = 1;
+  let ZOOM = 1, SS = 1, VW = 1, VH = 1;
   function resize() {
     const o = SND.opts.zoom || "auto";
     ZOOM = o === "auto" ? clamp(Math.round(innerHeight / (TILE * 14) * 4) / 4, 1, 3) : +o;
-    canvas.width = Math.round(innerWidth / ZOOM); canvas.height = Math.round(innerHeight / ZOOM);
-    canvas.style.imageRendering = Number.isInteger(ZOOM) ? "pixelated" : "auto";
+    // rodada 136: a tela tem SS pixels por pixel do mundo (o mapa continua no mesmo pixel, ampliado sem suavizar; os monstros
+    // de pixel fino, folha "fine", aparecem com o detalhe todo). VW x VH = tamanho da vista em pixels do mundo.
+    SS = SND.opts.fine === false ? 1 : Math.min(2, Math.max(1, Math.round(ZOOM * (window.devicePixelRatio || 1)))); window.VD_SS = SS;
+    VW = Math.round(innerWidth / ZOOM); VH = Math.round(innerHeight / ZOOM);
+    canvas.width = VW * SS; canvas.height = VH * SS;
+    canvas.style.imageRendering = Number.isInteger(ZOOM / SS) ? "pixelated" : "auto";
     ctx.imageSmoothingEnabled = false;
   }
   function applyUi() { // "auto": interface cresce junto com a altura da janela
@@ -2835,8 +2840,8 @@
     give: (n, q) => { if (!addItem(n, q)) dropItem(n, q, player.x, player.y); }, scene: (id, cb) => SCENE.play(id, cb), dirty: () => { hudDirty = true; },
     maxHp: () => maxHp(), tickN: () => tickN, regionAt: (x, y) => regionAt(x, y), night: () => LIGHT.darkness(player.dayT) > 0.4,
     viewRight: () => { const now = performance.now(); if (now - VR.t > 500) { VR.t = now; // borda esquerda do painel lateral, em pixels do canvas (medida 2x por segundo)
-      const h = $("hud").getBoundingClientRect(), c = canvas.getBoundingClientRect(); VR.v = h.width && h.left > c.left + c.width * 0.5 ? (h.left - c.left) * canvas.width / c.width : canvas.width; }
-      return Math.min(VR.v || canvas.width, canvas.width); },
+      const h = $("hud").getBoundingClientRect(), c = canvas.getBoundingClientRect(); VR.v = h.width && h.left > c.left + c.width * 0.5 ? (h.left - c.left) * VW / c.width : VW; }
+      return Math.min(VR.v || VW, VW); },
     freeNear: (x0, y0, r) => { for (let k = 0; k <= r; k++) for (let dy = -k; dy <= k; dy++) for (let dx = -k; dx <= k; dx++) if (Math.max(Math.abs(dx), Math.abs(dy)) === k && walkable(x0 + dx, y0 + dy)) return { x: x0 + dx, y: y0 + dy }; return null; },
     removeItem: (n, q) => removeItem(n, q),
     teleport: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null, dir: "down" }); CAMERA.reset(); hudDirty = true; save(); } });
@@ -2995,7 +3000,7 @@
   const activeMob = (m) => m.aggro || m.temp || inCrypt || (Math.abs(m.x - player.x) <= ACTIVE_X && Math.abs(m.y - player.y) <= ACTIVE_Y);
   function update(dt) {
     indexMobs();
-    AMBIENT.update(dt, cam, canvas.width, canvas.height, player.region, LIGHT.darkness(player.dayT), inCrypt); // rodada 66: vento e vagalumes
+    AMBIENT.update(dt, cam, VW, VH, player.region, LIGHT.darkness(player.dayT), inCrypt); // rodada 66: vento e vagalumes
     CAMPAIGN_RT.update(dt); // rodada 78: onda no marco, Capataz e viagem
     SHRINE_RT.update(dt); // santuário: velas, moedas, chama votiva e faíscas da Lenda (js/shrine.js)
     // movimento contínuo do jogador (tile a tile, com sobra de tempo aproveitada)
@@ -3215,7 +3220,7 @@
 
   // ---------- Câmera: segue com suavidade, olha um pouco à frente na direção do movimento ----------
   // câmera com mola e antecipação na direção do movimento (js/camera.js)
-  const CAMERA = ValdoraCamera.create({ TILE, DIR_VEC, player: () => player, view: () => [canvas.width, canvas.height] });
+  const CAMERA = ValdoraCamera.create({ TILE, DIR_VEC, player: () => player, view: () => [VW, VH] });
   const updateCamera = (dt) => CAMERA.update(dt);
 
   // ---------- Desenho ----------
@@ -3226,15 +3231,15 @@
     dirty: () => { hudDirty = true; }, save: () => save() });
   const waterKey = (x, y, t) => animKey("water", t, (x * 7 + y * 13) % 5 * 0.37);
   function draw(t) {
-    frameId++;
+    frameId++; ctx.setTransform(SS, 0, 0, SS, 0, 0); ctx.imageSmoothingEnabled = false; // rodada 136
     const sk = shake > 0 ? (rand() - 0.5) * 8 * shake / 0.3 : 0;
     const cf = CAMERA.focus();
-    cam.x = Math.round(clamp(cf.x, 0, Math.max(0, W * TILE - canvas.width)) + sk);
-    cam.y = Math.round(clamp(cf.y, 0, Math.max(0, H * TILE - canvas.height)) + sk);
-    ctx.fillStyle = "#0c0c0c"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ground.draw(ctx, cam, canvas.width, canvas.height, t, waterKey, waterDraw);
+    cam.x = Math.round(clamp(cf.x, 0, Math.max(0, W * TILE - VW)) + sk);
+    cam.y = Math.round(clamp(cf.y, 0, Math.max(0, H * TILE - VH)) + sk);
+    ctx.fillStyle = "#0c0c0c"; ctx.fillRect(0, 0, VW, VH);
+    ground.draw(ctx, cam, VW, VH, t, waterKey, waterDraw);
     const x0 = Math.floor(cam.x / TILE), y0 = Math.floor(cam.y / TILE);
-    const x1 = Math.min(W, x0 + Math.ceil(canvas.width / TILE) + 1), y1 = Math.min(H, y0 + Math.ceil(canvas.height / TILE) + 1);
+    const x1 = Math.min(W, x0 + Math.ceil(VW / TILE) + 1), y1 = Math.min(H, y0 + Math.ceil(VH / TILE) + 1);
     const ents = [];
     // objetos visíveis (inclui linhas abaixo da tela, pois artes altas sobem)
     for (let y = Math.max(0, y0 - 1); y < Math.min(H, y1 + 3); y++) for (let x = Math.max(0, x0 - 2); x < Math.min(W, x1 + 2); x++) {
@@ -3248,7 +3253,7 @@
     drawGroundItems(t, x0, y0, x1, y1);
     RENDER.drawOnce("ground"); // poeira e rachaduras no chão, antes das entidades
     fx.drawGround(ctx, cam); // rodada 67: ondas de choque e marcas de impacto por baixo dos personagens
-    AMBIENT.drawGround(ctx, cam, canvas.width, canvas.height, t, inCrypt); // rodada 75: poças depois da chuva
+    AMBIENT.drawGround(ctx, cam, VW, VH, t, inCrypt); // rodada 75: poças depois da chuva
     CAMPAIGN_RT.drawGround(t); // rodada 78: fendas dos Campos
     for (const m of mobs) if (m.dead && m.respawnAt && m.d.marker && ANIMS[m.d.marker.fx]) { // um monstro vai voltar aqui
       const A = ANIMS[m.d.marker.fx], R = A.rows.loop, w = m.respawnAt; // em loop (fogo-fátuo) ou toca uma vez e segura o último quadro (pedras)
@@ -3306,7 +3311,7 @@
     drawStores(Math.min(0.1, t - (drawStores.lt ?? t))); drawStores.lt = t; // rodada 42: item entrando no baú
     drawShots(); // rodada 104: flechas do arqueiro
     auras(0.35); // a frente do anel passa por cima do chefe
-    AMBIENT.draw(ctx, cam, canvas.width, canvas.height, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt); // rodada 66: sombras de nuvens e partículas de vento
+    AMBIENT.draw(ctx, cam, VW, VH, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt); // rodada 66: sombras de nuvens e partículas de vento
     SHRINE_RT.titleTags(); // cor do nome e título do santuário (js/shrine.js)
     // rodada 66: em luta, o nome (e o título) do herói quase some, para os números e a barra do monstro ficarem legíveis
     const fight = (player.target && player.target.kind === "mob" && !player.target.ref.dead) || tickN - (player.lastHurt ?? -99) < 6;
@@ -3318,8 +3323,8 @@
     MSKILL.draw(ctx, cam, TILE); // rodada 134: flechas, pedras, feitiços dos monstros
     drawLights(t);
     CAMPAIGN_RT.drawOver(t); // rodada 78: luz dos marcos acesos, "!" nos objetivos e seta na borda (por cima da noite)
-    AMBIENT.draw(ctx, cam, canvas.width, canvas.height, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt, true); // vagalumes e faíscas brilham por cima da noite
-    AMBIENT.drawVignette(ctx, canvas.width, canvas.height, inCrypt ? 0.9 : 0.75); // rodada 66: vinheta suave
+    AMBIENT.draw(ctx, cam, VW, VH, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt, true); // vagalumes e faíscas brilham por cima da noite
+    AMBIENT.drawVignette(ctx, VW, VH, inCrypt ? 0.9 : 0.75); // rodada 66: vinheta suave
     CAMPAIGN_RT.drawScreen(); // rodada 78: clarão das pedras de passagem
     drawBubble();
     fx.draw(ctx, cam); // partículas e textos por cima da iluminação
@@ -3425,7 +3430,7 @@
     const [title, color, sub] = d;
     ctx.font = "12px 'Valdora Pixel', 'Courier New', monospace"; ctx.textAlign = "left";
     const w = Math.max(ctx.measureText(title).width, sub ? ctx.measureText(sub).width : 0) + 12, h = sub ? 34 : 20;
-    const x = Math.min(PST.mouse.x + 14, canvas.width - w - 4), y = Math.max(4, PST.mouse.y - h - 6);
+    const x = Math.min(PST.mouse.x + 14, VW - w - 4), y = Math.max(4, PST.mouse.y - h - 6);
     ctx.fillStyle = "#1b1610e8"; ctx.fillRect(x, y, w, h); ctx.strokeStyle = "#6b4f2a"; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = color; ctx.fillText(title, x + 6, y + 14);
     if (sub) { ctx.fillStyle = "#c9bfa8"; ctx.font = "12px 'Valdora Pixel', 'Courier New', monospace"; ctx.fillText(sub, x + 6, y + 28); }

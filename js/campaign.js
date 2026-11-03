@@ -228,7 +228,7 @@ window.ValdoraCampaign = (() => {
       for (let i = 0; i < CRACKS.length; i++) {
         const st = crackState(i); if (!st) continue; const c = CRACKS[i], img = SPR[st === "open" ? "deco_crack_open" : "deco_crack_scar"]; if (!img) continue;
         const x = Math.round(sx(c.x + 0.5) - img.width / 2), y = Math.round(sy(c.y + 0.55) - img.height / 2); // decalque visto de cima, centrado no tile
-        if (x > ctx.canvas.width || y > ctx.canvas.height || x + img.width < 0 || y + img.height < 0) continue;
+        if (x > (ctx.canvas.width / (window.VD_SS || 1)) || y > (ctx.canvas.height / (window.VD_SS || 1)) || x + img.width < 0 || y + img.height < 0) continue;
         ctx.drawImage(img, x, y);
         if (st === "open") for (let k = 0; k < 6; k++) { // fagulhas de lumita subindo da fenda
           const ph = (t * 0.45 + k / 6 + i * 0.13) % 1, mx = x + img.width * (0.2 + ((k * 37 + i * 11) % 60) / 100) + Math.sin(t * 2 + k) * 3, my = y + img.height * 0.55 - ph * TILE * 1.1;
@@ -244,12 +244,12 @@ window.ValdoraCampaign = (() => {
     function drawOver(t) { // depois das entidades: luz do marco aceso, marcas sobre os objetivos e seta na borda da tela
       if (api.inCrypt()) return;
       for (const [key, o] of Object.entries(markers)) if (rules.lit(P(), key)) {
-        const x = sx(o.x + 0.5), y = sy(o.y + 1) - TILE * 1.75; if (x < -80 || y < -200 || x > ctx.canvas.width + 80 || y > ctx.canvas.height + 120) continue;
+        const x = sx(o.x + 0.5), y = sy(o.y + 1) - TILE * 1.75; if (x < -80 || y < -200 || x > (ctx.canvas.width / (window.VD_SS || 1)) + 80 || y > (ctx.canvas.height / (window.VD_SS || 1)) + 120) continue;
         const k = 0.55 + 0.25 * Math.sin(t * 1.8 + o.x), g = ctx.createRadialGradient(x, y, 2, x, y, TILE * 0.9);
         g.addColorStop(0, `rgba(150,245,255,${0.5 * k})`); g.addColorStop(1, "rgba(90,220,255,0)");
         ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(x - TILE, y - TILE, TILE * 2, TILE * 2); ctx.globalCompositeOperation = "source-over";
       }
-      const goals = objectives(), W0 = ctx.canvas.width, H0 = ctx.canvas.height;
+      const goals = objectives(), W0 = (ctx.canvas.width / (window.VD_SS || 1)), H0 = (ctx.canvas.height / (window.VD_SS || 1));
       for (const g of goals) if (g.kind === "crack" || g.kind === "marker") drawMark(sx(g.x + 0.5), sy(g.y) - (g.kind === "marker" ? TILE * 1.25 : 14), t, "!", "#7fe8ff");
       // seta na borda: aponta para o objetivo mais perto quando ele está fora da tela
       const p = P(); let best = null, bd = Infinity;
@@ -269,7 +269,7 @@ window.ValdoraCampaign = (() => {
       }
     }
     function drawScreen() { // clarão da viagem
-      if (flash <= 0) return; ctx.fillStyle = `rgba(200,248,255,${Math.min(1, flash / 0.5) * 0.7})`; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      if (flash <= 0) return; ctx.fillStyle = `rgba(200,248,255,${Math.min(1, flash / 0.5) * 0.7})`; ctx.fillRect(0, 0, (ctx.canvas.width / (window.VD_SS || 1)), (ctx.canvas.height / (window.VD_SS || 1)));
     }
     return { place, sync, update, tick, crackAt, openCracks, inspectCrack, markerView, travelHtml, travel, objectives, drawGround, drawOver, drawScreen,
       spawnCapataz, useSeal, sealLit: () => !!P() && rules.sealLit(P()), markers: () => markers, calm: (m) => rules.calm(P(), m, markers.south) || rules.calmEast(P(), m, markers.east) || rules.calmRuins(P(), m, markers.ruins) || rules.calmWest(P(), m, markers.west) || rules.calmCamp(m, api.npc().miner) || rules.calmJuna(m, api.npc().herb), inspectRune, alchemyOpen: () => rules.alchemy(P()), lit: (k) => rules.lit(P(), k), travelOpen: () => rules.travel(P()) };

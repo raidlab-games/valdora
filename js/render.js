@@ -13,14 +13,15 @@ window.ValdoraRender = (() => {
     // um quadro da folha com os pés em (cx, footY); flip espelha (as folhas olham para a esquerda)
     function drawAnim(A, rowName, frame, cx, footY, flip, scale = 1, flash = 0) {
       const R = A.rows[rowName]; if (!R) return;
-      const w = A.cw * scale, h = A.ch * scale, sx = frame * A.cw, sy = R.row * A.ch;
+      const k = A.k || 1, sw = A.cw * k, sh = A.ch * k; // rodada 136: k = 2 nas folhas de pixel fino (guardadas inteiras)
+      const w = A.cw * scale, h = A.ch * scale, sx = frame * sw, sy = R.row * sh;
       ctx.save(); ctx.translate(cx, footY); if (flip) ctx.scale(-1, 1);
-      ctx.drawImage(A.c, sx, sy, A.cw, A.ch, -w / 2, -h * (1 - AM.ground), w, h);
+      ctx.drawImage(A.c, sx, sy, sw, sh, -w / 2, -h * (1 - AM.ground), w, h);
       if (flash > 0) { // lampejo branco só na silhueta do quadro
-        if (flashTmp.width !== A.cw || flashTmp.height !== A.ch) { flashTmp.width = A.cw; flashTmp.height = A.ch; }
-        flashCtx.globalCompositeOperation = "source-over"; flashCtx.clearRect(0, 0, A.cw, A.ch);
-        flashCtx.drawImage(A.c, sx, sy, A.cw, A.ch, 0, 0, A.cw, A.ch);
-        flashCtx.globalCompositeOperation = "source-in"; flashCtx.fillStyle = "#fff"; flashCtx.fillRect(0, 0, A.cw, A.ch);
+        if (flashTmp.width !== sw || flashTmp.height !== sh) { flashTmp.width = sw; flashTmp.height = sh; }
+        flashCtx.globalCompositeOperation = "source-over"; flashCtx.clearRect(0, 0, sw, sh);
+        flashCtx.drawImage(A.c, sx, sy, sw, sh, 0, 0, sw, sh);
+        flashCtx.globalCompositeOperation = "source-in"; flashCtx.fillStyle = "#fff"; flashCtx.fillRect(0, 0, sw, sh);
         ctx.globalAlpha = flash; ctx.drawImage(flashTmp, -w / 2, -h * (1 - AM.ground), w, h); ctx.globalAlpha = 1;
       }
       ctx.restore();
