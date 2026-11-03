@@ -144,7 +144,7 @@
   // ---------- Lobby: a tela inicial fica em js/lobby.js, que usa window.ValdoraGame ----------
   // opções: volume de efeitos e música, tremor de tela (guardadas em localStorage pelo módulo de áudio)
   $("opt-sfx").value = ValdoraAudio.opts.sfx; $("opt-music").value = ValdoraAudio.opts.music; $("opt-shake").checked = ValdoraAudio.opts.shake;
-  $("opt-btn").onclick = () => { $("options").hidden = !$("options").hidden; };
+  if ($("opt-btn")) $("opt-btn").onclick = () => { $("options").hidden = !$("options").hidden; }; // rodada 137: as opções foram para o menu (Config)
   $("me-face").onclick = () => { if (running) shortcut("p"); }; // rodada 105: o retrato abre a ficha
   $("opt-sfx").oninput = (e) => { ValdoraAudio.setOpt("sfx", +e.target.value); ValdoraAudio.play("coin"); };
   $("opt-music").oninput = (e) => ValdoraAudio.setOpt("music", +e.target.value);
@@ -1177,10 +1177,34 @@
   const tier = (k) => { const e = gearItem(k); return e ? GEAR[k].tiers[ITEMS[e.name].tier] : NO_GEAR[k] || { name: "Sem " + GEAR[k].label.toLowerCase(), bonus: 0 }; };
   const hasBow = () => { const e = player.equip.arma; return !!(e && ITEMS[e.name].bow); };
   const maxHp = () => combatStats().maxHp;
+  // rodada 137: Coleção (estilo Cabal): cada coleção completa soma o bônus dela para sempre
+  const collDone = (c) => Object.entries(c.items).every(([n, q]) => ((player.coll || {})[c.id] || {})[n] >= q);
+  const collBonuses = () => (player && player.coll ? VD.COLLECTIONS.filter(collDone).map((c) => c.bonus) : []);
+  function collRegister(id, item) {
+    const c = VD.COLLECTIONS.find((x) => x.id === id); if (!c || !c.items[item]) return;
+    const have = count(item), got = ((player.coll[id] = player.coll[id] || {})[item] || 0), need = c.items[item] - got;
+    if (need <= 0 || have <= 0) return;
+    const n = Math.min(need, have); removeItem(item, n); player.coll[id][item] = got + n; SND.play("coin");
+    log(`Coleção ${c.name}: +${n} ${item}.`, "dim");
+    if (collDone(c)) { log(`★ Coleção completa: ${c.name}! ${RULES.bonusText(c.bonus)} para sempre.`, "gold"); SND.play("level"); showToast("Coleção completa", `${c.name} · ${RULES.bonusText(c.bonus)}`, "#9fe08a"); }
+    hudDirty = true; save();
+  }
+  // rodada 137: barra de 9 atalhos (teclas 1 a 9): comida, poções e skills, montada na aba Skills
+  const HOT_ACTIONS = () => [{ id: "eat", name: "Comer", desc: "Come a comida que mais cura da mochila.", icon: ASSETS.icon_heal_small },
+    ...["Poção de vida", "Poção de força", "Poção de pedra"].filter((n) => ITEMS[n]).map((n) => ({ id: "pot:" + n, name: n, desc: ITEMS[n].heal ? `Cura ${ITEMS[n].heal}.` : "Efeito por um tempo.", icon: ASSETS[ITEMS[n].icon], item: n })),
+    ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl }))];
+  function useHot(i) {
+    const a = player.hotbar[i]; if (!a) return;
+    if (a === "eat") { let best = -1; player.inv.forEach((s, j) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = j; });
+      if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim"); }
+    else if (a.startsWith("pot:")) { const pot = a.slice(4), j = player.inv.findIndex((s) => s && s.name === pot); if (j >= 0) eat(j); else log(`Sem ${pot.toLowerCase()} na mochila.`, "dim"); }
+    else if (a.startsWith("skill:")) useSkill(a.slice(6));
+  }
+  function setHot(i, id) { const k = player.hotbar.indexOf(id); if (k >= 0) player.hotbar[k] = null; player.hotbar[i] = id; buildSkillbar(); hudDirty = true; save(); }
   const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + lv(k), 0);
   const combatStats = () => RULES.combatStats({ combate: lv("combate"), vitalidade: lv("vitalidade"), weapon: tier("espada"), armor: tier("armadura"),
     style: STYLES[player.style], buffs: Object.keys(player.buffs).map((k) => k === "descansado" ? { ...BUFFS[k], hp: ValdoraHome.restHp(ValdoraHome.shown(player.home)) } : BUFFS[k]), master: { espada: (gearItem("espada") || {}).master, armadura: (gearItem("armadura") || {}).master },
-    accessories: Object.values(player.equip || {}).filter(Boolean).map(accBonus) }); // rodada 104: os modificadores do estelar vêm na própria peça
+    accessories: Object.values(player.equip || {}).filter(Boolean).map(accBonus).concat(collBonuses()) }); // rodada 104: os modificadores do estelar vêm na própria peça; 137: + coleções
   const hitChance = RULES.hitChance;
   const validAff = (aff) => Array.isArray(aff) ? aff.filter((a) => a && RULES.AFFIXES.some((A) => A.id === a.id) && a.v > 0).map((a) => ({ id: a.id, v: a.v | 0 })) : undefined;
   const slotsFrom = (arr, n) => { const out = Array(n).fill(null); if (Array.isArray(arr)) arr.slice(0, n).forEach((s, i) => {
@@ -1204,7 +1228,7 @@
     for (const k of Object.keys(SKILLS)) xp[k] = Math.max(0, +data.xp?.[k] || 0);
     for (const k of Object.keys(GEAR)) gear[k] = clamp(Math.floor(+data.gear?.[k] || 0), 0, GEAR[k].tiers.length - 1);
     let { x, y } = data;
-    if ((data.wv || 0) < 3) ({ x, y } = SPAWN); // rodada 120: o mapa cresceu (biomas maiores, Lumeira em dobro, mar em volta): save de antes volta para a praça
+    if ((data.wv || 0) < 4) ({ x, y } = SPAWN); // rodada 137: mapa 50% mais extenso (wv 4); rodada 120: o mapa cresceu (biomas maiores, Lumeira em dobro, mar em volta): save de antes volta para a praça
     if (!Number.isInteger(x) || !Number.isInteger(y) || !walkable(x, y)) ({ x, y } = SPAWN);
     player = { name: String(data.name || "Aventureiro").slice(0, 14), hero: HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id,
       x, y, fx: x, fy: y, prog: 1, px: x, py: y, dir: "down", dist: 0, moveT: 0, turnT: 0, act: null, cast: null, flash: 0, hitT: 0, deadT: 0, eatT: 0,
@@ -1271,6 +1295,11 @@
     $("lobby").hidden = true; $("game").hidden = false;
     fx.clear(); tickN = 0; tickAcc = 0;
     chatT = 6; bubble = null; tipT = TIP_EVERY; saveT = 0; for (const k of Object.keys(warnT)) delete warnT[k]; // rodada 63: jogo novo não herda os relógios do anterior
+    player.bossNext = { ...((data.bossNext && typeof data.bossNext === "object") ? data.bossNext : {}) }; // rodada 137: chefes voltam 2-4 h depois
+    player.hotbar = Array.isArray(data.hotbar) && data.hotbar.length === 9 ? data.hotbar.slice() : VD.HOTBAR_DEFAULT.slice(); // rodada 137
+    player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
+    hudTab = null; buildSkillbar();
+    for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
     homeSync(); resize(); running = true; last = performance.now(); requestAnimationFrame(loop); // rodada 100: casa conforme o save
     hudDirty = true; save();
   }
@@ -1349,7 +1378,8 @@
   function xpToast(skill, n) { // barra de progresso da habilidade que acabou de ganhar XP
     const xp = player.xp[skill], l = level(xp), a = xpFor(l), b = xpFor(l + 1), pct = l >= MAX_LVL ? 100 : (xp - a) / (b - a) * 100;
     const el = $("xpdrop");
-    el.innerHTML = `<b>${SKILLS[skill]}</b> <span>nv ${l}</span> <em>+${n} xp</em><div class="bar xp"><i style="width:${pct}%"></i></div><small>${l < MAX_LVL ? `${Math.ceil(b - xp)} xp para o nível ${l + 1}` : "nível máximo"}</small>`;
+    const nn = n >= 10 ? Math.round(n) : Math.round(n * 10) / 10; // rodada 137: XP fracionário (0,2 xp)
+    el.innerHTML = `<b>${SKILLS[skill]}</b> <span>nv ${l}</span> <em>+${nn} xp</em><div class="bar xp"><i style="width:${pct}%"></i></div><small>${l < MAX_LVL ? `${Math.ceil(b - xp)} xp para o nível ${l + 1}` : "nível máximo"}</small>`;
     el.classList.add("show"); clearTimeout(xpTimer); xpTimer = setTimeout(() => el.classList.remove("show"), 2400);
   }
   function unlocksAt(skill, l) { // o que o novo nível libera (lido das tabelas de dados)
@@ -1491,9 +1521,9 @@
   }
   // teclado (js/input.js): ações de cada atalho
   const INPUT = ValdoraInput.create({
-    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
+    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; hudTab = null; hudDirty = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
     toggleDlg: (kind) => { if (dlg && dlg.kind === kind) closeDlg(); else openDlg(kind, null); }, petStay: () => petStay(),
-    tab: (t) => { hudTab = t; hudDirty = true; SND.play("ui"); },
+    tab: (t) => openTab(t), hot: (i) => useHot(i),
     eatBest: () => { // come a comida que mais cura
       let best = -1; player.inv.forEach((s, i) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = i; });
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim");
@@ -1611,17 +1641,33 @@
   // barra de habilidades: ícone, tecla, recarga circular e nível exigido
   const skillTip = (S) => `<b style="color:#ffd84a">${esc(S.name)}</b> <small>(tecla ${S.key})</small><div>${esc(S.desc)}</div>`
     + `<small class="tip-hint">Dano ×${S.mult}${S.stun ? ` · atordoa ${S.stun} s` : ""} · recarga ${S.cd} s · libera no Combate ${S.lvl}</small>`;
-  $("skillbar").innerHTML = Object.entries(ACTIVE).map(([id, S]) => `<button data-skill="${id}" data-tip="${esc(skillTip(S))}" aria-label="${esc(S.name)}">
-    ${ASSETS["skill_" + id] ? `<img class="ic" src="${ASSETS["skill_" + id]}" alt="">` : `<span class="ic">${S.icon}</span>`}<b>${S.key}</b><i class="cd"></i><small class="lock">nv ${S.lvl}</small></button>`).join("");
-  $("skillbar").onclick = (e) => { const b = e.target.closest("[data-skill]"); if (b) useSkill(b.dataset.skill); };
+  // rodada 137: 9 espaços (teclas 1 a 9); cada um pode ter comida, poção ou skill (aba Skills do menu)
+  function buildSkillbar() {
+    if (!player || !player.hotbar) return;
+    const A = Object.fromEntries(HOT_ACTIONS().map((a) => [a.id, a]));
+    $("skillbar").innerHTML = player.hotbar.map((id, i) => {
+      const a = id && A[id];
+      if (!a) return `<button data-slot="${i}" class="empty" aria-label="Atalho ${i + 1} vazio" data-tip="${esc(`<b>Atalho ${i + 1}</b><div>Vazio: monte na aba Skills do menu.</div>`)}"><b>${i + 1}</b></button>`;
+      const S = a.skill && ACTIVE[a.skill];
+      const tip = S ? skillTip(S) : `<b style="color:#ffd84a">${esc(a.name)}</b> <small>(tecla ${i + 1})</small><div>${esc(a.desc)}</div>`;
+      return `<button data-slot="${i}" data-act="${esc(id)}" data-tip="${esc(tip)}" aria-label="${esc(a.name)}">${a.icon ? `<img class="ic" src="${a.icon}" alt="">` : ""}<b>${i + 1}</b><i class="cd"></i>${S ? `<small class="lock">nv ${S.lvl}</small>` : `<small class="slot-n"></small>`}</button>`;
+    }).join("");
+  }
+  $("skillbar").onclick = (e) => { const b = e.target.closest("[data-slot]"); if (b) useHot(+b.dataset.slot); };
   function updateSkillbar() {
     for (const b of $("skillbar").children) {
-      const id = b.dataset.skill, S = ACTIVE[id], locked = lv("combate") < S.lvl, cd = player.cd[id];
-      b.classList.toggle("locked", locked); b.classList.toggle("ready", !locked && cd <= 0);
-      const cooling = !locked && cd > 0; // rodada 66: a recarga acabou agora → o botão pulsa e soa um sininho curto
-      if (b.dataset.cool === "1" && !cooling && !locked) { b.classList.remove("justready"); void b.offsetWidth; b.classList.add("justready"); SND.play("ready"); }
-      b.dataset.cool = cooling ? "1" : "";
-      b.style.setProperty("--p", locked ? 1 : cd / S.cd);
+      const id = b.dataset.act; if (!id) continue;
+      if (id.startsWith("skill:")) {
+        const k = id.slice(6), S = ACTIVE[k], locked = lv("combate") < S.lvl, cd = player.cd[k];
+        b.classList.toggle("locked", locked); b.classList.toggle("ready", !locked && cd <= 0);
+        const cooling = !locked && cd > 0; // rodada 66: a recarga acabou agora → o botão pulsa e soa um sininho curto
+        if (b.dataset.cool === "1" && !cooling && !locked) { b.classList.remove("justready"); void b.offsetWidth; b.classList.add("justready"); SND.play("ready"); }
+        b.dataset.cool = cooling ? "1" : "";
+        b.style.setProperty("--p", locked ? 1 : cd / S.cd);
+      } else {
+        const n = id === "eat" ? player.inv.reduce((t, s) => t + (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") ? s.n : 0), 0) : count(id.slice(4));
+        const el = b.querySelector(".slot-n"); if (el && el.textContent !== String(n)) el.textContent = n; b.classList.toggle("locked", !n);
+      }
     }
   }
   const touchUi = matchMedia("(pointer: coarse)").matches;
@@ -1740,7 +1786,7 @@
     if (t.kind === "res" && !ensureTool(RES[r.kind].tool)) { // rodada 104: sem a ferramenta certa na mochila
       const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
     }
-    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS : 2; if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
+    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS * 2 : 2; /* rodada 137: pesca 2x mais lenta por varada */ if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
     else if (t.kind === "fire") { cook(r); player.actT = 3; }
   }
 
@@ -2136,10 +2182,11 @@
     if (m.dead) return;
     if (!opts.dot && !opts.pet) { rawDmg = MSKILL.guard(m, rawDmg); if (rawDmg <= 0) { m.aggro = true; return; } } // rodada 134: desviar, aparar, sumir e reaparecer
     const st = combatStats(), d = m.d, headY = headOf(m), dmg = Math.min(m.hp, rawDmg);
+    if (!m.aggro && !opts.pet) callPack(m); // rodada 137: quem apanha chama os da mesma família que estão perto
     if (opts.dot) { // pulso de sangramento: só número, gotas e XP, sem reação de golpe
       m.hp -= dmg; m.aggro = true; hitSplat(m.px + 0.5, headY + 0.45, dmg, "#ff6b5a");
       if (!RENDER.playOnce("fx_bleed", m.px, (headY + m.py + 1) / 2 - 0.5)) burst(m.px + 0.5, m.py + 0.6, ["#a8202a", "#d8323a"], 4, 1.4);
-      const xp = STYLES[player.style].xp; gainXp("combate", Math.round(dmg * xp.combate)); gainXp("vitalidade", Math.round(dmg * xp.vitalidade));
+      const xp = STYLES[player.style].xp; gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); // rodada 137: 5x menos
       if (m.hp <= 0) killMob(m);
       return;
     }
@@ -2158,7 +2205,7 @@
       if ((d.slam || d.enrage) && !m.enraged && m.hp > 0 && m.hp <= d.hp * ((d.enrage && d.enrage.at) || 0.3)) enrageMob(m);
       burst(m.px + 0.5, m.py + 0.5, [d.color, "#ffffff"], 6, 3);
       const xp = STYLES[player.style].xp;
-      if (!opts.pet) { gainXp("combate", Math.round(dmg * xp.combate)); gainXp("vitalidade", Math.round(dmg * xp.vitalidade)); } // rodada 95: a mordida do filhote não dá XP ao herói
+      if (!opts.pet) { gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); } // rodada 137: XP 5x menor // rodada 95: a mordida do filhote não dá XP ao herói
       if (d.summon && !m.summoned && m.hp > 0 && m.hp <= d.hp / 2) bossSummon(m);
       if (m.hp <= 0) killMob(m);
     }
@@ -2248,9 +2295,22 @@
     corpses.push({ spr: d.spr, scale: d.scale || 1, tint: d.tint, x: m.px, y: m.py, face: m.face, dir8: m.dir8, t: 0, squish: d.squish, dir: Math.sign(m.x - player.x) || (m.face > 0 ? 1 : -1),
       anim: !!DA, life: DA ? DA.frames / DA.fps + 0.6 : 0.8 });
   }
+  // rodada 137: matilha. Os da mesma família (lobos, goblins, mortos-vivos...) a até 4 tiles entram na briga juntos
+  function callPack(m) {
+    const famOf = (x) => (VD.familyOf && VD.familyOf(x.d)) || x.d.spr, fam = famOf(m);
+    for (const o of mobs) {
+      if (o === m || o.dead || o.aggro || o.temp || Math.max(Math.abs(o.x - m.x), Math.abs(o.y - m.y)) > 4) continue;
+      if (famOf(o) !== fam) continue;
+      o.aggro = true; o.atkT = 0; o.returning = false;
+    }
+  }
   function killMob(m) {
     const d = m.d;
     m.dead = true; m.respawnT = d.respawn || 12; m.bleed = null; player.target = null;
+    if (d.respawnMin) { // rodada 137: chefe volta entre 2 e 4 h depois de morrer (sorteado agora; guardado no save, conta com o jogo fechado)
+      const secs = d.respawnMin + rand() * (d.respawnMax - d.respawnMin); m.respawnT = secs;
+      (player.bossNext = player.bossNext || {})[m.type] = Date.now() + secs * 1000;
+    }
     if (d.deathFx) RENDER.playOnce(d.deathFx, m.px, m.py, { foot: true, hold: 4 }); // estilhaços ficam no chão e somem em fade
     const firstKill = !player.kills[m.type];
     player.kills[m.type] = (player.kills[m.type] || 0) + 1; emit("kill:" + m.type);
@@ -2262,7 +2322,8 @@
       showToast(`Eco da Serpente: ${S.streak} semana${S.streak > 1 ? "s" : ""} seguida${S.streak > 1 ? "s" : ""}`, `${extra ? `+${extra} moedas de sequência` : "Volte na próxima semana para o bônus"}${S.bar ? " · barra estelar" : ""}`, "#bff6ff");
     }
     hitStop = Math.max(hitStop, d.boss ? 0.25 : 0.05);
-    if (firstKill) { showToast("Nova criatura no bestiário", `${d.name} · +${d.lvl * 8} xp de Combate`, "#7dff9a"); setTimeout(() => player && gainXp("combate", d.lvl * 8), 0); }
+    const fkXp = Math.round(d.lvl * 8 * RULES.MOB_XP * 10) / 10; // rodada 137: 5x menos
+    if (firstKill) { showToast("Nova criatura no bestiário", `${d.name} · +${fkXp} xp de Combate`, "#7dff9a"); setTimeout(() => player && gainXp("combate", fkXp), 0); }
     pushCorpse(m); MSKILL.onDeath(m); // rodada 134: divide (slimes) ou solta esporos
     burst(m.px + 0.5, m.py + 0.6, [d.color, "#ffffff", "#000000"], d.boss ? 50 : 18, d.boss ? 6 : 4);
     const coins = ri(...d.coins); player.coins += coins; hudDirty = true; SND.play("coin");
@@ -2282,6 +2343,15 @@
         addFloat(m.px + 0.5, m.py - 0.9, `${tag}: ${item}`, c, 2.4, 16);
         burst(m.px + 0.5, m.py + 0.5, [c, "#f1c40f", "#ffffff"], 30, 5); SND.play("rare");
       }
+    }
+    for (const [rar, p, list] of [...VD.mapLoot(d)].reverse()) { // rodada 137: equipamento do mapa (do lendário ao comum; no máximo um por monstro)
+      if (!list.length || rand() >= p) continue;
+      const item = list[Math.floor(rand() * list.length)], it = ITEMS[item], q = it.ammo ? ri(5, 15) : 1;
+      dropItem(item, q, m.x, m.y, { x: m.px, y: m.py - 0.6 }); player.seen["drop:" + m.type + ":" + item] = 1;
+      if (rar !== "comum") { const c = RARITY[rar].color, tag = RARITY[rar].name.toUpperCase();
+        log(`✦ ${tag}! ${d.name} deixou cair ${item}!`, "rare"); player.stats.rares++; addFloat(m.px + 0.5, m.py - 0.9, `${tag}: ${item}`, c, 2.4, 16);
+        burst(m.px + 0.5, m.py + 0.5, [c, "#f1c40f", "#ffffff"], rar === "lendario" ? 50 : 30, 5); SND.play("rare"); }
+      break;
     }
     log(`${d.name} derrotado! +${coins} moedas.${groundItems.some((g) => g.x === m.x && g.y === m.y) ? " Clique nos espólios para pegar." : ""}`, d.boss ? "gold" : "");
     if (d.boss) showToast(`${d.name} derrotado!`, "Os espólios brilham no chão.", "#c79bff");
@@ -2738,12 +2808,21 @@
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
   // ---------- HUD ----------
-  let hudDirty = true, hudTab = "inv";
+  let hudDirty = true, hudTab = null; // rodada 137: o painel abre pelo menu de baixo à direita (fechado no começo)
   for (const b of document.querySelectorAll("#panel .tabs button")) b.onclick = () => { hudTab = b.dataset.tab; hudDirty = true; };
+  function openTab(t) { // rodada 137: o mesmo botão abre e fecha; Config abre as opções no mesmo lugar
+    if (t === "config") { $("options").hidden = !$("options").hidden; hudTab = null; }
+    else { $("options").hidden = true; hudTab = hudTab === t ? null : t; }
+    hudDirty = true; SND.play("ui");
+  }
+  for (const b of document.querySelectorAll("#menubar [data-menu]")) b.onclick = () => openTab(b.dataset.menu);
+  $("panel-close").onclick = () => { hudTab = null; hudDirty = true; };
   $("quest").onclick = () => { hudTab = "journal"; hudDirty = true; };
+  $("tab-book").addEventListener("click", (e) => { const b = e.target.closest("[data-hot]"); if (b) setHot(+b.dataset.slot, b.dataset.hot); });
+  $("tab-coll").addEventListener("click", (e) => { const b = e.target.closest("[data-coll]"); if (b) collRegister(b.dataset.coll, b.dataset.item); });
   // painel lateral (js/hud.js)
   const HUD = ValdoraHud.create({ QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
-    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
+    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96
   function updateHud() { hudDirty = false; HUD.render(); }
@@ -3195,6 +3274,7 @@
   function hurtPlayer(m, dmg, o = {}) {
     if (player.deadT > 0) return;
     if (player.style === "defensivo" && rand() < RULES.BLOCK.chance) { player.blockT = 0.22; dmg = RULES.blockDmg(dmg); addFloat(player.px + 0.5, player.py - 0.75, "aparou!", "#9fd0ff", 0.9, 13); }
+    if (!o.raw) dmg = RULES.armorCut(dmg, combatStats().armor || 0); // rodada 137: a armadura segura parte do dano
     player.hp -= dmg; player.flash = 0.18; player.hitT = 0.3; player.lastHurt = tickN; hudDirty = true;
     hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); SND.play("hurt");
     burst(player.px + 0.5, player.py + 0.5, [o.color || "#c0392b"], o.heavy ? 12 : 5, 2.5); if (o.heavy && SND.opts.shake) shake = Math.max(shake, 0.3);
@@ -3452,10 +3532,10 @@
     if (!player) return;
     try {
       const pos = inCrypt ? overworld.ret : player; // dentro da cripta, salva a entrada
-      const data = ({ v: 2, wv: 3, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
+      const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

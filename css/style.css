@@ -759,3 +759,60 @@ button.link:hover { color: #cfe3ff; }
 /* rodada 117: Alquimia */
 #dlg .row.locked { opacity: .55; } #dlg .row .miss { color: #ff8a7a; }
 #game > #market:not(#canvas):not(#lowhp) { z-index: 95; } /* rodada 117: acima da interface (a regra geral do #game põe tudo em 2) */
+
+/* ---------- rodada 137: menu embaixo à direita no estilo Cambria; os painéis abrem numa janela logo acima ---------- */
+#menubar { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 3px; padding: 4px; background: var(--wood); border: 3px solid var(--edge);
+  box-shadow: 0 0 0 2px #000, 0 4px 0 2px #0006; zoom: var(--ui, 1); }
+#menubar button { width: 50px; height: 50px; padding: 2px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  background: #2a2010; border: 2px solid var(--edge-dim); cursor: pointer; color: var(--text); }
+#menubar button:hover { border-color: var(--gold); }
+#menubar button.on { border-color: var(--gold); background: #3a2c14; box-shadow: inset 0 0 8px #f1c40f55; }
+#menubar img { width: 28px; height: 28px; image-rendering: pixelated; }
+#menubar .mi { font-size: 22px; line-height: 28px; }
+#menubar small { font-size: 9px; line-height: 10px; opacity: .9; }
+#panel { position: absolute; right: 10px; bottom: 82px; width: 320px; max-height: calc(100% - 320px); min-height: 160px; overflow: auto; z-index: 5;
+  background: #1b1610f4; border: 3px solid var(--edge); box-shadow: 0 0 0 2px #000, 0 6px 0 2px #0006; zoom: var(--ui, 1); }
+#panel[hidden] { display: none; }
+#panel .tabs { display: none; }
+#panel .ph { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; background: var(--wood);
+  border-bottom: 2px solid var(--edge); z-index: 1; }
+#panel .ph b { color: var(--gold); font-size: 13px; }
+#panel .ph button { padding: 0 6px; font-size: 13px; background: transparent; border: 0; color: var(--text); cursor: pointer; }
+#options { top: auto !important; left: auto !important; right: 10px; bottom: 82px; }
+#skillbar { gap: 5px; bottom: 10px; }
+#skillbar button { width: 48px; height: 48px; }
+#skillbar img.ic { width: 38px; height: 38px; }
+#skillbar .slot-n { position: absolute; right: 3px; bottom: 1px; font-size: 11px; color: #ffe680; text-shadow: 1px 1px 0 #000; }
+#skillbar .empty { opacity: .45; }
+#tab-book, #tab-coll, #tab-mount, #tab-guild { padding: 6px 8px; font-size: 12px; display: flex; flex-direction: column; gap: 6px; }
+.book-row { display: grid; grid-template-columns: 34px 1fr; gap: 6px; align-items: center; padding: 4px; background: #ffffff08; border: 1px solid var(--edge-dim); }
+.book-row img, .book-row .ic { width: 32px; height: 32px; font-size: 22px; text-align: center; }
+.book-row .slots { grid-column: 1 / -1; display: flex; gap: 2px; }
+.book-row .slots button { flex: 1; padding: 2px 0; font-size: 11px; background: var(--wood-2); border: 1px solid var(--edge-dim); cursor: pointer; color: var(--text); }
+.book-row .slots button.on { border-color: var(--gold); color: var(--gold); background: #3a2c14; }
+.book-row.locked { opacity: .55; }
+.coll { padding: 6px; background: #ffffff08; border: 1px solid var(--edge-dim); }
+.coll.done { border-color: var(--gold); box-shadow: inset 0 0 10px #f1c40f33; }
+.coll h4 { margin: 0 0 4px; color: var(--gold); font-size: 13px; display: flex; justify-content: space-between; }
+.coll .ci { display: grid; grid-template-columns: 26px 1fr auto; gap: 6px; align-items: center; padding: 2px 0; }
+.coll .ci img { width: 24px; height: 24px; image-rendering: pixelated; }
+.coll .ci button { padding: 2px 8px; font-size: 11px; background: #c97a1a; color: #1b0f00; border: 0; cursor: pointer; }
+.coll .ci button:disabled { background: #555; color: #999; cursor: default; }
+.coll .bonus { margin-top: 4px; color: #9fe08a; }
+#tab-livro { padding: 6px 8px; font-size: 12px; display: flex; flex-direction: column; gap: 5px; }
+#tab-livro .lv-tabs { display: flex; gap: 3px; position: sticky; top: 30px; background: #1b1610; padding: 2px 0; z-index: 1; }
+#tab-livro .lv-tabs button, #tab-livro .lv-maps button { flex: 1; padding: 3px 0; font-size: 11px; background: var(--wood-2); border: 1px solid var(--edge-dim); color: var(--text); cursor: pointer; }
+#tab-livro .lv-tabs button.on, #tab-livro .lv-maps button.on { border-color: var(--gold); color: var(--gold); background: #3a2c14; }
+#tab-livro .lv-maps { display: flex; gap: 2px; flex-wrap: wrap; }
+.lv-mob { display: grid; grid-template-columns: 40px 1fr; gap: 6px; padding: 4px; background: #ffffff08; border: 1px solid var(--edge-dim); }
+.lv-mob img { width: 40px; height: 40px; object-fit: contain; image-rendering: pixelated; }
+.lv-mob .dl { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 11px; }
+.lv-mob .dl span b { font-weight: normal; opacity: .75; }
+.lv-item { padding: 3px 4px; border-bottom: 1px solid #ffffff10; font-size: 11px; }
+.lv-item b { font-size: 12px; }
+.soon { text-align: center; padding: 18px 8px; opacity: .8; }
+.soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
+@media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }
+/* rodada 137: tela estreita: a barra de atalhos sobe acima do menu e do registro (não fica escondida atrás deles) */
+@media (max-width: 1300px) { #skillbar { bottom: 76px; left: auto; right: 10px; transform: none; } #panel, #options { bottom: 136px; } }
+@media (max-width: 900px) { #skillbar { bottom: 62px; } #panel, #options { bottom: 116px; } }

@@ -29,7 +29,12 @@ window.ValdoraMobs = (() => {
         if (m.ambush) { // rodada 113: ninja não desiste; some na vila (ou com o herói caído) e, longe ou preso, reaparece perto dele
           if (inTown(player.x, player.y) || player.deadT > 0) { api.ambushVanish(m); return; }
           if (dist > 12 || (m.stuck || 0) >= 6 || (api.elevAt && api.elevAt(m.x, m.y) !== api.elevAt(player.x, player.y))) { api.ambushBlink(m); return; }
-        } else if (Math.hypot(m.x - m.hx, m.y - m.hy) > 11 || inTown(player.x, player.y) || dist > 14) { m.aggro = false; m.windup = 0; if (!m.temp) api.giveUp(m); if (m.temp && !m.dungeon) { if (d.echo) api.echoFade(m); m.dead = true; m.respawnT = 0; } return; } // eventos somem (o eco em névoa); masmorra não
+        } else if (Math.hypot(m.x - m.hx, m.y - m.hy) > 16.5 || inTown(player.x, player.y) || dist > 21) { // rodada 137: persegue 50% mais longe
+          // herói entrou na vila ou fugiu: o monstro NÃO some; volta andando para o ponto dele (e no caminho pode pegar outro herói)
+          m.aggro = false; m.windup = 0; m.returning = true; m.sprint = false; api.giveUp(m);
+          if (m.temp && !m.dungeon && d.echo) { api.echoFade(m); m.dead = true; m.respawnT = 0; } // só o eco do chefe se desfaz em névoa
+          return;
+        }
         const spd = m.enraged ? Math.max(2, d.speed - 2) : d.speed;
         if (m.windup > 0) { // chefe preparando golpe especial
           if (--m.windup === 0) {
@@ -47,6 +52,7 @@ window.ValdoraMobs = (() => {
         if (api.skills && api.skills.think(m, near)) return; // rodada 133: salto, cerco (js/mobskills.js)
         engage(m, near, spd);
       } else if (m.prog >= 1 && Math.abs(m.x - m.hx) + Math.abs(m.y - m.hy) > 4) mobStepToward(m, m.hx, m.hy); // volta para casa
+      else if (m.returning) m.returning = false; // rodada 137: chegou de volta ao ponto
       else if (m.prog >= 1 && rand() < 0.12) {
         const [dx, dy] = DIRS8V[Math.floor(rand() * 8)]; // rodada 105: passeia também na diagonal
         if (Math.hypot(m.x + dx - m.hx, m.y + dy - m.hy) < 5) mobMove(m, m.x + dx, m.y + dy);
@@ -127,7 +133,7 @@ window.ValdoraMobs = (() => {
       const first = Math.abs(tx - m.x) >= Math.abs(ty - m.y) ? [[dx, 0], [0, dy]] : [[0, dy], [dx, 0]];
       if (dx && dy) first.unshift([dx, dy]); // rodada 105: vai direto na diagonal quando dá
       for (const [ax, ay] of first) if ((ax || ay) && mobMove(m, m.x + ax, m.y + ay)) { m.stuck = 0; return; }
-      if (m.aggro) { const st = pathStep(m, tx, ty); if (st && mobMove(m, st[0], st[1])) { m.stuck = 0; return; } } // rodada 136: dá a volta
+      if (m.aggro || m.returning) { const st = pathStep(m, tx, ty); if (st && mobMove(m, st[0], st[1])) { m.stuck = 0; return; } } // rodada 136: dá a volta (137: também voltando)
       // rodada 45: preso na diagonal (os dois tiles do meio bloqueados): tenta um passo de lado; depois de ~5 s desiste e volta para casa
       m.stuck = (m.stuck || 0) + 1;
       if (m.stuck >= 3) { const side = dx && dy ? [[-dx, 0], [0, -dy]] : dx ? [[0, 1], [0, -1]] : [[1, 0], [-1, 0]]; for (const [ax, ay] of side.sort(() => rand() - 0.5)) if (mobMove(m, m.x + ax, m.y + ay)) return; }

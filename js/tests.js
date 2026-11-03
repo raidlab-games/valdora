@@ -116,7 +116,7 @@
     for (const k of ["capacete", "calca", "botas", "capa"]) {
       const its = Object.entries(ITEMS).filter(([, it]) => it.slot === k);
       if (!["comum", "raro", "epico"].every((r) => its.some(([, it]) => it.rarity === r))) miss.push(k + " (raridades)");
-      for (const [n, it] of its) { if (!ASSETS[it.icon]) miss.push(n + " (ícone)"); if (!VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) miss.push(n + " (receita ou loja)"); }
+      for (const [n, it] of its) { if (!ASSETS[it.icon]) miss.push(n + " (ícone)"); if (!it.mapGear && !VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) miss.push(n + " (receita ou loja)"); } /* rodada 137: equipamento do mapa só cai de monstro */
     }
     for (const [n, r] of Object.entries(VD.CRAFT)) for (const m of Object.keys(r.mats)) if (!ITEMS[m]) miss.push(n + " → " + m);
     if (!VD.EQUIP_SLOTS.municao || !VD.EQUIP_SLOTS.municao.sec) miss.push("secundária (por classe)"); // rodada 105
@@ -170,7 +170,7 @@
   test("bônus de item soma base + afixos", () => { const b = RU.itemBonus({ name: "Anel do caçador", aff: [{ id: "feroz", v: 2 }, { id: "vigoroso", v: 6 }] }, ITEMS); return (b.dmg === 4 && b.acc === 1 && b.hp === 6) || JSON.stringify(b); });
   test("atributos de combate: acessórios e obra-prima entram na conta", () => {
     const st = RU.combatStats({ combate: 10, vitalidade: 10, weapon: { acc: 3, dmg: 1 }, armor: { def: 3 }, style: { acc: 4, dmg: 0, def: 0 }, buffs: [], accessories: [{ acc: 1, dmg: 2, def: 0, hp: 5 }], master: { espada: 1 } });
-    return (st.acc === 19 && st.maxHit === 2 + 2 + 1 + 2 + 1 && st.def === 13 && st.maxHp === 18 + 20 + 5) || JSON.stringify(st);
+    return (st.acc === 19 && st.maxHit === 2 + 2 + 1 + 2 + 1 && st.def === 5 + 6 && st.maxHp === 18 + 20 + 5) || JSON.stringify(st); // rodada 137: def = vit/2 + armadura x2
   });
   test("chance de coleta respeita os limites (10% a 95%)", () => RU.gatherChance(1, 30, 0) === 0.1 && RU.gatherChance(40, 1, 3, 1) === 0.95 || "limites errados");
   // ---------- rodada 7: interface, missões, habilidades e cenário animado ----------
@@ -1016,10 +1016,10 @@
     for (const h of HEROES) { if (!VD.SEC[h.sec]) { r.push(h.id + " sem secundária"); continue; }
       const its = Object.entries(ITEMS).filter(([, it]) => it.slot === "municao" && it.sec === h.sec);
       if (!["comum", "raro", "epico"].every((q) => its.some(([, it]) => it.rarity === q))) r.push(h.sec + " (raridades)");
-      for (const [n, it] of its) { if (!ASSETS[it.icon]) r.push(n + " (ícone)"); if (!VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) r.push(n + " (receita ou loja)"); } }
+      for (const [n, it] of its) { if (!ASSETS[it.icon]) r.push(n + " (ícone)"); if (!it.mapGear && !VD.CRAFT[n] && !(it.buy && VD.SHOP_ITEMS.includes(n))) r.push(n + " (receita ou loja)"); } } /* rodada 137 */
     if (!Object.values(ITEMS).some((it) => it.sec === "orbe" && it.look && it.look[0] === "book")) r.push("livros do Místico");
     const br = Object.entries(ITEMS).filter(([, it]) => it.slot === "bracelete");
-    if (!VD.EQUIP_SLOTS.bracelete || br.length < 3 || br.some(([n, it]) => !ASSETS[it.icon] || !(VD.CRAFT[n] || it.buy))) r.push("bracelete");
+    if (!VD.EQUIP_SLOTS.bracelete || br.length < 3 || br.some(([n, it]) => !ASSETS[it.icon] || !(VD.CRAFT[n] || it.buy || it.mapGear))) r.push("bracelete"); /* rodada 137 */
     for (const t of VD.GEAR.espada.tiers.slice(1)) { const it = ITEMS[t.two];
       if (!it || !it.twoH || it.onlyHero !== "hero_1" || !(it.bonus.dmg > 0) || !ASSETS[it.icon] || !t.twoForge || (it.look || [])[0] !== "sword2") r.push("montante " + t.two); }
     for (const L of ["shield", "orb", "book", "sword2"]) if (!ValdoraOutfit.ORDER.includes(L)) r.push("camada " + L);

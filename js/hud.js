@@ -66,6 +66,9 @@ window.ValdoraHud = (() => {
       if (dung) return `<span class="resp dim" title="A masmorra é refeita a cada visita">${img}a cada visita</span>`;
       return `<span class="resp none" title="Só aparece uma vez (evento ou missão)">não renasce</span>`;
     };
+    const LV = { view: "mobs", map: "" }; // rodada 137: página do Livro
+    document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("#tab-livro [data-lv], #tab-livro [data-lvmap]"); if (!b) return;
+      if (b.dataset.lv) LV.view = b.dataset.lv; if (b.dataset.lvmap != null) LV.map = b.dataset.lvmap; $("tab-livro").dataset.k = ""; api.dirty && api.dirty(); });
     let invFocus = null; // último espaço da mochila com foco do teclado (rodada 41)
     document.addEventListener("focusin", (e) => { const el = e.target; if (el && el.closest && el.closest("#tab-inv") && el.dataset.i != null) invFocus = el.dataset.i; });
     function render() {
@@ -101,7 +104,60 @@ window.ValdoraHud = (() => {
       $("quest").hidden = !s && !qs.length;
       $("quest").innerHTML = (s ? `${ASSETS.icon_tutorial_step ? `<img class="qicon" src="${ASSETS.icon_tutorial_step}" alt="">` : ""}<small>Tarefa ${player.tut.step + 1}/${TUTORIAL.length}</small> ${esc(s.text)} <b>${player.tut.n}/${s.n}</b>` : "") + qs.map((x) => `<div class="qline">${x}</div>`).join("");
       for (const b of document.querySelectorAll("#panel .tabs button")) b.classList.toggle("on", b.dataset.tab === hudTab);
-      for (const t of ["inv", "skills", "combat", "journal"]) $("tab-" + t).hidden = t !== hudTab;
+      for (const t of ["inv", "skills", "combat", "journal", "book", "coll", "mount", "guild", "livro"]) $("tab-" + t).hidden = t !== hudTab;
+      // rodada 137: o painel é uma janela que abre pelo menu de baixo à direita (estilo Cambria)
+      const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Diário", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros" };
+      $("panel").hidden = !hudTab; $("panel-title").textContent = TITLES[hudTab] || "";
+      for (const b of document.querySelectorAll("#menubar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
+      if (hudTab === "book") {
+        const acts = api.hotActions(), hb = player.hotbar || [];
+        $("tab-book").innerHTML = `<small class="desc">Escolha em qual atalho (1 a 9) cada ação fica. As teclas Q, E e R continuam usando as skills.</small>` + acts.map((a) => {
+          const locked = a.lvl && level(player.xp.combate) < a.lvl;
+          return `<div class="book-row${locked ? " locked" : ""}">${a.icon ? `<img src="${a.icon}" alt="">` : `<span class="ic">•</span>`}<div><b>${esc(a.name)}</b>${a.lvl ? ` <small>Combate ${a.lvl}</small>` : ""}<br><small>${esc(a.desc)}</small></div>
+            <div class="slots">${hb.map((_, i) => `<button data-hot="${esc(a.id)}" data-slot="${i}" class="${hb[i] === a.id ? "on" : ""}" title="Pôr no atalho ${i + 1}">${i + 1}</button>`).join("")}</div></div>`;
+        }).join("");
+      } else if (hudTab === "coll") {
+        const C = VD.COLLECTIONS || [], st = player.coll || {}, cnt = (n) => player.inv.reduce((t, s) => t + (s && s.name === n ? s.n : 0), 0);
+        const done = C.filter((c) => Object.entries(c.items).every(([n, q]) => (st[c.id] || {})[n] >= q)).length;
+        $("tab-coll").innerHTML = `<small class="desc">Registre itens do bestiário (o item é guardado na coleção). Completou, o bônus vale para sempre. ${done}/${C.length} completas.</small>` + C.map((c) => {
+          const got = st[c.id] || {}, full = Object.entries(c.items).every(([n, q]) => (got[n] || 0) >= q);
+          return `<div class="coll${full ? " done" : ""}"><h4>${esc(c.name)}<small>${full ? "✔ completa" : ""}</small></h4>${Object.entries(c.items).map(([n, q]) => {
+            const g = Math.min(q, got[n] || 0), have = cnt(n), ic = ASSETS[(ITEMS[n] || {}).icon];
+            return `<div class="ci">${ic ? `<img src="${ic}" alt="">` : "<span></span>"}<span>${esc(n)} <small>${g}/${q}${g < q ? ` · na mochila: ${have}` : ""}</small></span>
+              <button data-coll="${c.id}" data-item="${esc(n)}" ${g >= q || !have ? "disabled" : ""}>Registrar</button></div>`; }).join("")}
+            <div class="bonus">Bônus: ${esc(bonusText(c.bonus))}</div></div>`;
+        }).join("");
+      } else if (hudTab === "livro" && ($("tab-livro").dataset.k !== (LV.view + LV.map))) { // rodada 137: o livro só é refeito quando muda a página
+        $("tab-livro").dataset.k = LV.view + LV.map;
+        const pct = (p) => p >= 1 ? "sempre" : p >= 0.1 ? Math.round(p * 100) + "%" : p >= 0.01 ? (Math.round(p * 1000) / 10).toString().replace(".", ",") + "%" : (Math.round(p * 10000) / 100).toString().replace(".", ",") + "%";
+        const col = (n) => ITEMS[n] && ITEMS[n].rarity ? RARITY[ITEMS[n].rarity].color : "#e8e0c8";
+        const maps = VD.MAP_GEAR || [], mapOf = (d) => maps.find((M) => d.lvl >= M.lv[0] && d.lvl <= M.lv[1]) || maps[0];
+        const list = Object.entries(MOBS).filter(([, d]) => !d.summon && !d.temp && !d.echo && (!LV.map || mapOf(d).n === +LV.map)).sort((a, b) => a[1].lvl - b[1].lvl);
+        const head = `<div class="lv-tabs"><button data-lv="mobs" class="${LV.view === "mobs" ? "on" : ""}">Monstros</button><button data-lv="items" class="${LV.view === "items" ? "on" : ""}">Itens e recursos</button></div>
+          <div class="lv-maps"><button data-lvmap="" class="${!LV.map ? "on" : ""}">Todos</button>${maps.map((M) => `<button data-lvmap="${M.n}" class="${+LV.map === M.n ? "on" : ""}">${esc(M.tag.replace(/^d[oa]s? /, ""))}</button>`).join("")}</div>`;
+        if (LV.view === "mobs") {
+          $("tab-livro").innerHTML = head + list.map(([k, d]) => {
+            const loot = (VD.mapLoot ? VD.mapLoot(d) : []).map(([rar, p, items]) => `<span title="${esc(items.join(", "))}" style="color:${RARITY[rar].color}">Equip. ${esc(RARITY[rar].name.toLowerCase())} <b>${pct(p)}</b></span>`).join("");
+            const drops = (d.drops || []).map(([n, p, a = 1, b = a]) => `<span style="color:${col(n)}">${esc(n)}${b > 1 ? ` ${a}-${b}` : ""} <b>${pct(p)}</b></span>`).join("");
+            return `<div class="lv-mob"><img src="${ASSETS[d.spr] || ""}" alt="" ${d.tint ? `style="filter:${d.tint}"` : ""}><div><b>${esc(d.name)}</b> <small>nível ${d.lvl}${d.boss ? " · chefe" : ""}</small><br><small>${esc(d.where || "")}</small></div>
+              <div class="dl">${drops}${loot}</div></div>`;
+          }).join("");
+        } else {
+          const by = {}; // item -> [[monstro, chance]]
+          for (const [, d] of list) {
+            for (const [n, p] of d.drops || []) (by[n] = by[n] || []).push([d.name, p]);
+            for (const [, p, items] of VD.mapLoot ? VD.mapLoot(d) : []) for (const n of items) (by[n] = by[n] || []).push([d.name, p / items.length]);
+          }
+          $("tab-livro").innerHTML = head + Object.keys(by).sort((a, b) => (ITEMS[a].price || 0) - (ITEMS[b].price || 0)).map((n) => {
+            const src = by[n].sort((a, b) => b[1] - a[1]), ic = ASSETS[(ITEMS[n] || {}).icon];
+            return `<div class="lv-item">${ic ? `<img class="qicon" src="${ic}" alt="" ${ITEMS[n].filter ? `style="filter:${ITEMS[n].filter}"` : ""}>` : ""}<b style="color:${col(n)}">${esc(n)}</b> <small>${src.slice(0, 6).map(([m, p]) => `${esc(m)} ${pct(p)}`).join(" · ")}${src.length > 6 ? ` · +${src.length - 6}` : ""}</small></div>`;
+          }).join("");
+        }
+      } else if (hudTab === "mount") {
+        $("tab-mount").innerHTML = `<div class="soon"><span class="big">🐎</span><b>Montarias</b><br><small>Em breve: montarias para atravessar o continente mais rápido.</small></div>`;
+      } else if (hudTab === "guild") {
+        $("tab-guild").innerHTML = `<div class="soon"><span class="big">⚑</span><b>Guildas</b><br><small>Em breve: crie ou entre numa guilda com outros aventureiros.</small></div>`;
+      }
       if (hudTab === "inv") {
         const fi = document.activeElement && document.activeElement.closest && document.activeElement.closest("#tab-inv") ? document.activeElement.dataset.i : null; // rodada 40: mantém o foco do teclado
         // rodada 41: só um espaço entra no Tab (o último em foco, ou o primeiro com item); as setas andam entre eles

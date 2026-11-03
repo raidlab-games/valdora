@@ -4,7 +4,8 @@ window.VD = (() => {
   const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia" }; // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
 
   // Raridade dos acessórios (cor usada no inventário, no chão e nos textos)
-  const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" } };
+  const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" },
+    lendario: { name: "Lendário", color: "#ff9a2a" } }; // rodada 137: lendário
 
   // price = quanto o Bento paga; buy = preço de compra (se ele vende); heal = vida ao comer
   // filter = filtro CSS opcional aplicado ao ícone (reaproveita uma arte com outra cor)
@@ -22,7 +23,14 @@ window.VD = (() => {
     "Lambari cru": { icon: "item_lambari", price: 2, cook: "Lambari assado", cookLvl: 1, cookXp: 6 },
     "Tucunaré cru": { icon: "item_tucunare", price: 5, cook: "Tucunaré assado", cookLvl: 10, cookXp: 16 },
     "Lambari assado": { icon: "item_lambari_cooked", price: 4, heal: 5 },
-    "Tucunaré assado": { icon: "item_tucunare_cooked", price: 11, heal: 15 }, // rodada 89: 12 -> 15 (empatava com a carne assada; chefes medidos de novo)
+    "Tucunaré assado": { icon: "item_tucunare_cooked", price: 11, heal: 15 },
+    // rodada 137: um peixe novo por bioma (os anteriores também saem lá, e o mais fraco sai mais)
+    "Truta da serra crua": { icon: "item_tucunare", filter: "hue-rotate(160deg) saturate(1.2)", price: 9, cook: "Truta da serra assada", cookLvl: 22, cookXp: 28 },
+    "Truta da serra assada": { icon: "item_tucunare_cooked", filter: "hue-rotate(160deg) saturate(1.2)", price: 20, heal: 26 },
+    "Bagre do oásis cru": { icon: "item_tucunare", filter: "sepia(0.8) saturate(1.8)", price: 15, cook: "Bagre do oásis assado", cookLvl: 36, cookXp: 42 },
+    "Bagre do oásis assado": { icon: "item_tucunare_cooked", filter: "sepia(0.8) saturate(1.8)", price: 32, heal: 40 },
+    "Salmão glacial cru": { icon: "item_tucunare", filter: "hue-rotate(-30deg) saturate(1.6) brightness(1.1)", price: 24, cook: "Salmão glacial assado", cookLvl: 50, cookXp: 60 },
+    "Salmão glacial assado": { icon: "item_tucunare_cooked", filter: "hue-rotate(-30deg) saturate(1.6) brightness(1.1)", price: 50, heal: 58 }, // rodada 89: 12 -> 15 (empatava com a carne assada; chefes medidos de novo)
     "Peixe queimado": { icon: "item_burnt", price: 1 }, // rodada 31: o Bento compra (antes ficava acumulando na mochila)
     "Poção de vida": { icon: "item_potion", price: 7, heal: 18, buy: 15 },
     "Poção de força": { icon: "item_potion_strength", price: 15, buy: 40, buff: "forca" },
@@ -793,6 +801,7 @@ window.VD = (() => {
     pharaoh_scarab: minion("mob_scarab", "Escaravelho do Faraó", 140, { color: "#40a0a0", skills: { poison: { p: 0.4 } } }),
   });
   // ----- Floresta Sombria (nível 32-70) -----
+  const CAMPO_MOBS = new Set(Object.keys(MOBS)); // rodada 137: o mapa 1 (Campo, ruínas, cripta) fica com o alcance de ataque de antes
   const FS = "Floresta Sombria";
   Object.assign(MOBS, {
     shade_wolf: nm("mob_wolf_shade", "Lobo das sombras", 32, FS, { drops: [["Pele de lobo", 0.5], ...DW], color: "#5a4878", skills: { flank: true, bleed: { p: 0.25 } } }),
@@ -918,6 +927,18 @@ window.VD = (() => {
     echo_serpent: { poison: { p: 0.45 }, charge: { range: 5, cd: 9 } }, boss_golem: { charge: { range: 4, cd: 10 }, block: { p: 0.2 } }, echo_golem: { charge: { range: 4, cd: 9 }, block: { p: 0.25 } },
     boss: { block: { p: 0.2 }, charge: { range: 4, cd: 10 } }, echo_ruins: { block: { p: 0.25 }, charge: { range: 4, cd: 9 }, blink: { cd: 10 } }, ninja: { blink: { cd: 7 }, bleed: { p: 0.35 } },
   })) if (MOBS[k]) MOBS[k].skills = Object.assign({}, MOBS[k].skills, s);
+  // ----- rodada 137: ajustes de combate de todos os monstros -----
+  for (const [k, d] of Object.entries(MOBS)) {
+    d.maxHit = Math.ceil(d.maxHit * 1.25); d.atk = Math.ceil(d.atk * 1.1);                  // batem um pouco mais forte e acertam mais
+    if (d.aggro && !CAMPO_MOBS.has(k)) d.aggro = Math.round(d.aggro * 1.5);               // percebem o herói 50% mais longe (fora do mapa 1)
+    if (d.boss) { d.respawnMin = 2 * 3600; d.respawnMax = 4 * 3600; }                        // chefes: 2 a 4 h (sorteado a cada morte)
+    for (const S of Object.values(d.skills || {})) {                                         // skills 10% mais rápidas e com alcance maior
+      if (!S || typeof S !== "object") continue;
+      if (S.cd) S.cd = Math.round(S.cd * 0.9 * 10) / 10;
+      if (S.range) S.range += 1;
+      if (S.r) S.r = Math.round(S.r * 1.2 * 10) / 10;
+    }
+  }
 
   const tool = (n, worn, first) => [
     { name: `${n} ${worn}`, bonus: 0 },
@@ -1266,6 +1287,51 @@ window.VD = (() => {
     if (tw > 0) for (const name of [T.name, T.bow, T.two]) if (name) add([name, d.boss ? 0.08 : 1 / 320]);
     if (ta > 0) add([GEAR.armadura.tiers[ta].name, d.boss ? 0.08 : 1 / 320]);
   }
+  // ---------- rodada 137: equipamento de cada mapa, do comum ao lendário, para todas as classes ----------
+  // 5 mapas x 4 raridades x 11 peças (as do corpo e as secundárias: escudo do Guerreiro, flechas do Arqueiro, orbe e tomo do
+  // Místico). Quanto mais rara, mais forte e mais difícil de cair. Os monstros mais fortes do mapa derrubam mais; slimes, só o comum.
+  const MAP_GEAR = [
+    { n: 1, tag: "do Campo", lv: [1, 30], k: 1, filter: "", col: "#c8a878" },
+    { n: 2, tag: "da Mata Sombria", lv: [31, 65], k: 2, filter: "hue-rotate(250deg) saturate(1.4)", col: "#8a6ab8" },
+    { n: 3, tag: "das Montanhas", lv: [66, 101], k: 3.2, filter: "saturate(0.35) brightness(1.15)", col: "#b8bcc8" },
+    { n: 4, tag: "do Deserto", lv: [102, 140], k: 4.6, filter: "sepia(0.8) saturate(2) hue-rotate(-10deg)", col: "#e8b860" },
+    { n: 5, tag: "do Gelo", lv: [141, 999], k: 6.2, filter: "hue-rotate(160deg) saturate(1.3) brightness(1.2)", col: "#9ad8f0" },
+  ];
+  const MAP_RAR = [["comum", 1, "", 1 / 70], ["raro", 1.4, " (Raro)", 1 / 320], ["epico", 1.9, " (Épico)", 1 / 1500], ["lendario", 2.6, " (Lendário)", 1 / 7000]];
+  const MAP_PIECES = [ // [espaço, nome, ícone, bônus base, extra, camada no herói]
+    ["capacete", "Elmo", "item_helm_iron", { def: 2 }, {}, "helm"], ["calca", "Grevas", "item_pants_iron", { def: 2 }, {}, "greaves"],
+    ["botas", "Botas", "item_boots_travel", { def: 1, acc: 1 }, {}, "boots"], ["capa", "Capa", "item_cape_hunter", { acc: 1, dmg: 1 }, {}, "cape"],
+    ["anel", "Anel", "item_ring_hunter", { acc: 2, dmg: 1 }, {}, null], ["amuleto", "Amuleto", "item_amulet_moss", { def: 2, acc: 1 }, {}, null],
+    ["bracelete", "Bracelete", "item_bracelet_iron", { def: 1, dmg: 1 }, {}, null],
+    ["municao", "Escudo", "item_shield_iron", { def: 3 }, { sec: "escudo" }, "shield"], ["municao", "Orbe", "item_orb_amber", { acc: 2, dmg: 1 }, { sec: "orbe" }, "orb"],
+    ["municao", "Tomo", "item_book_amber", { acc: 1, def: 2 }, { sec: "orbe" }, "book"], ["municao", "Flechas", "item_arrows_iron", { dmg: 1 }, { sec: "flecha", ammo: true }, null],
+  ];
+  const MAP_LOOT = {}; // mapa -> raridade -> [nomes]
+  for (const M of MAP_GEAR) {
+    MAP_LOOT[M.n] = {};
+    MAP_RAR.forEach(([rar, mult, suf], ri) => {
+      MAP_LOOT[M.n][rar] = [];
+      for (const [slot, noun, icon, base, extra, layer] of MAP_PIECES) {
+        const name = `${noun} ${M.tag}${suf}`;
+        const bonus = Object.fromEntries(Object.entries(base).map(([b, v]) => [b, Math.max(1, Math.round(v * M.k * mult))]));
+        ITEMS[name] = { icon, filter: M.filter, slot, rarity: rar, bonus, need: Math.max(1, M.lv[0] + ri * 4), price: Math.round((extra.ammo ? 2 : 24) * M.k * mult * mult),
+          ...extra, ...(layer ? { look: [layer, M.col] } : {}), mapGear: M.n };
+        MAP_LOOT[M.n][rar].push(name);
+      }
+    });
+  }
+  const mapOfLvl = (lvl) => (MAP_GEAR.find((M) => lvl >= M.lv[0] && lvl <= M.lv[1]) || MAP_GEAR[0]);
+  // chances do equipamento do mapa para um monstro: [raridade, chance, itens]
+  function mapLoot(d) {
+    if (!d || d.summon || d.echo || d.temp) return [];
+    const M = mapOfLvl(d.lvl || 1), span = Math.max(1, Math.min(M.lv[1], 200) - M.lv[0]);
+    const f = (0.5 + 1.5 * Math.max(0, Math.min(1, ((d.lvl || 1) - M.lv[0]) / span))) * (d.boss ? 12 : d.mini ? 4 : 1); // mais forte, mais chance
+    const slime = /slime/.test(d.spr || "");
+    return MAP_RAR.filter(([rar]) => !slime || rar === "comum").map(([rar, , , p]) => [rar, p * f * (slime ? 0.5 : 1), MAP_LOOT[M.n][rar]]);
+  }
+  // rodada 137: peixe de cada bioma (o 1º é o do Campo); no bioma N saem os N primeiros, o mais fraco com mais chance
+  const FISH_BY_BIOME = [{ item: "Lambari cru", req: 1, xp: 6 }, { item: "Tucunaré cru", req: 10, xp: 12 }, { item: "Truta da serra crua", req: 22, xp: 20 },
+    { item: "Bagre do oásis cru", req: 36, xp: 30 }, { item: "Salmão glacial cru", req: 50, xp: 44 }];
   const REGION_DROP = (reg, d) => { const n = regionItem(reg); return n ? [n, d.boss ? 1 : d.mini ? 0.5 : 0.12, 1, d.boss ? 4 : 1] : null; };
 
   // Peso (kg). Pesa tudo o que vai na mochila e no corpo; o cofre não. Carga = 50 kg + 0,4 por nível de Vitalidade + a mochila.
@@ -1403,6 +1469,19 @@ window.VD = (() => {
     "Poção de vida da aurora": { mats: { "Flor-de-gelo": 2, "Flor-aurora": 1 }, lvl: 150, xp: 650 },
   };
 
-  return { POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  // rodada 137: Coleção (estilo Cabal). Registra itens do bestiário (o item é consumido) e, completando a coleção, ganha status
+  // para sempre. bonus no formato dos acessórios: acc, dmg, def, hp.
+  const COLLECTIONS = [
+    { id: "campo", name: "Coleção do Campo", items: { "Gosma": 20, "Carne de caça": 10, "Cobre": 10 }, bonus: { hp: 10 } },
+    { id: "bosque", name: "Feras do Bosque", items: { "Carne de caça": 20, "Galhada de cervo": 5, "Pele de urso": 3 }, bonus: { acc: 2 } },
+    { id: "sombra", name: "Relíquias da Mata Sombria", items: { "Obsidiana": 10, "Cogumelo-sombra": 10, "Madeira de ébano": 3 }, bonus: { def: 3 } },
+    { id: "montanha", name: "Tesouros das Montanhas", items: { "Mitril": 10, "Musgo-de-rocha": 10, "Ferro": 20 }, bonus: { dmg: 1, hp: 6 } },
+    { id: "deserto", name: "Areias do Deserto Rubro", items: { "Ouro solar": 10, "Rosa-do-deserto": 10 }, bonus: { acc: 3 } },
+    { id: "gelo", name: "Gelo Eterno", items: { "Gelo eterno": 10, "Flor-de-gelo": 10, "Barra glacial": 2 }, bonus: { def: 4, hp: 10 } },
+    { id: "cacador", name: "Grande Caçador", items: { "Pele de urso": 10, "Galhada de cervo": 10, "Barra de obsidiana": 2 }, bonus: { dmg: 2 } },
+  ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
+  // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
+  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", null, null];
+  return { MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

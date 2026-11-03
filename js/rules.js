@@ -5,7 +5,12 @@ window.ValdoraRules = (() => {
   // curva de XP: nível 10 ≈ 3,6 mil, 20 ≈ 23,6 mil, 30 ≈ 68 mil, 40 ≈ 142 mil
   const xpFor = (l) => l <= 40 ? Math.round(15 * Math.pow(l - 1, 2.5)) : Math.round(15 * Math.pow(39, 2.5) + 500 * Math.pow(l - 40, 1.85)); // até 40, a curva de sempre
   const level = (xp) => { let l = 1; while (l < MAX_LVL && xp >= xpFor(l + 1)) l++; return l; };
-  const hitChance = (acc, def) => Math.max(0.1, Math.min(0.95, 0.6 + (acc - def) * 0.03));
+  // rodada 137: acerto pela diferença entre acerto e defesa. Muito acima da defesa do alvo: acerta sempre (um monstro do gelo
+  // não erra um herói pelado de nível baixo); muito abaixo: 10%. Mesma força: 80%.
+  const hitChance = (acc, def) => Math.max(0.1, Math.min(1, 0.8 + (acc - def) * 0.015));
+  // rodada 137: a armadura também segura parte do dano (até ~40% com a melhor armadura e bônus)
+  const armorCut = (dmg, armorDef) => Math.max(1, Math.round(dmg * (1 - Math.min(0.45, armorDef * 2 / (armorDef * 2 + 90)))));
+  const MOB_XP = 0.2; // rodada 137: XP de monstro 5x menor (1 xp -> 0,2 xp)
   const critChance = (style) => (style === "agressivo" ? 0.1 : style === "preciso" ? 0.14 : 0.06); // rodada 10: Preciso 14% (medido com o robô: com o acerto no teto, só o crítico compensa)
   // passivas (rodada 9): Preciso tem críticos mais fortes; Agressivo faz sangrar; Defensivo apara golpes
   const critBonus = (style) => (style === "preciso" ? 1 : 0.5);      // bônus do crítico = até (fração × dano máx.)
@@ -51,7 +56,8 @@ window.ValdoraRules = (() => {
     return {
       acc: combate + weapon.acc + style.acc + b.acc,
       maxHit: 2 + Math.floor(combate / 4) + weapon.dmg + style.dmg + b.dmg,
-      def: vitalidade + armor.def + style.def + b.def,
+      def: Math.floor(vitalidade / 2) + armor.def * 2 + style.def + b.def, // rodada 137: a armadura pesa mais que o nível (pelado = pouca defesa)
+      armor: armor.def + b.def,
       maxHp: 18 + 2 * vitalidade + b.hp,
     };
   }
@@ -79,5 +85,5 @@ window.ValdoraRules = (() => {
   const talkerNear = (npcs, p, r = 6) => npcs.some((n) => n && TALKERS.includes(n.type) && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= r);
   // rodada 89: XP de Combate das recompensas (missões, caçadas, caçada do dia) leva junto Vitalidade na proporção do estilo, até 1:1
   const vitShare = (style, n) => Math.round(n * Math.min(1, style.xp.vitalidade / style.xp.combate));
-  return { PET, petBond, petStats, petStage, petMaxHp, petDef, petName, talkerNear, vitShare, mulberry32, burnChance, MAX_LVL, xpFor, level, hitChance, critChance, critBonus, BLEED, BLOCK, bleedDmg, blockDmg, AFFIXES, rollAffixes, itemBonus, affixNames, bonusText, combatStats, gatherChance };
+  return { PET, petBond, petStats, petStage, petMaxHp, petDef, petName, talkerNear, vitShare, mulberry32, burnChance, MAX_LVL, xpFor, level, hitChance, armorCut, MOB_XP, critChance, critBonus, BLEED, BLOCK, bleedDmg, blockDmg, AFFIXES, rollAffixes, itemBonus, affixNames, bonusText, combatStats, gatherChance };
 })();

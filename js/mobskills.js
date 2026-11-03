@@ -59,6 +59,8 @@ window.ValdoraMobSkills = (() => {
       if (fromTick && m.cds) for (const k in m.cds) if (m.cds[k] > 0) m.cds[k]--;
       if (m.prog < 1) return false;
       const dd = cheb(m, p);
+      // rodada 137: com pouca vida, quem cura cuida de si antes de tudo
+      if (S.heal && ready(m, "heal") && m.hp < m.d.hp * 0.5) { const t = healTarget(m, S.heal); if (t) { useCd(m, "heal", S.heal.cd || 8); doHeal(m, t, S.heal); return true; } }
       if (S.summon && ready(m, "summon") && api.temps(m) < (S.summon.max || 3) && dd <= 8) { useCd(m, "summon", S.summon.cd || 14); startSummon(m); return true; }
       if (S.heal && ready(m, "heal")) { const t = healTarget(m, S.heal); if (t) { useCd(m, "heal", S.heal.cd || 8); doHeal(m, t, S.heal); return true; } }
       if (S.roar && ready(m, "roar") && dd <= (S.roar.r || 2) + 1) { useCd(m, "roar", S.roar.cd || 10); startRoar(m, S.roar); return true; }
@@ -67,7 +69,7 @@ window.ValdoraMobSkills = (() => {
       if (S.leap && !near && ready(m, "leap") && api.hasRow(m, "special") && dd >= 2 && dd <= S.leap.range) {
         const L = landing(m, p); if (L) { useCd(m, "leap", S.leap.cd || 8); startLeap(m, p, L); return true; } }
       if (S.ranged) {
-        if (near && S.ranged.kite && rand() < 0.55 && stepAway(m, p)) return true;
+        if (near && S.ranged.kite && rand() < 0.75 && stepAway(m, p)) return true; // rodada 137: recua mais (era 55%)
         if (dd <= S.ranged.range && dd >= (near ? 1 : 2) && los(m, p)) { if (m.atkT <= 0) shoot(m, p); else api.faceAt(m, p.x, p.y); return true; }
       }
       if (S.flank && !near) return flank(m, p);

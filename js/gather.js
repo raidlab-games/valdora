@@ -11,7 +11,12 @@ window.ValdoraGather = (() => {
       const player = api.player(), event = api.event(), R = RES[o.kind], lvl = lv(R.skill);
       let item = R.item, xp = R.xp;
       if (lvl < R.req) { log(`${R.name} pede ${SKILLS[R.skill]} ${R.req}.`, "warn"); player.target = null; return; }
-      if (R.fish) { const opts = R.fish.filter((f) => lvl >= f.req); const f = opts.length > 1 && rand() < 0.5 ? opts[0] : opts[opts.length - 1]; item = f.item; xp = f.xp; }
+      if (R.fish) { // rodada 137: o bioma decide os peixes (bioma N: os N primeiros); o mais fraco sai mais (pesos 2^n); só os que o nível já pesca
+        const W = window.ValdoraWorld, b = W && W.biomeAt ? Math.max(1, W.biomeAt(o.x, o.y) || 1) : 1;
+        const opts = VD.FISH_BY_BIOME.slice(0, Math.min(b + (R === RES.fishspot_deep ? 1 : 0), VD.FISH_BY_BIOME.length)).filter((f) => lvl >= f.req);
+        const list = opts.length ? opts : [VD.FISH_BY_BIOME[0]], w = list.map((_, i) => Math.pow(2, list.length - 1 - i)), tot = w.reduce((a, c) => a + c, 0);
+        let r = rand() * tot, k = 0; while (k < list.length - 1 && (r -= w[k]) > 0) k++;
+        item = list[k].item; xp = list[k].xp; }
       if (o.golden > 0 && event && event.left > 0 && rand() < 0.25) { item = "Peixe dourado"; xp = 30; event.left--; } // evento: cardume dourado (6 por evento)
       if (!canAdd(item)) { log("Sua mochila está cheia. Guarde itens no cofre ou venda ao Bento.", "warn"); player.target = null; return; }
       const key = R.tool === "machado" ? "tool_axe" : R.tool === "picareta" ? "tool_pick" : R.tool === "foice" ? "tool_sickle" : "rod";

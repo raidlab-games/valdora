@@ -106,7 +106,8 @@ window.ValdoraWorld = (() => {
     MARKERS, CRACKS, HUT, TENT, RUNES, MINE, RIFT_ENTRY, RX, RY, rm };
   // rodada 120: biomas 50% maiores (o desenho de 520 x 400 cresce 22% em cada lado: IW x IH) e mar nos 4 lados. O desenho fica
   // no "miolo" (u, v de 0 a 1); em volta, a margem de mar (mais larga a oeste e ao sul, onde antes a terra saía do mapa).
-  const SC = 1.22, IW = Math.round(520 * SC), IH = Math.round(400 * SC), MW = 46, MN = 14, ME = 20, MS = 46;
+  // rodada 137: o continente 50% mais extenso (1,22 -> 1,83): os biomas crescem proporcionalmente; as vilas ficam do mesmo tamanho
+  const SC = 1.83, IW = Math.round(520 * SC), IH = Math.round(400 * SC), MW = 46, MN = 14, ME = 20, MS = 46;
   const CW = IW + MW + ME, CH = IH + MN + MS, OX = MW + Math.round(34 * SC), OY = MN + Math.round(236 * SC);
   // n = ordem de nível (1 a 5); a posição segue o desenho: 1 oeste, 2 centro-sul, 3 faixa norte, 4 leste/sudeste, 5 nordeste
   const BIOMES = [
@@ -272,7 +273,7 @@ window.ValdoraWorld = (() => {
     [4, 0.56, 0.74, 4], [4, 0.70, 0.62, 4.5], [5, 0.80, 0.30, 6], [5, 0.70, 0.30, 4.5],
     [2, 0.27, 0.62, 3], [2, 0.33, 0.92, 3.5], [2, 0.42, 0.72, 3], [3, 0.30, 0.22, 3.5], [4, 0.64, 0.92, 3.5], [4, 0.75, 0.70, 3], [5, 0.86, 0.45, 3.5], [5, 0.66, 0.22, 4],
     [1, 0.02, 0.60, 4], [1, 0.10, 0.98, 4], [2, 0.36, 0.98, 4], [3, 0.55, 0.26, 4], [4, 0.82, 0.84, 4], [5, 0.92, 0.40, 4]]) {
-    r *= 1.15; const p = findBox(XU(u), YV(v), Math.ceil(r * 2), Math.ceil(r * 2.4), b); // rodada 120: lagos acompanham os biomas maiores if (!inOld(p.x0, p.y0) && !inOld(p.x0 + r * 2, p.y0 + r * 2.4)) LAKES_G.push([p.x0 + r, p.y0 + r * 1.2, r, b >= 3 ? "fishspot_deep" : "fishspot", 2]);
+    r *= 1.15 * 1.5; const p = findBox(XU(u), YV(v), Math.ceil(r * 2), Math.ceil(r * 2.4), b); // rodada 120: lagos acompanham os biomas maiores if (!inOld(p.x0, p.y0) && !inOld(p.x0 + r * 2, p.y0 + r * 2.4)) LAKES_G.push([p.x0 + r, p.y0 + r * 1.2, r, b >= 3 ? "fishspot_deep" : "fishspot", 2]);
   }
   // ---------- monstros dos biomas novos: [tipo, quantos]; cada tipo em 2-3 bandos; os de nível baixo mais perto do Campo ----------
   // rodada 136: 2 espécies novas por bioma e 35% mais monstros nos bandos (os raros ficam iguais)
@@ -290,12 +291,12 @@ window.ValdoraWorld = (() => {
   };
   // bandos extras do Campo crescido (fora do quadro antigo): os mesmos monstros, espalhados nas regiões esticadas
   // rodada 120: 60% a mais (biomas maiores e mais gente online)
-  const CAMPO_EXTRA = { fields: [["slime", 38], ["slime_blue", 20], ["fox", 15], ["hare", 15], ["bee", 10], ["kobold", 10], ["scarecrow", 10], ["horn_beetle", 14]], // rodada 136: mais e 2 espécies novas east: [["boar", 22], ["goblin", 16], ["goblin_archer", 6], ["goblin_shaman", 2], ["deer", 12], ["fox", 6]],
-    south: [["wolf", 28], ["wolf_alpha", 6], ["deer", 8], ["bear", 7], ["weaver", 10], ["ghoul", 8]],
-    west: [["golem", 16], ["slime_crystal", 13], ["crystal_lizard", 8], ["wisp", 8]], ruins: [["skeleton", 19], ["skeleton_archer", 8], ["necromancer", 2], ["cursed_knight", 4]] };
+  const CAMPO_EXTRA = { fields: [["slime", 72], ["slime_blue", 38], ["fox", 28], ["hare", 28], ["bee", 19], ["kobold", 19], ["scarecrow", 19], ["horn_beetle", 27]], // rodada 136: mais e 2 espécies novas east: [["boar", 42], ["goblin", 30], ["goblin_archer", 11], ["goblin_shaman", 4], ["deer", 23], ["fox", 11]],
+    south: [["wolf", 53], ["wolf_alpha", 11], ["deer", 15], ["bear", 13], ["weaver", 19], ["ghoul", 15]],
+    west: [["golem", 30], ["slime_crystal", 25], ["crystal_lizard", 15], ["wisp", 15]], ruins: [["skeleton", 36], ["skeleton_archer", 15], ["necromancer", 4], ["cursed_knight", 8]] };  // rodada 137: Campo maior, 90% mais monstros fora do quadro antigo
   function homesFor(b, n, seed) { // n pontos de bando no bioma, ordenados do mais perto do Campo ao mais fundo
     const B = BIOMES[b - 1], C = BIOMES[0].c, out = [];
-    for (let k = 0, t = 0; out.length < n * 6 && t < 12000; t++, k++) {
+    for (let k = 0, t = 0; out.length < n * 6 && t < 30000; t++, k++) {
       const a = h2(k, seed, 5) * Math.PI * 2, r = Math.sqrt(h2(seed, k, 9)) * B.c[2] * 1.3, x = Math.round(B.c[0] + Math.cos(a) * r), y = Math.round(B.c[1] + Math.sin(a) * r);
       if (biomeAt(x, y) === b && !villageAt(x, y) && !VILLAGES.some((v) => x > v.x0 - 10 && x < v.x1 + 10 && y > v.y0 - 10 && y < v.y1 + 10)) out.push({ x, y, d: Math.hypot(x - C[0], y - C[1]) });
     }
@@ -305,10 +306,10 @@ window.ValdoraWorld = (() => {
   for (const B of BIOMES.slice(1)) {
     // rodada 120: bandos 50% maiores e em até 4 lugares; e monstros avulsos (sozinhos, cada um com casa própria) espalhados pela
     // mesma faixa de nível do tipo, para o bioma maior não ter trechos vazios
-    const list = BIOME_MOBS[B.key], pts = homesFor(B.n, list.length * 3, B.n * 17), per = Math.floor(pts.length / list.length);
-    BIOME_SPAWNS[B.key] = list.flatMap(([t, n0], i) => { const n = Math.round(n0 * 1.5), k = Math.min(4, Math.max(1, Math.round(n / 5))); // bandos do tipo i na faixa i do caminho
+    const list = BIOME_MOBS[B.key], pts = homesFor(B.n, list.length * 6, B.n * 17), per = Math.floor(pts.length / list.length); /* rodada 137: mais pontos (mapa maior) */
+    BIOME_SPAWNS[B.key] = list.flatMap(([t, n0], i) => { const n = Math.round(n0 * 1.5 * 2.1), k = Math.min(9, Math.max(1, Math.round(n / 5))); // rodada 137: mapa maior, mais bandos // bandos do tipo i na faixa i do caminho
       const packs = Array.from({ length: k }, (_, j) => { const p = pts[Math.min(pts.length - 1, i * per + Math.floor((j + 0.5) * per / k))]; return [t, Math.ceil(n / k), { x: p.x, y: p.y, r: 8 }]; });
-      const solo = n0 <= 4 ? [] : Array.from({ length: Math.round(n0 * 0.5) }, (_, j) => { const p = pts[Math.min(pts.length - 1, i * per + Math.floor(h2(j, i, B.n + 40) * per))];
+      const solo = n0 <= 4 ? [] : Array.from({ length: Math.round(n0 * 0.5 * 2.1) }, (_, j) => { const p = pts[Math.min(pts.length - 1, i * per + Math.floor(h2(j, i, B.n + 40) * per))];
         return [t, 1, { x: p.x + Math.round((h2(i, j, 71) - 0.5) * 16), y: p.y + Math.round((h2(j, i, 72) - 0.5) * 16), r: 5 }]; });
       return [...packs, ...solo]; });
   }

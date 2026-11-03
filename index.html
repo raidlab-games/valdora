@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Valdora — RPG em pixel art</title>
   <meta name="description" content="Valdora: um RPG 2D original em pixel art para navegador. Colete, forje, cozinhe, enfrente chefes e defenda Lumeira." />
-  <link rel="stylesheet" href="css/style.css?v=202611031815" />
+  <link rel="stylesheet" href="css/style.css?v=202611031853" />
 </head>
 <body>
   <!-- Lobby / site -->
@@ -13,7 +13,7 @@
     <div class="lobby-bg"></div>
     <div id="fireflies"></div>
     <header class="lobby-top">
-      <div class="brand"><h1>VALDORA</h1><span class="ver">v1.34</span><p class="sub">Um reino em pixel art para explorar, forjar e defender</p></div>
+      <div class="brand"><h1>VALDORA</h1><span class="ver">v1.35</span><p class="sub">Um reino em pixel art para explorar, forjar e defender</p></div>
       <nav id="lobby-nav">
         <button data-page="play" class="on">Jogar</button><button data-page="how">Como jogar</button><button data-page="news">Novidades</button>
       </nav>
@@ -93,18 +93,7 @@
       <button id="quest" hidden title="Abrir o diário"></button>
       <div id="event" hidden></div>
       <button id="hud-toggle" title="Mostrar ou ocultar mapa e painel (telas pequenas)">▾ Ocultar painel</button>
-      <div id="panel">
-        <div class="tabs">
-          <button data-tab="inv" class="on"><img class="tabicon" src="assets/ui/icon_tab_bag_flow.png" alt="">Mochila</button>
-          <button data-tab="skills"><img class="tabicon" src="assets/ui/icon_tab_levels_flow.png" alt="">Níveis</button>
-          <button data-tab="combat"><img class="tabicon" src="assets/flow/item_armor.png" alt="">Equip.</button>
-          <button data-tab="journal"><img class="tabicon" src="assets/flow/icon_journal_quests.png" alt="">Diário</button>
-        </div>
-        <div id="tab-inv"></div>
-        <div id="tab-skills" hidden></div>
-        <div id="tab-combat" hidden></div>
-        <div id="tab-journal" hidden></div>
-      </div>
+
     </div>
     <div id="banner"></div>
     <div id="levelup"></div>
@@ -121,8 +110,38 @@
       <div id="dlg-body"></div>
     </div>
     <div id="worldmap" hidden><div class="wm-head"><b>Mapa do continente</b><small>M ou Esc fecha · as Pedras azuis já estão salvas · ✦ onde você renasce</small><button id="wm-close" type="button" aria-label="Fechar o mapa">✕</button></div><canvas id="wm-canvas" width="1000" height="880"></canvas></div>
-    <div id="me-card" title="Seu personagem (P abre a ficha)"><button type="button" id="me-face" aria-label="Abrir a ficha do personagem"><img id="me-img" alt=""><span id="me-lvl">Nv. 1</span></button><span id="me-gold"><img id="me-coin" alt=""><b id="me-gold-n">0</b></span><button id="opt-btn" title="Opções (som, zoom, voltar ao menu)">⚙</button><div id="me-load" role="meter" aria-label="Peso carregado"><i></i><em></em></div></div>
+    <div id="me-card" title="Seu personagem (P abre a ficha)"><button type="button" id="me-face" aria-label="Abrir a ficha do personagem"><img id="me-img" alt=""><span id="me-lvl">Nv. 1</span></button><span id="me-gold"><img id="me-coin" alt=""><b id="me-gold-n">0</b></span><div id="me-load" role="meter" aria-label="Peso carregado"><i></i><em></em></div></div>
     <div id="skillbar"></div>
+    <div id="panel" hidden>
+        <div class="ph"><b id="panel-title"></b><button id="panel-close" type="button" title="Fechar (Esc)">✕</button></div>
+        <div class="tabs">
+          <button data-tab="inv" class="on"><img class="tabicon" src="assets/ui/icon_tab_bag_flow.png" alt="">Mochila</button>
+          <button data-tab="skills"><img class="tabicon" src="assets/ui/icon_tab_levels_flow.png" alt="">Níveis</button>
+          <button data-tab="combat"><img class="tabicon" src="assets/flow/item_armor.png" alt="">Equip.</button>
+          <button data-tab="journal"><img class="tabicon" src="assets/flow/icon_journal_quests.png" alt="">Diário</button>
+        </div>
+        <div id="tab-inv"></div>
+        <div id="tab-skills" hidden></div>
+        <div id="tab-combat" hidden></div>
+        <div id="tab-journal" hidden></div>
+        <div id="tab-book" hidden></div>
+        <div id="tab-coll" hidden></div>
+        <div id="tab-mount" hidden></div>
+        <div id="tab-guild" hidden></div>
+        <div id="tab-livro" hidden></div>
+      </div>
+    <nav id="menubar" aria-label="Menu">
+      <button data-menu="inv" title="Mochila (I)"><img src="assets/ui/icon_tab_bag_flow.png" alt=""><small>Bolsa</small></button>
+      <button data-menu="skills" title="Níveis (K)"><img src="assets/ui/icon_tab_levels_flow.png" alt=""><small>Níveis</small></button>
+      <button data-menu="combat" title="Equipamento (C)"><img src="assets/flow/item_armor.png" alt=""><small>Equip.</small></button>
+      <button data-menu="book" title="Skills (U)"><img src="assets/flow/skill_spin.png" alt=""><small>Skills</small></button>
+      <button data-menu="journal" title="Diário (J)"><img src="assets/flow/icon_journal_quests.png" alt=""><small>Diário</small></button>
+      <button data-menu="livro" title="Livro dos monstros (B)"><img src="assets/flow/icon_journal_quests.png" alt="" style="filter:hue-rotate(120deg)"><small>Livro</small></button>
+      <button data-menu="coll" title="Coleção (L)"><img src="assets/flow/item_echo_crystal.png" alt=""><small>Coleção</small></button>
+      <button data-menu="mount" title="Montaria (em breve)"><span class="mi">🐎</span><small>Montaria</small></button>
+      <button data-menu="guild" title="Guilda (em breve)"><span class="mi">⚑</span><small>Guilda</small></button>
+      <button data-menu="config" title="Configurações"><span class="mi">⚙</span><small>Config</small></button>
+    </nav>
     <div id="fhint" hidden></div>
     <div id="touch-btns" hidden><button id="touch-help" title="Dica do Ivo">?</button><button id="touch-eat" title="Comer (1)">✚</button><button id="touch-attack" title="Atacar o mais próximo (Espaço)">⚔</button></div>
     <div id="options" hidden>
@@ -139,50 +158,50 @@
     </div>
   </section>
 
-  <script src="js/assets.js?v=202611031815"></script>
-  <script src="js/data.js?v=202611031815"></script>
-  <script src="js/terrain.js?v=202611031815"></script>
-  <script src="js/audio.js?v=202611031815"></script>
-  <script src="js/path.js?v=202611031815"></script>
-  <script src="js/fx.js?v=202611031815"></script>
-  <script src="js/ambient.js?v=202611031815"></script>
-  <script src="js/lighting.js?v=202611031815"></script>
-  <script src="js/rules.js?v=202611031815"></script>
-  <script src="js/anim_data.js?v=202611031815"></script>
-  <script src="js/anim3d_data.js?v=202611031815"></script>
-  <script src="js/anim_extra.js?v=202611031815"></script>
-  <script src="js/version.js?v=202611031815"></script>
-  <script src="js/ui.js?v=202611031815"></script>
-  <script src="js/quests.js?v=202611031815"></script>
-  <script src="js/dialogs.js?v=202611031815"></script>
-  <script src="js/render.js?v=202611031815"></script>
-  <script src="js/hud.js?v=202611031815"></script>
-  <script src="js/mobs.js?v=202611031815"></script>
-  <script src="js/world.js?v=202611031815"></script>
-  <script src="js/crafting.js?v=202611031815"></script>
-  <script src="js/gather.js?v=202611031815"></script>
-  <script src="js/shop.js?v=202611031815"></script>
-  <script src="js/input.js?v=202611031815"></script>
-  <script src="js/pointer.js?v=202611031815"></script>
-  <script src="js/camera.js?v=202611031815"></script>
-  <script src="js/actors.js?v=202611031815"></script>
-  <script src="js/outfit.js?v=202611031815"></script>
-  <script src="js/hero.js?v=202611031815"></script>
-  <script src="js/scenery.js?v=202611031815"></script>
-  <script src="js/overlay.js?v=202611031815"></script>
-  <script src="js/events.js?v=202611031815"></script>
-  <script src="js/shrine.js?v=202611031815"></script>
-  <script src="js/dlgactions.js?v=202611031815"></script>
-  <script src="js/daily.js?v=202611031815"></script>
-  <script src="js/home.js?v=202611031815"></script>
-  <script src="js/scene.js?v=202611031815"></script>
-  <script src="js/campaign.js?v=202611031815"></script>
-  <script src="js/auction.js?v=202611031815"></script>
-  <script src="js/mobskills.js?v=202611031815"></script>
-  <script src="js/game.js?v=202611031815"></script>
-  <script src="js/lobby.js?v=202611031815"></script>
-  <script src="js/net_config.js?v=202611031815"></script>
-  <script src="js/net.js?v=202611031815"></script>
-  <script src="js/account.js?v=202611031815"></script>
+  <script src="js/assets.js?v=202611031853"></script>
+  <script src="js/data.js?v=202611031853"></script>
+  <script src="js/terrain.js?v=202611031853"></script>
+  <script src="js/audio.js?v=202611031853"></script>
+  <script src="js/path.js?v=202611031853"></script>
+  <script src="js/fx.js?v=202611031853"></script>
+  <script src="js/ambient.js?v=202611031853"></script>
+  <script src="js/lighting.js?v=202611031853"></script>
+  <script src="js/rules.js?v=202611031853"></script>
+  <script src="js/anim_data.js?v=202611031853"></script>
+  <script src="js/anim3d_data.js?v=202611031853"></script>
+  <script src="js/anim_extra.js?v=202611031853"></script>
+  <script src="js/version.js?v=202611031853"></script>
+  <script src="js/ui.js?v=202611031853"></script>
+  <script src="js/quests.js?v=202611031853"></script>
+  <script src="js/dialogs.js?v=202611031853"></script>
+  <script src="js/render.js?v=202611031853"></script>
+  <script src="js/hud.js?v=202611031853"></script>
+  <script src="js/mobs.js?v=202611031853"></script>
+  <script src="js/world.js?v=202611031853"></script>
+  <script src="js/crafting.js?v=202611031853"></script>
+  <script src="js/gather.js?v=202611031853"></script>
+  <script src="js/shop.js?v=202611031853"></script>
+  <script src="js/input.js?v=202611031853"></script>
+  <script src="js/pointer.js?v=202611031853"></script>
+  <script src="js/camera.js?v=202611031853"></script>
+  <script src="js/actors.js?v=202611031853"></script>
+  <script src="js/outfit.js?v=202611031853"></script>
+  <script src="js/hero.js?v=202611031853"></script>
+  <script src="js/scenery.js?v=202611031853"></script>
+  <script src="js/overlay.js?v=202611031853"></script>
+  <script src="js/events.js?v=202611031853"></script>
+  <script src="js/shrine.js?v=202611031853"></script>
+  <script src="js/dlgactions.js?v=202611031853"></script>
+  <script src="js/daily.js?v=202611031853"></script>
+  <script src="js/home.js?v=202611031853"></script>
+  <script src="js/scene.js?v=202611031853"></script>
+  <script src="js/campaign.js?v=202611031853"></script>
+  <script src="js/auction.js?v=202611031853"></script>
+  <script src="js/mobskills.js?v=202611031853"></script>
+  <script src="js/game.js?v=202611031853"></script>
+  <script src="js/lobby.js?v=202611031853"></script>
+  <script src="js/net_config.js?v=202611031853"></script>
+  <script src="js/net.js?v=202611031853"></script>
+  <script src="js/account.js?v=202611031853"></script>
 </body>
 </html>
