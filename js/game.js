@@ -59,7 +59,8 @@
   const SPR = {}, WHITE = {};
   // rodada 134: monstros no estilo novo (folha "half"): o quadro aparece na metade exata (pixel 2x2 da folha = 1 pixel na tela)
   // e o sprite parado (caixa px) com o mesmo tamanho: px / 96 tiles
-  for (const [k, A] of Object.entries(window.ANIM3D || {})) if (A.half && !k.includes("@")) SPRITE_SIZE[k] = [A.px / 96, A.px / 96];
+  // rodada 136: "scale" amplia uma folha já pronta (monstros refeitos 50% maiores até serem renderizados de novo no tamanho novo)
+  for (const [k, A] of Object.entries(window.ANIM3D || {})) if (A.half && !k.includes("@")) SPRITE_SIZE[k] = [A.px / 96 * (A.scale || 1), A.px / 96 * (A.scale || 1)];
   const assetsReady = Promise.all(Object.entries(ASSETS).map(([key, src]) => new Promise((done) => {
     const img = new Image();
     img.onload = () => {
@@ -92,7 +93,8 @@
       const hero = HEROES.find((h) => h.id === key), isHero = !!hero; // hero_N_dash não é herói: usa SPRITE_SIZE próprio
       const host = OVERLAY_HOST[key] && (SPRITE_SIZE[OVERLAY_HOST[key]] || [1, 1]);
       const size = host ? [host[0] / AM.margin, host[1] / AM.margin] : A.fx ? [A.tiles / AM.margin, A.tiles / AM.margin] : isHero ? [(SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols, (SPRITE_SIZE[hero.sheet] || [3])[0] / HERO_SHEET.cols] : (SPRITE_SIZE[key] || SPRITE_SIZE[key.split("@")[0]] || [1, 1]);
-      const cw = A.half ? A.cell / 2 : Math.round(size[0] * TILE * AM.margin), ch = A.half ? A.cell / 2 : Math.round((size[1] || size[0]) * TILE * AM.margin); // rodada 134
+      const hs = A.half ? (A.scale || 1) : 1; // rodada 136
+      const cw = A.half ? Math.round(A.cell / 2 * hs) : Math.round(size[0] * TILE * AM.margin), ch = A.half ? Math.round(A.cell / 2 * hs) : Math.round((size[1] || size[0]) * TILE * AM.margin); // rodada 134
       const cols = Math.round(img.naturalWidth / A.cell), rows = Math.round(img.naturalHeight / A.cell);
       const k = A.half && A.fine && SS > 1 ? 2 : 1; // rodada 136: folha de pixel fino fica inteira (1 pixel da folha = 1 pixel da tela)
       const c = document.createElement("canvas"); c.width = cols * cw * k; c.height = rows * ch * k;
