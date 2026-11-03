@@ -207,7 +207,7 @@
     npc.anvil = deco("anvil", "anvil", 64, 49, 1, 1);
     npc.board = deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", 59, 34, ASSETS.deco_board ? 2 : 1, 1); // rodada 124: quadro maior, 2 tiles
     deco("barrel", "barrel", 60, 37); deco("barrel", "barrel", 65, 38); deco("barrel", "barrel", 66, 49); deco("barrel", "barrel", 50, 47); deco("barrel", "barrel", 70, 56);
-    deco("well", "well", 51, 39); deco("well", "well", 68, 46); // o do Ivo ("ao lado do poço", no tutorial) e o da forja
+    { const ws = bigSpot(51, 39, 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: só o do Ivo ("ao lado do poço", no tutorial), com o dobro do tamanho
     if (SPR.deco_quest_board_ivo) for (const [x, y] of [[55, 40], [53, 40], [52, 41]]) // mural decorativo ao lado do Ivo (rodada 126: nunca na frente do cofre)
       if (!occ[y * W + x] && map[y][x] !== "path" && ![-1, 0, 1].some((dx) => [1, 2].some((dy) => occ[(y - dy) * W + x + dx] === npc.bank))) { npc.ivoBoard = deco("sign", "deco_quest_board_ivo", x, y, 1, 1, { label: "Mural do Ivo: procura-se lobos e goblins. Fale com o Ivo para ver as missões (M abre o diário)." }); break; }
     // rodada 124: área de treino com 4 bonecos nos cantos de um quadrado (4 jogadores treinam juntos) e o poste "Treino" no meio.
@@ -591,6 +591,19 @@
   // pilhas e pares de sacos deitados, vasos cinzas. Tudo em grupos: o grupo inteiro precisa caber em chão livre fora da estrada,
   // com 1 tile livre em volta (casa pode encostar), para não fechar passagem nem deixar buraco de 1 tile. Nada nasce até 2 tiles
   // na frente de baú, NPC, placa ou bancada (não esconde o que se usa). Grupo = [[dx, dy, arte, largura]]
+  // rodada 129: lugar para peça grande (poço, Pedra da vila): a base de w x 1 e o retângulo em volta (1 tile dos lados e na frente,
+  // "up" linhas acima, onde a arte alta sobe) livres, a base fora da estrada, e sem ficar na frente de baú, NPC ou placa
+  function bigSpot(x0, y0, w, up, r = 7) {
+    let best = null, bd = 1e9;
+    for (let y = y0 - r; y <= y0 + r; y++) for (let x = x0 - r; x <= x0 + r; x++) {
+      const d = Math.hypot(x - x0, y - y0); if (d >= bd) continue;
+      let ok = true;
+      for (let dy = -up; dy <= 1 && ok; dy++) for (let dx = -1; dx <= w && ok; dx++) { const X = x + dx, Y = y + dy;
+        if (!inside(X, Y) || occ[Y * W + X] || /water/.test(map[Y][X]) || (dy === 0 && dx >= 0 && dx < w && map[Y][X] === "path")) ok = false; }
+      if (ok && !hidesUse(x, y, w)) { best = [x, y]; bd = d; }
+    }
+    return best;
+  }
   const CARGO_SOFT = new Set(["prop", "barrel", "bush", "rock_wall", "house", "decal", "res", "gate", "well", "bench", "fire", "ruin"]);
   function hidesUse(x, y, w = 1) {
     for (let dy = 1; dy <= 2; dy++) for (let dx = -1; dx <= w; dx++) { const X = x + dx, Y = y - dy;
@@ -605,7 +618,8 @@
     for (const c of own) { const X = c % W, Y = (c / W) | 0;
       for (const [ax, ay] of DIRS8V) { const N = (Y + ay) * W + X + ax; if (own.has(N)) continue;
         if (!inside(X + ax, Y + ay)) return false; const o = occ[N]; if (o && !ringOk(o)) return false; } }
-    for (const [dx, dy, spr, w = 1] of cells) deco("prop", spr, x + dx, y + dy, w, 1, VASE.has(spr) ? { ox: cells.some((c) => c[1] === dy && c[0] + (c[3] || 1) === dx) ? -0.24 : 0.24 } : {}); // vaso pequeno encosta no vizinho
+    const made = cells.map(([dx, dy, spr, w = 1]) => deco("prop", spr, x + dx, y + dy, w, 1));
+    for (const v of made) if (VASE.has(v.spr)) { const n = made.find((o) => o !== v && o.y === v.y && (o.x + o.w === v.x || v.x + 1 === o.x)); if (n) glueVase(v, n); } // vaso colado no vizinho
     return true;
   }
   const CARGO_SMALL = [[[0, 0, "deco_crates"]], [[0, 0, "deco_sacks"]], [[0, 0, "deco_barrel_stack"]], [[0, 0, "deco_crates_orange"], [1, 0, "deco_sack_pair"]],
@@ -656,6 +670,21 @@
   // soltos (a arte do barril com o vaso na tampa) e ao lado de uma ou outra pilha. O vaso fica encostado no vizinho (ox), não no
   // meio do tile. Junto de alguns caixotes, um par de sacos
   const VASE = new Set(["deco_vase_gray", "deco_vase_plant"]);
+  // rodada 129: o vaso fica literalmente colado no vizinho. A borda de cada arte é medida na faixa de baixo (meio tile acima do chão,
+  // onde as duas peças se encostam) e o vaso anda de lado (ox) até a borda dele tocar a do vizinho, 1 px por dentro
+  const SPAN = {};
+  function footSpan(spr) {
+    if (SPAN[spr]) return SPAN[spr];
+    const c = SPR[spr]; if (!c || !c.getContext) return (SPAN[spr] = [-0.3, 0.3]);
+    const g = c.getContext("2d").getImageData(0, 0, c.width, c.height).data, gy = Math.round(c.height * (1 - ((window.SPRITE_SINK || {})[spr] || 0)));
+    let L = 1e9, R = -1e9;
+    for (let y = Math.max(0, gy - Math.round(TILE * 0.45)); y < Math.min(c.height, gy); y++) for (let x = 0; x < c.width; x++) if (g[(y * c.width + x) * 4 + 3] > 200) { L = Math.min(L, x); R = Math.max(R, x); }
+    return (SPAN[spr] = L > R ? [-0.3, 0.3] : [(L - c.width / 2) / TILE, (R + 1 - c.width / 2) / TILE]);
+  }
+  function glueVase(v, host) {
+    const [hl, hr] = footSpan(host.spr), [vl, vr] = footSpan(v.spr), hc = host.x + host.w / 2 + (host.ox || 0), touch = 1 / TILE;
+    const c = v.x < host.x ? hc + hl - vr + touch : hc + hr - vl - touch; v.ox = c - (v.x + 0.5);
+  }
   const PILES = new Set(["deco_crates", "deco_crates_green", "deco_crates_orange", "deco_barrel_stack", "deco_sacks", "deco_barrel_pile", "deco_cargo_pile", "deco_sack_pile"]);
   function placeVases(deco, x0, y0, x1, y1) {
     if (!SPR.deco_vase_gray) return;
@@ -669,7 +698,7 @@
       if (!sacks && h > (kind === "lamp" ? 0.35 : 0.18)) continue;
       const at = [[o.x - 1, o.y], [o.x + o.w, o.y]].sort((a, b) => hash(a[0], a[1], 50) - hash(b[0], b[1], 50)).find(([x, y]) => fits(x, y, o)); if (!at) continue;
       if (sacks) { deco("prop", "deco_sack_pair", ...at); continue; }
-      deco("prop", hash(o.x, o.y, 49) < 0.65 ? "deco_vase_gray" : "deco_vase_plant", ...at, 1, 1, { ox: at[0] < o.x ? 0.24 : -0.24 });
+      glueVase(deco("prop", hash(o.x, o.y, 49) < 0.65 ? "deco_vase_gray" : "deco_vase_plant", ...at), o);
     }
   }
   function genContinent() {
@@ -741,12 +770,12 @@
     const HOUSES = { breu: ["house_green", "house_blue", "house_green", "house_red", "house_green"], oasis: ["house_red", "house_red", "house_blue", "house_green", "house_red"],
       escarpa: ["house_blue", "house_blue", "house_red", "house_green", "house_blue"], degelo: ["house_blue", "house_green", "house_blue", "house_red", "house_blue"] };
     for (const v of G.VILLAGES) {
+      v.stoneObj = null; // rodada 129: as vilas são as mesmas a cada mundo gerado
       if (v.main) { // Lumeira: a Pedra entra num tile livre da praça
         const cx = (TOWN.x0 + TOWN.x1) / 2, cy = (TOWN.y0 + TOWN.y1) / 2, cand = [];
         for (let y = TOWN.y0 + 1; y < TOWN.y1; y++) for (let x = TOWN.x0 + 1; x < TOWN.x1; x++) cand.push([x, y]);
         cand.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cy) - Math.hypot(q[0] - cx, q[1] - cy));
-        for (const [x, y] of cand) // tile de pedra livre mais perto do centro da praça, com os 8 vizinhos livres (não fecha passagem)
-          if (!occ[y * W + x] && map[y][x] === "stone" && DIRS8V.every(([dx, dy]) => !occ[(y + dy) * W + x + dx] && map[y + dy][x + dx] !== "water")) { v.stone = { x, y }; break; }
+        { const s = bigSpot(Math.round(cx), Math.round(cy), 2, 2, 12); if (s) v.stone = { x: s[0], y: s[1] }; } // rodada 129: a Pedra tem 2 tiles de base
       } else {
         // rodada 120: vila com o dobro do tamanho (34 x 32): ruas em cruz no meio, cinco casas, banca, forja, fogueira, dois poços,
         // e a praça cheia de postes, canteiros, bancos e caixotes (como a Lumeira)
@@ -757,10 +786,11 @@
         deco("house", hs[3], ...at(9, 4), 3, 2); deco("house", hs[4], ...at(26, 26), 3, 2);
         deco("stall", "stall", ...at(21, 6), 2, 1); deco("merchant", "npc_merchant", ...at(23, 6), 1, 1, { name: MERCH[v.key], village: v.key });
         deco("bank", "chest", ...at(13, 12)); deco("furnace", "furnace", ...at(21, 22)); deco("anvil", "anvil", ...at(23, 22));
-        deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); deco("well", "well", ...at(8, 10)); deco("well", "well", ...at(26, 19)); deco("fire", "campfire", ...at(8, 22));
+        deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); { const ws = bigSpot(...at(8, 10), 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: um poço por vila deco("fire", "campfire", ...at(8, 22));
         deco("barrel", "barrel", ...at(20, 6)); deco("barrel", "barrel", ...at(25, 22)); deco("barrel", "barrel", ...at(6, 22)); deco("barrel", "barrel", ...at(30, 12));
         if (SPR.deco_campfire_log) deco("bench", "deco_campfire_log", ...at(8, 23));
-        v.stone = { x: v.x0 + 13, y: v.y0 + 19 };
+        { const s = bigSpot(v.x0 + 13, v.y0 + 19, 2, 2) || [v.x0 + 13, v.y0 + 19]; v.stone = { x: s[0], y: s[1] };
+          v.stoneObj = deco("waystone", "deco_waystone", s[0], s[1], 2, 1, { village: v.key, label: v.name }); } // já no lugar: nada nasce atrás dela
         const WD = WARDENS[v.key]; // rodada 114: guardião da vila, no estilo do Ivo, com as missões do bioma
         if (WD) (npc.wardens = npc.wardens || {})["w_" + v.key] = deco("warden", "npc_warden_" + v.key, ...at(14, 13), 1, 1, { name: WD[0], short: WD[1], hello: WD[2], giver: "w_" + v.key, village: v.key });
         for (const [x, y] of [at(-1, -1), at(VW, -1), at(-1, VH), at(VW, VH)]) if (inside(x, y) && !occ[y * W + x] && map[y][x] !== "water") deco("prop", SPR.deco_lamppost ? "deco_lamppost" : "deco_sign", x, y);
@@ -773,7 +803,7 @@
         placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
         placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7); placeVases(deco, v.x0, v.y0, v.x1, v.y1); // rodada 128
       }
-      if (v.stone) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name });
+      if (v.stone && !v.stoneObj) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 2, 1, { village: v.key, label: v.name }); // rodada 129: 2 x 1
     }
     // entradas das masmorras dos biomas
     for (const E of G.DG_ENTRIES) {

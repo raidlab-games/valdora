@@ -98,7 +98,7 @@ if (window.USE_FLOW_ART) {
   Object.assign(SPRITE_SIZE, {
     tree: [1.7, 1.7], tree_oak: [2.1, 2.1], tree_cedar: [1.5, 2.1], stump: [1, 1],
     rock: [1.25, 1.25], rock_iron: [1.25, 1.25], rock_lumita: [1.4, 1.4], rubble: [1, 1],
-    well: [1.6, 1.6], campfire: [1.1, 1.1], npc_merchant: [1.15, 1.15],
+    well: [3.2, 3.2], /* rodada 129: poço com o dobro do tamanho, base de 2 x 1 */ campfire: [1.1, 1.1], npc_merchant: [1.15, 1.15],
     slime: [0.9, 0.9], mob_boar: [1.5, 1.5], mob_wolf: [1.7, 1.7], mob_golem: [2.6, 2.6],
     house_red: [3.4, 3.4], house_blue: [3.4, 3.4], house_green: [3.4, 3.4], stall: [2.3, 2.3], barrel: [1.05, 1.05],
     // personagens um pouco maiores que 1 tile (cada quadro da folha = 1,45 tile)
@@ -332,7 +332,7 @@ for (const k of ["item_shield_wood", "item_shield_iron", "item_shield_lumita", "
 // rodada 105: chão dos biomas novos (texturas pintadas recoloridas: neve, areia rubra, rocha e mata escura)
 for (const k of ["snow", "snow_2", "sand_2", "rockg", "rockg_2", "grass_night", "grass_night_2"]) ASSETS[k] = `assets/flow/${k}.png`;
 // rodada 105: cenário dos biomas novos (a partir da arte pintada do mapa 1; Pedra no Blender), gemas e flores raras
-for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boulder", 2.3], ["boulder_snow", 2.3], ["boulder_sand", 2.3], ["deco_waystone", 1.5],
+for (const [k, s] of [["tree_dark", 2.1], ["palm", 1.7], ["cactus", 2.9], ["boulder", 2.3], ["boulder_snow", 2.3], ["boulder_sand", 2.3], ["deco_waystone", 3.0] /* rodada 129: o dobro, base de 2 x 1 */,
   ["deco_bush_dark", 1.25], ["deco_bush_dry", 1.25], ["deco_bush_snow", 1.25], ["deco_bush_mountain", 1.25],
   ["rock_obsidian", 1.25], ["rock_sun", 1.25], ["rock_mithril", 1.25], ["rock_frost", 1.25], ["rock_amethyst", 1.25], ["rock_adamant", 1.25], ["rock_ruby", 1.25], ["rock_starice", 1.25],
   ["res_shadecap", 1.2], ["res_desertrose", 1.2], ["res_rockmoss", 1.5], ["res_frostbloom", 1.2], ["res_nightbloom", 1.2], ["res_edelweiss", 1.2], ["res_sunlotus", 1.2], ["res_aurora", 1.2]]) {

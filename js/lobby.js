@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.28", "Poço e Pedra maiores", ["Um poço por cidade, com o dobro do tamanho", "Pedra da vila com o dobro do tamanho, rocha mais escura e runas em azul forte que brilham", "Vasos colados no poste ou na pilha do lado"]],
     ["v1.27", "Vasos no lugar", ["Vasos com metade do tamanho e nunca soltos", "Ao pé de alguns postes, em cima de alguns barris e ao lado de uma ou outra pilha"]],
     ["v1.26", "Sacos empilhados", ["O saco da vila agora também deitado e empilhado em pirâmide (2 + 1 e 3 + 2 + 1)", "Mesma arte do saco dos caixotes, modelado no Blender"]],
     ["v1.25", "Vilas com mais carga", ["Pilhas variadas: pirâmide de barris, caixotes de maçã verde e laranja, sacos deitados", "Pequenas barricadas nas saídas das vilas", "Vasos cinzas ao lado dos postes; o cofre da praça não fica mais escondido"]],

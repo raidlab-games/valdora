@@ -20,6 +20,15 @@ Mudanças de cada rodada, da mais nova para a mais antiga. O README descreve o j
   (−1 ms por quadro com eco, r25); corpos que não saíam da lista (r24); saves antigos (encomendas, conquistas) compatíveis
   (r27, r37–38); sessões de 60 min sem acúmulo (r33, r37).
 
+## Rodada 129 (v1.28) — poço e Pedra da vila maiores, vasos colados
+- **Poço:** um por cidade (Lumeira fica com o do Ivo; o da forja saiu), arte com o dobro do tamanho (3,2 tiles) e base de 2 x 1.
+  `bigSpot` acha o lugar livre mais perto com espaço para o telhado e sem ficar na frente de baú, NPC ou placa.
+- **Pedra da vila:** o dobro do tamanho (3 tiles), base de 2 x 1, posta assim que o lugar é escolhido (nada nasce atrás dela).
+  Rocha cinza-ardósia mais escura e runas em azul forte (`tools/waystone_recolor.py`, a partir de
+  `tools/src_art/deco_waystone_r105.png`); halo azul de dia e luz azul à noite (`overlay.js`).
+- **Vasos colados:** a borda de baixo de cada arte é medida em pixels (`footSpan`) e o vaso anda de lado até encostar no poste
+  ou na pilha vizinha.
+
 ## Rodada 128 (v1.27) — vasos pequenos e sempre junto de algo
 - Vasos cinzas com metade do tamanho (0,6 e 0,53 tile), encostados no vizinho (`ox`), não no meio do tile.
 - Nenhum vaso sozinho: saiu o grupo de vaso solto. Ficam ao pé de ~35% dos postes, ao lado de ~18% das pilhas e em cima da tampa
