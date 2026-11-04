@@ -789,6 +789,22 @@
     if (ct.join() !== "1,2,3,4,5") r.push("tempo de assar " + ct);
     return miss(r);
   });
+  test("rodada 156: cavalos: 4 níveis x 3 pelagens, cada nível mais rápido, mais caro e pedindo mais Equitação; compra e save", () => {
+    const r = [], T = VD.MOUNT_TIERS, M = VD.MOUNTS, MT = ValdoraMount;
+    if (T.length !== 4 || Object.keys(M).length !== 12) r.push("4 x 3");
+    T.forEach((t, i) => { if (i && !(t.speed > T[i - 1].speed && t.price > T[i - 1].price && t.lvl > T[i - 1].lvl)) r.push("nível " + t.t + " não sobe");
+      if (Object.values(M).filter((m) => m.tier === t.t).length !== 3) r.push("3 pelagens no " + t.t); });
+    if (!VD.SKILLS.equitacao) r.push("skill Equitação");
+    const p = { coins: 2000, mounts: [], mount: null };
+    if (MT.whyNot(p, "t2_s1", 1) === "" || MT.whyNot(p, "t1_s1", 1) !== "") r.push("whyNot");
+    if (!MT.buy(p, "t1_s2", 1) || p.coins !== 500 || p.mount !== "t1_s2" || MT.buy(p, "t1_s2", 1)) r.push("compra");
+    p.riding = true; if (MT.speed(p) !== T[0].speed) r.push("velocidade"); p.riding = false; if (MT.speed(p) !== 1) r.push("a pé");
+    const sv = MT.sanitize({ mounts: ["t1_s2", "xx", "t1_s2"], mount: "zz" }); if (sv.mounts.join() !== "t1_s2" || sv.mount !== "t1_s2") r.push("sanitize");
+    if (MT.rideXp({}, 10) !== 10 * VD.RIDE_XP) r.push("xp");
+    if (!VD.HOTBAR_DEFAULT.includes("mount")) r.push("atalho");
+    for (const k of ["deco_barn", "deco_hay_stack", "deco_hay_pile", "deco_hay_bale", "deco_trough", "deco_pen_back", "deco_pen_front"]) if (!ASSETS[k] || !SPRITE_SIZE[k]) r.push(k);
+    return miss(r);
+  });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];
     r.push(a.type === b.type && a.n === b.n && !MOBS[a.type].boss && !MOBS[a.type].noBounty && a.n >= 8 && a.n <= 12);

@@ -20,6 +20,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.39", "Cavalos e o Celeiro de Lumeira", ["Celeiro novo logo ao sul de Lumeira (siga o caminho ao lado da placa \"Sul\"): o Teodoro vende cavalos",
+      "4 níveis de cavalo, 3 pelagens cada: lida, viagem, guerra e lenda; cada nível corre mais e é mais bonito (arreios, barda, crina acesa)",
+      "Skill nova: Equitação, sobe cavalgando; cada nível de cavalo pede mais Equitação", "H (ou o atalho Montar) monta e desce; golpear, coletar ou levar um golpe faz descer",
+      "Cercadinhos com os cavalos à venda, fenos, fardos e cocho em volta do celeiro"]],
     ["v1.38", "Fogueira, ofícios e roupas de classe", ["Fogueira nova: escolha o que assar e quantos (até a mochila toda); assa 1 por vez, peixe do mapa 1 em 1 s e cada mapa acima +1 s; andar ou ESC para",
       "Conjuntos de classe em todos os mapas: couro do Arqueiro e tecido do Mago na mesa; placas do Guerreiro na bigorna. Cada peça pede o nível da classe",
       "Cada mapa tem o seu couro (feras) e o seu fio (aranhas, mariposas, carneiros, múmias, mamutes); a mesa tece o fio em tecido",

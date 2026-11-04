@@ -364,6 +364,7 @@
     mobIdx.clear(); try { genLocal(); } finally { WORLD = Gw; TOWN = Gw.TOWN; SPAWN = Gw.SPAWN; TOWNS = Gw.VILLAGES; W = Gw.W; H = Gw.H; HOME = ValdoraHome; }
     embedLocal(Gw.OX, Gw.OY); indexMobs();
     genContinent();
+    placeStable(); // rodada 156: Celeiro de Lumeira
     finishWorld(); indexMobs();
   }
   function embedLocal(OX, OY) {
@@ -1003,6 +1004,7 @@
     buildMinimap();
   }
   function enterCrypt(o, kind = "crypt") {
+    if (player.riding) dismount("O cavalo fica do lado de fora."); // rodada 156
     const D = WORLD.DUNGEONS[kind];
     if (D.unlock && !(player.quests[D.unlock] && player.quests[D.unlock].done)) { log(D.locked, "warn"); return; }
     overworld = { map, occ, objects, resources, mobs, lakes, ground, groundItems, npc, ret: { x: o.x, y: o.y + 1 } };
@@ -1257,6 +1259,7 @@
   const HOT_ACTIONS = () => [
     ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, kind: S.cls ? `Skill de ${SKILLS[S.cls]}` : "Skill de todos", cls: S.cls, name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl, cd: S.cd })),
     { id: "eat", kind: "Ação", name: "Comer", desc: "Come a comida que mais cura da mochila.", icon: ASSETS.icon_heal_small, lvl: 1 },
+    { id: "mount", kind: "Ação", name: "Montar", desc: "Monta no seu cavalo ou desce dele (tecla H). Cavalos: Teodoro, no Celeiro ao sul de Lumeira.", icon: "assets/ui/skill_equitacao.png", lvl: 1 }, // rodada 156
     ...Object.keys(POT_LVL).filter((n) => ITEMS[n]).map((n) => ({ id: "pot:" + n, kind: "Poção", name: n, desc: ITEMS[n].heal ? `Cura ${ITEMS[n].heal}.` : (BUFFS[ITEMS[n].buff] || {}).desc || "Efeito por um tempo.", icon: ASSETS[ITEMS[n].icon], item: n, lvl: POT_LVL[n] })),
     ...Object.entries(STYLES).filter(([, s]) => s.passive).map(([k, s]) => ({ id: "passive:" + k, kind: `Passiva (estilo ${s.name})`, name: s.passive.name, desc: s.passive.desc, icon: ASSETS[s.passive.icon], lvl: 1, passive: true }))];
   const hotUnlocked = (a) => !a.lvl || lv(a.cls || "combate") >= a.lvl; // rodada 153: skills de classe pelo nível da classe
@@ -1267,6 +1270,7 @@
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim"); }
     else if (a.startsWith("pot:")) { const pot = a.slice(4), j = player.inv.findIndex((s) => s && s.name === pot); if (j >= 0) eat(j); else log(`Sem ${pot.toLowerCase()} na mochila.`, "dim"); }
     else if (a.startsWith("skill:")) useSkill(a.slice(6));
+    else if (a === "mount") toggleRide(); // rodada 156
   }
   function setHot(i, id) { // rodada 138: soltar numa casa ocupada troca as duas; id null limpa a casa
     const k = id ? player.hotbar.indexOf(id) : -1, old = player.hotbar[i];
@@ -1391,6 +1395,7 @@
     if (!player.seen.runHot) { player.seen.runHot = 1; const i = player.hotbar.indexOf(null); if (i >= 0 && !player.hotbar.includes("skill:run")) player.hotbar[i] = "skill:run"; } // rodada 139: Corrida na barra uma vez
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
     player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
+    Object.assign(player, ValdoraMount.sanitize(data)); player.riding = false; player.rideAcc = 0; // rodada 156: cavalos comprados (começa a pé)
     player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; player.pvpMode = data.pvpMode === "hostile" ? "hostile" : "passive"; // rodada 148 // rodada 147: PK (segundos de jogo que faltam)
     deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
@@ -1460,7 +1465,7 @@
     if (!n) return;
     const before = lv(skill); player.xp[skill] += n; hudDirty = true;
     const now = lv(skill);
-    if (skill !== "vitalidade" || now > before) xpToast(skill, n);
+    if ((skill !== "vitalidade" && skill !== "equitacao") || now > before) xpToast(skill, n); // rodada 156: Equitação sobe aos poucos, sem aviso a cada tile
     if (now > before) {
       log(`★ ${SKILLS[skill]} subiu para o nível ${now}!`, "gold"); SND.play("level");
       if (skill === "pesca" && now >= 10 && !player.seen.deepTip) { player.seen.deepTip = 1; log(`Dica do Ivo: Pesca 10! Os cardumes fundos, nos lagos maiores, rendem tucunarés (curam ${ITEMS["Tucunaré assado"].heal}).`, "tip", "icon_fish_spot"); } // rodada 56; rodada 89: cura lida do item
@@ -1581,7 +1586,7 @@
 
   // ---------- Entrada ----------
   const INTERACT_TEXT = { harbor: "falar com o mestre do cais", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
-    deathbag: "abrir o saco de morte", peace: "falar com o Pacificador", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
+    deathbag: "abrir o saco de morte", peace: "falar com o Pacificador", stable: "falar com o Teodoro (cavalos)", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
   function interactLabel(b) {
@@ -1621,7 +1626,7 @@
   const INPUT = ValdoraInput.create({
     running: () => running, escape: () => { closeDlg(); $("options").hidden = true; hudTab = null; hudDirty = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
     toggleDlg: (kind) => { if (dlg && dlg.kind === kind) closeDlg(); else openDlg(kind, null); }, petStay: () => petStay(),
-    tab: (t) => openTab(t), hot: (i) => useHot(i),
+    tab: (t) => openTab(t), hot: (i) => useHot(i), ride: () => toggleRide(), // rodada 156: H monta/desce
     eatBest: () => { // come a comida que mais cura
       let best = -1; player.inv.forEach((s, i) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = i; });
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim");
@@ -1671,7 +1676,8 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { harbor: "harbor", witch: "witch", warden: "warden", peace: "peace", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
+  const RIDE_TALK = new Set(["shop", "guard", "bank", "board", "bard", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable", "auction", "waystone"]);
+  const STATIONS = { stable: "stable", penhorse: "stable", harbor: "harbor", witch: "witch", warden: "warden", peace: "peace", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1802,6 +1808,7 @@
   }
   $("touch-help").onclick = () => { if (!running) return; log(`Dica do Ivo: ${nextTip()}`, "tip", "icon_tip"); };
   function setTarget(p) {
+    if (p && p.kind === "stable" && p.ref && p.ref.type === "penhorse" && npc.stable) p = { kind: "stable", ref: npc.stable }; // rodada 156: cavalo do cercado -> Teodoro
     if (player.job && player.job.kind === "cook" && p.ref !== player.job.obj) stopCook(); // rodada 155: saiu da fogueira
     player.target = { kind: p.kind, ref: p.ref }; player.job = null;
     const r = p.ref;
@@ -1855,6 +1862,7 @@
         }
         if (player.prog < 1) return;
         faceTo(r.x, r.y);
+        if (player.riding) dismount("Você desceu do cavalo para lutar."); // rodada 156
         if (player.actT <= 0) { startShot(r); player.actT = 3; ambushRoll(r); } // rodada 113: emboscada
         return;
       }
@@ -1863,6 +1871,7 @@
         return;
       }
       faceTo(r.x, r.y);
+      if (player.riding) dismount("Você desceu do cavalo para lutar."); // rodada 156
       if (player.actT <= 0) { startAttack(r); player.actT = 3; ambushRoll(r); } // rodada 113: emboscada
       return;
     }
@@ -1877,8 +1886,9 @@
     const onPlant = t.kind === "res" && isPlant(r) && player.x === r.x && player.y === r.y; // rodada 112: em cima da planta também colhe
     if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
     if (!onPlant) faceRect(r);
+    if (player.riding && !RIDE_TALK.has(t.kind)) dismount("Você desceu do cavalo."); // rodada 156: coletar, forjar, abrir... a pé; falar dá montado
     if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "craftdesk") { player.target = null; openDlg("craft", r); return; } // rodada 139: mesa de artesanato
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
@@ -2417,6 +2427,7 @@
         fx.shock(cx + 0.5, cy + 0.85, 2.2, "#ff7a2a", 0.8); burst(cx + 0.5, cy + 0.5, ["#ff7a2a", "#ffd23a", "#5a3a2a"], 30, 5); SND.play("slam"); hitStop = 0.12; if (SND.opts.shake) shake = 0.3; }, { prep: 0.9, strike: 0.08, rec: 0.25 }); },
   };
   function useSkill(id) {
+    if (player.riding) { if (id === "run") { log("Montado, quem corre é o cavalo.", "dim"); return; } dismount("Você desceu do cavalo."); } // rodada 156
     const S = ACTIVE[id];
     if (!running || player.deadT > 0 || player.dash) return;
     if (S.cls && curCls() !== S.cls) { log(`${S.name} é skill de ${SKILLS[S.cls]}: precisa de ${{ guerreiro: "uma espada", arqueiro: "um arco", mago: "um cajado" }[S.cls]} na mão.`, "dim"); return; } // rodada 153
@@ -2597,6 +2608,7 @@
     if (pe.hit) {
       pe.dmg = guardDmg(pe.dmg); // rodada 153: Muralha de ferro e Escudo de mana
       player.hp -= pe.dmg; player.flash = blocked ? 0.08 : 0.18; player.hitT = blocked ? 0 : 0.3; player.lastHurt = tickN; hudDirty = true;
+      if (player.riding && pe.dmg > 0) dismount("O golpe derrubou você do cavalo."); // rodada 156
       hitSplat(player.px + 0.5, player.py - 0.3, pe.dmg, "#ff5a4a"); SND.play("hurt"); if (SND.opts.shake) CAMERA.kick(player.px - m.px, player.py - m.py, pe.heavy ? 5 : 2.5);
       fx.sparks((player.px + m.px) / 2 + 0.5, (player.py + m.py) / 2 + 0.45, pe.heavy ? 12 : 6, ["#ff8a6a", "#ffffff"], 4);
       burst(player.px + 0.5, player.py + 0.5, ["#c0392b"], pe.heavy ? 14 : 5, 2.5);
@@ -2609,6 +2621,7 @@
   }
   function playerDied() { // toca a animação de morte e só então volta à vila
     if (player.deadT > 0) return;
+    player.riding = false; // rodada 156
     player.deadT = ANIMS[player.hero] ? 1.6 : 0.01; player.hp = 0; player.path = []; player.target = null; player.job = null; player.act = null; player.cast = null;
     for (const m of mobs) { m.aggro = false; m.pending = null; }
     player.dot = null; player.slowT = 0; MSKILL.clear(); // rodada 134
@@ -2983,11 +2996,76 @@
     const b = e.target.closest("button, .slot[data-dep], .slot[data-wd], .slot[data-bagi]"); if (!b) return;
     const ds = b.dataset; SND.play("ui");
     if (DLG_VIEW.uiClick(b, dlg)) return;
+    if (dlg.kind === "stable" && (ds.buymount || ds.usemount)) { stableAct(ds); renderDlg(); save(); return; } // rodada 156
     if (dlg.kind === "peace" && ds.peace) { if (PVP.peace(player)) { log("☮ Trato de paz feito: o PK sumiu e seu nome voltou ao normal.", "gold"); SND.play("coin"); burst(player.px + 0.5, player.py + 0.2, ["#ffffff", "#bfe8ff", "#f1c40f"], 18, 2.5); hudDirty = true; } renderDlg(); save(); return; } // rodada 147
     if (dlg.kind === "deathbag" && (ds.bagall || ds.bagi != null)) { takeFromBag(dlg.obj.bag, ds.bagall ? null : +ds.bagi); if (dlg) renderDlg(); save(); return; } // rodada 146 // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
     renderDlg(); save();
   });
+  // ---------- rodada 156: montaria ----------
+  function toggleRide() {
+    if (player.riding) return dismount("Você desceu do cavalo.");
+    const m = ValdoraMount.cur(player);
+    if (!m) { log("Você ainda não tem cavalo. O Teodoro vende no Celeiro, logo ao sul de Lumeira.", "dim"); return; }
+    if (inCrypt) { log("Aqui dentro não dá para cavalgar.", "warn"); return; }
+    if (player.deadT > 0 || player.dash || player.act) return;
+    if (tickN - player.lastHurt < 6) { log("No meio da luta não dá para montar.", "warn"); return; }
+    if (player.job && player.job.kind === "cook") stopCook();
+    player.riding = true; player.runT = 0; player.job = null; lazyAnim(m.sheet); SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
+    log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true;
+  }
+  function dismount(msg) {
+    if (!player.riding) return; player.riding = false; fx.dust(player.px + 0.5, player.py + 0.95, 8); if (msg) log(msg, "dim"); hudDirty = true;
+  }
+  function stableAct(ds) {
+    const k = ds.buymount || ds.usemount, M = VD.MOUNTS[k]; if (!M) return;
+    if (ds.buymount) {
+      const why = ValdoraMount.whyNot(player, k, lv("equitacao")); if (why) { log(`${M.name}: ${why}.`, "warn"); return; }
+      ValdoraMount.buy(player, k, lv("equitacao")); SND.play("coin"); burst(player.px + 0.5, player.py + 0.2, ["#f1c40f", "#fff2a0"], 18, 2.5);
+      showToast(`${M.name} é seu!`, "Aperte H (ou o atalho Montar) para montar. Equitação sobe cavalgando.", "#f1c40f"); emit("mount:" + k);
+    } else if (player.mounts.includes(k)) { player.mount = k; if (player.riding) lazyAnim(M.sheet); log(`Cavalo escolhido: ${M.name}.`, "dim"); }
+    hudDirty = true;
+  }
+  function stableHtml() {
+    const L = lv("equitacao");
+    return `<p class="desc">Equitação ${L} · ${player.coins} moedas. Cavalgar sobe Equitação; cada nível de cavalo corre mais e pede mais Equitação.</p>` + VD.MOUNT_TIERS.map((T) => {
+      const rows = Object.values(VD.MOUNTS).filter((m) => m.tier === T.t).map((m) => {
+        const own = player.mounts.includes(m.key), sel = own && player.mount === m.key, why = own ? "" : ValdoraMount.whyNot(player, m.key, L);
+        const btn = own ? `<button data-usemount="${m.key}" ${sel ? "disabled" : ""}>${sel ? "Seu cavalo" : "Usar"}</button>`
+          : `<button data-buymount="${m.key}" ${why ? "disabled" : ""} title="${esc(why)}">Comprar</button>`;
+        return `<div class="row mount${sel ? " on" : ""}"><img class="mt-ic" src="${(window.assetV || String)(m.icon)}" alt=""><span class="grow"><b>${esc(m.coat)}</b><small>${own ? "já é seu" : `${m.price} moedas${L < m.lvl ? ` · <b class="lock">Equitação ${m.lvl}</b>` : ""}`}</small></span>${btn}</div>`;
+      }).join("");
+      return `<div class="cr-group">${esc(T.name)} · +${Math.round((T.speed - 1) * 100)}% de velocidade · Equitação ${T.lvl}</div><small class="desc">${esc(T.desc)}</small><div class="mt-grid">${rows}</div>`;
+    }).join("");
+  }
+  // Celeiro: caminho saindo da ponta de baixo de Lumeira (perto da placa "Sul") para baixo e para a direita, o celeiro do Teodoro,
+  // fenos em volta, um cocho e 4 cercadinhos (um por nível de cavalo, com as 3 pelagens dentro)
+  function placeStable() {
+    const T0 = WORLD_G.TOWN, X = T0.x1, Y = T0.y1, x0 = X - 4, y0 = Y + 1, x1 = X + 25, y1 = Y + 12;
+    const kill = new Set(objects.filter((o) => o.x + o.w - 1 >= x0 && o.x <= x1 && o.y + o.h - 1 >= y0 && o.y <= y1 && !(o.type === "sign" && o.y < Y + 3 && o.x < X)));
+    for (const o of kill) for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) if (inside(x, y) && occ[y * W + x] === o) occ[y * W + x] = null;
+    objects = objects.filter((o) => !kill.has(o)); resources = resources.filter((o) => !kill.has(o));
+    mobs = mobs.filter((m) => !(m.x >= x0 && m.x <= x1 && m.y >= y0 && m.y <= y1));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inside(x, y) && !/^grass/.test(map[y][x]) && map[y][x] !== "path") map[y][x] = "grass";
+    const deco = (type, spr, x, y, w = 1, h = 1, extra = {}) => place({ type, spr, x, y, w, h, solid: true, ...extra });
+    const path = (x, y) => { if (inside(x, y)) map[y][x] = "path"; };
+    for (const [x, y] of [[X - 4, Y + 1], [X - 3, Y + 1], [X - 4, Y + 2], [X - 3, Y + 2], [X - 4, Y + 3]]) path(x, y);
+    for (let x = X - 3; x <= X + 4; x++) { path(x, Y + 3); path(x, Y + 4); }
+    npc.stable = deco("stable", "npc_stable", X + 4, Y + 2, 1, 1, { name: "Teodoro" });
+    deco("house", "deco_barn", X + 5, Y + 1, 5, 3);
+    deco("sign", "deco_sign", X - 1, Y + 2, 1, 1, { label: "Celeiro de Lumeira: cavalos à venda com o Teodoro. Montado, H desce do cavalo." });
+    deco("prop", "deco_hay_pile", X + 3, Y + 1); deco("prop", "deco_hay_stack", X + 6, Y + 5, 2, 1); deco("prop", "deco_hay_bale", X + 10, Y + 1);
+    deco("prop", "deco_hay_bale", X + 9, Y + 5); deco("prop", "deco_hay_pile", X + 5, Y + 5); deco("prop", "deco_trough", X + 17, Y + 5, 2, 1);
+    for (const [k, px, py] of [[1, X + 11, Y + 1], [2, X + 18, Y + 1], [3, X + 11, Y + 7], [4, X + 18, Y + 7]]) {
+      for (let y = py; y < py + 4; y++) for (let x = px; x < px + 6; x++) if (inside(x, y)) map[y][x] = "dirt";
+      deco("pen", "deco_pen_back", px, py, 6, 1);
+      for (let y = py + 1; y <= py + 2; y++) for (let x = px; x < px + 6; x++) place({ type: "block", spr: null, x, y, w: 1, h: 1, solid: true });
+      deco("pen", "deco_pen_front", px, py + 3, 6, 1);
+      [[1, 2, "downright"], [3, 1, "down"], [4, 2, "downleft"]].forEach(([dx, dy, dir], s) =>
+        place({ type: "penhorse", spr: `horse_t${k}_s${s + 1}`, x: px + dx, y: py + dy, w: 1, h: 1, solid: true, dir, name: VD.MOUNTS[`t${k}_s${s + 1}`].name }));
+    }
+  }
+
   // rodada 147: o Pacificador: trato de paz por 1000 moedas (só para quem está PK)
   function peaceHtml() {
     const pk = player.pk > 0, can = pk && player.coins >= PVP.PEACE_COST;
@@ -3148,7 +3226,7 @@
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), atAnvil: () => atAnvil(), prereqText: (k) => prereqText(k),
     cookTime: (n) => cookTime(n), startCook: (i, n, o) => startCook(i, n, o), stopCook: () => stopCook() });
-  const DLG_VIEW = ValdoraDialogs.create({ peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+  const DLG_VIEW = ValdoraDialogs.create({ stableHtml: () => stableHtml(), peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
@@ -3276,6 +3354,11 @@
   $("tab-inv").addEventListener("contextmenu", (e) => { // clique direito: o mesmo menu
     const el = e.target.closest(".slot[data-i]"); if (!el) return;
     e.preventDefault(); openInvMenu(+el.dataset.i, el);
+  });
+  $("tab-mount").addEventListener("click", (e) => { // rodada 156: aba Montaria
+    const b = e.target.closest("button"); if (!b) return; SND.play("ui");
+    if (b.dataset.ride) toggleRide(); else if (b.dataset.usemount) stableAct({ usemount: b.dataset.usemount });
+    hudDirty = true; save();
   });
   $("tab-passive").addEventListener("click", (e) => { // a passiva vem do estilo: clicar numa troca o estilo de luta
     const c = e.target.closest("[data-pstyle]"); if (!c || !STYLES[c.dataset.pstyle] || player.style === c.dataset.pstyle) return;
@@ -3501,7 +3584,9 @@
       rate *= loadRate(); // rodada 112: peso
       if (player.slowT > 0) rate *= 0.6; // rodada 134: teia, gelo, maldição
       if (player.runT > 0) rate *= ACTIVE.run.mult; // rodada 139: Corrida
+      if (player.riding) rate *= ValdoraMount.speed(player); // rodada 156: montado (o nível do cavalo)
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
+      if (player.riding) { const n = ValdoraMount.rideXp(player, rate * dt / STEP); if (n) gainXp("equitacao", n); }
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
       const over = wasMoving ? player.prog - 1 : 0;
@@ -3669,6 +3754,7 @@
     if (!o.raw) dmg = RULES.armorCut(dmg, combatStats().armor || 0); // rodada 137: a armadura segura parte do dano
     dmg = guardDmg(dmg); // rodada 153
     player.hp -= dmg; player.flash = 0.18; player.hitT = 0.3; player.lastHurt = tickN; hudDirty = true;
+    if (player.riding && dmg > 0) dismount("O golpe derrubou você do cavalo."); // rodada 156
     hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); SND.play("hurt");
     burst(player.px + 0.5, player.py + 0.5, [o.color || "#c0392b"], o.heavy ? 12 : 5, 2.5); if (o.heavy && SND.opts.shake) shake = Math.max(shake, 0.3);
     if (player.hp <= 0) playerDied();
@@ -3857,7 +3943,7 @@
   }
   // desenho dos objetos do mapa (js/scenery.js)
   const SCENERY = ValdoraScenery.create({ ctx, cam, TILE, ANIMS, SPR, HERO_SHEET, TUTORIAL, tags, animFrame, drawAnim, drawFx, drawSmoke, sceneryFrame,
-    shadow: (...a) => shadow(...a), marketOpen: () => AUCTION.isOpen(), questMark: (g) => questMark(g), player: () => player, dlg: () => dlg, bubble: () => bubble, mobs: () => mobs });
+    lazyAnim: (k) => lazyAnim(k), shadow: (...a) => shadow(...a), marketOpen: () => AUCTION.isOpen(), questMark: (g) => questMark(g), player: () => player, dlg: () => dlg, bubble: () => bubble, mobs: () => mobs });
   const drawObject = (o, t) => SCENERY.drawObject(o, t);
 
   function shadow(x, y, r) { shadowAt(x * TILE - cam.x, y * TILE - cam.y, r * TILE, r * TILE * 0.35); }
@@ -3870,7 +3956,8 @@
   // pose da ação: deslocamento do corpo (recuo na preparação, avanço no golpe) e fase (0 prep, 1 golpe, 2 recuperação)
   // desenho do herói (js/hero.js)
   const HERO = ValdoraHero.create({ ctx, cam, TILE, ANIMS, SPR, HEROES, HERO_SHEET, DIR_VEC, ease, tags, fx: { sparks: (...a) => fx.sparks(...a) }, rand, drawAnim, animFrame,
-    shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
+    shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player,
+    horse: () => { const m = player.riding && ValdoraMount.cur(player); return m ? lazyAnim(m.sheet) : null; } }); // rodada 156
   const drawPlayer = (t) => HERO.drawPlayer(t);
   // desenho dos monstros (js/actors.js)
   const ACTORS = ValdoraActors.create({ lazyAnim: (k) => lazyAnim(k), ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
@@ -3916,7 +4003,7 @@
     return {
       shop: ["Bento, o mercador", "#f5e27a", "Comprar, vender e encomendas"], guard: ["Guarda Ivo", "#9fd0ff", TUTORIAL[player.tut.step] ? "Tutorial e dicas" : "Dicas"],
       bank: ["Cofre da vila", "#f5e27a", "Guardar itens"], dummy: ["Boneco de treino", "#e8d9b0", "Golpeie e saia da área vermelha"], furnace: ["Fornalha", "#f5c060", "Fundir minério em barras"],
-      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], peace: ["Pacificador", "#ffffff", "Trato de paz: tira o PK por 1000 moedas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
+      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], stable: ["Teodoro · Celeiro", "#f0c878", "Cavalos e montaria"], penhorse: ["Cavalo à venda", "#f0c878", "Fale com o Teodoro"], peace: ["Pacificador", "#ffffff", "Trato de paz: tira o PK por 1000 moedas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
       crypt: ["Escada da cripta", "#c79bff", "Masmorra · Combate 18+"], crypt_exit: ["Saída", "#e8d9b0", "Voltar à superfície"],
       den: ["Toca dos Lobos", "#b8d8ff", player.quests.balada && player.quests.balada.done ? "Masmorra · Combate 14+" : "Bloqueada · missão do Tomé"],
       chest: [dungeon === "den" ? "Baú da toca" : "Baú da cripta", "#f1c40f", r.opened ? "Vazio" : mobs.some((m) => !m.dead) ? "Selado: derrote todos os inimigos" : "Abrir!"], board: ["Quadro de caçadas", "#f5e27a", "Recompensas por monstros"], fire: ["Fogueira", "#f5c060", "Assar peixe e carne"], sign: ["Placa", "#e8d9b0", r.label],
@@ -3947,7 +4034,7 @@
       const data = ({ v: 3, wv: 4, t: Date.now(), name: player.name, hero: player.hero, look: player.look, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", mounts: player.mounts || [], mount: player.mount || null, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, totalLevel(), urgent === true); // rodada 152: nível da conta (sem as classes)
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

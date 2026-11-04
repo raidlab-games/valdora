@@ -14,6 +14,7 @@ window.ValdoraInput = (() => {
       if (k === "m" && api.toggleMap) return api.toggleMap();
       if (k === "o") return api.toggleDlg("craft");
       if (k === "g" && api.petStay) return api.petStay(); // rodada 99: filhote fica / segue
+      if (k === "h" && api.ride) return api.ride(); // rodada 156: monta / desce do cavalo
       if (TABS[k]) return api.tab(TABS[k]);
       if (/^[1-9]$/.test(k) && api.hot) return api.hot(+k - 1); // rodada 137: barra de 9 atalhos
       if (k === "1") return api.eatBest();

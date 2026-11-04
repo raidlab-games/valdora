@@ -110,6 +110,16 @@ window.ValdoraHero = (() => {
         ctx.globalAlpha = 1; return;
       }
       const [vx, vy] = DIR_VEC[player.dir], pose = heroPose(), moving = player.prog < 1 && !player.halfStop; // rodada 117: parado no meio do tile
+      if (player.riding) { // rodada 156: montado. Cavalo por baixo e o herói (folha _ride, com a roupa) por cima, no mesmo quadro
+        const HS = api.horse && api.horse(), RS = ANIMS[hero.id + "_ride"];
+        if (HS && RS) {
+          const pre = moving ? "ridewalk_" : "ride_", row = rk(RS, pre, player.dir), R = RS.rows[row];
+          const f = moving ? Math.floor(player.dist * 3.2) % R.frames : animFrame(R, t), cx = Math.round(player.px * TILE - cam.x + TILE / 2), by = Math.round((player.py + 1) * TILE - cam.y);
+          shadowAt(cx, by - 2, TILE * 0.75, TILE * 0.22);
+          drawAnim(HS, row, f, cx, by, false); drawAnim(RS, row, f, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0);
+          tags.push([player.name, player.px + 0.5, player.py - 0.85, "#f1c40f"]); return;
+        }
+      }
       const fw = sheet ? sheet.width / HERO_SHEET.cols : TILE, fh = sheet ? sheet.height / HERO_SHEET.rows.length : TILE;
       // rodada 72: a folha de caminhada tem só 2 passadas + o quadro neutro; o corpo sobe ~2 px no neutro (passagem) e desce na
       // passada, no meio de cada quadro, para o passo ter peso. u = quadros andados (2 por tile)

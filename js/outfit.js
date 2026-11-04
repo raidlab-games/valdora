@@ -7,7 +7,7 @@ window.ValdoraOutfit = (() => {
   "use strict";
   const ORDER = ["under_m", "under_f", "eyes_1", "eyes_2", "eyes_3", "eyes_4", "eyes_5", "eyes_6", "eyes_7", "eyes_8", "pants", "greaves", "boots", "bootsplate", "shirt", "plate", "tunic", "hunter", "robe", "quiver", "hair_1", "hair_2", "hair_3", "hair_4", "hair_5", "hair_6", "hair_7", "hair_8", "hair_9", "hood", "helm", "mhood", "hat",
     "shield", "orb", "book", "cape", "backpack", "sword", "sword2", "staff", "bow", "tool"]; // rodada 151: cajado // rodada 105: escudo, orbe, livro e montante; 112: mochila
-  const ANIM_SUF = ["", "_walk6", "_dash", "_block", "_cancel", "_cheer", "_strike4"];
+  const ANIM_SUF = ["", "_walk6", "_dash", "_block", "_cancel", "_cheer", "_strike4", "_ride"]; // rodada 156: montado
   const SPR_SUF = ["_attack", "_chop", "_mine", "_hammer", "_fish", "_cook", "_reap", "_spin", "_sheet"];
   const BOW_ALT = { _attack: "_attack_bow", _strike4: "_strike4_bow" }; // com arco, o golpe vira tiro (outro corpo e outras peças)
   const imgs = {};

@@ -126,6 +126,7 @@ for (const k of ["skill_spin", "skill_dash", "skill_smash", "skill_run", ...["wa
   "fireball", "frost", "chain", "heal", "nova", "manashield", "meteor"].map((k) => "skill_" + k)]) ASSETS[k] = `assets/flow/${k}.png`;
 // Rodada 9: investida com espada (folhas hero_N_dash do Blender, células de 96 px como a folha de ataque) e ícone de missão
 for (const n of [1, 2, 3]) SPRITE_SIZE[`hero_${n}_dash`] = [1.45 * 1.5, 1.45 * 1.5];
+for (const n of [1, 2]) SPRITE_SIZE[`hero_${n}_ride`] = [1.45 * 1.5, 1.45 * 1.5]; // rodada 156: montado (mesma célula do dash)
 ASSETS.icon_quest = "assets/flow/icon_quest.png"; ASSETS.icon_quest_32 = "assets/flow/icon_quest_32.png";
 // Rodada 10: mini-chefes com arte própria, bloqueio do herói (folhas de 96 px como a de ataque), passivas e lua cheia
 ASSETS.mob_lumita_colossus = "assets/flow/mob_lumita_colossus.png"; SPRITE_SIZE.mob_lumita_colossus = [3.2, 3.2];
@@ -247,6 +248,7 @@ ASSETS.craft_desk = "assets/flow/craft_desk.png"; SPRITE_SIZE.craft_desk = [164 
 ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
 // rodada 120: cais. Mestre do cais (Blender) e o píer de madeira (tools/pier_art.py: 2 x 6 tiles, recortado tile a tile no chão)
 ASSETS.npc_harbor = "assets/flow/npc_harbor.png"; ASSETS.npc_harbor_sheet = "assets/flow/npc_harbor_sheet.png";
+ASSETS.npc_stable = "assets/flow/npc_stable.png"; ASSETS.npc_stable_sheet = "assets/flow/npc_stable_sheet.png"; // rodada 156: Teodoro, do Celeiro
 for (const s of ["s", "n", "e", "w"]) { ASSETS["pier_" + s] = `assets/flow/pier_${s}.png`; SPRITE_SIZE["pier_" + s] = s === "s" || s === "n" ? [2, 6] : [6, 2]; }
 window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 }, craft_desk: { ax: 0.3659, ay: 0.7643, nx: 0, ny: 0 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
@@ -311,7 +313,7 @@ ASSETS.icon_home = "assets/flow/icon_home.png"; ASSETS.icon_rested = "assets/flo
 // Cada um tem a altura do próprio modelo (o Bento é mais baixo, o Ivo mais alto); npc_X_walk6 = caminhada nas 4 direções.
 // rodada 114: guardiões das vilas novas (Blender, no estilo do Ivo)
 for (const v of ["breu", "oasis", "escarpa", "degelo"]) { const k = "npc_warden_" + v; ASSETS[k] = `assets/flow/${k}.png`; ASSETS[k + "_sheet"] = `assets/flow/${k}_sheet.png`; }
-for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo", "npc_witch", "npc_harbor"]) {
+for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odilia", "npc_bras", "npc_auctioneer", "npc_warden_breu", "npc_warden_oasis", "npc_warden_escarpa", "npc_warden_degelo", "npc_witch", "npc_harbor", "npc_stable"]) {
   for (const suf of ["", "_look", "_walk6"]) SPRITE_SIZE[k + suf] = [1.45, 1.45];
   SPRITE_SIZE[k + "_sheet"] = [3 * 1.45, 4 * 1.45];
 }

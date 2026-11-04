@@ -2,7 +2,7 @@
 // Tudo aqui é configuração: dá para equilibrar o jogo mexendo só neste arquivo.
 window.VD = (() => {
   const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia",
-    guerreiro: "Guerreiro", arqueiro: "Arqueiro", mago: "Mago" }; // rodada 151: classes (sobem usando a arma de cada uma) // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
+    guerreiro: "Guerreiro", arqueiro: "Arqueiro", mago: "Mago", equitacao: "Equitação" }; // rodada 156: Equitação (sobe cavalgando) // rodada 151: classes (sobem usando a arma de cada uma) // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
 
   // Raridade dos acessórios (cor usada no inventário, no chão e nos textos)
   const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" },
@@ -1544,7 +1544,7 @@ window.VD = (() => {
     { id: "cacador", name: "Grande Caçador", items: { "Pele de urso": 10, "Galhada de cervo": 10, "Barra de obsidiana": 2 }, bonus: { dmg: 2 } },
   ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
   // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
-  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", null];
+  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", "mount"]; // rodada 156: montar
   // ---------- rodada 155: equipamento de ofício das 3 classes, mapa a mapa ----------
   // Guerreiro: placas de metal (bigorna). Arqueiro: couro (mesa de artesanato). Mago: tecido (mesa de artesanato).
   // Cada mapa tem o seu couro (feras) e o seu fio (aranhas, mariposas, carneiros, múmias, mamutes...); a mesa tece 3 fios em 1 tecido.
@@ -1644,6 +1644,20 @@ window.VD = (() => {
   // rodada 155: fogueira assa 1 por vez; segundos por peça (mapa 1 = 1 s, cada mapa acima +1 s)
   for (const [n, t] of Object.entries({ "Lambari cru": 1, "Carne de javali": 1, "Carne de caça": 1, "Tucunaré cru": 1.5, "Enguia-sombria crua": 2, "Truta da serra crua": 3, "Bagre do oásis cru": 4, "Salmão glacial cru": 5 }))
     if (ITEMS[n]) ITEMS[n].cookT = t; // para refazer a ferramenta de pedra e começar o tecido
+  // ---------- rodada 156: montarias (Celeiro de Lumeira, com o Teodoro) ----------
+  // 4 níveis de cavalo, 3 pelagens cada; cada nível corre um pouco mais e é mais bonito que o anterior (arte: tools/b3d/horse.py).
+  // Pedem nível de Equitação (sobe 3 xp por tile cavalgado) e moedas. sheet = folha do cavalo (anim3d/horse_tT_sS.png).
+  const MOUNT_TIERS = [
+    { t: 1, name: "Cavalo de lida", speed: 1.35, price: 1500, lvl: 1, desc: "Sela simples de couro, manta de lã e cabresto de corda." },
+    { t: 2, name: "Cavalo de viagem", speed: 1.5, price: 9000, lvl: 20, desc: "Sela com tachas de latão, alforjes, peitoral de couro e cabeçada com rosetas." },
+    { t: 3, name: "Corcel de guerra", speed: 1.65, price: 45000, lvl: 45, desc: "Testeira, crineira e peitoral de aço; xairel com brasão e barra dourada." },
+    { t: 4, name: "Corcel lendário", speed: 1.8, price: 180000, lvl: 80, desc: "Barda ornamentada, gema acesa na testa e crina, cauda e boletos acesos." }];
+  const COATS = { 1: ["Castanho", "Baio", "Tordilho"], 2: ["Alazão", "Murzelo", "Pampa"], 3: ["Palomino", "Rosilho", "Zaino"], 4: ["Solar", "Lunar", "Sombra"] };
+  const MOUNTS = {};
+  for (const T of MOUNT_TIERS) COATS[T.t].forEach((coat, i) => { const key = `t${T.t}_s${i + 1}`;
+    MOUNTS[key] = { key, tier: T.t, style: i + 1, coat, name: `${T.name} ${coat.toLowerCase()}`, speed: T.speed, price: T.price, lvl: T.lvl, sheet: "horse_" + key, icon: `assets/ui/horse_${key}.png` }; });
+  const RIDE_XP = 3; // xp de Equitação por tile cavalgado
+
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
   // Cada receita pede só o nível do ofício (o jogador escolhe o que criar para subir); o xp dos três ofícios (Artesanato,
@@ -1657,6 +1671,6 @@ window.VD = (() => {
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
   }
-  return { CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

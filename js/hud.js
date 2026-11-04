@@ -171,7 +171,13 @@ window.ValdoraHud = (() => {
           const on = a.id === "passive:" + player.style, tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)}</small><div>${esc(a.desc)}</div><small>${on ? "Ativa agora" : "Clique para ativar"}</small>`;
           return `<div class="sk-card pick-p${on ? " on" : " off"}" data-pstyle="${esc(a.id.slice(8))}" role="button" tabindex="0" data-tip="${esc(tip)}">${a.icon ? `<img src="${a.icon}" alt="">` : ""}<b class="lv">${a.lvl}</b><small>${esc(a.name)}</small></div>`; }).join("")}</div>`;
       } else if (hudTab === "mount") {
-        $("tab-mount").innerHTML = `<div class="soon"><span class="big">🐎</span><b>Montarias</b><br><small>Em breve: montarias para atravessar o continente mais rápido.</small></div>`;
+        // rodada 156: seu cavalo, Equitação e os cavalos que você tem (comprar: Teodoro, no Celeiro ao sul de Lumeira)
+        const MT = window.ValdoraMount, cur = MT.cur(player), L = ValdoraRules.skillLevel("equitacao", (player.xp || {}).equitacao || 0), mine = (player.mounts || []).map((k) => VD.MOUNTS[k]).filter(Boolean);
+        $("tab-mount").innerHTML = (cur ? `<div class="mt-cur"><img src="${(window.assetV || String)(cur.icon)}" alt=""><span><b>${esc(cur.name)}</b><small>+${Math.round((cur.speed - 1) * 100)}% de velocidade · Equitação ${L}</small></span>
+          <button class="wide" data-ride="1">${player.riding ? "Descer do cavalo (H)" : "Montar (H)"}</button></div>`
+          : `<div class="soon"><img class="mt-big" src="assets/ui/skill_equitacao.png" alt=""><b>Sem cavalo</b><br><small>O Teodoro vende cavalos no Celeiro, logo ao sul de Lumeira (siga o caminho ao lado da placa "Sul"). Equitação ${L}.</small></div>`)
+          + (mine.length > 1 ? `<div class="cr-group">Seus cavalos</div><div class="mt-grid">${mine.map((m) => `<div class="row mount${m === cur ? " on" : ""}"><img class="mt-ic" src="${(window.assetV || String)(m.icon)}" alt=""><span class="grow"><b>${esc(m.coat)}</b><small>${esc(VD.MOUNT_TIERS[m.tier - 1].name)}</small></span><button data-usemount="${m.key}" ${m === cur ? "disabled" : ""}>${m === cur ? "Em uso" : "Usar"}</button></div>`).join("")}</div>` : "")
+          + `<small class="desc">Montado você anda mais rápido e sobe Equitação a cada tile. Golpear, coletar, usar skill ou levar um golpe faz descer.</small>`;
       } else if (hudTab === "guild") {
         $("tab-guild").innerHTML = `<div class="soon"><span class="big">⚑</span><b>Guildas</b><br><small>Em breve: crie ou entre numa guilda com outros aventureiros.</small></div>`;
       }

@@ -6,6 +6,11 @@ window.ValdoraScenery = (() => {
     const { ctx, cam, TILE, ANIMS, SPR, HERO_SHEET, TUTORIAL, tags, animFrame, drawAnim, drawFx, drawSmoke, sceneryFrame, shadow, questMark } = api;
     function drawObject(o, t) {
       const player = api.player(), dlg = api.dlg(), bubble = api.bubble(), mobs = api.mobs();
+      if (o.type === "penhorse") { // rodada 156: cavalo do cercadinho (folha pequena, baixada quando aparece na tela)
+        const A = api.lazyAnim && api.lazyAnim(o.spr + "_pen"), row = "ride_" + o.dir, R = A && A.rows[row]; if (!R) return;
+        const x = Math.round((o.x + 0.5) * TILE - cam.x), y = Math.round((o.y + 1) * TILE - cam.y);
+        shadow(o.x + 0.5, o.y + 0.92, 0.7); drawAnim(A, row, animFrame(R, t + o.x * 0.37 + o.y * 0.21), x, y, false); return;
+      }
       const img = SPR[o.spr]; if (!img) return;
       const mvx = o.mv ? (o.mv.fx - o.x) * (1 - o.mv.t) : 0, mvy = o.mv ? (o.mv.fy - o.y) * (1 - o.mv.t) : 0; // NPC andando
       const scen = sceneryFrame(o, t), HA = ANIMS[o.spr] && ANIMS[o.spr].rows.hit ? ANIMS[o.spr] : null;
@@ -25,8 +30,8 @@ window.ValdoraScenery = (() => {
       const behind = player.py < o.y + o.h - 1 + 0.01 && psx > sx && psx < sx + img.width && psy > sy && psy < sy + img.height;
       if (behind) ctx.globalAlpha = 0.5;
       if (o.tint && o.type === "peace") ctx.filter = o.tint; // rodada 147: Pacificador de branco
-      if ((o.type === "merchant" || o.type === "guard" || o.type === "bard" || o.type === "herb" || o.type === "carto" || o.type === "miner" || o.type === "warden" || o.type === "auction" || o.type === "harbor" || o.type === "peace") && ANIMS[o.spr]) { // idle animado (Blender); rodada 79: e a Juna; 114: guardiões; 119: cais
-        const A = ANIMS[o.spr], talk = A.rows.talk && ((dlg && dlg.kind === { merchant: "shop", guard: "guard", bard: "bard", herb: "herb", carto: "carto", miner: "miner", warden: "warden", auction: "auction", harbor: "harbor", peace: "peace" }[o.type] && ((o.type !== "warden" && o.type !== "harbor") || dlg.obj === o)) || (bubble && bubble.o === o));
+      if ((o.type === "merchant" || o.type === "guard" || o.type === "bard" || o.type === "herb" || o.type === "carto" || o.type === "miner" || o.type === "warden" || o.type === "auction" || o.type === "harbor" || o.type === "peace" || o.type === "stable") && ANIMS[o.spr]) { // idle animado (Blender); rodada 79: e a Juna; 114: guardiões; 119: cais
+        const A = ANIMS[o.spr], talk = A.rows.talk && ((dlg && dlg.kind === { merchant: "shop", guard: "guard", bard: "bard", herb: "herb", carto: "carto", miner: "miner", warden: "warden", auction: "auction", harbor: "harbor", peace: "peace", stable: "stable" }[o.type] && ((o.type !== "warden" && o.type !== "harbor") || dlg.obj === o)) || (bubble && bubble.o === o));
         // rodada 73: parado, olha para o herói (ou para a banca) pelo quadro em pé da folha de 4 direções; de frente fica o idle animado
         const look = !o.mv && o.lookDir && o.lookDir !== "down" && !talk && !o.react && !o.rise && !(o.sitT > 0) && !o.singing;
         const WS = (o.mv || look) && SPR[o.spr + "_sheet"], fx0 = Math.round((o.x + mvx + 0.5) * TILE - cam.x), fy0 = Math.round((o.y + mvy + 1) * TILE - cam.y);
@@ -96,7 +101,8 @@ window.ValdoraScenery = (() => {
       if (o.type === "auction" || o.type === "witch") { const D = (window.DESKS || {})[o.spr] || { nx: 0 }; tags.push([o.type === "auction" ? "Celeste · Leilão" : "Morgana · Poções", o.x + (o.dcx ?? 1.5) + D.nx, o.y - 0.95, o.type === "auction" ? "#e8b4ff" : "#9fe0a8"]); } // rodadas 114–117
       if (o.type === "warden") tags.push([o.short || o.name, o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#9fd0ff"]); // rodada 114: guardiões
       if (o.type === "harbor") tags.push([o.name, o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#8fd8ff"]);
-      if (o.type === "peace") tags.push(["☮ Pacificador", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#ffffff"]); // rodada 147 // rodada 120: mestre do cais
+      if (o.type === "peace") tags.push(["☮ Pacificador", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#ffffff"]);
+      if (o.type === "stable") tags.push(["Teodoro · Cavalos", o.x + 0.5, (sy + cam.y) / TILE + 0.05, "#f0c878"]); // rodada 156 // rodada 147 // rodada 120: mestre do cais
       if (o.type === "guard" || o.type === "bard" || o.type === "merchant" || o.type === "herb" || o.type === "carto" || o.type === "miner" || o.type === "warden") { // "!" tutorial ou missão nova; "?" missão pronta para entregar
         const mark = o.type === "warden" ? questMark(o.giver) : o.village ? null : o.type === "guard" && TUTORIAL[player.tut.step] && player.tut.step === 0 ? "!" : questMark(o.type === "merchant" ? "shop" : o.type); // rodada 105: missões só com os da Lumeira
         if (mark) {
