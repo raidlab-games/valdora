@@ -87,6 +87,9 @@ window.ValdoraHud = (() => {
         const L = api.load && api.load(), lb = $("me-load"); // rodada 112: peso carregado / carga
         if (L && lb) { lb.className = ["", "heavy", "crawl"][L.k]; lb.firstChild.style.width = Math.min(100, L.r * 100) + "%"; lb.lastChild.textContent = `${L.w.toLocaleString("pt-BR")}/${L.cap} kg`;
           lb.title = L.k === 2 ? "Peso demais: anda igual a uma tartaruga. Guarde ou venda itens." : L.k === 1 ? "Pesado: anda mais devagar." : "Peso: leve"; } }
+      { const pb = $("pvp-mode"), st = player.pk > 0 ? "hostile locked" : player.pvpMode === "hostile" ? "hostile" : "passive"; // rodada 148: botão das espadas
+        if (pb && pb.dataset.st !== st) { pb.dataset.st = st; pb.className = "pvp-btn " + st;
+          pb.title = st === "passive" ? "Modo Passivo: não acerta jogadores. Clique para ir ao modo Hostil." : st === "hostile" ? "Modo Hostil: pode atacar jogadores nas zonas PvP. Clique para voltar ao Passivo." : "Modo Hostil travado: você é PK. Fica assim até o PK acabar ou o Pacificador limpar."; } }
       { const pv = api.pvpHere && api.pvpHere(), pk = player.pk > 0; // rodada 147: zona PvP e marca de PK embaixo do lugar
         const lh = `${reg.icon && ASSETS[reg.icon] ? `<img class="ricon" src="${ASSETS[reg.icon + "_32"] || ASSETS[reg.icon]}" alt="">` : ""}${esc(reg.name)}${reg.lvl ? `<small>${esc(reg.lvl)}</small>` : ""}`
           + `<div class="loc-z"><span class="${pv ? "pvp" : "safe"}">${pv ? "⚔ zona PvP" : "zona sem PvP"}</span>${pk ? `<span class="pk"><img src="${ASSETS.pk_skull}" alt=""> PK ${ValdoraPvP.fmt(player.pk)}</span>` : ""}</div>`;

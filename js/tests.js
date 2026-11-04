@@ -512,7 +512,9 @@
     P.onKillPlayer(p); if (p.pk !== 7200) r.push("PK 2 h");
     for (let i = 0; i < 50; i++) P.onKillMob(p); if (p.pk !== 7140) r.push("50 monstros = -1 min");
     P.tick(p, 100); P.onAttackPlayer(p); if (p.pk !== 7200) r.push("ataque volta a 2 h");
+    if (!P.hostile(p) || !P.locked(p) || P.toggleMode(p)) r.push("PK trava o Hostil");
     if (!P.peace(p) || p.pk || p.coins !== 500 || P.peace(p)) r.push("paz por 1000");
+    if (!P.toggleMode(p) || P.hostile(p) || !P.toggleMode(p) || !P.hostile(p)) r.push("botão Passivo/Hostil"); /* rodada 148 */
     return miss(r);
   });
   test("iluminação: dia claro, noite escura", () => ValdoraLight.darkness(0.2) === 0 && ValdoraLight.darkness(0.8) === 0 && ValdoraLight.darkness(0.92) > 0.5 || "curva inesperada"); // rodada 139: dia 2 h, noite 20 min

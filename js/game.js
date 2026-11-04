@@ -1372,7 +1372,7 @@
     if (!player.seen.runHot) { player.seen.runHot = 1; const i = player.hotbar.indexOf(null); if (i >= 0 && !player.hotbar.includes("skill:run")) player.hotbar[i] = "skill:run"; } // rodada 139: Corrida na barra uma vez
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
     player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
-    player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; // rodada 147: PK (segundos de jogo que faltam)
+    player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; player.pvpMode = data.pvpMode === "hostile" ? "hostile" : "passive"; // rodada 148 // rodada 147: PK (segundos de jogo que faltam)
     deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
     for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
@@ -1800,7 +1800,7 @@
     tile: (x, y) => map[y] && map[y][x], tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM],
     spawn: (type, x, y) => spawnMob(type, regionAt(x, y), { x, y, r: 0 }, null, { at: { x, y } }), // rodada 135: teste de comportamento de cada espécie
-    shotsN: () => MSKILL.warnTiles().length, pvpHere: (x, y) => pvpHere(x, y), pvpAttack: () => pvpAttack(), pvpKill: (n) => pvpKill(n) }; // rodada 104: inspeção pelo console (só com ?debug)
+    shotsN: () => MSKILL.warnTiles().length, pvpHere: (x, y) => pvpHere(x, y), pvpAttack: () => pvpAttack(), pvpKill: (n) => pvpKill(n), canHitPlayer: () => canHitPlayer() }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ fineTo: (fx, fy, tx, ty) => fineTo(fx, fy, tx, ty), blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
@@ -2509,7 +2509,18 @@
   // rodada 147: PvP (js/pvp.js). pvpHere: o tile vale PvP? pvpAttack/pvpKill: chamados quando houver jogadores online
   const PVP = window.ValdoraPvP;
   const pvpHere = (x = player.x, y = player.y) => PVP.zoneOk({ biome: inCrypt ? 0 : WORLD_G.biomeAt(x, y) || 1, town: inTown(x, y), dungeon: inCrypt ? dungeon : null });
-  function pvpAttack() { PVP.onAttackPlayer(player); hudDirty = true; }
+  // rodada 148: só bate em jogador no modo Hostil e numa zona PvP (o online chama canHitPlayer antes de mandar o golpe)
+  const canHitPlayer = () => PVP.hostile(player) && pvpHere();
+  function pvpAttack() {
+    if (!canHitPlayer()) { log(pvpHere() ? "Modo Passivo: ligue as espadas (Hostil) para atacar jogadores." : "Aqui não tem PvP.", "dim"); return false; }
+    PVP.onAttackPlayer(player); hudDirty = true; return true;
+  }
+  $("pvp-mode").onclick = () => {
+    if (!player) return;
+    if (!PVP.toggleMode(player)) { log(`Preso no modo Hostil enquanto for PK (${PVP.fmt(player.pk)}). O Pacificador limpa por ${PVP.PEACE_COST} moedas.`, "warn"); SND.play("miss"); return; }
+    SND.play("ui"); hudDirty = true; save();
+    log(player.pvpMode === "hostile" ? "⚔ Modo Hostil: você pode atacar jogadores nas zonas PvP." : "Modo Passivo: você não acerta jogadores.", player.pvpMode === "hostile" ? "warn" : "dim");
+  };
   function pvpKill(name) { const was = player.pk > 0; PVP.onKillPlayer(player); hudDirty = true;
     log(`☠ Você derrotou ${name || "um jogador"} e agora é PK por 2 h: nome vermelho e caveira no mapa para todos.${was ? "" : " O Pacificador de qualquer vila desfaz isso por 1000 moedas."}`, "warn"); }
   function deathPenalty() {
@@ -3773,13 +3784,13 @@
       const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }
   }
   addEventListener("pagehide", () => { if (running) save(true); });
-  window.ValdoraGame = { start, readSave, level, SKILLS, pvp: { here: (x, y) => pvpHere(x, y), attack: () => pvpAttack(), kill: (n) => pvpKill(n) }, // usado por js/lobby.js; pvp: para o online (rodada 147)
+  window.ValdoraGame = { start, readSave, level, SKILLS, pvp: { here: (x, y) => pvpHere(x, y), canHit: () => canHitPlayer(), attack: () => pvpAttack(), kill: (n) => pvpKill(n) }, // usado por js/lobby.js; pvp: para o online (rodada 147)
     seed: (n) => { RNG = n == null ? Math.random : mulberry32(n); } }; // rodada 63: só para medições (null volta ao normal)
   document.addEventListener("visibilitychange", () => { if (document.hidden && running) save(true); });
 })();

@@ -8,7 +8,12 @@ window.ValdoraPvP = (() => {
   "use strict";
   const PK_TIME = 2 * 60 * 60, MOB_STEP = 50, MOB_CUT = 60, PEACE_COST = 1000;
   const zoneOk = ({ biome, town, dungeon }) => !town && (dungeon ? /^dg_/.test(dungeon) : biome > 1);
-  function onKillPlayer(p) { p.pk = PK_TIME; p.pkMobs = 0; }
+  function onKillPlayer(p) { p.pk = PK_TIME; p.pkMobs = 0; p.pvpMode = "hostile"; }
+  // rodada 148: modo do botão das espadas. Passivo não acerta jogadores (o clique em outro jogador não bate); Hostil libera.
+  // Com PK, fica preso no Hostil até o PK acabar (2 h em paz) ou ser limpo no Pacificador.
+  const hostile = (p) => p.pk > 0 || p.pvpMode === "hostile";
+  const locked = (p) => p.pk > 0;
+  function toggleMode(p) { if (locked(p)) return false; p.pvpMode = p.pvpMode === "hostile" ? "passive" : "hostile"; return true; }
   function onAttackPlayer(p) { if (p.pk > 0) p.pk = PK_TIME; }
   function onKillMob(p) { // true quando a contagem tirou 1 minuto
     if (!(p.pk > 0)) return false;
@@ -19,5 +24,5 @@ window.ValdoraPvP = (() => {
   function tick(p, dt) { if (!(p.pk > 0)) return false; p.pk = Math.max(0, p.pk - dt); if (p.pk === 0) p.pkMobs = 0; return p.pk === 0; } // true quando o PK acabou agora
   function peace(p) { if (!(p.pk > 0) || p.coins < PEACE_COST) return false; p.coins -= PEACE_COST; p.pk = 0; p.pkMobs = 0; return true; }
   const fmt = (s) => { s = Math.ceil(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60); return h ? `${h}h${String(m).padStart(2, "0")}` : m ? `${m} min` : `${s} s`; };
-  return { PK_TIME, MOB_STEP, MOB_CUT, PEACE_COST, zoneOk, onKillPlayer, onAttackPlayer, onKillMob, tick, peace, fmt };
+  return { hostile, locked, toggleMode, PK_TIME, MOB_STEP, MOB_CUT, PEACE_COST, zoneOk, onKillPlayer, onAttackPlayer, onKillMob, tick, peace, fmt };
 })();
