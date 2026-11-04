@@ -41,7 +41,10 @@ window.ValdoraAccount = (() => {
 
   // ---------- servidores ----------
   async function servers() {
-    const list = await N.servers(); show("acct-servers");
+    const list = await N.servers();
+    const on = list.filter((s) => s.status === "online");
+    if (on.length === 1) { server = on[0]; store.set("valdora.lastServer", server.id); return charList(); } // rodada 158: um servidor só (Lumeira): vai direto aos personagens
+    show("acct-servers");
     const last = store.get("valdora.lastServer");
     $("srv-list").innerHTML = list.map((s) => `<button type="button" class="srv${s.id === last ? " last" : ""}" data-srv="${esc(s.id)}" ${s.status !== "online" ? "disabled" : ""}>
       <span class="dot ${esc(s.status)}"></span><b>${esc(s.name)}</b><small>${esc(s.region)}</small>
@@ -74,7 +77,7 @@ window.ValdoraAccount = (() => {
     const sink = N.play(c);
     await G.start(data, { sink });
   }
-  $("chars-back").onclick = () => guard(null, servers);
+  if ($("chars-back")) $("chars-back").onclick = () => guard(null, servers);
   $("char-new").onclick = () => { show("create"); $("name").value = ""; $("name").focus(); };
   $("create-back").onclick = () => show("acct-chars");
   $("char-import").onclick = () => guard($("char-import"), async () => {
