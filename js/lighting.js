@@ -2,13 +2,15 @@
 // A escuridão é desenhada num canvas pequeno (1/4 da tela) com "furos" de luz e depois ampliada com suavização,
 // então custa pouco mesmo com dezenas de luzes.
 window.ValdoraLight = (() => {
-  const DAY = 600; // duração de um dia completo, em segundos
+  // rodada 139: dia de 2 h e noite de 20 min (reais); 3 min de entardecer e 3 de amanhecer dentro do dia
+  const DAY = 8400; // duração de um dia completo, em segundos
+  const D1 = (7200 - 360) / DAY, D2 = D1 + 180 / DAY, D3 = D2 + 1200 / DAY;
   // fase do dia (0..1) → escuridão (0..1)
   function darkness(phase) {
-    if (phase < 0.55) return 0;                          // dia
-    if (phase < 0.65) return (phase - 0.55) / 0.1 * 0.62; // entardecer
-    if (phase < 0.9) return 0.62;                         // noite
-    return (1 - phase) / 0.1 * 0.62;                      // amanhecer
+    if (phase < D1) return 0;                               // dia
+    if (phase < D2) return (phase - D1) / (D2 - D1) * 0.62; // entardecer
+    if (phase < D3) return 0.62;                            // noite
+    return (1 - phase) / (1 - D3) * 0.62;                   // amanhecer
   }
   const hourOf = (phase) => (phase * 24 + 6) % 24;        // fase 0 = 6h da manhã
   function create() {

@@ -87,10 +87,12 @@ window.ValdoraHud = (() => {
         const L = api.load && api.load(), lb = $("me-load"); // rodada 112: peso carregado / carga
         if (L && lb) { lb.className = ["", "heavy", "crawl"][L.k]; lb.firstChild.style.width = Math.min(100, L.r * 100) + "%"; lb.lastChild.textContent = `${L.w.toLocaleString("pt-BR")}/${L.cap} kg`;
           lb.title = L.k === 2 ? "Peso demais: anda igual a uma tartaruga. Guarde ou venda itens." : L.k === 1 ? "Pesado: anda mais devagar." : "Peso: leve"; } }
+      { const lh = `${reg.icon && ASSETS[reg.icon] ? `<img class="ricon" src="${ASSETS[reg.icon + "_32"] || ASSETS[reg.icon]}" alt="">` : ""}${esc(reg.name)}${reg.lvl ? `<small>${esc(reg.lvl)}</small>` : ""}`;
+        if ($("loc").dataset.h !== lh) { $("loc").dataset.h = lh; $("loc").innerHTML = lh; } } // rodada 139: o lugar sempre embaixo do minimapa
       $("player-info").innerHTML = `<div class="who"><b${PR ? ` style="color:${PR.color}" title="${esc(PR.title)}"` : ""}>${PR && ValdoraShrine.badge(PR) ? `<img class="tbadge" src="${ValdoraShrine.badge(PR)}" alt="">` : ""}${esc(player.name)}</b><span class="lvl" title="Nível total (soma das habilidades)">${player.name.length + (PR ? 2 : 0) > 13 ? "Nv." : "Nível total"} ${totalLevel()}</span></div>
         <div class="bar hp"><i style="width:${Math.min(100, (hp / mh) * 100)}%"></i><em>${hp} / ${mh}</em>${vm ? `<span class="votive" title="Chama votiva: mais ${vm} min">${ASSETS.icon_votive_hud ? `<img src="${ASSETS.icon_votive_hud_32 || ASSETS.icon_votive_hud}" alt="">` : "✦"}<span class="vm">${vm} min</span></span>` : ""}</div>
         ${PT ? `<button type="button" class="petline${PT.down ? " down" : ""}" title="${esc(PT.tip)}">${ASSETS.icon_pet ? `<img src="${ASSETS.icon_pet}" alt="">` : ""}<span class="pn">${esc(PT.name)}</span><span class="bar pethp"><i style="width:${PT.pct}%"></i><em>${esc(PT.label)}</em></span></button>` : ""}
-        <div class="who"><span class="coins"><img src="${ASSETS.coin}" alt="">${player.coins}</span><span class="clock" title="Hora do dia">${LIGHT.darkness(player.dayT) > 0.3 || inCrypt ? "☾" : "☀"} ${Math.floor(LIGHT.hourOf(player.dayT))}h</span>${foodLow ? `<span class="foodlow${player.foodPulseT > 0 ? " pulse" : ""}" title="${food ? "Só resta 1 comida" : "Sem comida"}: pesque ou cace e asse na fogueira antes de lutar mais"><img src="${ASSETS.icon_food_low}" alt="">${food}</span>` : ""}<span class="reg" title="${esc(reg.name)}${reg.lvl ? " · " + esc(reg.lvl) : ""}">${reg.icon && ASSETS[reg.icon] ? `<img class="ricon" src="${ASSETS[reg.icon + "_32"] || ASSETS[reg.icon]}" alt="">` : ""}<span class="rname">${esc(reg.name)}</span></span></div>
+        <div class="who"><span class="coins"><img src="${ASSETS.coin}" alt="">${player.coins}</span>${foodLow ? `<span class="foodlow${player.foodPulseT > 0 ? " pulse" : ""}" title="${food ? "Só resta 1 comida" : "Sem comida"}: pesque ou cace e asse na fogueira antes de lutar mais"><img src="${ASSETS.icon_food_low}" alt="">${food}</span>` : ""}</div>
         ${Object.keys(player.buffs).length ? `<div class="buffs">${Object.entries(player.buffs).map(([k, v]) => `<span style="border-color:${BUFFS[k].color}">${esc(BUFFS[k].name)} ${Math.ceil(v * TICK)}s</span>`).join("")}</div>` : ""}`;
       const s = TUTORIAL[player.tut.step];
       const qs = QUEST.tracker();
@@ -104,15 +106,16 @@ window.ValdoraHud = (() => {
       $("quest").hidden = !s && !qs.length;
       $("quest").innerHTML = (s ? `${ASSETS.icon_tutorial_step ? `<img class="qicon" src="${ASSETS.icon_tutorial_step}" alt="">` : ""}<small>Tarefa ${player.tut.step + 1}/${TUTORIAL.length}</small> ${esc(s.text)} <b>${player.tut.n}/${s.n}</b>` : "") + qs.map((x) => `<div class="qline">${x}</div>`).join("");
       for (const b of document.querySelectorAll("#panel .tabs button")) b.classList.toggle("on", b.dataset.tab === hudTab);
-      for (const t of ["inv", "skills", "combat", "journal", "book", "coll", "mount", "guild", "livro"]) $("tab-" + t).hidden = t !== hudTab;
+      for (const t of ["inv", "skills", "combat", "journal", "book", "coll", "mount", "guild", "livro", "passive"]) $("tab-" + t).hidden = t !== hudTab;
       // rodada 137: o painel é uma janela que abre pelo menu de baixo à direita (estilo Cambria)
-      const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Diário", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros" };
+      const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Diário", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros", passive: "Passivas" };
+      $("panel").classList.toggle("big", ["journal", "livro", "coll", "guild"].includes(hudTab)); $("panel").classList.toggle("small", ["inv", "book", "passive"].includes(hudTab)); // rodada 139
       $("panel").hidden = !hudTab; $("panel-title").textContent = TITLES[hudTab] || "";
-      for (const b of document.querySelectorAll("#menubar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
+      for (const b of document.querySelectorAll("#menubar [data-menu], #roundbar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
       if (hudTab === "book") { // rodada 138: estilo Cambria: todas as skills em ícones com o nível; liberadas arrastam para a barra
-        const acts = api.hotActions(), hb = player.hotbar || [], pick = api.hotPick && api.hotPick();
+        const acts = api.hotActions().filter((a) => a.skill), hb = player.hotbar || [], pick = api.hotPick && api.hotPick(); // rodada 139: só as skills de combate
         const groups = [...new Set(acts.map((a) => a.kind.replace(/ \(.*\)/, "")))];
-        $("tab-book").innerHTML = `<small class="desc">Arraste uma skill liberada até a barra (teclas 1 a 9) para equipar. No toque: clique na skill e depois na casa da barra. Arraste uma casa para fora da barra para tirar.</small>`
+        $("tab-book").innerHTML = `<small class="desc">Arraste a skill até a barra (1 a 9). Comida e poções: arraste da mochila.</small>`
           + groups.map((g) => `<div class="sk-group"><div class="sk-h">${esc(g === "Passiva" ? "Passivas" : g === "Skill ativa" ? "Skills de combate" : g === "Poção" ? "Poções" : "Ações")}</div><div class="sk-grid">${acts.filter((a) => a.kind.replace(/ \(.*\)/, "") === g).map((a) => {
             const ok = api.hotUnlocked(a), on = hb.includes(a.id);
             const tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)} · nível ${a.lvl || 1}${a.cd ? ` · recarga ${a.cd} s` : ""}</small><div>${esc(a.desc)}</div>${ok ? (a.passive ? "<small>Ativa sozinha com o estilo escolhido</small>" : "<small>Arraste para a barra</small>") : `<small style="color:#ff9a7a">Libera no Combate ${a.lvl}</small>`}`;
@@ -156,6 +159,11 @@ window.ValdoraHud = (() => {
             return `<div class="lv-item">${ic ? `<img class="qicon" src="${ic}" alt="" ${ITEMS[n].filter ? `style="filter:${ITEMS[n].filter}"` : ""}>` : ""}<b style="color:${col(n)}">${esc(n)}</b> <small>${src.slice(0, 6).map(([m, p]) => `${esc(m)} ${pct(p)}`).join(" · ")}${src.length > 6 ? ` · +${src.length - 6}` : ""}</small></div>`;
           }).join("");
         }
+      } else if (hudTab === "passive") { // rodada 139: aba só das passivas (vêm do estilo de luta escolhido)
+        const P = api.hotActions().filter((a) => a.passive);
+        $("tab-passive").innerHTML = `<small class="desc">A passiva do estilo escolhido (aba Equip.) fica ativa sozinha.</small><div class="sk-grid">${P.map((a) => {
+          const on = a.id === "passive:" + player.style, tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)}</small><div>${esc(a.desc)}</div>`;
+          return `<div class="sk-card${on ? " on" : " locked"}" data-tip="${esc(tip)}">${a.icon ? `<img src="${a.icon}" alt="">` : ""}<b class="lv">${a.lvl}</b><small>${esc(a.name)}</small></div>`; }).join("")}</div>`;
       } else if (hudTab === "mount") {
         $("tab-mount").innerHTML = `<div class="soon"><span class="big">🐎</span><b>Montarias</b><br><small>Em breve: montarias para atravessar o continente mais rápido.</small></div>`;
       } else if (hudTab === "guild") {
@@ -172,7 +180,7 @@ window.ValdoraHud = (() => {
           const tip = `${s.name}${it.heal ? ` · cura ${it.heal} (clique para comer)` : ""}${B ? ` · ${B.name} por ${B.ticks * TICK} s (clique para beber)` : ""}${it.cook ? (level(player.xp.culinaria) < it.cookLvl ? ` · asse numa fogueira (requer Culinária ${it.cookLvl})` : ` · asse numa fogueira (${Math.round(RULES.burnChance(level(player.xp.culinaria), it.cookLvl) * 100)}% de queimar)`) : ""} · vale ${it.price} · clique direito larga no chão`;
           const tip2 = it.slot ? `${accName(s)} · ${RARITY[it.rarity].name}${s.aff ? " com afixos" : ""} · ${bonusText(accBonus(s))} · clique para equipar` : tip;
           const tipAttr = `data-tip="${esc(invTip(s, player))}" aria-label="${esc(tip2)}"`; // rodada 113: resumo com a comparação; o texto curto vai para o leitor de tela
-          return `<div class="slot${isSpecial(s.name) || s.aff ? " rare" : ""}${s.aff ? " affix" : ""}" data-i="${i}" tabindex="${i === rov ? 0 : -1}" role="button" ${tipAttr} ${it.rarity ? `style="border-color:${RARITY[it.rarity].color}"` : ""}>${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}${it.heal && !s.name.startsWith("Poção") && ASSETS.icon_heal_small ? `<i class="heal"><img src="${ASSETS.icon_heal_small}" alt="">${it.heal}</i>` : ""}${it.cook && ASSETS.icon_cook_level && RULES.burnChance(level(player.xp.culinaria), it.cookLvl) === 0 ? `<img class="cookok" src="${ASSETS.icon_cook_level}" alt="" title="Não queima mais no seu nível">` : ""}${s.aff ? `<i class="aff">${affBadges(s)}</i>` : ""}</div>`;
+          return `<div class="slot${isSpecial(s.name) || s.aff ? " rare" : ""}${s.aff ? " affix" : ""}" data-i="${i}" draggable="${it.heal || it.buff ? "true" : "false"}" tabindex="${i === rov ? 0 : -1}" role="button" ${tipAttr} ${it.rarity ? `style="border-color:${RARITY[it.rarity].color}"` : ""}>${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}${it.heal && !s.name.startsWith("Poção") && ASSETS.icon_heal_small ? `<i class="heal"><img src="${ASSETS.icon_heal_small}" alt="">${it.heal}</i>` : ""}${it.cook && ASSETS.icon_cook_level && RULES.burnChance(level(player.xp.culinaria), it.cookLvl) === 0 ? `<img class="cookok" src="${ASSETS.icon_cook_level}" alt="" title="Não queima mais no seu nível">` : ""}${s.aff ? `<i class="aff">${affBadges(s)}</i>` : ""}</div>`;
         }).join("") + `<button class="craft-btn">Artesanato · criar itens</button>`;
         if (fi != null) { const el = $("tab-inv").querySelector(`[data-i="${fi}"]`) || $("tab-inv").querySelector(".slot[tabindex]"); if (el) el.focus(); }
       } else if (hudTab === "skills") {

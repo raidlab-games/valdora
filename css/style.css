@@ -828,6 +828,29 @@ button.link:hover { color: #cfe3ff; }
 .sk-card.pick { border-color: var(--gold); box-shadow: 0 0 8px #f1c40f; }
 .sk-card[data-passive] { cursor: help; }
 #skillbar button.dropok { border-color: var(--gold); box-shadow: 0 0 10px #f1c40f; }
+/* rodada 139: mochila e Skills na metade do tamanho; botões redondos ao lado do minimapa; telas cheias sem borda */
+#tab-inv { grid-template-columns: repeat(8, 1fr) !important; gap: 2px !important; padding: 4px !important; }
+#tab-inv .slot span { font-size: 9px; left: 1px; bottom: 0; }
+#tab-inv .craft-btn { grid-column: 1 / -1; }
+#tab-book .sk-grid, #tab-passive .sk-grid { grid-template-columns: repeat(8, 1fr); gap: 3px; }
+.sk-card { padding: 2px 1px 1px; }
+.sk-card img, .sk-card .ic { width: 20px; height: 20px; font-size: 14px; }
+.sk-card small { font-size: 8px; line-height: 9px; }
+.sk-card .lv, .sk-card .eq { font-size: 8px; }
+.sk-card .lock { top: 5px; font-size: 10px; }
+#panel.small { width: 230px; }
+#roundbar { position: absolute; left: -17px; top: 4px; display: flex; flex-direction: column; gap: 4px; z-index: 3; background: none !important; border: 0 !important; }
+#roundbar button { width: 30px; height: 30px; border-radius: 50%; padding: 0; display: grid; place-items: center; background: var(--wood); border: 2px solid var(--edge);
+  box-shadow: 0 0 0 2px #000; cursor: pointer; }
+#roundbar button:hover, #roundbar button.on { border-color: var(--gold); box-shadow: 0 0 0 2px #000, 0 0 8px #f1c40f88; }
+#roundbar img { width: 20px; height: 20px; image-rendering: pixelated; }
+#hud { position: absolute; }
+#loc { padding: 3px 6px; text-align: center; font-size: 12px; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#loc small { color: var(--text); opacity: .8; margin-left: 4px; }
+#panel.big { left: 7%; right: 7%; top: 6%; bottom: 13%; width: auto; max-height: none; min-height: 0; background: #120e0ae8; border: 0; box-shadow: 0 0 40px #000c; }
+#panel.big .ph { background: transparent; border-bottom: 1px solid #ffffff22; }
+#panel.big #tab-livro, #panel.big #tab-coll { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); align-content: start; }
+#panel.big #tab-livro .lv-tabs, #panel.big #tab-livro .lv-maps, #panel.big #tab-livro > small, #panel.big #tab-coll > small { grid-column: 1 / -1; }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }

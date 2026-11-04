@@ -302,6 +302,54 @@ window.ANIM3D = {
     "frames": 6,
     "fps": 10,
     "loop": true
+   },
+   "run_down": {
+    "row": 8,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_left": {
+    "row": 9,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_right": {
+    "row": 10,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_up": {
+    "row": 11,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downleft": {
+    "row": 12,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downright": {
+    "row": 13,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upleft": {
+    "row": 14,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upright": {
+    "row": 15,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
    }
   },
   "b3d": true,
@@ -900,6 +948,54 @@ window.ANIM3D = {
     "frames": 6,
     "fps": 10,
     "loop": true
+   },
+   "run_down": {
+    "row": 8,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_left": {
+    "row": 9,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_right": {
+    "row": 10,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_up": {
+    "row": 11,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downleft": {
+    "row": 12,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downright": {
+    "row": 13,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upleft": {
+    "row": 14,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upright": {
+    "row": 15,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
    }
   },
   "b3d": true,
@@ -1497,6 +1593,54 @@ window.ANIM3D = {
     "row": 7,
     "frames": 6,
     "fps": 10,
+    "loop": true
+   },
+   "run_down": {
+    "row": 8,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_left": {
+    "row": 9,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_right": {
+    "row": 10,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_up": {
+    "row": 11,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downleft": {
+    "row": 12,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_downright": {
+    "row": 13,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upleft": {
+    "row": 14,
+    "frames": 6,
+    "fps": 13,
+    "loop": true
+   },
+   "run_upright": {
+    "row": 15,
+    "frames": 6,
+    "fps": 13,
     "loop": true
    }
   },

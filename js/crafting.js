@@ -5,7 +5,7 @@ window.ValdoraCrafting = (() => {
   "use strict";
   function create(api) {
     const { SMELT, CRAFT, GEAR, ITEMS, RARITY, SKILLS } = VD, { esc, iconImg } = ValdoraUI, { row, gearIcon, lockedIcon } = ValdoraDialogs, bonusText = ValdoraRules.bonusText;
-    const { lv, count, hasMats, matsText, gearEffect } = api;
+    const { lv, count, hasMats, matsText, gearEffect } = api, pre = (k) => (api.prereqText ? api.prereqText(k) : "");
     function furnaceHtml() {
       const player = api.player(); let html = "";
         const lvl = lv("ferraria"), busy = player.job && player.job.kind === "smelt";
@@ -18,13 +18,13 @@ window.ValdoraCrafting = (() => {
     }
     function craftHtml() {
       const player = api.player(); let html = "";
-        const lvl = lv("artesanato");
-        html = Object.entries(CRAFT).map(([n, r]) => {
+        const lvl = lv("artesanato"), desk = !api.atDesk || api.atDesk();
+        html = (desk ? "" : `<p class="desc warn">Para criar, vá à mesa de artesanato ao lado da bigorna. Aqui você só vê as receitas.</p>`) + Object.entries(CRAFT).map(([n, r]) => {
           const owned = r.bag && player.bags.includes(n), needBag = r.req && !player.bags.includes(r.req);
           const it = ITEMS[n], icon = it ? iconImg(n) : `<img src="${ASSETS.item_pouch || ASSETS.item_leather}" alt="">`;
-          const why = owned ? "já tem" : lvl < r.lvl ? `requer Artesanato ${r.lvl}` : needBag ? `requer ${r.req}` : !hasMats(r.mats) ? "faltam materiais" : "";
+          const why = owned ? "já tem" : lvl < r.lvl ? `requer Artesanato ${r.lvl}` : needBag ? `requer ${r.req}` : pre(n) ? pre(n) : !hasMats(r.mats) ? "faltam materiais" : !desk ? "só na mesa de artesanato" : "";
           const what = r.desc || (it && it.bonus ? `${RARITY[it.rarity].name}: ${bonusText(it.bonus)}` : "");
-          return row(icon, `${esc(n)}${owned ? " <small>(já tem)</small>" : ""}`, `${esc(what)} · ${esc(matsText(r.mats))} · Artesanato ${r.lvl} · +${r.xp} xp`, null,
+          return row(icon, `${esc(n)}${owned ? " <small>(já tem)</small>" : ""}`, `${esc(what)} · ${esc(matsText(r.mats))} · Artesanato ${r.lvl} · +${r.xp} xp${pre(n) ? ` · <b class="lock">${esc(pre(n))}</b>` : ""}`, null,
             `<button data-craft="${esc(n)}" ${why ? "disabled" : ""} title="${why}">Criar</button>`);
         }).join("");
       return html;
@@ -37,9 +37,9 @@ window.ValdoraCrafting = (() => {
           const f = t.forge; if (!f || f.lvl > lvl + 7) return;
           for (const v of k === "espada" ? ["", ...(t.bow ? ["bow"] : []), ...(t.two ? ["two"] : [])] : [""]) { // rodada 105: + montante
             const ff = v === "two" ? t.twoForge : f, name = v === "bow" ? t.bow : v === "two" ? t.two : t.name, lvOk = lvl >= ff.lvl, mats = hasMats(ff.mats);
-            const why = !lvOk ? `requer Ferraria ${ff.lvl}` : !mats ? "faltam materiais" : "";
+            const pq = pre("forge:" + name), why = !lvOk ? `requer Ferraria ${ff.lvl}` : pq ? pq : !mats ? "faltam materiais" : "";
             const extra = v === "bow" ? " · atira flechas" : v === "two" ? ` · duas mãos, +${ITEMS[name].bonus.dmg} dano, sem escudo · só o Guerreiro` : k === "espada" ? " · uma mão (deixa usar escudo)" : "";
-            html += row(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · ${esc(matsText(ff.mats))} · ${lvOk ? "" : '<b class="lock">'}Ferraria ${ff.lvl}${lvOk ? "" : "</b>"} · usar: ${SKILLS[g.skill]} ${t.req || 1}`, null,
+            html += row(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · ${esc(matsText(ff.mats))} · ${lvOk ? "" : '<b class="lock">'}Ferraria ${ff.lvl}${lvOk ? "" : "</b>"} · usar: ${SKILLS[g.skill]} ${t.req || 1}${pq ? ` · <b class="lock">${esc(pq)}</b>` : ""}`, null,
               `<button data-forge="${k}:${i}${v ? ":" + v : ""}" ${!why ? "" : "disabled"} title="${why}">Forjar</button>`);
           }
         });

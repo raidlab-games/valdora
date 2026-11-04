@@ -122,7 +122,7 @@ ASSETS.deco_town_sign = "assets/flow/deco_town_sign.png"; SPRITE_SIZE.deco_town_
 // Rodada 8: giro do herói (8 quadros de 96 px numa linha, mesma escala da folha de ataque), baú aberto e ícones de habilidade
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_spin`] = `assets/flow/hero_${n}_spin.png`; SPRITE_SIZE[`hero_${n}_spin`] = [8 * 1.45 * 1.5, 1.45 * 1.5]; }
 ASSETS.chest_open = "assets/flow/chest_open.png"; SPRITE_SIZE.chest_open = SPRITE_SIZE.chest || [1.05, 1.05];
-for (const k of ["skill_spin", "skill_dash", "skill_smash"]) ASSETS[k] = `assets/flow/${k}.png`;
+for (const k of ["skill_spin", "skill_dash", "skill_smash", "skill_run"]) ASSETS[k] = `assets/flow/${k}.png`;
 // Rodada 9: investida com espada (folhas hero_N_dash do Blender, células de 96 px como a folha de ataque) e ícone de missão
 for (const n of [1, 2, 3]) SPRITE_SIZE[`hero_${n}_dash`] = [1.45 * 1.5, 1.45 * 1.5];
 ASSETS.icon_quest = "assets/flow/icon_quest.png"; ASSETS.icon_quest_32 = "assets/flow/icon_quest_32.png";
@@ -239,11 +239,12 @@ ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auctio
 // rodada 117: o da Celeste virou de frente para a direita (espelhado); a bancada de poções da Morgana fica de frente para a esquerda
 ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
 ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
+ASSETS.craft_desk = "assets/flow/craft_desk.png"; SPRITE_SIZE.craft_desk = [164 / 75, 113 / 75]; // rodada 139: mesa de artesanato
 ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
 // rodada 120: cais. Mestre do cais (Blender) e o píer de madeira (tools/pier_art.py: 2 x 6 tiles, recortado tile a tile no chão)
 ASSETS.npc_harbor = "assets/flow/npc_harbor.png"; ASSETS.npc_harbor_sheet = "assets/flow/npc_harbor_sheet.png";
 for (const s of ["s", "n", "e", "w"]) { ASSETS["pier_" + s] = `assets/flow/pier_${s}.png`; SPRITE_SIZE["pier_" + s] = s === "s" || s === "n" ? [2, 6] : [6, 2]; }
-window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
+window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 }, craft_desk: { ax: 0.3659, ay: 0.7643, nx: 0, ny: 0 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
 ASSETS.mob_ninja = "assets/flow/mob_ninja.png"; SPRITE_SIZE.mob_ninja = [1.4, 1.4]; // rodada 113: ninja encapuzado (emboscada)
 // rodada 120: espécies novas (Blender, tools/b3d/mobs.py): raposa e cervo na caixa de 128 px do lobo, urso na de 192 px

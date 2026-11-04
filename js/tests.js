@@ -505,7 +505,7 @@
   });
   test("tutorial tem o passo da esquiva no boneco", () => TUTORIAL.some((t) => t.ev === "dodge") || "faltando");
   test("módulo de coleta carrega", () => !!window.ValdoraGather || "faltando");
-  test("iluminação: dia claro, noite escura", () => ValdoraLight.darkness(0.2) === 0 && ValdoraLight.darkness(0.75) > 0.5 || "curva inesperada");
+  test("iluminação: dia claro, noite escura", () => ValdoraLight.darkness(0.2) === 0 && ValdoraLight.darkness(0.8) === 0 && ValdoraLight.darkness(0.92) > 0.5 || "curva inesperada"); // rodada 139: dia 2 h, noite 20 min
   test("rodada 66: números de dano têm estilo por tipo (causado, crítico, recebido, sangramento)", () => {
     const fx = ValdoraFX.create(48, () => 0.5);
     fx.hitSplat(1, 1, 7, "#ffffff", false); fx.hitSplat(3, 1, 12, "#ffd23a", true); fx.hitSplat(5, 1, 4, "#ff5a4a"); fx.hitSplat(7, 1, 2, "#ff6b5a");
@@ -1007,7 +1007,7 @@
         if (R.req < lv[0] - 30 || R.req > lv[1]) r.push(`${k} req ${R.req}`); }
       const rare = list.slice(3).map((k) => VD.RES[k]), base = list.slice(0, 3).map((k) => VD.RES[k]);
       if (rare.some((R) => !R || !R.rare || R.req <= Math.max(...base.map((x) => x.req)))) r.push(b + ": raro sem nível maior");
-      for (const k of list.slice(3)) { const it = VD.RES[k].item; if (!Object.values(VD.CRAFT).some((c) => c.mats[it])) r.push(it + " sem uso"); }
+      for (const k of list.slice(3)) { const it = VD.RES[k].item; if (![...Object.values(VD.CRAFT), ...Object.values(VD.POTIONS)].some((c) => c.mats[it])) r.push(it + " sem uso"); } /* rodada 139: ervas raras vão para a alquimia */
     }
     return miss(r);
   });

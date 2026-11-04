@@ -5,7 +5,7 @@ window.ValdoraInput = (() => {
   function create(api) {
     const keys = {};
     // atalho → ação (as abas e janelas ficam com o jogo)
-    const TABS = { i: "inv", k: "skills", c: "combat", j: "journal", u: "book", l: "coll", b: "livro" }, SKILL_KEYS = { q: "spin", e: "dash", r: "smash" }; // rodada 105: M abre o mapa do continente
+    const TABS = { i: "inv", k: "skills", c: "combat", j: "journal", u: "book", l: "coll", b: "livro" }, SKILL_KEYS = { q: "spin", e: "dash", r: "smash", shift: "run" }; // rodada 105: M abre o mapa do continente
     const POTIONS = { 2: "Poção de vida", 3: "Poção de força", 4: "Poção de pedra" };
     function shortcut(k) {
       if (k === "f") return api.interact();

@@ -205,7 +205,8 @@ window.ValdoraHero = (() => {
       const dh = Math.round(fh * breath), sy = by - dh - Math.round(bob);
       const toolBehind = player.dir.startsWith("up") && !(player.act && player.act.key && player.act.key !== "rod");
       if (toolBehind) drawTool(t, cx, by - fh * 0.45 - bob);
-      if (W6 && moving && W6.rows[rk(W6, "walk_", player.dir)]) drawAnim(W6, rk(W6, "walk_", player.dir), Math.floor(player.dist * 3) % 6, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0); // 6 quadros a cada 2 tiles
+      const wk = player.runT > 0 && W6 && W6.rows[rk(W6, "run_", player.dir)] ? "run_" : "walk_"; // rodada 139: Corrida usa o quadro mais inclinado
+      if (W6 && moving && W6.rows[rk(W6, wk, player.dir)]) drawAnim(W6, rk(W6, wk, player.dir), Math.floor(player.dist * 3) % 6, cx, by, false, 1, player.flash > 0 ? Math.min(1, player.flash / 0.18) * 0.5 : 0); // 6 quadros a cada 2 tiles
       else if (img) ctx.drawImage(img, col * fw, row * fh, fw, fh, cx - fw / 2, sy, fw, dh);
       else if (SPR[player.hero]) ctx.drawImage(SPR[player.hero], cx - TILE / 2, by - TILE);
       if (!toolBehind) drawTool(t, cx, by - fh * 0.45 - bob);

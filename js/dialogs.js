@@ -14,7 +14,7 @@ window.ValdoraDialogs = (() => {
     witch: { title: "Feiticeira Morgana", talk: "\"Ervas certas, fogo baixo e paciência. Traga os ingredientes e eu ensino o resto.\"" }, // rodada 117
     warden: { title: "Guardião", talk: "" },
     harbor: { title: "Cais", talk: "" }, // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
-    craft: { title: "Artesanato", talk: "Crie bolsas e acessórios com o que tem na mochila, em qualquer lugar do reino." },
+    craft: { title: "Mesa de artesanato", talk: "Mochilas, roupas de couro e pano, joias, escudos e flechas. As peças melhores só saem depois de fazer as básicas." },
     bard: { title: "Tomé, o bardo", talk: "" },
     char: { title: "Ficha do personagem", talk: "" },
     shrine: { title: "Santuário de Lumeira", talk: "Pedras antigas, três velas e uma tigela de ouro. Quem oferta tem o nome lembrado pela vila." },

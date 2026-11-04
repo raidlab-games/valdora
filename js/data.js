@@ -240,6 +240,8 @@ window.VD = (() => {
   const ACTIVE = {
     spin: { name: "Golpe giratório", key: "Q", icon: "⟳", lvl: 5, cd: 8, mult: 1.2, desc: "Gira a lâmina e acerta todos os monstros ao seu redor." },
     dash: { name: "Investida", key: "E", icon: "➤", lvl: 12, cd: 12, mult: 1.3, range: 5, stun: 1.6, desc: "Avança até o alvo (até 5 passos) e o deixa atordoado." },
+    // rodada 139: Corrida: 1,5x a velocidade por 2 s (parado não faz nada)
+    run: { name: "Corrida", key: "Shift", icon: "»", lvl: 1, cd: 10, mult: 1.5, dur: 2, desc: "Dispara a 1,5x da velocidade por 2 s, com o corpo inclinado e o vento atrás. Parado, não faz nada." },
     smash: { name: "Golpe esmagador", key: "R", icon: "✸", lvl: 20, cd: 15, mult: 2.2, stun: 0.8, desc: "Carrega um golpe lento que sempre acerta, atordoa e solta uma onda de choque." },
   };
 
@@ -1495,7 +1497,33 @@ window.VD = (() => {
     { id: "cacador", name: "Grande Caçador", items: { "Pele de urso": 10, "Galhada de cervo": 10, "Barra de obsidiana": 2 }, bonus: { dmg: 2 } },
   ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
   // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
-  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", null, null];
-  return { MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", null];
+  // ---------- rodada 139: ofícios com progressão lenta ----------
+  // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções e elixires ficam com a Morgana.
+  // Cada receita só libera depois de fazer a anterior da mesma linha algumas vezes (botas de couro → de viajante → de lumita...),
+  // e o xp dos três ofícios (Artesanato, Ferraria e Alquimia) caiu para 60%.
+  const CRAFT_NEED = 3, BREW_NEED = 4, FORGE_NEED = 2, PREREQ = {};
+  for (const [n, r] of Object.entries(CRAFT)) if (ITEMS[n] && (ITEMS[n].heal || ITEMS[n].buff)) {
+    delete CRAFT[n]; // os elixires antigos curavam menos que as poções da Morgana do mesmo nível: a linha dela os substitui
+  }
+  {
+    const fam = (n, r) => r.bag ? "bag" : ITEMS[n] ? `${ITEMS[n].slot || "x"}:${ITEMS[n].ammo ? "ammo" : ITEMS[n].sec || ""}` : "x:" + n;
+    const by = {};
+    for (const [n, r] of Object.entries(CRAFT)) (by[fam(n, r)] = by[fam(n, r)] || []).push([n, r]);
+    delete by.bag; // mochilas se fazem uma vez só e já pedem a anterior (r.req)
+    for (const L of Object.values(by)) { L.sort((a, b) => a[1].lvl - b[1].lvl); for (let i = 1; i < L.length; i++) PREREQ[L[i][0]] = [L[i - 1][0], CRAFT_NEED]; }
+    const P = Object.entries(POTIONS).sort((a, b) => a[1].lvl - b[1].lvl);
+    for (let i = 1; i < P.length; i++) PREREQ["pot:" + P[i][0]] = [P[i - 1][0], BREW_NEED];
+    for (const g of Object.values(GEAR)) g.tiers.forEach((t, i) => {
+      const p = g.tiers[i - 1]; if (!p || !p.forge || !t.forge) return;
+      PREREQ["forge:" + t.name] = [p.name, FORGE_NEED];
+      if (t.bow) PREREQ["forge:" + t.bow] = [p.bow || p.name, FORGE_NEED];
+      if (t.two) PREREQ["forge:" + t.two] = [p.two || p.name, FORGE_NEED];
+    });
+    const slow = (r) => { if (r && r.xp) r.xp = Math.max(1, Math.round(r.xp * 0.6)); };
+    for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
+    for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
+  }
+  return { PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

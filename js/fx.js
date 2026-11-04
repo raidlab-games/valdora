@@ -20,6 +20,14 @@ window.ValdoraFX = (() => {
         particles.push({ x: x * TILE, y: y * TILE, vx: Math.cos(a) * v, vy: Math.sin(a) * v - TILE * 0.6, g: 7, t: 0, life: 0.16 + rand() * 0.16, c: colors[i % colors.length], s: 2, streak: true });
       }
     }
+    function wind(x, y, dx, dy, n = 2) { // rodada 139: ventinhos atrás do herói na Corrida (riscos brancos que ficam para trás)
+      const L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      for (let i = 0; i < n && particles.length < 500; i++) {
+        const side = (rand() - 0.5) * 0.9, v = (2.2 + rand() * 1.4) * TILE;
+        particles.push({ x: (x - ux * 0.35 - uy * side) * TILE, y: (y - uy * 0.35 + ux * side - rand() * 0.6) * TILE, vx: -ux * v, vy: -uy * v, g: 0, t: 0,
+          life: 0.18 + rand() * 0.14, c: rand() < 0.5 ? "#ffffff" : "#cfeeff", s: 2, streak: true, len: 0.07 });
+      }
+    }
     function dust(x, y, n = 4) { // poeira nos pés (arrancar, virar)
       for (let i = 0; i < n && particles.length < 500; i++)
         particles.push({ x: x * TILE + (rand() - 0.5) * 12, y: y * TILE - rand() * 3, vx: (rand() - 0.5) * 40, vy: -8 - rand() * 14, g: -0.4,
@@ -111,7 +119,7 @@ window.ValdoraFX = (() => {
     function draw(ctx, cam) {
       for (const p of particles) {
         const k = p.t / p.life; ctx.globalAlpha = p.soft ? (1 - k) * 0.7 : 1 - k;
-        if (p.streak) { ctx.strokeStyle = p.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x - cam.x, p.y - cam.y); ctx.lineTo(p.x - cam.x - p.vx * 0.03, p.y - cam.y - p.vy * 0.03); ctx.stroke(); continue; }
+        if (p.streak) { ctx.strokeStyle = p.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x - cam.x, p.y - cam.y); ctx.lineTo(p.x - cam.x - p.vx * (p.len || 0.03), p.y - cam.y - p.vy * (p.len || 0.03)); ctx.stroke(); continue; }
         const sz = p.soft ? p.s + k * 3 : p.s; ctx.fillStyle = p.c; ctx.fillRect(Math.round(p.x - cam.x - sz / 2), Math.round(p.y - cam.y - sz / 2), sz, sz);
       }
       ctx.globalAlpha = 1;
@@ -156,7 +164,7 @@ window.ValdoraFX = (() => {
       ctx.globalAlpha = 1;
     }
     const clear = () => { particles.length = 0; floaters.length = 0; arcs.length = 0; };
-    return { particles, floaters, burst, ember, sparks, dust, arc, clickFx, addFloat, hitSplat, splatKind, shock, mark, setDigits, drawGround, update, draw, clear };
+    return { particles, floaters, burst, ember, sparks, wind, dust, arc, clickFx, addFloat, hitSplat, splatKind, shock, mark, setDigits, drawGround, update, draw, clear };
   }
   return { create };
 })();

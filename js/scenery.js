@@ -59,6 +59,8 @@ window.ValdoraScenery = (() => {
       else if (rockHit) drawAnim(HA, "hit", hitF, Math.round((o.x + o.w / 2) * TILE - cam.x), Math.round((o.y + o.h) * TILE - cam.y), false);
       else if (o.type === "crypt_chest" && o.spr === "chest" && o.openT != null && ANIMS.chest_open && o.openT < ANIMS.chest_open.rows.open.frames / ANIMS.chest_open.rows.open.fps) {
         const R = ANIMS.chest_open.rows.open; drawAnim(ANIMS.chest_open, "open", Math.min(R.frames - 1, Math.floor(o.openT * R.fps)), Math.round((o.x + 0.5) * TILE - cam.x), Math.round((o.y + 1) * TILE - cam.y), false);
+      } else if (o.type === "craftdesk") { const D = (window.DESKS || {})[o.spr] || { ax: 0.5, ay: 0.76 }; // rodada 139: mesa de artesanato
+        ctx.drawImage(img, Math.round((o.x + (o.dcx ?? 1.5)) * TILE - cam.x - img.width * D.ax), Math.round((o.y + 1) * TILE - cam.y - img.height * D.ay));
       } else if (o.type === "auction" || o.type === "witch") { // rodadas 116/117: NPC atrás do balcão, encostado na frente da casa
         const A = ANIMS[o.npcSpr], D = (window.DESKS || {})[o.spr] || { ax: 0.5, ay: 0.76, nx: 0, ny: -0.17 }, fxN = Math.round((o.x + (o.dcx ?? 1.5) + D.nx) * TILE - cam.x), fyN = Math.round((o.y + 1 + D.ny) * TILE - cam.y);
         const talking = o.type === "auction" ? api.marketOpen && api.marketOpen() : dlg && dlg.kind === "witch";

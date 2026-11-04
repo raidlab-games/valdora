@@ -211,6 +211,7 @@
     npc.bank = deco("bank", "chest", 53, 39, 1, 1);
     npc.furnace = deco("furnace", "furnace", 62, 49, 1, 1);
     npc.anvil = deco("anvil", "anvil", 64, 49, 1, 1);
+    npc.craftdesk = deco("craftdesk", "craft_desk", 66, 47, 2, 1, { dcx: 0.5 }); // rodada 139: mesa de artesanato à direita e acima da bigorna
     npc.board = deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", 59, 34, ASSETS.deco_board ? 2 : 1, 1); // rodada 124: quadro maior, 2 tiles
     deco("barrel", "barrel", 60, 37); deco("barrel", "barrel", 65, 38); deco("barrel", "barrel", 66, 49); deco("barrel", "barrel", 50, 47); deco("barrel", "barrel", 70, 56);
     { const ws = bigSpot(51, 39, 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: só o do Ivo ("ao lado do poço", no tutorial), com o dobro do tamanho
@@ -361,8 +362,11 @@
   }
   // rodada 123: metade das árvores e dos minérios sai do mapa (sorteio fixo pela posição, não mexe no resto do mundo); de cada 4
   // que saem, 1 vira uma pedra grande no estilo do bioma (capim no Campo, musgo na mata, rocha nua na montanha, neve, arenito)
+  // rodada 139: árvores 50% menos que antes (fica 1 em 4) e mais pedras grandes no lugar delas (obstáculos; o mapa não fica limpo)
   const THIN = (kind, x, y) => { const R = RES[kind.replace(/^rare:/, "")]; if (!R || (R.skill !== "corte" && R.skill !== "mineracao")) return 1;
-    const h = hash(x, y, 123); return h < 0.5 ? 1 : h < 0.625 ? 2 : 0; };
+    const h = hash(x, y, 123);
+    if (R.skill === "corte") return h < 0.25 ? 1 : h < 0.52 ? 2 : 0;
+    return h < 0.5 ? 1 : h < 0.625 ? 2 : 0; };
   const boulderFor = (b, reg) => { const k = b === 1 ? (reg === "west" || reg === "ruins" ? "boulder" : reg === "south" ? "boulder_moss" : "boulder_grass")
     : { 2: "boulder_moss", 3: "boulder", 4: "boulder_sand", 5: "boulder_snow" }[b]; return SPR[k] ? k : "boulder"; };
   // chão de cada bioma novo (com reserva quando a arte não existe)
@@ -792,7 +796,7 @@
         deco("house", hs[0], ...at(3, 3), 3, 2); deco("house", hs[1], ...at(27, 3), 3, 2); deco("house", hs[2], ...at(3, 26), 3, 2);
         deco("house", hs[3], ...at(9, 4), 3, 2); deco("house", hs[4], ...at(26, 26), 3, 2);
         deco("stall", "stall", ...at(21, 6), 2, 1); deco("merchant", "npc_merchant", ...at(23, 6), 1, 1, { name: MERCH[v.key], village: v.key });
-        deco("bank", "chest", ...at(13, 12)); deco("furnace", "furnace", ...at(21, 22)); deco("anvil", "anvil", ...at(23, 22));
+        deco("bank", "chest", ...at(13, 12)); deco("furnace", "furnace", ...at(21, 22)); deco("anvil", "anvil", ...at(23, 22)); deco("craftdesk", "craft_desk", ...at(25, 20), 2, 1, { dcx: 0.5 });
         deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); { const ws = bigSpot(...at(8, 10), 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: um poço por vila deco("fire", "campfire", ...at(8, 22));
         deco("barrel", "barrel", ...at(20, 6)); deco("barrel", "barrel", ...at(25, 22)); deco("barrel", "barrel", ...at(6, 22)); deco("barrel", "barrel", ...at(30, 12));
         if (SPR.deco_campfire_log) deco("bench", "deco_campfire_log", ...at(8, 23));
@@ -871,6 +875,28 @@
     const outside = (m) => { if (m && G.inOld(m.x, m.y)) { m.dead = true; mobs.splice(mobs.indexOf(m), 1); } };
     for (const [reg, list] of Object.entries(G.CAMPO_EXTRA)) for (const [type, n] of list) for (let i = 0; i < n; i++) outside(spawnMob(type, reg, null));
     for (const [key, list] of Object.entries(G.BIOME_SPAWNS)) for (const [type, n, home] of list) if (MOBS[type]) for (let i = 0; i < n; i++) spawnMob(type, key, home);
+    guardGroves(); // rodada 139
+  }
+  // rodada 139: nenhuma mata ou canteiro de plantas fica sem monstro por perto (a coleta tem perigo). Divide o mapa em quadras de
+  // 20 x 20; a quadra com 3+ árvores/plantas e sem monstro a até 14 tiles ganha um bando do bioma (2 a 3 monstros de nível do lugar).
+  function guardGroves() {
+    const C = 20, have = new Set(), count = new Map();
+    for (const m of mobs) if (!m.dead) have.add(((m.hy / C) | 0) * 4096 + ((m.hx / C) | 0));
+    for (const o of objects) if (o.type === "res" && RES[o.kind] && (RES[o.kind].skill === "corte" || RES[o.kind].skill === "herbalismo")) {
+      const k = ((o.y / C) | 0) * 4096 + ((o.x / C) | 0); const c = count.get(k) || { n: 0, x: o.x, y: o.y }; c.n++; count.set(k, c); }
+    const near = (k) => { const cy = (k / 4096) | 0, cx = k % 4096; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (have.has((cy + dy) * 4096 + cx + dx)) return true; return false; };
+    let added = 0;
+    for (const [k, c] of count) {
+      if (c.n < 3 || near(k) || nearTown(c.x, c.y, 8) || inTown(c.x, c.y)) continue;
+      const b = WORLD_G.biomeAt(c.x, c.y); if (!b) continue;
+      const reg = WORLD_G.regionShape ? WORLD_G.regionShape(c.x, c.y) : null;
+      const pool = (b === 1 ? (WORLD_G.CAMPO_EXTRA[reg] || WORLD_G.CAMPO_EXTRA.fields || []) : (WORLD_G.BIOME_SPAWNS[WORLD_G.BKEY[b]] || [])).map((s) => s[0]).filter((t) => MOBS[t] && !MOBS[t].boss && !MOBS[t].passive);
+      if (!pool.length) continue;
+      const type = pool[Math.floor(hash(c.x, c.y, 139) * pool.length)], n = 2 + (hash(c.y, c.x, 140) < 0.5 ? 1 : 0);
+      for (let i = 0; i < n; i++) { const m = spawnMob(type, b === 1 ? reg : WORLD_G.BKEY[b], { x: c.x, y: c.y, r: 6 }); if (m) added++; }
+      have.add(k);
+    }
+    if (added && window.__vdDebug) console.log("guardGroves", added);
   }
   function finishWorld() {
     const deepWater = new Uint8Array(W * H);
@@ -1324,7 +1350,9 @@
     chatT = 6; bubble = null; tipT = TIP_EVERY; saveT = 0; for (const k of Object.keys(warnT)) delete warnT[k]; // rodada 63: jogo novo não herda os relógios do anterior
     player.bossNext = { ...((data.bossNext && typeof data.bossNext === "object") ? data.bossNext : {}) }; // rodada 137: chefes voltam 2-4 h depois
     player.hotbar = Array.isArray(data.hotbar) && data.hotbar.length === 9 ? data.hotbar.slice() : VD.HOTBAR_DEFAULT.slice(); // rodada 137
+    if (!player.seen.runHot) { player.seen.runHot = 1; const i = player.hotbar.indexOf(null); if (i >= 0 && !player.hotbar.includes("skill:run")) player.hotbar[i] = "skill:run"; } // rodada 139: Corrida na barra uma vez
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
+    player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade(); // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
     for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
     homeSync(); resize(); running = true; last = performance.now(); requestAnimationFrame(loop); // rodada 100: casa conforme o save
@@ -1511,7 +1539,7 @@
 
   // ---------- Entrada ----------
   const INTERACT_TEXT = { harbor: "falar com o mestre do cais", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
-    anvil: "usar a bigorna", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
+    anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
   function interactLabel(b) {
@@ -1600,7 +1628,7 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { harbor: "harbor", witch: "witch", warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", fire: "fire", board: "board",
+  const STATIONS = { harbor: "harbor", witch: "witch", warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1630,7 +1658,7 @@
     for (let y = ty; y <= ty + 4; y++) for (let x = tx - 2; x <= tx + 2; x++) {
       const o = inside(x, y) && occ[y * W + x]; if (!o || seen.has(o)) continue; seen.add(o);
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type]; if (!kind) continue;
-      const DK = (o.type === "auction" || o.type === "witch") && (window.DESKS || {})[o.spr]; // rodada 116/117: NPC atrás do balcão
+      const DK = (o.type === "auction" || o.type === "witch" || o.type === "craftdesk") && (window.DESKS || {})[o.spr]; // rodada 116/117: NPC atrás do balcão
       if (DK) { const [w, h] = SPRITE_SIZE[o.spr], cx = o.x + (o.dcx ?? 1.5);
         if (fx >= cx - DK.ax * w && fx <= cx + (1 - DK.ax) * w && fy >= o.y + 1 - DK.ay * h - 0.7 && fy <= o.y + 1 + (1 - DK.ay) * h) { if (!best || o.y + o.h > best.ref.y + best.ref.h) best = { kind, ref: o, tx: o.x, ty: o.y }; }
         continue; }
@@ -1800,6 +1828,7 @@
     if (!onPlant) faceRect(r);
     if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
     if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (t.kind === "craftdesk") { player.target = null; openDlg("craft", r); return; } // rodada 139: mesa de artesanato
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
     if (t.kind === "crypt") { player.target = null; return enterCrypt(r); }
@@ -1844,6 +1873,8 @@
     } else if (j.kind === "forge") {
       const t = GEAR[j.key].tiers[j.tier], F = t && (j.two ? t.twoForge : t.forge); // rodada 105: montante usa mais metal
       if (!t || !F || !hasMats(F.mats)) { player.job = null; return renderDlg(); }
+      { const nm = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : t.name; // rodada 139: peça melhor só depois das anteriores
+        if (!prereqOk("forge:" + nm)) { log(`${nm}: ${prereqText("forge:" + nm)}.`, "warn"); player.job = null; return renderDlg(); } }
       j.hits++; const last = j.hits >= 3;
       useTool("hammer", () => {
         SND.play("clang"); fx.sparks(o.x + 0.5, o.y + 0.15, last ? 18 : 10, ["#ffe08a", "#ffffff", "#ff9a3a"], last ? 6 : 4.5);
@@ -1853,7 +1884,7 @@
       if (j.hits >= 3) {
         for (const [k, n] of Object.entries(F.mats)) removeItem(k, n);
         const name = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : t.name; let aff, master = 0;
-        gainXp("ferraria", F.xp); emit("forge:" + j.key); player.stats.forged++;
+        gainXp("ferraria", F.xp); emit("forge:" + j.key); player.stats.forged++; markMade(name);
         if (t.rolls) { aff = RULES.rollAffixes(rand() < 0.4 ? 2 : 1, 1, rand); // rodada 82: o metal "escolhe"
           log(`✦ ${name}: ${aff.map((a) => RULES.affixNames({ aff: [a] })).join(" e ")} (${bonusText(RULES.itemBonus({ name: "", aff }, ITEMS))}).`, "rare"); }
         if (rand() < 0.12 + lv("ferraria") * 0.002) { // obra-prima: bônus extra nesta peça
@@ -2252,6 +2283,10 @@
     if (lv("combate") < S.lvl) { log(`${S.name}: libera no Combate ${S.lvl}.`, "dim"); return; }
     if (player.cd[id] > 0) { SND.play("miss"); return; }
     if (player.act && player.act.key) return; // não corta um golpe em andamento
+    if (id === "run") { // rodada 139: só vale andando; parado não gasta a recarga
+      if (!(player.prog < 1 || player.path.length || keyDir())) { log("Corrida: ande para disparar.", "dim"); return; }
+      player.cd.run = S.cd; player.runT = S.dur; SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 6); return;
+    }
     if (id === "spin") {
       const targets = mobs.filter((m) => !m.dead && Math.max(Math.abs(m.x - player.x), Math.abs(m.y - player.y)) <= 1);
       if (!targets.length) { log("Nenhum monstro ao seu redor.", "dim"); return; }
@@ -2335,7 +2370,9 @@
   }
   function killMob(m) {
     const d = m.d;
-    m.dead = true; m.respawnT = d.respawn || 12; m.bleed = null; player.target = null;
+    // rodada 139: renascem em 2-3 min (monstros) ou 3-5 min (animais: javali, cervo, lebre, lobo...); quem tem tempo próprio usa o dele
+    const animal = /bear|boar|deer|elk|hare|fox|wolf|ram|mammoth|toad|eagle|owl|vulture|bee|bat|moth|beetle|crab|scorpion|scarab|spider|weaver|lizard(?!man)/.test(d.spr || "");
+    m.dead = true; m.respawnT = d.respawn >= 100 ? d.respawn : (animal ? 180 + rand() * 120 : 120 + rand() * 60); // chefes e invocados mantêm o próprio tempo m.bleed = null; player.target = null;
     if (d.respawnMin) { // rodada 137: chefe volta entre 2 e 4 h depois de morrer (sorteado agora; guardado no save, conta com o jogo fechado)
       const secs = d.respawnMin + rand() * (d.respawnMax - d.respawnMin); m.respawnT = secs;
       (player.bossNext = player.bossNext || {})[m.type] = Date.now() + secs * 1000;
@@ -2740,15 +2777,34 @@
     addItem(name); gainXp("culinaria", R.xp); SND.play("drink"); log(`A Juna resmunga, mas confere: ${name} pronto.`, "gold");
     if (npc.herb) burst(npc.herb.x + 0.5, npc.herb.y + 0.4, ["#8fe08a", "#ffffff"], 12, 2.5);
   }
+  // rodada 139: o artesanato é feito na mesa ao lado da bigorna; cada receita pede ter feito a anterior da linha
+  const atDesk = () => objects.some((o) => o.type === "craftdesk" && adjRect(player.x, player.y, o));
+  const madeN = (n) => (player.made || {})[n] || 0;
+  const prereqOf = (key) => VD.PREREQ[key] || null;
+  const prereqOk = (key) => { const p = prereqOf(key); return !p || madeN(p[0]) >= p[1]; };
+  const prereqText = (key) => { const p = prereqOf(key); return p && madeN(p[0]) < p[1] ? `faça ${p[1]}x ${p[0]} antes (${madeN(p[0])}/${p[1]})` : ""; };
+  const markMade = (n, k = 1) => { player.made = player.made || {}; player.made[n] = madeN(n) + k; };
+  function seedMade() { // save antigo: o que já estava abaixo do nível do jogador conta como feito (não trava quem já subiu)
+    const m = {}, P = VD.PREREQ;
+    for (const [key, [prev, need]] of Object.entries(P)) {
+      const sk = key.startsWith("pot:") ? "alquimia" : key.startsWith("forge:") ? "ferraria" : "artesanato";
+      const R = key.startsWith("pot:") ? VD.POTIONS[key.slice(4)] : key.startsWith("forge:") ? null : CRAFT[key];
+      const lvlNeed = R ? R.lvl : 1;
+      if (player.xp && lv(sk) >= lvlNeed + 3) m[prev] = Math.max(m[prev] || 0, need);
+    }
+    return m;
+  }
   function craft(name) {
     const r = CRAFT[name];
+    if (!atDesk()) { log("Use a mesa de artesanato, ao lado da bigorna.", "warn"); return; }
+    if (!prereqOk(name)) { log(`${name}: ${prereqText(name)}.`, "warn"); return; }
     if (lv("artesanato") < r.lvl || !hasMats(r.mats) || (r.bag && player.bags.includes(name)) || (r.req && !player.bags.includes(r.req))) return;
     for (const [k, n] of Object.entries(r.mats)) removeItem(k, n);
     if (r.bag) {
       player.bags.push(name); for (let i = 0; i < r.bag; i++) player.inv.push(null);
       showToast(`${name} pronta!`, `A mochila agora tem ${player.inv.length} espaços.`, "#7dff9a");
     } else if (!addItem(name, r.n || 1)) dropItem(name, r.n || 1, player.x, player.y);
-    useTool("hammer"); SND.play("clang"); gainXp("artesanato", r.xp);
+    useTool("hammer"); SND.play("clang"); gainXp("artesanato", r.xp); markMade(name);
     burst(player.px + 0.5, player.py + 0.3, ["#f1c40f", "#ffffff", "#c97a3a"], 16, 3);
     log(`Você criou: ${name}.`, "gold"); hudDirty = true; save();
   }
@@ -2782,16 +2838,17 @@
   function potionHtml() {
     const L = lv("alquimia");
     return `<p class="desc">Alquimia ${L}. Cada poção pede um nível de Alquimia e as ervas do Herbalismo (as melhores vêm dos biomas).</p>` + Object.entries(VD.POTIONS).map(([n, R]) => {
-      const it = ITEMS[n], lock = L < R.lvl, can = !lock && hasMats(R.mats);
+      const it = ITEMS[n], pq = prereqText("pot:" + n), lock = L < R.lvl || !!pq, can = !lock && hasMats(R.mats); // rodada 139: + receita anterior
       const mats = Object.entries(R.mats).map(([k, q]) => `<span class="${count(k) >= q ? "" : "miss"}">${count(k)}/${q} ${esc(k)}</span>`).join(" · ");
-      return `<div class="row${lock ? " locked" : ""}">${iconImg(n)}<span class="grow"><b>${esc(n)}</b>${it.heal ? ` <small>cura ${it.heal}</small>` : it.buff ? ` <small>${esc(BUFFS[it.buff].name)}</small>` : ""}<br><small>${lock ? `requer Alquimia ${R.lvl} · ` : ""}${mats} · +${R.xp} xp</small></span>`
+      return `<div class="row${lock ? " locked" : ""}">${iconImg(n)}<span class="grow"><b>${esc(n)}</b>${it.heal ? ` <small>cura ${it.heal}</small>` : it.buff ? ` <small>${esc(BUFFS[it.buff].name)}</small>` : ""}<br><small>${L < R.lvl ? `requer Alquimia ${R.lvl} · ` : ""}${pq ? `<b class="lock">${esc(pq)}</b> · ` : ""}${mats} · +${R.xp} xp</small></span>`
         + `<button data-potion="${esc(n)}" data-n="1" ${can ? "" : "disabled"}>Fazer</button><button data-potion="${esc(n)}" data-n="5" ${can ? "" : "disabled"}>×5</button></div>`;
     }).join("");
   }
   function brewPotion(name, n) {
     const R = VD.POTIONS[name]; if (!R || lv("alquimia") < R.lvl) return;
+    if (!prereqOk("pot:" + name)) { log(`${name}: ${prereqText("pot:" + name)}.`, "warn"); return; } // rodada 139
     let made = 0;
-    for (let k = 0; k < n && hasMats(R.mats) && canAdd(name); k++) { for (const [m, q] of Object.entries(R.mats)) removeItem(m, q); addItem(name); gainXp("alquimia", R.xp); made++; }
+    for (let k = 0; k < n && hasMats(R.mats) && canAdd(name); k++) { for (const [m, q] of Object.entries(R.mats)) removeItem(m, q); addItem(name); gainXp("alquimia", R.xp); markMade(name); made++; }
     if (!made) { log(canAdd(name) ? "Faltam ingredientes." : "Sua mochila está cheia.", "warn"); return; }
     react(npc.witch); SND.play("drink"); log(`Morgana mexe o caldeirão... ${made}x ${name} pront${made > 1 ? "as" : "a"}! (+${R.xp * made} xp de Alquimia)`, "gold");
     if (npc.witch) burst(npc.witch.x + (npc.witch.dcx ?? 1.5) + 0.4, npc.witch.y + 0.2, ["#8fe08a", "#d6b4ff", "#ffffff"], 16, 2.5);
@@ -2831,7 +2888,7 @@
   // telas da fornalha, da bigorna e do artesanato (js/crafting.js)
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
-  const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect });
+  const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), prereqText: (k) => prereqText(k) });
   const DLG_VIEW = ValdoraDialogs.create({ potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
@@ -2844,7 +2901,11 @@
     else { $("options").hidden = true; hudTab = hudTab === t ? null : t; }
     hudDirty = true; SND.play("ui");
   }
-  for (const b of document.querySelectorAll("#menubar [data-menu]")) b.onclick = () => openTab(b.dataset.menu);
+  for (const b of document.querySelectorAll("#menubar [data-menu], #roundbar [data-menu]")) b.onclick = () => openTab(b.dataset.menu);
+  $("tab-inv").addEventListener("dragstart", (e) => { // rodada 139: comida e poções vão da mochila para a barra de atalhos arrastando
+    const el = e.target.closest(".slot[data-i]"), s = el && player.inv[+el.dataset.i]; if (!s) { e.preventDefault(); return; }
+    const it = ITEMS[s.name], act = POT_LVL[s.name] ? "pot:" + s.name : it.heal ? "eat" : null; if (!act) { e.preventDefault(); return; }
+    e.dataTransfer.setData("text/plain", "act:" + act); e.dataTransfer.effectAllowed = "copy"; });
   $("panel-close").onclick = () => { hudTab = null; hudDirty = true; };
   $("quest").onclick = () => { hudTab = "journal"; hudDirty = true; };
   $("tab-book").addEventListener("click", (e) => { const c = e.target.closest("[data-skillcard]"); if (!c || c.classList.contains("locked") || c.dataset.passive) return;
@@ -3146,6 +3207,7 @@
       if (!player.path.length && !keyDir()) rate *= 1 - 0.2 * player.prog; // último passo: desacelera de leve (era 0,42: parecia escorregar)
       rate *= loadRate(); // rodada 112: peso
       if (player.slowT > 0) rate *= 0.6; // rodada 134: teia, gelo, maldição
+      if (player.runT > 0) rate *= ACTIVE.run.mult; // rodada 139: Corrida
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
     if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
@@ -3167,6 +3229,8 @@
     } else if (player.pickTile && player.pickTile !== tileKey && !moving) player.pickTile = null;
     player.flash = Math.max(0, player.flash - dt); player.hitT = Math.max(0, (player.hitT || 0) - dt); player.blockT = Math.max(0, (player.blockT || 0) - dt); player.cancelT = Math.max(0, (player.cancelT || 0) - dt); player.cheerT = Math.max(0, (player.cheerT || 0) - dt); player.eatT = Math.max(0, (player.eatT || 0) - dt);
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
+    if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
+      if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
     if (player.deadT > 0 && (player.deadT -= dt) <= 0) respawnAfterDeath();
     if (player.dot && (player.deadT > 0 || inTown(player.x, player.y))) player.dot = null; // rodada 133/134: ferida e veneno fecham na vila
@@ -3534,7 +3598,7 @@
     return {
       shop: ["Bento, o mercador", "#f5e27a", "Comprar, vender e encomendas"], guard: ["Guarda Ivo", "#9fd0ff", TUTORIAL[player.tut.step] ? "Tutorial e dicas" : "Dicas"],
       bank: ["Cofre da vila", "#f5e27a", "Guardar itens"], dummy: ["Boneco de treino", "#e8d9b0", "Golpeie e saia da área vermelha"], furnace: ["Fornalha", "#f5c060", "Fundir minério em barras"],
-      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
+      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
       crypt: ["Escada da cripta", "#c79bff", "Masmorra · Combate 18+"], crypt_exit: ["Saída", "#e8d9b0", "Voltar à superfície"],
       den: ["Toca dos Lobos", "#b8d8ff", player.quests.balada && player.quests.balada.done ? "Masmorra · Combate 14+" : "Bloqueada · missão do Tomé"],
       chest: [dungeon === "den" ? "Baú da toca" : "Baú da cripta", "#f1c40f", r.opened ? "Vazio" : mobs.some((m) => !m.dead) ? "Selado: derrote todos os inimigos" : "Abrir!"], board: ["Quadro de caçadas", "#f5e27a", "Recompensas por monstros"], fire: ["Fogueira", "#f5c060", "Assar peixe e carne"], sign: ["Placa", "#e8d9b0", r.label],
@@ -3565,7 +3629,7 @@
       const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

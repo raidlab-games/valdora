@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Valdora — RPG em pixel art</title>
   <meta name="description" content="Valdora: um RPG 2D original em pixel art para navegador. Colete, forje, cozinhe, enfrente chefes e defenda Lumeira." />
-  <link rel="stylesheet" href="css/style.css?v=202611032017" />
+  <link rel="stylesheet" href="css/style.css?v=202611032145" />
 </head>
 <body>
   <!-- Lobby / site -->
@@ -88,7 +88,14 @@
     <canvas id="canvas"></canvas>
     <img id="lowhp" alt="" hidden>
     <div id="hud">
+      <nav id="roundbar" aria-label="Atalhos"><!-- rodada 139: botões redondos à esquerda do minimapa; abrem em tela cheia -->
+        <button data-menu="journal" title="Diário (J)"><img src="assets/flow/icon_journal_quests.png" alt=""></button>
+        <button data-menu="livro" title="Livro dos monstros (B)"><img src="assets/flow/icon_journal_quests.png" alt="" style="filter:hue-rotate(120deg)"></button>
+        <button data-menu="coll" title="Coleção (L)"><img src="assets/flow/item_echo_crystal.png" alt=""></button>
+        <button data-menu="guild" title="Guilda (em breve)"><img src="assets/ui/icon_guild_castle.png" alt=""></button>
+      </nav>
       <canvas id="minimap" width="192" height="144" title="Clique para andar até o ponto"></canvas>
+      <div id="loc"></div>
       <div id="player-info"></div>
       <button id="quest" hidden title="Abrir o diário"></button>
       <div id="event" hidden></div>
@@ -129,17 +136,15 @@
         <div id="tab-mount" hidden></div>
         <div id="tab-guild" hidden></div>
         <div id="tab-livro" hidden></div>
+        <div id="tab-passive" hidden></div>
       </div>
     <nav id="menubar" aria-label="Menu">
       <button data-menu="inv" title="Mochila (I)"><img src="assets/ui/icon_tab_bag_flow.png" alt=""><small>Bolsa</small></button>
       <button data-menu="skills" title="Níveis (K)"><img src="assets/ui/icon_tab_levels_flow.png" alt=""><small>Níveis</small></button>
       <button data-menu="combat" title="Equipamento (C)"><img src="assets/flow/item_armor.png" alt=""><small>Equip.</small></button>
       <button data-menu="book" title="Skills (U)"><img src="assets/flow/skill_spin.png" alt=""><small>Skills</small></button>
-      <button data-menu="journal" title="Diário (J)"><img src="assets/flow/icon_journal_quests.png" alt=""><small>Diário</small></button>
-      <button data-menu="livro" title="Livro dos monstros (B)"><img src="assets/flow/icon_journal_quests.png" alt="" style="filter:hue-rotate(120deg)"><small>Livro</small></button>
-      <button data-menu="coll" title="Coleção (L)"><img src="assets/flow/item_echo_crystal.png" alt=""><small>Coleção</small></button>
+      <button data-menu="passive" title="Passivas"><img src="assets/flow/passive_block.png" alt=""><small>Passivas</small></button>
       <button data-menu="mount" title="Montaria (em breve)"><span class="mi">🐎</span><small>Montaria</small></button>
-      <button data-menu="guild" title="Guilda (em breve)"><span class="mi">⚑</span><small>Guilda</small></button>
       <button data-menu="config" title="Configurações"><span class="mi">⚙</span><small>Config</small></button>
     </nav>
     <div id="fhint" hidden></div>
@@ -158,50 +163,50 @@
     </div>
   </section>
 
-  <script src="js/assets.js?v=202611032017"></script>
-  <script src="js/data.js?v=202611032017"></script>
-  <script src="js/terrain.js?v=202611032017"></script>
-  <script src="js/audio.js?v=202611032017"></script>
-  <script src="js/path.js?v=202611032017"></script>
-  <script src="js/fx.js?v=202611032017"></script>
-  <script src="js/ambient.js?v=202611032017"></script>
-  <script src="js/lighting.js?v=202611032017"></script>
-  <script src="js/rules.js?v=202611032017"></script>
-  <script src="js/anim_data.js?v=202611032017"></script>
-  <script src="js/anim3d_data.js?v=202611032017"></script>
-  <script src="js/anim_extra.js?v=202611032017"></script>
-  <script src="js/version.js?v=202611032017"></script>
-  <script src="js/ui.js?v=202611032017"></script>
-  <script src="js/quests.js?v=202611032017"></script>
-  <script src="js/dialogs.js?v=202611032017"></script>
-  <script src="js/render.js?v=202611032017"></script>
-  <script src="js/hud.js?v=202611032017"></script>
-  <script src="js/mobs.js?v=202611032017"></script>
-  <script src="js/world.js?v=202611032017"></script>
-  <script src="js/crafting.js?v=202611032017"></script>
-  <script src="js/gather.js?v=202611032017"></script>
-  <script src="js/shop.js?v=202611032017"></script>
-  <script src="js/input.js?v=202611032017"></script>
-  <script src="js/pointer.js?v=202611032017"></script>
-  <script src="js/camera.js?v=202611032017"></script>
-  <script src="js/actors.js?v=202611032017"></script>
-  <script src="js/outfit.js?v=202611032017"></script>
-  <script src="js/hero.js?v=202611032017"></script>
-  <script src="js/scenery.js?v=202611032017"></script>
-  <script src="js/overlay.js?v=202611032017"></script>
-  <script src="js/events.js?v=202611032017"></script>
-  <script src="js/shrine.js?v=202611032017"></script>
-  <script src="js/dlgactions.js?v=202611032017"></script>
-  <script src="js/daily.js?v=202611032017"></script>
-  <script src="js/home.js?v=202611032017"></script>
-  <script src="js/scene.js?v=202611032017"></script>
-  <script src="js/campaign.js?v=202611032017"></script>
-  <script src="js/auction.js?v=202611032017"></script>
-  <script src="js/mobskills.js?v=202611032017"></script>
-  <script src="js/game.js?v=202611032017"></script>
-  <script src="js/lobby.js?v=202611032017"></script>
-  <script src="js/net_config.js?v=202611032017"></script>
-  <script src="js/net.js?v=202611032017"></script>
-  <script src="js/account.js?v=202611032017"></script>
+  <script src="js/assets.js?v=202611032145"></script>
+  <script src="js/data.js?v=202611032145"></script>
+  <script src="js/terrain.js?v=202611032145"></script>
+  <script src="js/audio.js?v=202611032145"></script>
+  <script src="js/path.js?v=202611032145"></script>
+  <script src="js/fx.js?v=202611032145"></script>
+  <script src="js/ambient.js?v=202611032145"></script>
+  <script src="js/lighting.js?v=202611032145"></script>
+  <script src="js/rules.js?v=202611032145"></script>
+  <script src="js/anim_data.js?v=202611032145"></script>
+  <script src="js/anim3d_data.js?v=202611032145"></script>
+  <script src="js/anim_extra.js?v=202611032145"></script>
+  <script src="js/version.js?v=202611032145"></script>
+  <script src="js/ui.js?v=202611032145"></script>
+  <script src="js/quests.js?v=202611032145"></script>
+  <script src="js/dialogs.js?v=202611032145"></script>
+  <script src="js/render.js?v=202611032145"></script>
+  <script src="js/hud.js?v=202611032145"></script>
+  <script src="js/mobs.js?v=202611032145"></script>
+  <script src="js/world.js?v=202611032145"></script>
+  <script src="js/crafting.js?v=202611032145"></script>
+  <script src="js/gather.js?v=202611032145"></script>
+  <script src="js/shop.js?v=202611032145"></script>
+  <script src="js/input.js?v=202611032145"></script>
+  <script src="js/pointer.js?v=202611032145"></script>
+  <script src="js/camera.js?v=202611032145"></script>
+  <script src="js/actors.js?v=202611032145"></script>
+  <script src="js/outfit.js?v=202611032145"></script>
+  <script src="js/hero.js?v=202611032145"></script>
+  <script src="js/scenery.js?v=202611032145"></script>
+  <script src="js/overlay.js?v=202611032145"></script>
+  <script src="js/events.js?v=202611032145"></script>
+  <script src="js/shrine.js?v=202611032145"></script>
+  <script src="js/dlgactions.js?v=202611032145"></script>
+  <script src="js/daily.js?v=202611032145"></script>
+  <script src="js/home.js?v=202611032145"></script>
+  <script src="js/scene.js?v=202611032145"></script>
+  <script src="js/campaign.js?v=202611032145"></script>
+  <script src="js/auction.js?v=202611032145"></script>
+  <script src="js/mobskills.js?v=202611032145"></script>
+  <script src="js/game.js?v=202611032145"></script>
+  <script src="js/lobby.js?v=202611032145"></script>
+  <script src="js/net_config.js?v=202611032145"></script>
+  <script src="js/net.js?v=202611032145"></script>
+  <script src="js/account.js?v=202611032145"></script>
 </body>
 </html>
