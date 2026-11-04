@@ -2751,13 +2751,24 @@
     log(`O quadro estremece: ${d.name} desperta em ${d.where.replace(" (eco semanal)", "")}.`, "warn"); SND.play("echo_rise");
     showToast(d.name, "Desperto até você vencê-lo ou se afastar.", "#7fe8ff"); closeDlg();
   }
+  // rodada 150: pedidos do quadro no nível do personagem (de 4 abaixo a 6 acima do Combate); quem está alto caça bicho alto.
+  // Sem nada na faixa, os 6 monstros de nível mais perto. Pedido que ficou fraco (8+ níveis abaixo) é trocado ao abrir o quadro.
+  const BOUNTY_LO = 4, BOUNTY_HI = 6, BOUNTY_STALE = 8;
+  const bountyOk = ([, d]) => !d.noBounty && !d.summon && !d.temp && !d.echo;
   function newBounty(exclude) {
     const cl = lv("combate"), have = new Set((player.bounties || []).filter(Boolean).map((b) => b.type)); if (exclude) have.add(exclude);
-    let pool = Object.entries(MOBS).filter(([k, d]) => !d.noBounty && !have.has(k) && (d.boss ? cl >= d.lvl - 8 : d.lvl <= cl + 5 && d.lvl >= cl - 12));
-    if (!pool.length) pool = Object.entries(MOBS).filter(([k, d]) => !d.boss && !d.noBounty && !have.has(k));
+    const all = Object.entries(MOBS).filter((e) => bountyOk(e) && !have.has(e[0]));
+    let pool = all.filter(([, d]) => d.boss ? d.lvl <= cl + 4 && d.lvl >= cl - BOUNTY_LO - 4 : d.lvl >= cl - BOUNTY_LO && d.lvl <= cl + BOUNTY_HI);
+    if (pool.length < 3) pool = all.filter(([, d]) => !d.boss).sort((a, b) => Math.abs(a[1].lvl - cl) - Math.abs(b[1].lvl - cl)).slice(0, 6);
     const [type, d] = pool[Math.floor(rand() * pool.length)];
     const n = d.boss ? 1 : ri(4, 8);
     return { type, n, have: 0, coins: Math.round(d.boss ? d.lvl * 30 : n * d.lvl * 4 + 20), xp: Math.round(d.boss ? d.lvl * 25 : n * d.lvl * 3) };
+  }
+  function refreshBounties() { // rodada 150: troca os pedidos que ficaram fáceis demais para o nível atual (os prontos para receber ficam)
+    const cl = lv("combate"); let n = 0;
+    player.bounties = (player.bounties || []).map((b) => { const d = b && MOBS[b.type];
+      if (b && d && (b.have >= b.n || d.lvl >= cl - BOUNTY_STALE)) return b; n++; return newBounty(b && b.type); });
+    if (n) log(`O quadro trocou ${n} pedido${n > 1 ? "s" : ""} por caçadas do seu nível.`, "dim");
   }
   // rodada 80: caçada do dia (js/daily.js) e recompensas do bestiário
   function dailyNow() { player.daily = DAILY.today(player.daily, DAILY.dayKey(), lv("combate"), MOBS); return player.daily; }
@@ -2812,6 +2823,7 @@
   }
   addEventListener("resize", () => placeDlg());
   function openDlg(kind, obj) {
+    if (kind === "board") refreshBounties(); // rodada 150
     dlg = { kind, obj, tab: kind === "shop" && questMark("shop") === "?" ? "orders" : (DLG[kind].tabs || [[null]])[0][0] }; // missão do Bento pronta para entregar abre direto nas encomendas (missão nova não: o tutorial manda vender)
     if (kind === "guard") emit("talk");
     $("dlg").hidden = false; $("dlg").classList.toggle("wide", kind === "char"); renderDlg(); placeDlg();

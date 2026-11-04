@@ -8,8 +8,10 @@ window.ValdoraDaily = (() => {
   const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; };
   // caçada do dia: monstro comum perto do nível de Combate (sem chefes, ecos, mini-chefes nem monstros de missão)
   function pick(key, cl, MOBS) {
-    let pool = Object.entries(MOBS).filter(([, d]) => !d.boss && !d.noBounty && !d.mini && d.lvl <= cl + 4 && d.lvl >= cl - 10);
-    if (!pool.length) pool = Object.entries(MOBS).filter(([, d]) => !d.boss && !d.noBounty && !d.mini);
+    // rodada 150: no nível do personagem (4 abaixo a 6 acima); sem nada na faixa, os 6 de nível mais perto
+    const all = Object.entries(MOBS).filter(([, d]) => !d.boss && !d.noBounty && !d.mini && !d.summon && !d.temp && !d.echo);
+    let pool = all.filter(([, d]) => d.lvl <= cl + 6 && d.lvl >= cl - 4);
+    if (pool.length < 3) pool = all.slice().sort((a, b) => Math.abs(a[1].lvl - cl) - Math.abs(b[1].lvl - cl) || a[0].localeCompare(b[0])).slice(0, 6);
     pool.sort((a, b) => a[1].lvl - b[1].lvl || a[0].localeCompare(b[0]));
     const [type, d] = pool[Math.floor(hash(key + ":t") * pool.length)], n = 8 + Math.floor(hash(key + ":n") * 5);
     return { day: key, type, n, have: 0, claimed: false, coins: Math.round(n * d.lvl * 6 + 40), xp: Math.round(n * d.lvl * 5) };

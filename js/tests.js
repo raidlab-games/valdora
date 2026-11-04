@@ -734,6 +734,12 @@
     r.push(ValdoraWorld.RUNES.length === VD.QUESTS.c3_inscricoes.steps[1].n, ["npc_odilia", "tent_odilia", "deco_stele_moon_dim", "deco_stele_crown_lit"].every((k) => ASSETS[k] && SPRITE_SIZE[k]));
     return r.every(Boolean) || "falhou no item " + r.indexOf(false);
   });
+  test("rodada 150: caçada do dia no nível do personagem (nível 100 pede monstro de 96 a 106)", () => {
+    const D = ValdoraDaily, r = [];
+    for (const [cl, day] of [[100, "2026-11-01"], [100, "2026-11-02"], [60, "2026-11-03"], [140, "2026-11-04"]]) { const d = MOBS[D.today(null, day, cl, MOBS).type];
+      if (d.lvl < cl - 4 || d.lvl > cl + 6) r.push(`${cl}: ${d.name} nv ${d.lvl}`); }
+    return miss(r);
+  });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];
     r.push(a.type === b.type && a.n === b.n && !MOBS[a.type].boss && !MOBS[a.type].noBounty && a.n >= 8 && a.n <= 12);
