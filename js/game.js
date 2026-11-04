@@ -2797,7 +2797,7 @@
     let roll = rand() * pool.reduce((a, o) => a + 1 + o.req / 4, 0), base = pool[0] || ORDER_POOL[0];
     for (const o of pool) if ((roll -= 1 + o.req / 4) <= 0) { base = o; break; }
     const qty = Math.round(ri(...base.qty) * (1 + Math.min(2, Math.max(0, lv(base.skill) - base.req) / 10)));
-    return { item: base.item, skill: base.skill, qty, big: qty > base.qty[1], coins: Math.round(qty * ITEMS[base.item].price * 1.8 + 8), xp: qty * (4 + base.req) };
+    return { item: base.item, skill: base.skill, qty, big: qty > base.qty[1], coins: Math.round(qty * ITEMS[base.item].price * 1.8 + 8), xp: Math.max(1, Math.round(qty * (4 + base.req) / VD.XP_CUT)) }; // rodada 158: 3x menos
   }
   function deliver(i) {
     const o = player.orders[i]; if (!o || count(o.item) < o.qty) return;
@@ -2911,7 +2911,7 @@
     if (pool.length < 3) pool = all.filter(([, d]) => !d.boss).sort((a, b) => Math.abs(a[1].lvl - cl) - Math.abs(b[1].lvl - cl)).slice(0, 6);
     const [type, d] = pool[Math.floor(rand() * pool.length)];
     const n = d.boss ? 1 : ri(4, 8);
-    return { type, n, have: 0, coins: Math.round(d.boss ? d.lvl * 30 : n * d.lvl * 4 + 20), xp: Math.round(d.boss ? d.lvl * 25 : n * d.lvl * 3) };
+    return { type, n, have: 0, coins: Math.round(d.boss ? d.lvl * 30 : n * d.lvl * 4 + 20), xp: Math.round((d.boss ? d.lvl * 25 : n * d.lvl * 3) / VD.XP_CUT) }; // rodada 158: 3x menos
   }
   function refreshBounties() { // rodada 150: troca os pedidos que ficaram fáceis demais para o nível atual (os prontos para receber ficam)
     const cl = lv("combate"); let n = 0;

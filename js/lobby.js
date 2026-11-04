@@ -20,6 +20,8 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.41", "Progressão mais lenta", ["Equitação sobe 3x mais devagar (1 xp por tile)", "Coleta, Culinária, fornalha, bigorna, mesa, poções, missões, encomendas e caçadas dão 3x menos XP",
+      "A XP de bater em monstro continua como estava (já era 5x menor)", "Lobby direto nos seus personagens do Lumeira (um servidor só)"]],
     ["v1.40", "Acerto pelo nível e botão da montaria", ["A lista de personagens mostra cada um como saiu: aparência e o que estava vestindo",
       "Acerto conta o nível: monstro bem acima de você acerta quase sempre; você erra mais em monstro acima do seu nível",
       "Corrigido: golpe de monstro na diagonal contava como \"esquivou\" mesmo com você parado", "Botão fixo da Montaria no fim da barra de skills (ou H): monta e desce na hora, com recarga de 2 s",

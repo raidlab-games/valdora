@@ -1656,7 +1656,7 @@ window.VD = (() => {
   const MOUNTS = {};
   for (const T of MOUNT_TIERS) COATS[T.t].forEach((coat, i) => { const key = `t${T.t}_s${i + 1}`;
     MOUNTS[key] = { key, tier: T.t, style: i + 1, coat, name: `${T.name} ${coat.toLowerCase()}`, speed: T.speed, price: T.price, lvl: T.lvl, sheet: "horse_" + key, icon: `assets/ui/horse_${key}.png` }; });
-  const RIDE_XP = 3; // xp de Equitação por tile cavalgado
+  const RIDE_XP = 1; // xp de Equitação por tile cavalgado (rodada 158: era 3; subia rápido demais)
 
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
@@ -1671,6 +1671,20 @@ window.VD = (() => {
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
   }
-  return { MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  // ---------- rodada 158: progressão 3x mais lenta em tudo que ainda não tinha sido cortado ----------
+  // A XP de bater em monstro (Combate, Vitalidade e classes) e a da primeira morte no bestiário já eram 5x menores (rodada 137:
+  // RULES.MOB_XP): ficam como estão. Todo o resto rende 3x menos: coleta (Corte, Mineração, Pesca, Herbalismo), Culinária,
+  // fornalha, bigorna, mesa, poções da Morgana e da Juna, recompensas das missões (o game.js e o daily.js dividem as
+  // encomendas do Bento, as caçadas do quadro, a caçada do dia e o evento da lua).
+  const XP_CUT = 3, cut = (v) => Math.max(1, Math.round(v / XP_CUT));
+  for (const R of Object.values(RES)) { if (R.xp) R.xp = cut(R.xp); for (const f of R.fish || []) f.xp = cut(f.xp); }
+  for (const f of FISH_BY_BIOME) f.xp = cut(f.xp);
+  for (const it of Object.values(ITEMS)) { if (it.cookXp) it.cookXp = cut(it.cookXp); if (it.skewer && it.skewer.xp) it.skewer.xp = cut(it.skewer.xp); }
+  for (const S of [CRAFT, POTIONS, SMELT, ALCHEMY]) for (const r of Object.values(S)) if (r && r.xp) r.xp = cut(r.xp);
+  for (const g of Object.values(GEAR)) for (const t of g.tiers) { if (t.forge) t.forge.xp = cut(t.forge.xp); if (t.twoForge && t.twoForge !== t.forge) t.twoForge.xp = cut(t.twoForge.xp); }
+  const cutRw = (o) => { if (!o || typeof o !== "object") return; if (o.reward && o.reward.xp && typeof o.reward.xp === "object") for (const k of Object.keys(o.reward.xp)) o.reward.xp[k] = cut(o.reward.xp[k]);
+    for (const v of Object.values(o)) if (v && typeof v === "object" && v !== o.reward) cutRw(v); };
+  cutRw(QUESTS); cutRw(TUTORIAL);
+  return { XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

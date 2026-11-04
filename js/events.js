@@ -48,7 +48,7 @@ window.ValdoraEvents = (() => {
         $("event").textContent = `Invasão goblin: ${left}/${event.total} · ${Math.max(0, Math.ceil(event.t))} s`;
       } else if (event.kind === "moon") {
         if (event.alpha.dead) {
-          done = true; api.player().coins += 150; gainXp("combate", 400); if (!addItem("Presa lunar")) dropItem("Presa lunar", 1, api.player().x, api.player().y);
+          done = true; api.player().coins += 150; gainXp("combate", Math.round(400 / ((window.VD && VD.XP_CUT) || 3))); /* rodada 158: 3x menos */ if (!addItem("Presa lunar")) dropItem("Presa lunar", 1, api.player().x, api.player().y);
           showToast("A lua se acalma", "+150 moedas, 400 xp de Combate e uma Presa lunar.", "#b8d8ff"); SND.play("quest"); log("O Alfa da lua cheia caiu! +150 moedas, 400 xp de Combate e uma Presa lunar.", "gold");
         } else if (event.t <= 0) { done = true; for (const m of api.mobs()) if (m.moon && !m.dead) { m.dead = true; m.respawnT = 0; } log("A matilha some na névoa da madrugada.", "dim"); }
         $("event").innerHTML = `${ASSETS.icon_moon ? `<img class="eicon" src="${ASSETS.icon_moon}" alt="">` : ""}Lua cheia: derrote o Alfa · ${Math.max(0, Math.ceil(event.t))} s`;

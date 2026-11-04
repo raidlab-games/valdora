@@ -814,6 +814,15 @@
     if (RU.hitChance(0, 200, -200) < 0.05) r.push("mínimo");
     return miss(r);
   });
+  test("rodada 158: progressão 3x mais lenta fora da XP de monstro (já 5x menor)", () => {
+    const r = [];
+    if (VD.XP_CUT !== 3 || VD.RIDE_XP !== 1) r.push("constantes");
+    if (VD.RES.tree.xp !== 2 || VD.RES.rock.xp !== 2) r.push("coleta " + VD.RES.tree.xp + "/" + VD.RES.rock.xp);
+    if (ITEMS["Lambari cru"].cookXp !== 2) r.push("culinária " + ITEMS["Lambari cru"].cookXp);
+    if (VD.QUESTS.c1_tremor.reward.xp.combate >= 800) r.push("missão");
+    if (RU.MOB_XP !== 0.2) r.push("monstro continua 5x");
+    return miss(r);
+  });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];
     r.push(a.type === b.type && a.n === b.n && !MOBS[a.type].boss && !MOBS[a.type].noBounty && a.n >= 8 && a.n <= 12);
@@ -915,9 +924,9 @@
       ...(MOBS.skeleton.respawn === 20 ? [] : ["esqueleto renasce em " + MOBS.skeleton.respawn])]);
   });
 
-  test("rodada 91: as duas primeiras missões do Ato I levam o herói do fim do tutorial (Combate 2) a perto do Combate 7", () => {
+  test("rodada 91/158: as duas primeiras missões do Ato I dão um empurrão (Combate 2 -> 4 ou mais), sem pular a missão seguinte", () => {
     const xp = RU.xpFor(2) + VD.QUESTS.c1_tremor.reward.xp.combate + VD.QUESTS.c1_marco.reward.xp.combate, l = RU.level(xp); // sem contar as lutas (fendas e onda)
-    return (l >= 5 && l < VD.QUESTS.c1_bando.minCombat) || "Combate " + l + " só com as recompensas";
+    return (l >= 4 && l < VD.QUESTS.c1_bando.minCombat) || "Combate " + l + " só com as recompensas"; // rodada 158: recompensas 3x menores
   });
 
   test("rodada 92: na Lua cheia, só os lobos comuns perto da toca do Alfa saem de cena", () => {

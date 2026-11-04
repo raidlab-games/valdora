@@ -14,7 +14,7 @@ window.ValdoraDaily = (() => {
     if (pool.length < 3) pool = all.slice().sort((a, b) => Math.abs(a[1].lvl - cl) - Math.abs(b[1].lvl - cl) || a[0].localeCompare(b[0])).slice(0, 6);
     pool.sort((a, b) => a[1].lvl - b[1].lvl || a[0].localeCompare(b[0]));
     const [type, d] = pool[Math.floor(hash(key + ":t") * pool.length)], n = 8 + Math.floor(hash(key + ":n") * 5);
-    return { day: key, type, n, have: 0, claimed: false, coins: Math.round(n * d.lvl * 6 + 40), xp: Math.round(n * d.lvl * 5) };
+    return { day: key, type, n, have: 0, claimed: false, coins: Math.round(n * d.lvl * 6 + 40), xp: Math.round(n * d.lvl * 5 / ((window.VD && VD.XP_CUT) || 3)) }; // rodada 158: 3x menos
   }
   // sequência: +10% por dia seguido (até +50%); no 3.º e no 7.º dia, prêmio extra
   const bonus = (streak) => Math.min(0.5, 0.1 * Math.max(0, streak - 1));
