@@ -768,6 +768,27 @@
     for (const t of T.slice(4)) if (!Object.keys(t.forge.mats).some((m) => /Madeira|Pinho/.test(m))) r.push(t.name + " sem madeira");
     return miss(r);
   });
+  test("rodada 155: 3 classes com conjunto em cada mapa; metal só na bigorna; couro e fio de cada mapa caem de monstros", () => {
+    const r = [], C = VD.CRAFT, G = VD.CLASS_GEAR;
+    if (G.length !== 5) r.push("5 mapas");
+    for (const cls of ["arqueiro", "mago", "guerreiro"]) for (const slot of ["capacete", "calca", "botas"]) {
+      const list = Object.entries(ITEMS).filter(([n, it]) => it.cls === cls && it.slot === slot && C[n]).map(([n, it]) => it);
+      if (list.length < (cls === "guerreiro" ? 4 : 5)) r.push(`${cls} ${slot}: ${list.length}`);
+      const byMap = list.sort((a, b) => a.clsLvl - b.clsLvl), sum = (it) => Object.values(it.bonus).reduce((t, v) => t + v, 0);
+      byMap.forEach((it, i) => { if (i && sum(it) <= sum(byMap[i - 1])) r.push(`${cls} ${slot} não melhora`); if (!ASSETS[it.icon]) r.push(it.icon); });
+    }
+    for (const [n, it] of Object.entries(ITEMS)) if (it.cls && C[n]) { const hv = VD.heavy(n);
+      if ((it.cls === "guerreiro" && it.slot !== "municao") !== hv && !(it.sec === "orbe" && hv) && !(it.sec === "escudo" && hv)) r.push(n + (hv ? " na bigorna" : " na mesa"));
+      for (const m of Object.keys(C[n].mats)) if (!ITEMS[m]) r.push(n + " pede " + m); }
+    for (const n of Object.keys(C)) if (VD.heavy(n) !== Object.keys(C[n].mats).some((m) => VD.ORE_ITEMS.has(m))) r.push("regra pesada " + n);
+    if (VD.heavy("Machado de pedra") || VD.heavy("Túnica de linho") || !VD.heavy("Elmo de obsidiana") || !VD.heavy("Anel de cobre")) r.push("mesa x bigorna");
+    const drops = new Set(Object.values(MOBS).flatMap((d) => (d.drops || []).map((x) => x[0])));
+    for (const G1 of G.slice(1)) if (!drops.has(G1.hide)) r.push("ninguém derruba " + G1.hide);
+    for (const f of ["Fio de linho", "Fio de seda sombria", "Lã de carneiro", "Fio de algodão", "Lã de mamute"]) if (!drops.has(f)) r.push("ninguém derruba " + f);
+    const ct = ["Lambari cru", "Enguia-sombria crua", "Truta da serra crua", "Bagre do oásis cru", "Salmão glacial cru"].map((n) => ITEMS[n].cookT);
+    if (ct.join() !== "1,2,3,4,5") r.push("tempo de assar " + ct);
+    return miss(r);
+  });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];
     r.push(a.type === b.type && a.n === b.n && !MOBS[a.type].boss && !MOBS[a.type].noBounty && a.n >= 8 && a.n <= 12);

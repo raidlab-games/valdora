@@ -1545,6 +1545,105 @@ window.VD = (() => {
   ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
   // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
   const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", null];
+  // ---------- rodada 155: equipamento de ofício das 3 classes, mapa a mapa ----------
+  // Guerreiro: placas de metal (bigorna). Arqueiro: couro (mesa de artesanato). Mago: tecido (mesa de artesanato).
+  // Cada mapa tem o seu couro (feras) e o seu fio (aranhas, mariposas, carneiros, múmias, mamutes...); a mesa tece 3 fios em 1 tecido.
+  // Cada peça pede o nível da classe (cls/clsLvl) para vestir.
+  Object.assign(ITEMS, {
+    "Pedra": { icon: "item_stone", price: 1, buy: 3 },
+    "Couro sombrio": { icon: "item_leather", filter: "hue-rotate(230deg) saturate(1.2) brightness(0.7)", price: 30 },
+    "Couro de rocha": { icon: "item_leather", filter: "saturate(0.25) brightness(1.05)", price: 55 },
+    "Couro de duna": { icon: "item_leather", filter: "sepia(0.6) saturate(1.8) brightness(1.15)", price: 90 },
+    "Pele polar": { icon: "item_pelt", filter: "brightness(1.35) saturate(0.4)", price: 140 },
+    "Fio de linho": { icon: "item_thread", price: 4, buy: 12 },
+    "Fio de seda sombria": { icon: "item_thread", filter: "hue-rotate(200deg) saturate(2) brightness(0.75)", price: 22 },
+    "Lã de carneiro": { icon: "item_thread", filter: "saturate(0.2) brightness(1.1)", price: 40 },
+    "Fio de algodão": { icon: "item_thread", filter: "sepia(0.5) saturate(1.5) brightness(1.1)", price: 64 },
+    "Lã de mamute": { icon: "item_thread", filter: "hue-rotate(150deg) saturate(1.4) brightness(1.1)", price: 100 },
+    "Tecido de linho": { icon: "item_cloth", price: 14 },
+    "Seda sombria": { icon: "item_cloth", filter: "hue-rotate(200deg) saturate(2) brightness(0.75)", price: 70 },
+    "Tecido de lã": { icon: "item_cloth", filter: "saturate(0.2) brightness(1.1)", price: 125 },
+    "Tecido de algodão": { icon: "item_cloth", filter: "sepia(0.5) saturate(1.5) brightness(1.1)", price: 200 },
+    "Tecido glacial": { icon: "item_cloth", filter: "hue-rotate(150deg) saturate(1.4) brightness(1.1)", price: 320 },
+  });
+  // fios e couros de cada mapa: [item, [[monstro, chance, mín, máx]...]]
+  for (const [item, list] of [
+    ["Fio de linho", [["scarecrow", 0.5, 1, 2], ["goblin", 0.25], ["kobold", 0.25], ["weaver", 0.45, 1, 3], ["goblin_shaman", 0.35]]],
+    ["Fio de seda sombria", [["wood_spider", 0.45, 1, 3], ["shade_moth", 0.4, 1, 2], ["shadow_cultist", 0.5, 1, 2], ["shade_goblin", 0.25]]],
+    ["Lã de carneiro", [["rock_ram", 0.5, 1, 3], ["cave_spider", 0.3, 1, 2], ["kobold_shaman", 0.4], ["cave_goblin", 0.25]]],
+    ["Fio de algodão", [["mummy", 0.45, 1, 3], ["mummy_priest", 0.6, 1, 2], ["raider_goblin", 0.3], ["lizardman", 0.25]]],
+    ["Lã de mamute", [["snow_mammoth", 0.6, 1, 3], ["yeti", 0.45, 1, 2], ["ice_witch", 0.5], ["frost_imp", 0.25]]],
+    ["Couro sombrio", [["shade_wolf", 0.4], ["dark_deer", 0.45], ["dark_bear", 0.6, 1, 2], ["night_alpha", 0.8, 1, 2], ["bog_toad", 0.3]]],
+    ["Couro de rocha", [["gray_wolf", 0.4], ["rock_fox", 0.4], ["stone_boar", 0.45], ["mountain_bear", 0.6, 1, 2], ["rock_ram", 0.3]]],
+    ["Couro de duna", [["sand_fox", 0.4], ["dune_boar", 0.45], ["lizardman", 0.4], ["dune_serpent", 0.6, 1, 2], ["sand_crab", 0.3]]],
+    ["Pele polar", [["ice_wolf", 0.4], ["arctic_fox", 0.4], ["ice_elk", 0.45], ["polar_bear", 0.6, 1, 2], ["blizzard_alpha", 0.8, 1, 2]]],
+  ]) for (const [mob, p, a, b] of list) if (MOBS[mob]) (MOBS[mob].drops = MOBS[mob].drops || []).push(a ? [item, p, a, b] : [item, p]);
+  const CLASS_GEAR = [ // um conjunto por mapa: couro, tecido, barra, madeira e erva do mapa; nível da classe para vestir e do ofício para fazer
+    { n: 1, hide: "Pele de lobo", hide2: "Couro de javali", cloth: "Tecido de linho", bar: "Barra de ferro", wood: "Madeira de carvalho", herb: "Erva-cidreira", cls: 1, lvl: 4, col: null, filter: "",
+      arq: "de couro de lobo", mag: "de linho", war: "de ferro" },
+    { n: 2, hide: "Couro sombrio", cloth: "Seda sombria", bar: "Barra de obsidiana", wood: "Madeira de ébano", herb: "Cogumelo-sombra", cls: 31, lvl: 33, col: "#8a6ab8", filter: "hue-rotate(250deg) saturate(1.4)",
+      arq: "de couro sombrio", mag: "de seda sombria", war: "de obsidiana" },
+    { n: 3, hide: "Couro de rocha", cloth: "Tecido de lã", bar: "Barra de mitril", wood: "Madeira de pinho", herb: "Musgo-de-rocha", cls: 66, lvl: 68, col: "#b8bcc8", filter: "saturate(0.35) brightness(1.15)",
+      arq: "de couro de rocha", mag: "de lã", war: "de mitril" },
+    { n: 4, hide: "Couro de duna", cloth: "Tecido de algodão", bar: "Barra solar", wood: "Madeira de palmeira", herb: "Rosa-do-deserto", cls: 102, lvl: 104, col: "#e8b860", filter: "sepia(0.8) saturate(2) hue-rotate(-10deg)",
+      arq: "de couro de duna", mag: "de algodão", war: "solar" },
+    { n: 5, hide: "Pele polar", cloth: "Tecido glacial", bar: "Barra glacial", wood: "Pinho nevado", herb: "Flor-de-gelo", cls: 141, lvl: 143, col: "#9ad8f0", filter: "hue-rotate(160deg) saturate(1.3) brightness(1.2)",
+      arq: "de pele polar", mag: "de tecido glacial", war: "glacial" },
+  ];
+  const FIBER = { "Tecido de linho": "Fio de linho", "Seda sombria": "Fio de seda sombria", "Tecido de lã": "Lã de carneiro", "Tecido de algodão": "Fio de algodão", "Tecido glacial": "Lã de mamute" };
+  const KM = [1, 2, 3.2, 4.6, 6.2], RAR = ["comum", "raro", "raro", "epico", "epico"];
+  const sb = (o, m) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Math.max(1, Math.round(v * m))]));
+  const plural = (w) => w === "solar" ? "solares" : w === "glacial" ? "glaciais" : w;
+  CLASS_GEAR.forEach((G, k) => {
+    const m = KM[k], rar = RAR[k], c = (base) => ({ rarity: rar, price: Math.round(base * m * m), mapGear: G.n }), lk = (layer, col) => [layer, G.col || col];
+    const add = (name, it, mats, lvl, xp) => { if (!ITEMS[name]) ITEMS[name] = it; if (!CRAFT[name]) CRAFT[name] = { mats, lvl, xp }; };
+    CRAFT[G.cloth] = CRAFT[G.cloth] || { mats: { [FIBER[G.cloth]]: 3 }, lvl: Math.max(1, G.lvl - 3), xp: Math.round(6 * m), desc: "tece 3 fios num tecido" };
+    const hide = G.hide2 ? { [G.hide]: 2, [G.hide2]: 2 } : { [G.hide]: 4 }, xp = (b) => Math.round(b * m * 1.4);
+    const A = { cls: "arqueiro", clsLvl: G.cls }, M = { cls: "mago", clsLvl: G.cls }, W = { cls: "guerreiro", clsLvl: G.cls };
+    // Arqueiro (couro): acerto e defesa leve
+    add(`Colete ${G.arq}`, { icon: "item_vest_leather", filter: G.filter, slot: "armadura", bonus: sb({ def: 2, acc: 2 }, m), look: lk("hunter", null), ...c(40), ...A }, { ...hide, [FIBER[G.cloth]]: 1 }, G.lvl + 2, xp(40));
+    add(`Chapéu ${G.arq}`, { icon: "item_helm_leather", filter: G.filter || "hue-rotate(70deg) saturate(1.4)", slot: "capacete", bonus: sb({ def: 1, acc: 2 }, m), look: lk("hat", null), ...c(22), ...A }, { [G.hide]: 3 }, G.lvl, xp(25));
+    add(`Calça ${G.arq}`, { icon: "item_pants_leather", filter: G.filter, slot: "calca", bonus: sb({ def: 2, acc: 1 }, m), look: lk("pants", "#8a5a34"), ...c(24), ...A }, { [G.hide]: 3, [FIBER[G.cloth]]: 1 }, G.lvl + 1, xp(28));
+    add(`Botas ${G.arq}`, { icon: "item_boots_leather", filter: G.filter, slot: "botas", bonus: sb({ def: 1, acc: 1 }, m), look: lk("boots", "#7a4a2a"), ...c(18), ...A }, { [G.hide]: 2 }, G.lvl, xp(20));
+    // Mago (tecido): dano e acerto
+    add(`Túnica ${G.mag}`, { icon: "item_robe", filter: G.filter, slot: "armadura", bonus: sb({ def: 1, dmg: 2, acc: 1 }, m), look: lk("robe", null), ...c(40), ...M }, { [G.cloth]: 4, [G.herb]: 1 }, G.lvl + 2, xp(40));
+    add(`Capuz ${G.mag}`, { icon: "item_hat_mage", filter: G.filter, slot: "capacete", bonus: sb({ acc: 1, dmg: 2 }, m), look: lk("mhood", null), ...c(22), ...M }, { [G.cloth]: 2 }, G.lvl, xp(25));
+    add(`Calça ${G.mag}`, { icon: "item_pants_leather", filter: G.filter || "saturate(0.15) brightness(1.5)", slot: "calca", bonus: sb({ def: 1, dmg: 1 }, m), look: lk("pants", "#d8ccb0"), ...c(24), ...M }, { [G.cloth]: 3 }, G.lvl + 1, xp(28));
+    add(`Sapatos ${G.mag}`, { icon: "item_boots_leather", filter: G.filter || "saturate(0.15) brightness(1.5)", slot: "botas", bonus: sb({ def: 1, acc: 1 }, m), look: lk("boots", "#c8bc9c"), ...c(18), ...M }, { [G.cloth]: 1, [G.hide]: 1 }, G.lvl, xp(20));
+    // secundária de tecido do Mago (tomo): na mesa; orbe e escudo são de metal (bigorna)
+    add(`Tomo ${G.mag}`, { icon: "item_book_amber", filter: G.filter, slot: "municao", sec: "orbe", bonus: sb({ acc: 1, def: 2, dmg: 1 }, m * 1.3), look: ["book", G.col || "#3c6eb4"], ...c(30), ...M }, { [G.cloth]: 2, [G.hide]: 2 }, G.lvl + 3, xp(34));
+    // Guerreiro (placas de metal: na bigorna)
+    const wn = (noun) => `${noun} ${noun === "Elmo" ? G.war : plural(G.war)}`;
+    const tagW = (n) => { if (ITEMS[n] && !ITEMS[n].cls) Object.assign(ITEMS[n], W); }; // peças de metal que já existiam viram do Guerreiro
+    add(wn("Elmo"), { icon: "item_helm_iron", filter: G.filter, slot: "capacete", bonus: sb({ def: 3 }, m), look: lk("helm", "#d0d4e0"), ...c(40), ...W }, { [G.bar]: 3 }, G.lvl + 1, xp(40));
+    add(wn("Grevas"), { icon: "item_pants_iron", filter: G.filter, slot: "calca", bonus: sb({ def: 3 }, m), look: lk("greaves", "#d0d4e0"), ...c(40), ...W }, { [G.bar]: 3, [G.hide]: 1 }, G.lvl + 2, xp(44));
+    add(wn("Botas"), { icon: "item_boots_lumita", filter: G.filter || "saturate(0) brightness(1.1)", slot: "botas", bonus: sb({ def: 2, acc: 1 }, m), look: lk("bootsplate", "#d0d4e0"), ...c(30), ...W }, { [G.bar]: 2, [G.hide]: 1 }, G.lvl, xp(30));
+    [wn("Elmo"), wn("Grevas"), wn("Botas")].forEach(tagW);
+    if (!k) for (const n of ["Elmo de lumita", "Grevas de lumita", "Botas de lumita"]) if (ITEMS[n] && !ITEMS[n].cls) Object.assign(ITEMS[n], { cls: "guerreiro", clsLvl: 15 });
+    if (k) { // mapas 2 a 5: escudo, orbe e flechas de metal (bigorna)
+      add(`Escudo ${G.war}`, { icon: "item_shield_iron", filter: G.filter, slot: "municao", sec: "escudo", bonus: sb({ def: 4, acc: 1 }, m * 1.4), look: ["shield", G.col], ...c(45), ...W }, { [G.bar]: 3, [G.wood]: 1 }, G.lvl + 3, xp(44));
+      add(`Orbe ${G.war}`, { icon: "item_orb_amber", filter: G.filter, slot: "municao", sec: "orbe", bonus: sb({ acc: 2, dmg: 2 }, m * 1.3), look: ["orb", G.col], ...c(45), ...M }, { [G.bar]: 2, [G.herb]: 2 }, G.lvl + 3, xp(44));
+      const fl = `Flecha ${G.war}`;
+      if (!ITEMS[fl]) ITEMS[fl] = { icon: "item_arrows_iron", filter: G.filter, price: Math.round(3 * m), slot: "municao", sec: "flecha", rarity: rar, bonus: { dmg: k + 2, acc: k + 1 }, ammo: true, mapGear: G.n, ...A };
+      if (!CRAFT[fl]) CRAFT[fl] = { mats: { [G.wood]: 2, [G.bar]: 1 }, lvl: G.lvl + 1, xp: xp(12), n: 15, desc: `15 flechas · +${k + 2} dano, +${k + 1} acerto` };
+    }
+  });
+  // ferramentas e armas de pedra e madeira: na mesa de artesanato (as de metal são forjadas na bigorna)
+  Object.assign(CRAFT, {
+    "Machado de pedra": { mats: { "Pedra": 3, "Madeira": 2 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · cortar madeira" },
+    "Picareta de pedra": { mats: { "Pedra": 3, "Madeira": 2 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · minerar" },
+    "Foice de pedra": { mats: { "Pedra": 2, "Madeira": 1 }, lvl: 1, xp: 5, desc: "ferramenta nível 1 · colher plantas" },
+    "Vara gasta": { mats: { "Madeira": 3, "Fio de linho": 1 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · pescar" },
+    "Arco gasto": { mats: { "Madeira": 4, "Fio de linho": 2 }, lvl: 2, xp: 10, desc: "arco de madeira · Arqueiro 1" },
+    "Cajado gasto": { mats: { "Madeira": 5, "Erva-cidreira": 1 }, lvl: 2, xp: 10, desc: "cajado de madeira · Mago 1" },
+  });
+  // rodada 155: tudo o que leva minério ou barra é trabalho pesado: fica na bigorna (Ferraria); o resto, na mesa (Artesanato)
+  const ORE_ITEMS = new Set([...Object.keys(SMELT), ...Object.values(RES).filter((R) => R.skill === "mineracao").map((R) => R.item)]);
+  const heavy = (name) => !!CRAFT[name] && Object.keys(CRAFT[name].mats).some((m) => ORE_ITEMS.has(m));
+  SHOP_ITEMS.push("Pedra", "Fio de linho");
+  // rodada 155: fogueira assa 1 por vez; segundos por peça (mapa 1 = 1 s, cada mapa acima +1 s)
+  for (const [n, t] of Object.entries({ "Lambari cru": 1, "Carne de javali": 1, "Carne de caça": 1, "Tucunaré cru": 1.5, "Enguia-sombria crua": 2, "Truta da serra crua": 3, "Bagre do oásis cru": 4, "Salmão glacial cru": 5 }))
+    if (ITEMS[n]) ITEMS[n].cookT = t; // para refazer a ferramenta de pedra e começar o tecido
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
   // Cada receita pede só o nível do ofício (o jogador escolhe o que criar para subir); o xp dos três ofícios (Artesanato,
@@ -1558,6 +1657,6 @@ window.VD = (() => {
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
   }
-  return { RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

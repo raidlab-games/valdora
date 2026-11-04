@@ -9,6 +9,7 @@ window.ValdoraDialogs = (() => {
       tabs: [["sell", "Vender"], ["buy", "Comprar"], ["orders", "Encomendas"]] },
     guard: { title: "Guarda Ivo", talk: "" },
     bank: { title: "Cofre da vila", talk: "Clique num item da mochila para guardar; clique no cofre para retirar." },
+    fire: { title: "Fogueira", talk: "Escolha o que assar e quantos. Assa um por vez e cada assado vai para a mochila. Sair andando ou apertar ESC apaga a fila." }, // rodada 155
     furnace: { title: "Fornalha", talk: "Funda minério em barras. Fique ao lado enquanto trabalha." },
     anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras (as primeiras ferramentas, de cobre, saem direto do minério). A peça pronta vai para a mochila: clique nela para vestir." },
     witch: { title: "Feiticeira Morgana", talk: "\"Ervas certas, fogo baixo e paciência. Traga os ingredientes e eu ensino o resto.\"" }, // rodada 117
@@ -16,7 +17,7 @@ window.ValdoraDialogs = (() => {
     harbor: { title: "Cais", talk: "" }, // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
     deathbag: { title: "Saco de morte", talk: "" }, // rodada 146
     peace: { title: "Pacificador", talk: "\"Sangue não lava sangue, viajante. Mas ouro compra o perdão dos homens.\"" }, // rodada 147
-    craft: { title: "Mesa de artesanato", talk: "Mochilas, roupas de couro e pano, joias, escudos e flechas. Cada peça pede um nível de Artesanato: escolha o que criar para subir." },
+    craft: { title: "Mesa de artesanato", talk: "Ferramentas de pedra, tecidos, roupas de couro (Arqueiro) e de tecido (Mago), mochilas e o que não leva metal. Cada peça pede um nível de Artesanato: escolha o que criar para subir." },
     bard: { title: "Tomé, o bardo", talk: "" },
     char: { title: "Ficha do personagem", talk: "" },
     shrine: { title: "Santuário de Lumeira", talk: "Pedras antigas, três velas e uma tigela de ouro. Quem oferta tem o nome lembrado pela vila." },
@@ -138,6 +139,8 @@ window.ValdoraDialogs = (() => {
         html = api.peaceHtml ? api.peaceHtml() : "";
       } else if (dlg.kind === "deathbag") { // rodada 146: o que caiu na morte
         html = api.deathBagHtml ? api.deathBagHtml(dlg.obj) : "";
+      } else if (dlg.kind === "fire") {
+        html = CRAFTING.fireHtml();
       } else if (dlg.kind === "craft") {
         html = CRAFTING.craftHtml();
       } else if (dlg.kind === "board") {

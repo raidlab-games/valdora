@@ -20,6 +20,11 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.38", "Fogueira, ofícios e roupas de classe", ["Fogueira nova: escolha o que assar e quantos (até a mochila toda); assa 1 por vez, peixe do mapa 1 em 1 s e cada mapa acima +1 s; andar ou ESC para",
+      "Conjuntos de classe em todos os mapas: couro do Arqueiro e tecido do Mago na mesa; placas do Guerreiro na bigorna. Cada peça pede o nível da classe",
+      "Cada mapa tem o seu couro (feras) e o seu fio (aranhas, mariposas, carneiros, múmias, mamutes); a mesa tece o fio em tecido",
+      "Tudo que leva minério ou barra é forjado na bigorna; ferramentas e armas de pedra e madeira na mesa", "Minerar solta Pedra às vezes; Pedra e fio de linho no Bento",
+      "Vilas mais limpas: menos caixas e barris amontoados"]],
     ["v1.37", "Ferramentas por mapa", ["Machado, picareta e foice começam de pedra (o Ivo dá) e a primeira de metal é de cobre, feita com o cobre do mapa 1",
       "Cada mapa tem madeira, minério, planta e peixe só dele; os recursos base do mapa seguinte pedem a ferramenta feita com o minério do mapa anterior",
       "Madeira demora mais para sair, e quanto melhor a ferramenta, mais rápido você coleta", "Peixe novo na Floresta Sombria: a enguia-sombria",

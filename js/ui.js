@@ -27,6 +27,7 @@ window.ValdoraUI = (() => {
       + (it.bonus ? `<div>${esc(bonusText(it.bonus))}</div>` : "")
       + (it.pack ? `<div>+${it.pack.slots} espaços na mochila · +${it.pack.cap} kg de carga</div>` : "") // rodada 112
       + (it.need ? `<small>requer Combate ${it.need}</small><br>` : "")
+      + (it.cls ? `<small>requer ${esc(VD.SKILLS[it.cls])} ${it.clsLvl}</small><br>` : "") // rodada 155: peças de classe
       + (VD.weightOf ? `<small>peso ${String(VD.weightOf(s.name)).replace(".", ",")} kg</small>` : "")
       + (s.aff || []).map((a) => `<div class="tip-aff">${badgeImg(a.id)}${esc(affLine(a))}</div>`).join("")
       + (hint ? `<small class="tip-hint">${esc(hint)}</small>` : "");

@@ -45,6 +45,7 @@ window.ValdoraGather = (() => {
         }
         if (!success) return;
         addItem(item); gainXp(R.skill, xp); emit("gather:" + item);
+        if (R.skill === "mineracao" && rand() < 0.3 && canAdd("Pedra")) { addItem("Pedra"); addFloat(o.x + 0.5, o.y - 0.3, "+1 Pedra", "#d8d0c4"); } // rodada 155: lascas para as ferramentas de pedra
         const sk = { corte: "logs", mineracao: "ores", pesca: "fish", herbalismo: "herbs" }[R.skill]; player.stats[sk] = (player.stats[sk] || 0) + 1; checkAch();
         if (R.skill === "pesca") fx.arc(SPR[ITEMS[item].icon], o.x + 0.5, o.y + 0.4, player.px + 0.5, player.py + 0.2, 0.5, 1.3, 26); // o peixe salta até o herói
         if (item === "Peixe dourado") { SND.play("coin"); burst(o.x + 0.5, o.y + 0.5, ["#ffd84a", "#fff6c0"], 16, 3); }
@@ -62,6 +63,20 @@ window.ValdoraGather = (() => {
       }, key === "rod" ? { prep: 0.12, strike: 0.06, rec: 0.22 } : {});
     }
 
+    // rodada 155: assa 1 peça de "name" (a fogueira escolhe o que e quantos; game.js anda a fila no tempo de cada peça)
+    function cookOne(fire, name) {
+      const player = api.player(), lvl = lv("culinaria"), s = player.inv.find((x) => x && x.name === name);
+      if (!s || !ITEMS[name].cook || lvl < ITEMS[name].cookLvl) return null;
+      const it0 = ITEMS[name], burn = RULES.burnChance(lvl, it0.cookLvl);
+      const sk = it0.skewer && player.inv.some((x) => x && x.name === it0.skewer.with) ? it0.skewer : null, it = sk ? { ...it0, cook: sk.item, cookXp: sk.xp } : it0;
+      if (!canAdd(it.cook) && s.n > 1) { log("Sua mochila está cheia: o assado não cabe.", "warn"); return null; }
+      removeItem(name); if (sk) removeItem(sk.with);
+      burst(fire.x + 0.5, fire.y + 0.4, ["#f39c12", "#f5e27a", "#c0392b"], 8, 2.2); SND.play("cook");
+      if (rand() < burn) { addItem("Peixe queimado"); addFloat(fire.x + 0.5, fire.y, "Queimou!", "#999"); return { burnt: true, item: it.cook }; }
+      addItem(it.cook); gainXp("culinaria", it.cookXp); emit("cook:" + it.cook); player.stats.cooked++; checkAch();
+      addFloat(fire.x + 0.5, fire.y, `+1 ${it.cook}`, "#fff"); addFloat(player.px + 0.5, player.py - 0.4, `+${it.cookXp} xp`, "#8fd3ff", 1, 11);
+      return { burnt: false, item: it.cook };
+    }
     function cook(fire) {
       const player = api.player(), lvl = lv("culinaria");
       const raw = player.inv.find((s) => s && ITEMS[s.name].cook && lvl >= ITEMS[s.name].cookLvl);
@@ -97,7 +112,7 @@ window.ValdoraGather = (() => {
         addFloat(fire.x + 0.5, fire.y, `+1 ${it.cook}`, "#fff"); addFloat(player.px + 0.5, player.py - 0.4, `+${it.cookXp} xp`, "#8fd3ff", 1, 11);
       }
     }
-    return { gather, cook };
+    return { gather, cook, cookOne };
   }
   return { create };
 })();

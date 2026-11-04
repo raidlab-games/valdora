@@ -291,6 +291,7 @@
     placeClutter(deco, objects.filter((o) => o.type === "house" && inTown(o.x, o.y))); // rodada 124
     placeClutterArea(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1, 12);
     placeVases(deco, TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 128: depois das pilhas
+    thinClutter(TOWN.x0, TOWN.y0, TOWN.x1, TOWN.y1); // rodada 155: tira o excesso
     // portal de boas-vindas na entrada sul (não bloqueia: passa-se por baixo da tábua)
     if (ASSETS.deco_town_sign) place({ type: "gate", spr: "deco_town_sign", x: RCX - 1, y: TOWN.y1 + 1, w: 3, h: 1, ox: 0.45, solid: false });
     homeObjs = null; { const H = HOME; // rodada 100: lote/casa, 9 pedestais, cama do filhote, banco e vaso (aparecem conforme o save)
@@ -717,6 +718,19 @@
     v.solid = false; // rodada 131: o vaso vive encostado no vizinho (que já bloqueia): o tile dele fica livre para passar
   }
   const PILES = new Set(["deco_crates", "deco_crates_green", "deco_crates_orange", "deco_barrel_stack", "deco_sacks", "deco_barrel_pile", "deco_cargo_pile", "deco_sack_pile"]);
+  // rodada 155: vila menos poluída: caixas, barris, sacos e vasos muito perto de outro somem (fica um a cada grupo; o 1º de cada
+  // grupo pela ordem fixa do hash). "Perto" = até 2 tiles de vão entre as bases.
+  const CLUTTER = new Set([...PILES, "barrel", "deco_barrel_vase", "deco_barrel_plant", "deco_sack_pair", "deco_vase_gray", "deco_vase_plant", "deco_clay_pot"]);
+  function thinClutter(x0, y0, x1, y1, gap = 2) {
+    const list = objects.filter((o) => CLUTTER.has(o.spr) && (o.type === "barrel" || o.type === "prop") && o.x >= x0 && o.x <= x1 && o.y >= y0 && o.y <= y1)
+      .sort((a, b) => hash(a.x, a.y, 61) - hash(b.x, b.y, 61)), kept = [], cut = new Set();
+    const near = (a, b) => Math.max(Math.max(0, a.x - (b.x + b.w - 1), b.x - (a.x + a.w - 1)), Math.max(0, a.y - (b.y + b.h - 1), b.y - (a.y + a.h - 1))) <= gap;
+    for (const o of list) { if (kept.some((k) => near(k, o))) cut.add(o); else kept.push(o); }
+    if (!cut.size) return 0;
+    for (const o of cut) for (let y = o.y; y < o.y + o.h; y++) for (let x = o.x; x < o.x + o.w; x++) if (occ[y * W + x] === o) occ[y * W + x] = null;
+    for (let i = objects.length - 1; i >= 0; i--) if (cut.has(objects[i])) objects.splice(i, 1);
+    return cut.size;
+  }
   function placeVases(deco, x0, y0, x1, y1) {
     if (!SPR.deco_vase_gray) return;
     const fits = (x, y, host) => cargoCell(x, y) && !hidesUse(x, y) && DIRS8V.every(([dx, dy]) => { const o = occ[(y + dy) * W + x + dx]; return !o || o === host; });
@@ -834,6 +848,7 @@
         placeBarricades(deco, v.x0, v.y0, v.x1, v.y1); // rodada 126
         placeClutter(deco, objects.filter((o) => o.type === "house" && o.x >= v.x0 && o.x <= v.x1 && o.y >= v.y0 && o.y <= v.y1)); // rodada 124
         placeClutterArea(deco, v.x0, v.y0, v.x1, v.y1, 7); placeVases(deco, v.x0, v.y0, v.x1, v.y1); // rodada 128
+        thinClutter(v.x0, v.y0, v.x1, v.y1); // rodada 155
       }
       if (v.stone && !v.stoneObj) v.stoneObj = deco("waystone", "deco_waystone", v.stone.x, v.stone.y, 1, 1, { village: v.key, label: v.name }); // rodada 132: o obelisco tem 1 tile de base
     }
@@ -1573,7 +1588,7 @@
     if (b.kind === "res") { const R = RES[b.ref.kind]; return R.skill === "pesca" ? "pescar no cardume" : `${R.verb.toLowerCase()} ${R.name.toLowerCase()}`; }
     if (b.kind === "loot") { const gs = groundItems.filter((g) => g.x === b.tx && g.y === b.ty); return "pegar " + (gs.length > 1 ? `${gs.length} itens` : `${gs[0].n}x ${gs[0].name}`); }
     if (b.kind === "fire" && b.ref.brazier) return null; // braseiro da masmorra não assa nada
-    if (b.kind === "fire") { const n = player.inv.reduce((t, s) => t + (s && ITEMS[s.name].cook && lv("culinaria") >= ITEMS[s.name].cookLvl ? s.n : 0), 0); return n > 1 ? `assar tudo (${n})` : n ? "assar na fogueira" : "assar (nada cru na mochila)"; } // rodada 45
+    if (b.kind === "fire") { const n = player.inv.reduce((t, s) => t + (s && ITEMS[s.name].cook && lv("culinaria") >= ITEMS[s.name].cookLvl ? s.n : 0), 0); return n ? `assar na fogueira (${n} cru${n > 1 ? "s" : ""})` : "fogueira (nada cru na mochila)"; } // rodada 45; 155: abre a janela
     return INTERACT_TEXT[b.kind] || null;
   }
   function updateFHint() { // "F: falar com Bento" no rodapé (só com teclado, fora de janelas)
@@ -1787,6 +1802,7 @@
   }
   $("touch-help").onclick = () => { if (!running) return; log(`Dica do Ivo: ${nextTip()}`, "tip", "icon_tip"); };
   function setTarget(p) {
+    if (player.job && player.job.kind === "cook" && p.ref !== player.job.obj) stopCook(); // rodada 155: saiu da fogueira
     player.target = { kind: p.kind, ref: p.ref }; player.job = null;
     const r = p.ref;
     if (p.kind === "mob") ensureWeapon(); // rodada 104: arma na mão antes de escolher onde parar
@@ -1880,20 +1896,21 @@
       const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
     }
     if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS * 2 : 2; /* rodada 137: pesca 2x mais lenta por varada */ if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
-    else if (t.kind === "fire") { cook(r); player.actT = 3; }
+    else if (t.kind === "fire") { player.target = null; openDlg("fire", r); } // rodada 155: a fogueira abre a janela (escolhe o que assar)
   }
 
   // coleta, pesca e culinária (js/gather.js)
   const GATHER = ValdoraGather.create({ player: () => player, event: () => EVENTS.current(), hitStop: (v) => { hitStop = Math.max(hitStop, v); },
     lv, log: (m, c, i) => log(m, c, i), canAdd, useTool, accBonus, tier, SND, burst: (...a) => burst(...a), fx: { sparks: (...a) => fx.sparks(...a), arc: (...a) => fx.arc(...a) },
     clickFx: (...a) => clickFx(...a), addItem, removeItem, gainXp, emit, checkAch, SPR, addFloat: (...a) => addFloat(...a), relocateSpot, ri, rand, clamp, RENDER });
-  const { gather, cook } = GATHER;
+  const { gather, cook, cookOne } = GATHER;
 
   // Trabalhos na fornalha e na bigorna: andam em ticks enquanto o jogador fica ao lado
   function doJob() {
     const j = player.job, o = j.obj;
-    if (!adjRect(player.x, player.y, o)) { player.job = null; return; }
+    if (!adjRect(player.x, player.y, o)) { if (j.kind === "cook") stopCook(); player.job = null; return; }
     faceRect(o);
+    if (j.kind === "cook") return cookTick(j); // rodada 155: 1 por vez, no tempo de cada peça
     if (player.actT > 0) return;
     if (j.kind === "smelt") {
       const r = SMELT[j.item];
@@ -2664,6 +2681,7 @@
     const s = player.inv[i], it = ITEMS[s.name], old = player.equip[it.slot];
     if (it.gear) { const g = GEAR[it.gear], t = g.tiers[it.tier], sk = weaponSkill(it); if (lv(sk) < (t.req || 0)) { log(`${s.name} pede ${SKILLS[sk]} ${t.req}.`, "warn"); return; } } // rodada 151: armas pedem o nível da classe
     if (it.need && lv("combate") < it.need) { log(`${s.name} pede Combate ${it.need}.`, "warn"); return; } // rodada 112: peças dos biomas
+    if (it.cls && lv(it.cls) < it.clsLvl) { log(`${s.name} pede ${SKILLS[it.cls]} ${it.clsLvl}.`, "warn"); return; } // rodada 155: peças de classe
     if (it.pack) { // rodada 112: troca de mochila — o que estiver nos espaços que somem precisa caber no resto
       const n = invSize(it.pack), used = player.inv.filter(Boolean).length - (s.n > 1 ? 0 : 1) + (old ? 1 : 0);
       if (used > n) { log("Não cabe: esvazie alguns espaços antes de trocar para uma mochila menor.", "warn"); return; }
@@ -2922,11 +2940,40 @@
     if (kind === "guard") emit("talk");
     $("dlg").hidden = false; $("dlg").classList.toggle("wide", kind === "char"); renderDlg(); placeDlg();
   }
-  function closeDlg() { dlg = null; $("dlg").hidden = true; }
+  function closeDlg() { if (player.job && player.job.kind === "cook") stopCook(); dlg = null; $("dlg").hidden = true; } // rodada 155: ESC ou fechar para de assar
+  // rodada 155: fogueira estilo forno: põe N peças, assa 1 por vez (ITEMS.cookT segundos cada) e cada assado vai para a mochila.
+  // Sair andando, apertar ESC ou fechar a janela para tudo: o que ainda não assou fica na mochila.
+  const cookTime = (n) => (ITEMS[n] && ITEMS[n].cookT) || 1;
+  function startCook(item, n, obj) {
+    const have = count(item), it = ITEMS[item];
+    if (!it || !it.cook || !have) return;
+    if (lv("culinaria") < it.cookLvl) { log(`Você precisa de Culinária ${it.cookLvl} para assar ${item.toLowerCase()}.`, "warn"); return; }
+    player.job = { kind: "cook", item, left: Math.max(1, Math.min(have, n)), obj, t: 0, made: 0, burnt: 0, total: Math.max(1, Math.min(have, n)) };
+    player.target = null; player.path = []; SND.play("ui"); renderDlg();
+  }
+  function cookTick(j) {
+    if (!count(j.item)) return stopCook(true);
+    j.t += TICK; player.cookUntil = j.obj.sizzleUntil = performance.now() / 1000 + 0.8;
+    if (j.t + 1e-6 >= cookTime(j.item)) {
+      j.t = 0; const r = cookOne(j.obj, j.item);
+      if (!r) return stopCook(true);
+      if (r.burnt) j.burnt++; else j.made++;
+      if (--j.left <= 0) return stopCook(true);
+    }
+    renderDlg();
+  }
+  function stopCook(done) {
+    const j = player.job; if (!j || j.kind !== "cook") return; player.job = null; player.cookUntil = 0;
+    const cooked = ITEMS[j.item].cook, msg = `${j.made}x ${cooked.toLowerCase()}${j.burnt ? `, ${j.burnt} queimado${j.burnt > 1 ? "s" : ""}` : ""}`;
+    if (done) log(`Fogueira: assou ${msg}.`, "dim", "icon_cook_all");
+    else log(`Parou de assar (${msg}). ${j.left} ${j.item.toLowerCase()} ${j.left > 1 ? "voltaram" : "voltou"} para a mochila.`, "dim");
+    if (j.made >= 2) RENDER.playOnce("fx_cook_batch", j.obj.x, j.obj.y, { foot: true });
+    hudDirty = true; save(); if (dlg && dlg.kind === "fire") renderDlg();
+  }
   // rodada 54: o desenho da janela (título, abas, fala e corpo) mora em js/dialogs.js; os cliques continuam aqui
   function renderDlg() { DLG_VIEW.render(dlg); }
   // rodada 56/57: o que cada botão faz mora em js/dlgactions.js (testado em tests.html com um jogador de mentira)
-  const DLG_ACT = ValdoraDlgActions.create({ brewPotion: (n, q) => brewPotion(n, q), bankUp: () => bankUp(), player: () => player, dlg: () => dlg, npc: () => npc, shrine: () => SHRINE_RT, dirty: () => { hudDirty = true; },
+  const DLG_ACT = ValdoraDlgActions.create({ crafting: () => CRAFTING, brewPotion: (n, q) => brewPotion(n, q), bankUp: () => bankUp(), player: () => player, dlg: () => dlg, npc: () => npc, shrine: () => SHRINE_RT, dirty: () => { hudDirty = true; },
     sell: (n, q) => sell(n, q), buy: (n) => buy(n), deliver: (i) => deliver(i), newOrder: (o) => newOrder(o), moveStack: (f, i, t) => moveStack(f, i, t),
     takeFx: (o, n) => takeFx(o, n), storeFx: (o, n) => storeFx(o, n), log: (m, c, i) => log(m, c, i), craft: (n) => craft(n), QUEST, react: (o) => react(o), rand, SND,
     addFloat: (...a) => addFloat(...a), claimBounty: (i) => claimBounty(i), wakeEcho: (k) => wakeEcho(k), newBounty: (t) => newBounty(t), emit: (e) => emit(e), accName,
@@ -2989,6 +3036,7 @@
   }
   // rodada 139: o artesanato é feito na mesa ao lado da bigorna; cada receita pede ter feito a anterior da linha
   const atDesk = () => objects.some((o) => o.type === "craftdesk" && adjRect(player.x, player.y, o));
+  const atAnvil = () => objects.some((o) => o.type === "anvil" && adjRect(player.x, player.y, o)); // rodada 155: o que leva minério é feito na bigorna
   const madeN = (n) => (player.made || {})[n] || 0;
   const prereqOf = (key) => VD.PREREQ[key] || null;
   const prereqOk = (key) => { const p = prereqOf(key); return !p || madeN(p[0]) >= p[1]; };
@@ -3005,16 +3053,16 @@
     return m;
   }
   function craft(name) {
-    const r = CRAFT[name];
-    if (!atDesk()) { log("Use a mesa de artesanato, ao lado da bigorna.", "warn"); return; }
+    const r = CRAFT[name], hv = VD.heavy(name), sk = hv ? "ferraria" : "artesanato"; // rodada 155: minério e barras = bigorna (Ferraria)
+    if (hv ? !atAnvil() : !atDesk()) { log(hv ? `${name} leva metal: forje na bigorna.` : "Use a mesa de artesanato, ao lado da bigorna.", "warn"); return; }
     if (!prereqOk(name)) { log(`${name}: ${prereqText(name)}.`, "warn"); return; }
-    if (lv("artesanato") < r.lvl || !hasMats(r.mats) || (r.bag && player.bags.includes(name)) || (r.req && !player.bags.includes(r.req))) return;
+    if (lv(sk) < r.lvl || !hasMats(r.mats) || (r.bag && player.bags.includes(name)) || (r.req && !player.bags.includes(r.req))) return;
     for (const [k, n] of Object.entries(r.mats)) removeItem(k, n);
     if (r.bag) {
       player.bags.push(name); for (let i = 0; i < r.bag; i++) player.inv.push(null);
       showToast(`${name} pronta!`, `A mochila agora tem ${player.inv.length} espaços.`, "#7dff9a");
     } else if (!addItem(name, r.n || 1)) dropItem(name, r.n || 1, player.x, player.y);
-    useTool("hammer"); SND.play("clang"); gainXp("artesanato", r.xp); markMade(name);
+    useTool("hammer"); SND.play("clang"); gainXp(sk, r.xp); markMade(name); emit("craft:" + name);
     burst(player.px + 0.5, player.py + 0.3, ["#f1c40f", "#ffffff", "#c97a3a"], 16, 3);
     log(`Você criou: ${name}.`, "gold"); hudDirty = true; save();
   }
@@ -3098,7 +3146,8 @@
   // telas da fornalha, da bigorna e do artesanato (js/crafting.js)
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
-  const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), prereqText: (k) => prereqText(k) });
+  const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), atAnvil: () => atAnvil(), prereqText: (k) => prereqText(k),
+    cookTime: (n) => cookTime(n), startCook: (i, n, o) => startCook(i, n, o), stopCook: () => stopCook() });
   const DLG_VIEW = ValdoraDialogs.create({ peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
@@ -3367,6 +3416,7 @@
       // rodada 114: cada toque em W/A/S/D anda um passo (rodada 130: meio tile); segurando, segue depois de KEY_REPEAT s
       if (!taps.length && keySteps >= 1 && keyHoldT < KEY_REPEAT) return false;
       if (player.act && player.act.key !== "rod") cancelAct(); // apertar uma direção cancela o golpe, mesmo contra um obstáculo
+      if (player.job && player.job.kind === "cook") stopCook(); // rodada 155: andou: para de assar
       player.path = []; player.target = null; player.goal = null; player.job = null; player.fineG = null; player.dir = kd;
       const [vx, vy] = keyVec(); nx = gx + vx; ny = gy + vy;
       if (!canStepG(gx, gy, nx, ny)) { // diagonal bloqueada: escorrega pelo lado que estiver livre

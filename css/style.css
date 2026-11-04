@@ -230,8 +230,8 @@ button:focus-visible, [data-tab]:focus-visible, input:focus-visible, #minimap:fo
 .row small { opacity: .65; font-size: 12px; }
 .price { color: var(--gold); min-width: 40px; text-align: right; }
 .price::after { content: " ●"; font-size: 12px; vertical-align: 2px; }
-.row button, .wide { background: #3a2a16; border: 2px solid #000; box-shadow: inset -2px -2px 0 #24190c; padding: 4px 8px; cursor: pointer; font-size: 12px; }
-.row button:hover:not(:disabled), .wide:hover { background: #5a4020; }
+.row button, .wide, .fb-act button { background: #3a2a16; border: 2px solid #000; box-shadow: inset -2px -2px 0 #24190c; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.row button:hover:not(:disabled), .wide:hover, .fb-act button:hover { background: #5a4020; }
 .row button:disabled { opacity: .35; cursor: not-allowed; }
 .wide { width: 100%; margin-top: 8px; padding: 8px; }
 .empty { opacity: .65; font-size: 12px; text-align: center; padding: 12px 4px; }
@@ -926,3 +926,18 @@ button.link:hover { color: #cfe3ff; }
 /* rodada 137: tela estreita: a barra de atalhos sobe acima do menu e do registro (não fica escondida atrás deles) */
 @media (max-width: 1300px) { #skillbar { bottom: 76px; left: auto; right: 10px; transform: none; } #panel, #options { bottom: 136px; } }
 @media (max-width: 900px) { #skillbar { bottom: 62px; } #panel, #options { bottom: 116px; } }
+
+/* rodada 155: fogueira estilo forno e grupos da mesa de artesanato */
+.fire-box { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 6px 0 8px; padding: 10px; background: #1e1510; border: 2px solid var(--edge-dim); }
+.fb-slot { position: relative; width: 52px; height: 52px; background: #2c2016; border: 2px solid #5a4430; box-shadow: inset 0 0 6px #000; display: flex; align-items: center; justify-content: center; }
+.fb-slot.out { border-color: #8a6a2a; }
+.fb-slot img { width: 40px; height: 40px; image-rendering: pixelated; }
+.fb-slot b { position: absolute; right: 2px; bottom: 0; font-size: 12px; color: #fff; text-shadow: 1px 1px 0 #000; }
+.fb-mid { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 110px; }
+.fb-flame { width: 24px; height: 24px; image-rendering: pixelated; }
+.fb-bar { width: 100%; height: 10px; background: #2c2016; border: 2px solid #5a4430; }
+.fb-bar i { display: block; height: 100%; background: linear-gradient(90deg, #f39c12, #ffd84a); transition: width .5s linear; }
+.fb-mid small { font-size: 10px; color: var(--text-dim, #c8b89a); }
+.fb-act { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.cr-group { margin: 10px 0 4px; padding: 3px 6px; font-size: 12px; color: var(--gold); border-bottom: 1px solid var(--edge-dim); }
+.cr-group.big { margin-top: 14px; font-size: 13px; }
