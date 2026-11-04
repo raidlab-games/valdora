@@ -5,8 +5,8 @@
 // tingindo as neutras com a cor do material. As folhas das peças só são baixadas quando alguém as veste.
 window.ValdoraOutfit = (() => {
   "use strict";
-  const ORDER = ["pants", "greaves", "boots", "bootsplate", "shirt", "plate", "tunic", "hunter", "robe", "quiver", "hood", "helm", "mhood", "hat",
-    "shield", "orb", "book", "cape", "backpack", "sword", "sword2", "bow", "tool"]; // rodada 105: escudo, orbe, livro e montante; 112: mochila
+  const ORDER = ["under_m", "under_f", "eyes_1", "eyes_2", "eyes_3", "eyes_4", "eyes_5", "eyes_6", "eyes_7", "eyes_8", "pants", "greaves", "boots", "bootsplate", "shirt", "plate", "tunic", "hunter", "robe", "quiver", "hair_1", "hair_2", "hair_3", "hair_4", "hair_5", "hair_6", "hair_7", "hair_8", "hair_9", "hood", "helm", "mhood", "hat",
+    "shield", "orb", "book", "cape", "backpack", "sword", "sword2", "staff", "bow", "tool"]; // rodada 151: cajado // rodada 105: escudo, orbe, livro e montante; 112: mochila
   const ANIM_SUF = ["", "_walk6", "_dash", "_block", "_cancel", "_cheer", "_strike4"];
   const SPR_SUF = ["_attack", "_chop", "_mine", "_hammer", "_fish", "_cook", "_reap", "_spin", "_sheet"];
   const BOW_ALT = { _attack: "_attack_bow", _strike4: "_strike4_bow" }; // com arco, o golpe vira tiro (outro corpo e outras peças)
@@ -27,7 +27,7 @@ window.ValdoraOutfit = (() => {
   }
 
   // looks: [[camada, cor|null], ...]; bow: arma é arco (troca o golpe pelo tiro)
-  async function apply(hero, looks, bow, ANIMS, SPR) {
+  async function apply(hero, looks, bow, ANIMS, SPR, skin) { // rodada 152: skin = cor da pele (tinge o corpo base)
     const my = ++token, list = ORDER.flatMap((l) => looks.filter((x) => x[0] === l));
     const jobs = [];
     for (const suf of ANIM_SUF) {
@@ -36,7 +36,7 @@ window.ValdoraOutfit = (() => {
       jobs.push(Promise.all([alt ? load(path(hero, alt, true)) : null, ...list.map(([l]) => load(path("gear_" + l, alt || suf, true)))]).then(([bi, ...li]) => {
         if (my !== token) return;
         const c = document.createElement("canvas"); c.width = b.width; c.height = b.height; const g = c.getContext("2d");
-        if (bi) paint(g, bi, c.width, c.height, null, true); else g.drawImage(b, 0, 0);
+        if (bi) paint(g, bi, c.width, c.height, skin || null, true); else if (skin) paint(g, b, c.width, c.height, skin, false); else g.drawImage(b, 0, 0);
         list.forEach(([, rgb], i) => paint(g, li[i], c.width, c.height, rgb, true));
         A.c = c;
       }));
@@ -47,7 +47,7 @@ window.ValdoraOutfit = (() => {
       jobs.push(Promise.all([alt ? load(path(hero, alt, false)) : null, ...list.map(([l]) => load(path("gear_" + l, alt || suf, false)))]).then(([bi, ...li]) => {
         if (my !== token) return;
         const c = document.createElement("canvas"); c.width = b.width; c.height = b.height; const g = c.getContext("2d");
-        if (bi) paint(g, bi, c.width, c.height, null, bi.naturalWidth > c.width); else g.drawImage(b, 0, 0);
+        if (bi) paint(g, bi, c.width, c.height, skin || null, bi.naturalWidth > c.width); else if (skin) paint(g, b, c.width, c.height, skin, false); else g.drawImage(b, 0, 0);
         list.forEach(([, rgb], i) => paint(g, li[i], c.width, c.height, rgb, !!li[i] && li[i].naturalWidth > c.width));
         SPR[key] = c;
       }));

@@ -20,9 +20,10 @@ window.ValdoraNet = (() => {
   // ---------------- motor local (teste, sem servidor) ----------------
   function localEngine() {
     const K = "valdora.net.local.v1";
-    const SERVERS = [{ id: "lumeira", name: "Lumeira", region: "Brasil", status: "online" }, { id: "escarpa", name: "Escarpa", region: "Brasil", status: "online" },
-      { id: "degelo", name: "Degelo", region: "Portugal", status: "online" }];
-    const db = () => { try { return JSON.parse(localStorage.getItem(K)) || { users: [], chars: [], session: null }; } catch (e) { return { users: [], chars: [], session: null }; } };
+    const SERVERS = [{ id: "lumeira", name: "Lumeira", region: "Brasil", status: "online" }]; // rodada 152: um servidor só
+    // rodada 152: jogo novo (sem classe na criação): os personagens antigos são apagados uma vez; as contas ficam
+    const db = () => { let d; try { d = JSON.parse(localStorage.getItem(K)); } catch (e) { d = null; } d = d || { users: [], chars: [], session: null };
+      if (d.ver !== 3) { d.chars = []; d.ver = 3; try { localStorage.setItem(K, JSON.stringify(d)); } catch (e) { /* sem espaço */ } } return d; };
     const put = (d) => { try { localStorage.setItem(K, JSON.stringify(d)); } catch (e) { err("Sem espaço no navegador para salvar."); } };
     async function hash(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); }
     const me = (d) => d.users.find((u) => u.id === d.session);

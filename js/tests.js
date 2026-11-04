@@ -78,7 +78,8 @@
   test("acessórios têm raridade e espaço válidos", () => miss(Object.entries(ITEMS).filter(([, it]) => it.slot && (!RARITY[it.rarity] || !(VD.EQUIP_SLOTS[it.slot] && (!VD.EQUIP_SLOTS[it.slot].archer || it.ammo)))).map(([n]) => n)));
   test("rodada 104: Arqueiro no lugar do Marinheiro, com arco, flechas (munição) e folhas 3D de tiro", () => {
     const miss = [], H = HEROES.find((h) => h.id === "hero_2");
-    if (!H || !H.archer || H.name !== "Arqueiro") miss.push("herói");
+    if (!H || HEROES.length !== 2 || HEROES.some((h) => h.archer)) miss.push("herói"); /* rodada 152: sem classe na criação (2 corpos); Arqueiro vem do arco */
+    if (!VD.GEAR.espada.tiers.every((t) => t.staff && t.staff.startsWith("Cajado") && ITEMS[t.staff].staff)) miss.push("cajados"); /* rodada 151 */
     if (HEROES.some((h) => h.name === "Marinheiro")) miss.push("Marinheiro ainda na lista");
     for (const n of ["Flecha de madeira", "Flecha de ferro", "Flecha de lumita"]) { const it = ITEMS[n]; if (!it || it.slot !== "municao" || !it.ammo || !ASSETS[it.icon]) miss.push(n); if (!VD.CRAFT[n] || !(VD.CRAFT[n].n > 1)) miss.push(n + " (receita)"); }
     if (!VD.SHOP_ITEMS.includes("Flecha de madeira") || !ITEMS["Flecha de madeira"].buyN) miss.push("flechas na loja");
@@ -185,7 +186,8 @@
     ...q.steps.flatMap((s) => Object.keys(s.deliver || {}).filter((i) => !ITEMS[i])).map((i) => id + ":" + i),
     ...q.steps.filter((s) => s.ev && s.ev.startsWith("kill:") && !MOBS[s.ev.slice(5)]).map((s) => id + ":" + s.ev)])));
   test("habilidades ativas: teclas únicas, recarga e nível positivos", () => { const A = Object.values(VD.ACTIVE);
-    return (new Set(A.map((a) => a.key)).size === A.length && A.every((a) => a.cd > 0 && a.lvl > 0 && a.mult > 0)) || "dados inválidos"; });
+    const K = A.filter((a) => a.key).map((a) => a.key); /* rodada 153: as skills de classe vão pela barra (1 a 9) */
+    return (new Set(K).size === K.length && A.every((a) => a.cd > 0 && a.lvl > 0 && a.mult > 0) && ["guerreiro", "arqueiro", "mago"].every((c) => A.filter((a) => a.cls === c).length >= 7)) || "dados inválidos"; });
   test("cenário animado: folhagem (sway) com 16 quadros e chamas (flicker) com 8", () => miss(Object.entries(window.ANIM_SHEETS || {})
     .filter(([, A]) => (A.rows.sway && A.rows.sway.frames !== 16) || (A.rows.flicker && A.rows.flicker.frames !== 8)).map(([k]) => k)));
   test("chefes com golpe especial: impacto dentro da linha", () => miss(Object.entries(window.ANIM_SHEETS || {})
@@ -1039,7 +1041,7 @@
     const br = Object.entries(ITEMS).filter(([, it]) => it.slot === "bracelete");
     if (!VD.EQUIP_SLOTS.bracelete || br.length < 3 || br.some(([n, it]) => !ASSETS[it.icon] || !(VD.CRAFT[n] || it.buy || it.mapGear))) r.push("bracelete"); /* rodada 137 */
     for (const t of VD.GEAR.espada.tiers.slice(1)) { const it = ITEMS[t.two];
-      if (!it || !it.twoH || it.onlyHero !== "hero_1" || !(it.bonus.dmg > 0) || !ASSETS[it.icon] || !t.twoForge || (it.look || [])[0] !== "sword2") r.push("montante " + t.two); }
+      if (!it || !it.twoH || !(it.bonus.dmg > 0) || !ASSETS[it.icon] || !t.twoForge || (it.look || [])[0] !== "sword2") r.push("montante " + t.two); }
     for (const L of ["shield", "orb", "book", "sword2"]) if (!ValdoraOutfit.ORDER.includes(L)) r.push("camada " + L);
     return miss(r);
   });

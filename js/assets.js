@@ -122,7 +122,8 @@ ASSETS.deco_town_sign = "assets/flow/deco_town_sign.png"; SPRITE_SIZE.deco_town_
 // Rodada 8: giro do herói (8 quadros de 96 px numa linha, mesma escala da folha de ataque), baú aberto e ícones de habilidade
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_spin`] = `assets/flow/hero_${n}_spin.png`; SPRITE_SIZE[`hero_${n}_spin`] = [8 * 1.45 * 1.5, 1.45 * 1.5]; }
 ASSETS.chest_open = "assets/flow/chest_open.png"; SPRITE_SIZE.chest_open = SPRITE_SIZE.chest || [1.05, 1.05];
-for (const k of ["skill_spin", "skill_dash", "skill_smash", "skill_run"]) ASSETS[k] = `assets/flow/${k}.png`;
+for (const k of ["skill_spin", "skill_dash", "skill_smash", "skill_run", ...["warcry", "rend", "ironwall", "execute", "aimed", "double", "pierce", "rain", "venom", "leap", "hawk",
+  "fireball", "frost", "chain", "heal", "nova", "manashield", "meteor"].map((k) => "skill_" + k)]) ASSETS[k] = `assets/flow/${k}.png`;
 // Rodada 9: investida com espada (folhas hero_N_dash do Blender, células de 96 px como a folha de ataque) e ícone de missão
 for (const n of [1, 2, 3]) SPRITE_SIZE[`hero_${n}_dash`] = [1.45 * 1.5, 1.45 * 1.5];
 ASSETS.icon_quest = "assets/flow/icon_quest.png"; ASSETS.icon_quest_32 = "assets/flow/icon_quest_32.png";
@@ -239,6 +240,7 @@ ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auctio
 // rodada 117: o da Celeste virou de frente para a direita (espelhado); a bancada de poções da Morgana fica de frente para a esquerda
 ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
 ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
+ASSETS.item_staff = "assets/ui/item_staff.png"; // rodada 151: cajado do Mago
 ASSETS.pk_skull = "assets/ui/pk_skull.png"; // rodada 147: marca de PK no mapa
 ASSETS.death_bag = "assets/ui/death_bag.png"; SPRITE_SIZE.death_bag = [0.92, 0.92]; // rodada 146: saco de morte no chão
 ASSETS.craft_desk = "assets/flow/craft_desk.png"; SPRITE_SIZE.craft_desk = [164 / 75, 113 / 75]; // rodada 139: mesa de artesanato
@@ -315,9 +317,9 @@ for (const k of ["npc_merchant", "npc_guard", "npc_bard", "npc_juna", "npc_odili
 }
 
 window.HEROES = [
-  { id: "hero_1", sheet: "hero_1_sheet", attack: "hero_1_attack", name: "Guerreiro", color: "#c0392b", sec: "escudo" }, // rodada 105: secundária
-  { id: "hero_2", sheet: "hero_2_sheet", attack: "hero_2_attack", name: "Arqueiro", color: "#3f9e4a", archer: true, sec: "flecha" }, // rodada 104: no lugar do Marinheiro
-  { id: "hero_3", sheet: "hero_3_sheet", attack: "hero_3_attack", name: "Místico", color: "#8e44ad", sec: "orbe" },
+  // rodada 152: sem classe na criação: só o corpo (masculino ou feminino); a classe vem da arma (espada, arco ou cajado)
+  { id: "hero_1", sheet: "hero_1_sheet", attack: "hero_1_attack", name: "Aventureiro", color: "#c0392b", sec: "escudo" },
+  { id: "hero_2", sheet: "hero_2_sheet", attack: "hero_2_attack", name: "Aventureira", color: "#3f9e4a", sec: "escudo" },
 ];
 // rodada 104: ícones (Blender) das peças novas do boneco: capacete, calça, botas e capa
 for (const k of ["item_helm_leather", "item_helm_iron", "item_helm_lumita", "item_pants_leather", "item_pants_iron", "item_pants_lumita",
@@ -369,3 +371,19 @@ for (const th of ["gray", "green", "dark", "sand", "snow"]) { ASSETS["mtn_face_"
 for (const k of ["tree_pine", "tree_snowpine"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.5, 2.1]; } // como o cedro
 // rodada 106: montanhas (face de rocha e escada talhada por tema; o contorno é desenhado no chão, em terrain.js)
 for (const th of ["gray", "green", "dark", "sand", "snow"]) for (const k of [`mtn_face_t_${th}`, `mtn_face_b_${th}`, `mtn_stairs_t_${th}`, `mtn_stairs_b_${th}`]) ASSETS[k] = `assets/flow/${k}.png`;
+
+// rodada 152: aparência do personagem (criação): sexo, cor da pele, penteado, cor do cabelo e olhos. As camadas (js/outfit.js)
+// vêm de tools/b3d/layered.py: corpo neutro tingido pela pele, roupa de baixo, olhos e cabelo neutro tingido pela cor.
+window.LOOK = {
+  skins: ["#ffe2c8", "#f1c296", "#d49a68", "#9c6640", "#5e3b26"], skinNames: ["Clara", "Rosada", "Morena", "Parda", "Negra"],
+  hairColors: ["#5a381e", "#24191a", "#e0b85c", "#b04a26", "#e8e8e8", "#4a6ab0"], hairColorNames: ["Castanho", "Preto", "Loiro", "Ruivo", "Branco", "Azul"],
+  hairs: ["Espetado", "Curto", "Trança", "Longo", "Rabo de cavalo", "Coque", "Moicano", "Chanel", "Maria-chiquinha", "Careca"],
+  eyes: ["Vermelho", "Preto", "Normal", "Azul", "Verde", "Cobra", "Rubro", "Espiral"], // rodada 153: tipos e cores de olho
+  def: { g: "m", skin: 1, hair: 1, hc: 0, eyes: 3 },
+};
+window.lookSanitize = (L) => { const D = LOOK.def, n = (v, max, d) => (Number.isInteger(+v) && +v >= 0 && +v < max ? +v : d);
+  L = L && typeof L === "object" ? L : {};
+  return { g: L.g === "f" ? "f" : "m", skin: n(L.skin, LOOK.skins.length, D.skin), hair: Math.max(1, n(L.hair, LOOK.hairs.length + 1, D.hair)), hc: n(L.hc, LOOK.hairColors.length, D.hc), eyes: Math.max(1, n(L.eyes, LOOK.eyes.length + 1, D.eyes)) }; };
+window.lookHero = (L) => (L && L.g === "f" ? "hero_2" : "hero_1");
+// camadas da aparência: roupa de baixo, olhos e cabelo (careca = sem cabelo; com elmo/capuz/chapéu o cabelo fica escondido)
+window.lookLayers = (L, covered) => [["under_" + L.g, null], ["eyes_" + L.eyes, null], ...(L.hair < 10 && !covered ? [["hair_" + L.hair, LOOK.hairColors[L.hc]]] : [])];

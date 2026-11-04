@@ -867,6 +867,7 @@ button.link:hover { color: #cfe3ff; }
 #tab-passive .sk-card img { width: 40px; height: 40px; }
 #tab-passive .sk-card small { font-size: 10px; line-height: 11px; }
 #panel.small.inv-w { width: 310px; }
+#panel.small.book-w { width: 330px; } #tab-book .sk-grid { grid-template-columns: repeat(7, 1fr) !important; } #tab-book { overflow-x: hidden; } /* rodada 153: 7 skills por classe numa linha */
 #tab-inv .slot { min-height: 0; aspect-ratio: 1; }
 #tab-inv .slot img { width: 80%; height: 80%; }
 /* rodada 141: itens arrastáveis */
@@ -898,6 +899,23 @@ button.link:hover { color: #cfe3ff; }
 .dslot.empty .q { opacity: 1; }
 .dslot img.slotph { width: 30px; height: 30px; opacity: .55; image-rendering: pixelated; }
 .dslot.empty:hover img.slotph { opacity: .8; }
+/* rodada 151: ícone de cada nível e as classes separadas */
+#tab-skills .skill { display: grid; grid-template-columns: 26px 1fr auto; align-items: center; column-gap: 6px; }
+#tab-skills .skill .sk-ic { width: 26px; height: 26px; grid-row: 1 / 3; image-rendering: auto; }
+#tab-skills .skill .bar { grid-column: 2 / 4; }
+#tab-skills .skill-h { color: var(--gold); font-size: 12px; margin: 8px 0 2px; border-top: 1px solid #ffffff22; padding-top: 6px; }
+#tab-skills .skill-h small { opacity: .6; font-size: 10px; margin-left: 4px; }
+/* rodada 152: criação do personagem */
+#heroes { display: block; }
+.creator { display: flex; flex-direction: column; gap: 7px; margin: 4px 0 8px; }
+.cr-row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 6px; }
+.cr-row > span { font-size: 12px; color: var(--gold); }
+.cr-opts { display: flex; flex-wrap: wrap; gap: 4px; }
+.cr-o { padding: 4px 7px; font-size: 11px; background: var(--wood-2); border: 2px solid var(--edge-dim); color: var(--text); cursor: pointer; }
+.cr-o.sel { border-color: var(--gold); background: #3a2c14; color: #ffe680; }
+.cr-opts.sw .cr-o { width: 26px; height: 26px; padding: 0; border-radius: 50%; background: var(--sw); }
+.cr-opts.sw .cr-o.sel { box-shadow: 0 0 0 2px #000, 0 0 8px #f1c40f; }
+.cr-opts.hairs .cr-o { flex: 1 1 18%; }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }

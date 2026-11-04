@@ -27,7 +27,9 @@
   const { CHATTER, BARD_SONGS, ACTIVE, QUESTS } = VD;
   const EQUIP_KEYS = Object.keys(VD.EQUIP_SLOTS); // rodada 104: espaços do boneco que recebem itens (a munição só o arqueiro usa)
   const isArcher = () => !!(HEROES.find((h) => h.id === player.hero) || {}).archer; // rodada 104: o Arqueiro atira de longe
-  const heroSec = () => (HEROES.find((h) => h.id === player.hero) || {}).sec; // rodada 105: escudo, flecha ou orbe (espaço "Secundária")
+  // rodada 151: a secundária vem da arma na mão (espada: escudo; arco: flechas; cajado: orbe ou livro), não da classe escolhida
+  const heroSec = () => RULES.CLASS_SEC[RULES.weaponClass(player.equip.arma && ITEMS[player.equip.arma.name]) || "guerreiro"];
+  const weaponSkill = (it) => RULES.weaponClass(it) || (it && it.gear && GEAR[it.gear].skill); // nível que a arma pede
   const arrows = () => { const q = player.equip.municao; return q && ITEMS[q.name] && ITEMS[q.name].ammo ? q : null; }; // flechas na secundária
   const ARROW_RANGE = 4.3; // alcance do arco (tiles)
 
@@ -1215,7 +1217,7 @@
 
   // ---------- Jogador ----------
   let player = null;
-  const lv = (s) => level(player.xp[s]);
+  const lv = (s) => RULES.skillLevel(s, player.xp[s]); // rodada 151: classes têm curva própria
   // rodada 104: o nível vem da peça vestida (arma/ferramenta no espaço "arma", peitoral no "armadura")
   const NO_GEAR = { espada: { name: "Sem arma", acc: 0, dmg: 0 }, armadura: { name: "Sem peitoral", def: 0 } };
   const gearItem = (k) => { const e = player.equip[k === "armadura" ? "armadura" : "arma"], it = e && ITEMS[e.name]; return it && it.gear === k ? e : null; };
@@ -1238,14 +1240,14 @@
   // rodada 138: TODA ação tem nível (estilo Cambria): skills, comida, poções e as passivas dos estilos
   const POT_LVL = { "Poção de vida": 1, "Poção de força": 10, "Poção de pedra": 20 };
   const HOT_ACTIONS = () => [
-    ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, kind: "Skill ativa", name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl, cd: S.cd })),
+    ...Object.entries(ACTIVE).map(([k, S]) => ({ id: "skill:" + k, kind: S.cls ? `Skill de ${SKILLS[S.cls]}` : "Skill de todos", cls: S.cls, name: S.name, desc: S.desc, icon: ASSETS["skill_" + k], skill: k, lvl: S.lvl, cd: S.cd })),
     { id: "eat", kind: "Ação", name: "Comer", desc: "Come a comida que mais cura da mochila.", icon: ASSETS.icon_heal_small, lvl: 1 },
     ...Object.keys(POT_LVL).filter((n) => ITEMS[n]).map((n) => ({ id: "pot:" + n, kind: "Poção", name: n, desc: ITEMS[n].heal ? `Cura ${ITEMS[n].heal}.` : (BUFFS[ITEMS[n].buff] || {}).desc || "Efeito por um tempo.", icon: ASSETS[ITEMS[n].icon], item: n, lvl: POT_LVL[n] })),
     ...Object.entries(STYLES).filter(([, s]) => s.passive).map(([k, s]) => ({ id: "passive:" + k, kind: `Passiva (estilo ${s.name})`, name: s.passive.name, desc: s.passive.desc, icon: ASSETS[s.passive.icon], lvl: 1, passive: true }))];
-  const hotUnlocked = (a) => !a.lvl || lv("combate") >= a.lvl;
+  const hotUnlocked = (a) => !a.lvl || lv(a.cls || "combate") >= a.lvl; // rodada 153: skills de classe pelo nível da classe
   function useHot(i) {
     const a = player.hotbar[i]; if (!a) return;
-    const A = HOT_ACTIONS().find((x) => x.id === a); if (A && !hotUnlocked(A)) { log(`${A.name}: libera no Combate ${A.lvl}.`, "dim"); return; } // rodada 138
+    const A = HOT_ACTIONS().find((x) => x.id === a); if (A && !hotUnlocked(A)) { log(`${A.name}: libera no ${SKILLS[A.cls || "combate"]} ${A.lvl}.`, "dim"); return; } // rodada 138
     if (a === "eat") { let best = -1; player.inv.forEach((s, j) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = j; });
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim"); }
     else if (a.startsWith("pot:")) { const pot = a.slice(4), j = player.inv.findIndex((s) => s && s.name === pot); if (j >= 0) eat(j); else log(`Sem ${pot.toLowerCase()} na mochila.`, "dim"); }
@@ -1273,7 +1275,7 @@
   $("skillbar").addEventListener("dragend", (e) => { // arrastou uma casa para fora da barra: tira a skill dela
     const b = e.target.closest("[data-slot]"); if (b && e.dataTransfer.dropEffect === "none" && !document.elementFromPoint(e.clientX, e.clientY)?.closest("#skillbar")) setHot(+b.dataset.slot, null);
   });
-  const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + lv(k), 0);
+  const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + (RULES.isClass(k) ? 0 : lv(k)), 0); // as classes ficam fora do nível total
   const combatStats = () => RULES.combatStats({ combate: lv("combate"), vitalidade: lv("vitalidade"), weapon: tier("espada"), armor: tier("armadura"),
     style: STYLES[player.style], buffs: Object.keys(player.buffs).map((k) => k === "descansado" ? { ...BUFFS[k], hp: ValdoraHome.restHp(ValdoraHome.shown(player.home)) } : BUFFS[k]), master: { espada: (gearItem("espada") || {}).master, armadura: (gearItem("armadura") || {}).master },
     accessories: Object.values(player.equip || {}).filter(Boolean).map(accBonus).concat(collBonuses()) }); // rodada 104: os modificadores do estelar vêm na própria peça; 137: + coleções
@@ -1287,6 +1289,7 @@
     SINK = (opts && opts.sink) || null; // rodada 109
     if (inCrypt) leaveCrypt();
     $("play").disabled = $("continue").disabled = true;
+    data = { ...data, look: lookSanitize(data.look) }; data.hero = lookHero(data.look); // rodada 152: o corpo vem da aparência escolhida
     await assetsReady; await animsReady; await heroAnims(HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id); // rodada 105
     if (document.fonts) await Promise.race([document.fonts.load('12px "Valdora Pixel"'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {}); // rodada 79: o canvas só usa a fonte depois de carregada fx.setDigits(SPR.ui_digits); UI.setTitleFont(SPR.ui_font_title); // rodadas 67-68: números e títulos em pixel art
     $("play").disabled = $("continue").disabled = false;
@@ -1302,7 +1305,7 @@
     let { x, y } = data;
     if ((data.wv || 0) < 4) ({ x, y } = SPAWN); // rodada 137: mapa 50% mais extenso (wv 4); rodada 120: o mapa cresceu (biomas maiores, Lumeira em dobro, mar em volta): save de antes volta para a praça
     if (!Number.isInteger(x) || !Number.isInteger(y) || !walkable(x, y)) ({ x, y } = SPAWN);
-    player = { name: String(data.name || "Aventureiro").slice(0, 14), hero: HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id,
+    player = { name: String(data.name || "Aventureiro").slice(0, 14), look: data.look, hero: HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id,
       x, y, fx: x, fy: y, prog: 1, px: x, py: y, dir: "down", dist: 0, moveT: 0, turnT: 0, act: null, cast: null, flash: 0, hitT: 0, deadT: 0, eatT: 0,
       cd: { spin: 0, dash: 0, smash: 0 }, dash: null, ghosts: null,
       quests: Object.fromEntries(Object.entries((data.quests && typeof data.quests === "object") ? data.quests : {}).filter(([id]) => QUESTS[id])),
@@ -1434,6 +1437,8 @@
   const hasMats = (mats, times = 1) => Object.entries(mats).every(([k, n]) => count(k) >= n * times);
   const matsText = (mats) => Object.entries(mats).map(([k, n]) => `${n}x ${k} (${count(k)})`).join(", ");
 
+  // rodada 151: a classe da arma na mão ganha o mesmo xp de Combate do golpe (a curva dela é 1,2x mais rápida); boneco não conta
+  function classXp(dmg) { const k = RULES.weaponClass(player.equip.arma && ITEMS[player.equip.arma.name]); if (k) gainXp(k, dmg * RULES.MOB_XP * (STYLES[player.style].xp.combate || 1)); }
   function rewardCombatXp(n) { gainXp("combate", n); gainXp("vitalidade", RULES.vitShare(STYLES[player.style], n)); } // rodada 89
   function gainXp(skill, n) {
     if (!n) return;
@@ -1452,7 +1457,7 @@
   }
   let xpTimer = 0;
   function xpToast(skill, n) { // barra de progresso da habilidade que acabou de ganhar XP
-    const xp = player.xp[skill], l = level(xp), a = xpFor(l), b = xpFor(l + 1), pct = l >= MAX_LVL ? 100 : (xp - a) / (b - a) * 100;
+    const xp = player.xp[skill], l = lv(skill), a = RULES.skillXpFor(skill, l), b = RULES.skillXpFor(skill, l + 1), pct = l >= MAX_LVL ? 100 : (xp - a) / (b - a) * 100;
     const el = $("xpdrop");
     const nn = n >= 10 ? Math.round(n) : Math.round(n * 10) / 10; // rodada 137: XP fracionário (0,2 xp)
     el.innerHTML = `<b>${SKILLS[skill]}</b> <span>nv ${l}</span> <em>+${nn} xp</em><div class="bar xp"><i style="width:${pct}%"></i></div><small>${l < MAX_LVL ? `${Math.ceil(b - xp)} xp para o nível ${l + 1}` : "nível máximo"}</small>`;
@@ -1718,7 +1723,7 @@
   }
   // barra de habilidades: ícone, tecla, recarga circular e nível exigido
   const skillTip = (S) => `<b style="color:#ffd84a">${esc(S.name)}</b> <small>(tecla ${S.key})</small><div>${esc(S.desc)}</div>`
-    + `<small class="tip-hint">Dano ×${S.mult}${S.stun ? ` · atordoa ${S.stun} s` : ""} · recarga ${S.cd} s · libera no Combate ${S.lvl}</small>`;
+    + `<small class="tip-hint">Dano ×${S.mult}${S.stun ? ` · atordoa ${S.stun} s` : ""} · recarga ${S.cd} s · libera no ${SKILLS[S.cls || "combate"]} ${S.lvl}</small>`;
   // rodada 137: 9 espaços (teclas 1 a 9); cada um pode ter comida, poção ou skill (aba Skills do menu)
   function buildSkillbar() {
     if (!player || !player.hotbar) return;
@@ -1738,7 +1743,7 @@
     for (const b of $("skillbar").children) {
       const id = b.dataset.act; if (!id) continue;
       if (id.startsWith("skill:")) {
-        const k = id.slice(6), S = ACTIVE[k], locked = lv("combate") < S.lvl, cd = player.cd[k];
+        const k = id.slice(6), S = ACTIVE[k], locked = lv(S.cls || "combate") < S.lvl, cd = player.cd[k];
         b.classList.toggle("locked", locked); b.classList.toggle("ready", !locked && cd <= 0);
         const cooling = !locked && cd > 0; // rodada 66: a recarga acabou agora → o botão pulsa e soa um sininho curto
         if (b.dataset.cool === "1" && !cooling && !locked) { b.classList.remove("justready"); void b.offsetWidth; b.classList.add("justready"); SND.play("ready"); }
@@ -1902,7 +1907,7 @@
     } else if (j.kind === "forge") {
       const t = GEAR[j.key].tiers[j.tier], F = t && (j.two ? t.twoForge : t.forge); // rodada 105: montante usa mais metal
       if (!t || !F || !hasMats(F.mats)) { player.job = null; return renderDlg(); }
-      { const nm = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : t.name; // rodada 139: peça melhor só depois das anteriores
+      { const nm = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : j.staff && t.staff ? t.staff : t.name; // rodada 139: peça melhor só depois das anteriores
         if (!prereqOk("forge:" + nm)) { log(`${nm}: ${prereqText("forge:" + nm)}.`, "warn"); player.job = null; return renderDlg(); } }
       j.hits++; const last = j.hits >= 3;
       useTool("hammer", () => {
@@ -1912,8 +1917,8 @@
       player.actT = 2;
       if (j.hits >= 3) {
         for (const [k, n] of Object.entries(F.mats)) removeItem(k, n);
-        const name = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : t.name; let aff, master = 0;
-        gainXp("ferraria", F.xp); emit("forge:" + j.key); player.stats.forged++; markMade(name);
+        const name = j.bow && t.bow ? t.bow : j.two && t.two ? t.two : j.staff && t.staff ? t.staff : t.name; let aff, master = 0;
+        gainXp("ferraria", F.xp); emit("forge:" + j.key); emit("forgeitem:" + name); player.stats.forged++; markMade(name);
         if (t.rolls) { aff = RULES.rollAffixes(rand() < 0.4 ? 2 : 1, 1, rand); // rodada 82: o metal "escolhe"
           log(`✦ ${name}: ${aff.map((a) => RULES.affixNames({ aff: [a] })).join(" e ")} (${bonusText(RULES.itemBonus({ name: "", aff }, ITEMS))}).`, "rare"); }
         if (rand() < 0.12 + lv("ferraria") * 0.002) { // obra-prima: bônus extra nesta peça
@@ -1945,7 +1950,7 @@
   function bestInBag(ok) {
     let bi = -1, bt = -1;
     player.inv.forEach((s, i) => { const it = s && ITEMS[s.name]; if (!it || !it.gear || !ok(it)) return;
-      const g = GEAR[it.gear]; if (lv(g.skill) >= (g.tiers[it.tier].req || 0) && it.tier > bt) { bt = it.tier; bi = i; } });
+      if (lv(weaponSkill(it)) >= (GEAR[it.gear].tiers[it.tier].req || 0) && it.tier > bt) { bt = it.tier; bi = i; } });
     return bi;
   }
   function ensureTool(k) {
@@ -1957,7 +1962,7 @@
   function ensureWeapon() {
     const e = player.equip.arma; if (e && ITEMS[e.name].gear === "espada") return;
     const shield = player.equip.municao && ITEMS[player.equip.municao.name].sec === "escudo"; // rodada 105: com escudo, não pega montante
-    const i = bestInBag((it) => it.gear === "espada" && (!it.bow || arrows()) && (!it.onlyHero || it.onlyHero === player.hero) && !(it.twoH && shield)); if (i >= 0) equip(i, true);
+    const i = bestInBag((it) => it.gear === "espada" && (!it.bow || arrows()) && !(it.twoH && shield)); if (i >= 0) equip(i, true);
   }
   // rodada 104: tiro do arqueiro. A flecha sai na soltura da corda e o dano entra quando ela chega.
   function clearShot(x0, y0, x1, y1) { // nada sólido no caminho (água não bloqueia; árvore, parede e casa sim)
@@ -1984,6 +1989,7 @@
     for (const s of shots) {
       s.t += dt; if (s.t < s.dur || s.done) continue; s.done = true;
       const m = s.m; if (m.dead) continue;
+      if (s.onHit) { s.onHit(m); continue; } // rodada 153: skill (sempre acerta)
       if (rollHit(m)) { const [dmg, crit] = rollDmg(); hurtMob(m, dmg, crit); } else missMob(m);
     }
     for (let i = shots.length - 1; i >= 0; i--) if (shots[i].done) shots.splice(i, 1);
@@ -1993,7 +1999,13 @@
       const k = Math.min(1, s.t / s.dur), h = 0.25 * Math.min(1, s.dur * 3);
       const px = (k2) => [(s.x0 + (s.x1 - s.x0) * k2) * TILE - cam.x, (s.y0 + (s.y1 - s.y0) * k2 - Math.sin(Math.PI * k2) * h) * TILE - cam.y];
       const [x, y] = px(k), [xa, ya] = px(Math.min(1, k + 0.02)), [xb, yb] = px(Math.max(0, k - 0.02)), ang = Math.atan2(ya - yb, xa - xb);
-      const tip = s.it.includes("lumita") ? "#9ff0ff" : s.it.includes("ferro") ? "#e8eef6" : "#c8a070";
+      if (s.magic) { // rodada 153: magia: bola de luz com brilho e rastro
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        for (let r = 3; r >= 1; r--) { const [tx, ty] = px(Math.max(0, k - r * 0.05)); ctx.globalAlpha = 0.25 / r; ctx.fillStyle = s.magic; ctx.beginPath(); ctx.arc(tx, ty, 5 + r, 0, 7); ctx.fill(); }
+        ctx.globalAlpha = 0.55; ctx.fillStyle = s.magic; ctx.beginPath(); ctx.arc(x, y, 9, 0, 7); ctx.fill();
+        ctx.globalAlpha = 1; ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); ctx.restore(); continue;
+      }
+      const tip = (s.it || "").includes("lumita") ? "#9ff0ff" : (s.it || "").includes("ferro") ? "#e8eef6" : "#c8a070";
       ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.rotate(ang);
       ctx.fillStyle = "#1a1012"; ctx.fillRect(-15, -2, 26, 4); // contorno
       ctx.fillStyle = "#c49a62"; ctx.fillRect(-14, -1, 24, 2); // haste
@@ -2005,7 +2017,8 @@
   const headOf = (m) => m.py + 1 - (SPR[m.d.spr] ? SPR[m.d.spr].height * (m.d.scale || 1) / TILE : 1);
   function rollHit(m, bonusAcc = 0) { const st = combatStats(); return rand() < hitChance(st.acc + bonusAcc, m.d.def); }
   function rollDmg(mult = 1) { // dano de um golpe; devolve [dano, crítico]
-    const st = combatStats(), crit = rand() < RULES.critChance(player.style);
+    const st = combatStats(), crit = rand() < RULES.critChance(player.style) + ((player.sk || {}).hawkT > 0 ? 0.3 : 0); // rodada 153: Olho de falcão
+    if ((player.sk || {}).furyT > 0) mult *= ACTIVE.warcry.mult; // Grito de guerra
     return [Math.ceil((crit ? st.maxHit + ri(1, Math.ceil(st.maxHit * RULES.critBonus(player.style))) : ri(1, st.maxHit)) * mult), crit]; // Preciso: crítico maior
   }
   function missMob(m) { addFloat(m.px + 0.5, headOf(m) + 0.35, "errou", "#bbbbbb", 0.8, 12); SND.play("miss"); }
@@ -2275,7 +2288,7 @@
     if (opts.dot) { // pulso de sangramento: só número, gotas e XP, sem reação de golpe
       m.hp -= dmg; m.aggro = true; hitSplat(m.px + 0.5, headY + 0.45, dmg, "#ff6b5a");
       if (!RENDER.playOnce("fx_bleed", m.px, (headY + m.py + 1) / 2 - 0.5)) burst(m.px + 0.5, m.py + 0.6, ["#a8202a", "#d8323a"], 4, 1.4);
-      const xp = STYLES[player.style].xp; gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); // rodada 137: 5x menos
+      const xp = STYLES[player.style].xp; gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); classXp(dmg); // rodada 137: 5x menos
       if (m.hp <= 0) killMob(m);
       return;
     }
@@ -2294,7 +2307,7 @@
       if ((d.slam || d.enrage) && !m.enraged && m.hp > 0 && m.hp <= d.hp * ((d.enrage && d.enrage.at) || 0.3)) enrageMob(m);
       burst(m.px + 0.5, m.py + 0.5, [d.color, "#ffffff"], 6, 3);
       const xp = STYLES[player.style].xp;
-      if (!opts.pet) { gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); } // rodada 137: XP 5x menor // rodada 95: a mordida do filhote não dá XP ao herói
+      if (!opts.pet) { gainXp("combate", dmg * xp.combate * RULES.MOB_XP); gainXp("vitalidade", dmg * xp.vitalidade * RULES.MOB_XP); classXp(dmg); } // rodada 137: XP 5x menor // rodada 95: a mordida do filhote não dá XP ao herói
       if (d.summon && !m.summoned && m.hp > 0 && m.hp <= d.hp / 2) bossSummon(m);
       if (m.hp <= 0) killMob(m);
     }
@@ -2306,10 +2319,90 @@
     return mobs.filter((m) => !m.dead && Math.abs(m.x - player.x) + Math.abs(m.y - player.y) <= maxDist)
       .sort((a, b) => (Math.abs(a.x - player.x) + Math.abs(a.y - player.y)) - (Math.abs(b.x - player.x) + Math.abs(b.y - player.y)))[0];
   }
+  // ---------- rodada 153: skills de classe ----------
+  const curCls = () => RULES.weaponClass(player.equip.arma && ITEMS[player.equip.arma.name]);
+  function guardDmg(d) { // Muralha de ferro (metade do dano) e Escudo de mana (absorve até acabar)
+    const K = player.sk || {}; if (K.wallT > 0) d = Math.max(1, Math.round(d * 0.5));
+    if (K.shieldT > 0 && K.shield > 0) { const a = Math.min(K.shield, d); K.shield -= a; d -= a; addFloat(player.px + 0.5, player.py - 0.5, `-${a} escudo`, "#8fd8ff", 0.8, 12); }
+    return d;
+  }
+  const skillHit = (m, mult, o = {}) => { if (m.dead) return; const [dmg, crit] = rollDmg(mult); m.aggro = true; hurtMob(m, dmg, crit, o); };
+  function rangedTarget(S) { // alvo para tiro/magia: no alcance (+2 com Olho de falcão) e com a linha livre
+    const r = S.range + ((player.sk || {}).hawkT > 0 ? 2 : 0), m = skillTarget(r + 3);
+    if (!m) { log("Nenhum alvo ao alcance.", "dim"); return null; }
+    if (Math.hypot(m.x - player.x, m.y - player.y) > r || !clearShot(player.x, player.y, m.x, m.y)) { log("O alvo está longe demais ou sem linha livre.", "dim"); return null; }
+    player.target = { kind: "mob", ref: m }; player.path = []; faceTo(m.x, m.y); m.aggro = true; return m;
+  }
+  function takeArrows(n) { const q = arrows(); if (!q || q.n < n) { log(n > 1 ? `Precisa de ${n} flechas na aljava.` : "Sem flechas na aljava.", "warn"); return null; }
+    q.n -= n; const it = q.name; if (q.n <= 0) { player.equip.municao = null; refreshOutfit(); } hudDirty = true; return it; }
+  function fireShot(m, o) { // flecha ou magia que chama onHit ao chegar
+    const x0 = player.px + 0.5 + DIR_VEC[player.dir][0] * 0.3, y0 = player.py + 0.35, x1 = m.px + 0.5, y1 = headOf(m) + 0.55;
+    shots.push({ x0, y0, x1, y1, t: -(o.delay || 0), dur: Math.max(0.14, Math.hypot(x1 - x0, y1 - y0) / (o.magic ? 9 : 14)), m, it: o.it, magic: o.magic, onHit: o.onHit });
+    SND.play("whoosh");
+  }
+  const near = (x, y, r) => mobs.filter((o) => !o.dead && Math.max(Math.abs(o.x - x), Math.abs(o.y - y)) <= r);
+  const adjTarget = (S) => { const m = skillTarget(1); if (!m || !adjacent(player, m)) { log(`Fique ao lado de um monstro para ${S.name.toLowerCase()}.`, "dim"); return null; }
+    player.target = { kind: "mob", ref: m }; player.path = []; faceTo(m.x, m.y); m.aggro = true; return m; };
+  const shotT = { prep: 0.2, strike: 0.06, rec: 0.2 }, castT = { prep: 0.18, strike: 0.06, rec: 0.22 };
+  const CLASS_SKILL = {
+    warcry(S, id) { const ms = near(player.x, player.y, 4); for (const m of ms) { m.aggro = true; m.foe = "hero"; }
+      player.cd[id] = S.cd; (player.sk = player.sk || {}).furyT = S.dur; SND.play("level"); fx.shock(player.px + 0.5, player.py + 0.85, 2.2, "#ff7a3a", 0.6);
+      addFloat(player.px + 0.5, player.py - 0.9, "GRITO DE GUERRA!", "#ff9a5a", 1.4, 15); },
+    rend(S, id) { const m = adjTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("tool_sword", () => { skillHit(m, S.mult); if (!m.dead) m.bleed = { n: 6, t: 1, dmg: Math.max(2, Math.round(combatStats().maxHit * 0.5)) }; burst(m.px + 0.5, m.py + 0.5, ["#a8202a", "#ff5a4a"], 12, 3); }, { prep: 0.14, strike: 0.07, rec: 0.2 }); },
+    ironwall(S, id) { player.cd[id] = S.cd; (player.sk = player.sk || {}).wallT = S.dur; SND.play("clang"); player.blockT = 0.4;
+      fx.shock(player.px + 0.5, player.py + 0.85, 1.2, "#cfe6ff", 0.5); addFloat(player.px + 0.5, player.py - 0.9, "MURALHA!", "#cfe6ff", 1.2, 14); },
+    execute(S, id) { const m = adjTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 3);
+      useTool("smash", () => { const low = m.hp < m.d.hp * 0.3; skillHit(m, low ? S.mult * 2 : S.mult, { heavy: true }); hitStop = Math.max(hitStop, 0.12);
+        if (low) addFloat(m.px + 0.5, m.py - 0.6, "EXECUÇÃO!", "#ff5a4a", 1.2, 15); fx.sparks(m.px + 0.5, m.py + 0.5, 18, ["#ffffff", "#ff5a4a"], 6); }, { prep: 0.3, strike: 0.08, rec: 0.28 }); },
+    aimed(S, id) { const m = rangedTarget(S); if (!m) return; const it = takeArrows(1); if (!it) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("bow", () => fireShot(m, { it, onHit: (t) => skillHit(t, S.mult) }), { prep: 0.34, strike: 0.06, rec: 0.2 }); },
+    double(S, id) { const m = rangedTarget(S); if (!m) return; const it = takeArrows(2); if (!it) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("bow", () => { for (const d of [0, 0.14]) fireShot(m, { it, delay: d, onHit: (t) => skillHit(t, S.mult) }); }, shotT); },
+    pierce(S, id) { const m = rangedTarget(S); if (!m) return; const it = takeArrows(1); if (!it) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      const dx = Math.sign(m.x - player.x), dy = Math.sign(m.y - player.y);
+      useTool("bow", () => fireShot(m, { it, onHit: (t) => { skillHit(t, S.mult);
+        for (let k = 1; k <= 3; k++) for (const o of near(t.x + dx * k, t.y + dy * k, 0)) if (o !== t) { skillHit(o, S.mult * 0.8); fx.sparks(o.px + 0.5, o.py + 0.5, 6, ["#ffffff"], 3); } } }), shotT); },
+    rain(S, id) { const m = rangedTarget(S); if (!m) return; const it = takeArrows(3); if (!it) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("bow", () => fireShot(m, { it, onHit: (t) => { for (const o of near(t.x, t.y, 1)) skillHit(o, S.mult);
+        for (let a = 0; a < 14; a++) fx.sparks(t.x - 0.5 + rand() * 2, t.y - 0.5 + rand() * 2, 2, ["#e8d0a0", "#ffffff"], 3); } }), shotT); },
+    venom(S, id) { const m = rangedTarget(S); if (!m) return; const it = takeArrows(1); if (!it) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("bow", () => fireShot(m, { it, onHit: (t) => { skillHit(t, S.mult); if (!t.dead) t.bleed = { n: 8, t: 1, dmg: Math.max(1, Math.round(combatStats().maxHit * 0.35)) };
+        burst(t.px + 0.5, t.py + 0.5, ["#7dff5a", "#3a9a2a"], 12, 2); } }), shotT); },
+    leap(S, id) { const m = skillTarget(S.range); if (!m) { log("Nenhum monstro perto para fugir dele.", "dim"); return; }
+      const dx = Math.sign(player.x - m.x) || (rand() < 0.5 ? 1 : -1), dy = Math.sign(player.y - m.y);
+      let tx = player.x, ty = player.y; for (let k = 1; k <= 3; k++) { const X = player.x + dx * k, Y = player.y + dy * k; if (!walkable(X, Y)) break; tx = X; ty = Y; }
+      if (tx === player.x && ty === player.y) { log("Sem espaço para saltar.", "dim"); return; }
+      player.cd[id] = S.cd; m.slowT = 4; m.aggro = true;
+      player.dash = { fx: player.px, fy: player.py, t: 0, dur: 0.22, m: null, ghosts: [] }; player.fx = tx; player.fy = ty; player.x = tx; player.y = ty; player.prog = 1; player.path = [];
+      faceTo(m.x, m.y); dustAtFeet(6); SND.play("whoosh"); },
+    hawk(S, id) { player.cd[id] = S.cd; (player.sk = player.sk || {}).hawkT = S.dur; SND.play("rare"); addFloat(player.px + 0.5, player.py - 0.9, "OLHO DE FALCÃO", "#ffe680", 1.3, 14);
+      burst(player.px + 0.5, player.py + 0.2, ["#ffe680", "#ffffff"], 14, 2); },
+    fireball(S, id) { const m = rangedTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("tool_sword", () => fireShot(m, { magic: "#ff7a2a", onHit: (t) => { skillHit(t, S.mult); burst(t.px + 0.5, t.py + 0.5, ["#ff7a2a", "#ffd23a", "#ffffff"], 16, 3); } }), castT); },
+    frost(S, id) { const m = rangedTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("tool_sword", () => fireShot(m, { magic: "#8fe0ff", onHit: (t) => { skillHit(t, S.mult); t.slowT = 4; burst(t.px + 0.5, t.py + 0.5, ["#bff0ff", "#ffffff"], 14, 2); } }), castT); },
+    chain(S, id) { const m = rangedTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("tool_sword", () => fireShot(m, { magic: "#e0e8ff", onHit: (t) => { skillHit(t, S.mult); fx.sparks(t.px + 0.5, t.py + 0.5, 10, ["#ffffff", "#9fd0ff"], 5);
+        near(t.x, t.y, 3).filter((o) => o !== t).sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y)).slice(0, 2)
+          .forEach((o, k) => setTimeout(() => { if (player && !o.dead) { skillHit(o, S.mult * 0.8); fx.sparks(o.px + 0.5, o.py + 0.5, 10, ["#ffffff", "#9fd0ff"], 5); } }, 120 * (k + 1))); } }), castT); },
+    heal(S, id) { const n = Math.round(maxHp() * 0.3), was = player.hp; player.hp = Math.min(maxHp(), player.hp + n); player.cd[id] = S.cd;
+      addFloat(player.px + 0.5, player.py - 0.6, `+${player.hp - was}`, "#7dff9a", 1.2, 15); burst(player.px + 0.5, player.py + 0.3, ["#7dff9a", "#ffffff"], 18, 2); SND.play("drink"); hudDirty = true; },
+    nova(S, id) { const ms = near(player.x, player.y, 2); if (!ms.length) { log("Nenhum monstro perto para a explosão.", "dim"); return; }
+      player.cd[id] = S.cd; player.actT = Math.max(player.actT, 2);
+      useTool("spin", () => { for (const m of ms) skillHit(m, S.mult, { stun: 0.6 }); fx.shock(player.px + 0.5, player.py + 0.85, 2.6, "#c48cff", 0.7); hitStop = Math.max(hitStop, 0.08); if (SND.opts.shake) shake = 0.18; }, { prep: 0.2, strike: 0.08, rec: 0.2 }); },
+    manashield(S, id) { const K = player.sk = player.sk || {}; K.shieldT = S.dur; K.shield = Math.round(maxHp() * 0.25); player.cd[id] = S.cd; SND.play("rare");
+      fx.shock(player.px + 0.5, player.py + 0.85, 1.1, "#8fd8ff", 0.5); addFloat(player.px + 0.5, player.py - 0.9, `ESCUDO ${K.shield}`, "#8fd8ff", 1.3, 14); },
+    meteor(S, id) { const m = rangedTarget(S); if (!m) return; player.cd[id] = S.cd; player.actT = Math.max(player.actT, 3); const cx = m.x, cy = m.y;
+      addFloat(m.px + 0.5, m.py - 0.8, "!", "#ff7a2a", 1, 18);
+      useTool("tool_sword", () => { for (const o of near(cx, cy, 1)) skillHit(o, S.mult, { stun: 1, heavy: true });
+        fx.shock(cx + 0.5, cy + 0.85, 2.2, "#ff7a2a", 0.8); burst(cx + 0.5, cy + 0.5, ["#ff7a2a", "#ffd23a", "#5a3a2a"], 30, 5); SND.play("slam"); hitStop = 0.12; if (SND.opts.shake) shake = 0.3; }, { prep: 0.9, strike: 0.08, rec: 0.25 }); },
+  };
   function useSkill(id) {
     const S = ACTIVE[id];
     if (!running || player.deadT > 0 || player.dash) return;
-    if (lv("combate") < S.lvl) { log(`${S.name}: libera no Combate ${S.lvl}.`, "dim"); return; }
+    if (S.cls && curCls() !== S.cls) { log(`${S.name} é skill de ${SKILLS[S.cls]}: precisa de ${{ guerreiro: "uma espada", arqueiro: "um arco", mago: "um cajado" }[S.cls]} na mão.`, "dim"); return; } // rodada 153
+    if (lv(S.cls || "combate") < S.lvl) { log(`${S.name}: libera no ${SKILLS[S.cls || "combate"]} ${S.lvl}.`, "dim"); return; }
     if (player.cd[id] > 0) { SND.play("miss"); return; }
     if (player.act && player.act.key) return; // não corta um golpe em andamento
     if (id === "run") { // rodada 139: só vale andando; parado não gasta a recarga
@@ -2349,7 +2442,7 @@
         for (let a = 0; a < 16; a++) { const ang = a / 16 * 6.28; burst(m.x + 0.5 + Math.cos(ang) * 0.9, m.y + 0.8 + Math.sin(ang) * 0.6, ["#cdb98f", "#ffffff"], 1, 1.2); }
         fx.sparks(m.px + 0.5, m.py + 0.5, 16, ["#fff6c0", "#ffd23a", "#ffffff"], 6); clickFx(m.x + 0.5, m.y + 0.9, "#ffd23a"); fx.shock(m.px + 0.5, m.py + 0.85, 1.5, "#ffc04a", 0.5); fx.mark(m.px + 0.5, m.py + 0.9, 0.95); // rodadas 66-67
       }, { prep: 0.38, strike: 0.08, rec: 0.3 });
-    }
+    } else if (CLASS_SKILL[id]) CLASS_SKILL[id](S, id); // rodada 153
     hudDirty = true;
   }
   function updateDash(dt) { // investida: desliza com rastro de imagens e golpeia na chegada
@@ -2360,7 +2453,7 @@
     if (k >= 1) {
       player.dash = null; player.fx = player.x; player.fy = player.y; player.prog = 1; player.halfStop = false;
       const m = D.m, S = ACTIVE.dash;
-      if (!m.dead && adjacent(player, m)) {
+      if (m && !m.dead && adjacent(player, m)) {
         faceTo(m.x, m.y);
         useTool("tool_sword", () => { if (rollHit(m, 6)) { const [dmg, crit] = rollDmg(S.mult); hurtMob(m, dmg, crit, { stun: S.stun }); } else missMob(m); hitStop = Math.max(hitStop, 0.07); }, { prep: 0.01, strike: 0.06, rec: 0.22 });
       }
@@ -2484,6 +2577,7 @@
       if (!RENDER.playOnce("fx_spark_block", cx, cy)) fx.sparks(cx + 0.5, cy + 0.5, 8, ["#cfe6ff", "#ffffff"], 4);
     }
     if (pe.hit) {
+      pe.dmg = guardDmg(pe.dmg); // rodada 153: Muralha de ferro e Escudo de mana
       player.hp -= pe.dmg; player.flash = blocked ? 0.08 : 0.18; player.hitT = blocked ? 0 : 0.3; player.lastHurt = tickN; hudDirty = true;
       hitSplat(player.px + 0.5, player.py - 0.3, pe.dmg, "#ff5a4a"); SND.play("hurt"); if (SND.opts.shake) CAMERA.kick(player.px - m.px, player.py - m.py, pe.heavy ? 5 : 2.5);
       fx.sparks((player.px + m.px) / 2 + 0.5, (player.py + m.py) / 2 + 0.45, pe.heavy ? 12 : 6, ["#ff8a6a", "#ffffff"], 4);
@@ -2546,7 +2640,7 @@
     leaveCrypt();
     if (items.length) deathBags.push({ x: at.x, y: at.y, items, owner: player.name, killer, lockUntil: killer ? Date.now() + BAG_LOCK : 0, until: Date.now() + BAG_LIFE });
     const nItems = items.reduce((t, it) => t + it.n, 0);
-    log(`☠ Você desmaiou e acordou na vila. Perdeu ${lostXp.combate ? `${lostXp.combate} xp de Combate (10% do nível)` : "nada de Combate (já estava no 0% do nível)"}${nItems ? ` e deixou ${nItems} ite${nItems > 1 ? "ns" : "m"} num saco onde caiu: volte em até 30 min antes que alguém pegue!` : "."}`, "warn");
+    log(`☠ Você desmaiou e acordou na vila. Perdeu ${lostXp.combate ? `${Math.round(lostXp.combate)} xp de Combate (10% do nível)` : "nada de Combate (já estava no 0% do nível)"}${nItems ? ` e deixou ${nItems} ite${nItems > 1 ? "ns" : "m"} num saco onde caiu: volte em até 30 min antes que alguém pegue!` : "."}`, "warn");
     player.stats.deaths = (player.stats.deaths || 0) + 1; // rodada 55: na segunda morte, a dica do estilo Defensivo (uma vez por save)
     if (player.stats.deaths >= 2 && player.style !== "defensivo" && !player.seen.defTip) { player.seen.defTip = 1; log(DEF_TIP, "tip", STYLES.defensivo.passive && STYLES.defensivo.passive.icon); }
     const RS = player.spawnStone && player.spawnStone !== "lumeira" && stoneOf(player.spawnStone) ? stoneSpot(stoneOf(player.spawnStone)) : SPAWN; // rodada 105: Pedra marcada
@@ -2561,11 +2655,13 @@
     for (const k of Object.keys(e)) { const it = e[k] && ITEMS[e[k].name]; if (it && it.look) looks.push(it.look); }
     if (arrows()) looks.push(["quiver", null]); // escudo e orbe entram pelo look da própria peça
     looks.push(["tool", null]); // ferramenta das ações de coleta (machado, picareta, vara, foice, martelo, espeto)
-    ValdoraOutfit.apply(player.hero, looks, !!(w && w.bow), ANIMS, SPR).then((ok) => { if (ok) hudDirty = true; });
+    const L = player.look || LOOK.def, covered = looks.some(([l]) => l === "helm" || l === "hood" || l === "mhood" || l === "hat"); // rodada 152: aparência por baixo
+    looks.unshift(...lookLayers(L, covered));
+    ValdoraOutfit.apply(player.hero, looks, !!(w && w.bow), ANIMS, SPR, LOOK.skins[L.skin]).then((ok) => { if (ok) hudDirty = true; });
   }
   function equip(i, quiet) {
     const s = player.inv[i], it = ITEMS[s.name], old = player.equip[it.slot];
-    if (it.gear) { const g = GEAR[it.gear], t = g.tiers[it.tier]; if (lv(g.skill) < (t.req || 0)) { log(`${s.name} pede ${SKILLS[g.skill]} ${t.req}.`, "warn"); return; } }
+    if (it.gear) { const g = GEAR[it.gear], t = g.tiers[it.tier], sk = weaponSkill(it); if (lv(sk) < (t.req || 0)) { log(`${s.name} pede ${SKILLS[sk]} ${t.req}.`, "warn"); return; } } // rodada 151: armas pedem o nível da classe
     if (it.need && lv("combate") < it.need) { log(`${s.name} pede Combate ${it.need}.`, "warn"); return; } // rodada 112: peças dos biomas
     if (it.pack) { // rodada 112: troca de mochila — o que estiver nos espaços que somem precisa caber no resto
       const n = invSize(it.pack), used = player.inv.filter(Boolean).length - (s.n > 1 ? 0 : 1) + (old ? 1 : 0);
@@ -2575,14 +2671,11 @@
       log(`Você vestiu a ${s.name}: ${player.inv.length} espaços na mochila e ${capacity()} kg de carga.`, "gold"); SND.play("pickup");
       refreshOutfit(); burst(player.px + 0.5, player.py + 0.3, [itemColor(s.name), "#ffffff"], 14, 2.5); hudDirty = true; save(); return;
     }
-    if (it.onlyHero && it.onlyHero !== player.hero) { // rodada 105: montante só o Guerreiro
-      log(`${s.name} é arma de duas mãos do Guerreiro.`, "warn"); return;
-    }
     const wNow = player.equip.arma && ITEMS[player.equip.arma.name];
     if (it.sec === "escudo" && wNow && wNow.twoH) { log(`Com o ${player.equip.arma.name} (duas mãos) não dá para usar escudo. Troque por uma espada de uma mão.`, "warn"); return; }
-    if (it.sec && it.sec !== heroSec()) { // rodada 105: a secundária depende da classe
-      const S = VD.SEC[heroSec()] || {}, h = HEROES.find((x) => x.id === player.hero) || {};
-      log(`${s.name} é para o ${VD.SEC[it.sec].who}. A secundária do ${h.name} é ${(S.name || "outra").toLowerCase()}.`, "warn"); return;
+    if (it.sec && it.sec !== heroSec()) { // rodada 151: a secundária combina com a arma na mão
+      const need = { escudo: "uma espada", flecha: "um arco", orbe: "um cajado" }[it.sec];
+      log(`${s.name} pede ${need} na mão (${VD.SEC[it.sec].who}). Equipe a arma antes.`, "warn"); return;
     }
     if (it.ammo) { // rodada 104: o maço inteiro vai para a aljava (mesma flecha soma; outra volta para a mochila)
       player.inv[i] = null;
@@ -3374,6 +3467,7 @@
     } else if (player.pickTile && player.pickTile !== tileKey && !moving) player.pickTile = null;
     player.flash = Math.max(0, player.flash - dt); player.hitT = Math.max(0, (player.hitT || 0) - dt); player.blockT = Math.max(0, (player.blockT || 0) - dt); player.cancelT = Math.max(0, (player.cancelT || 0) - dt); player.cheerT = Math.max(0, (player.cheerT || 0) - dt); player.eatT = Math.max(0, (player.eatT || 0) - dt);
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
+    { const K = player.sk || (player.sk = {}); for (const k of ["furyT", "wallT", "hawkT", "shieldT"]) if (K[k] > 0) K[k] = Math.max(0, K[k] - dt); if (!(K.shieldT > 0)) K.shield = 0; } // rodada 153
     if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
     if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
       if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
@@ -3451,13 +3545,14 @@
       if (m.appear != null && (m.appear += dt) >= APPEAR) m.appear = null; // eco surgindo da névoa
       // rodada 136: quem luta corpo a corpo corre atrás do herói (quase a velocidade dele: magos e arqueiros não ficam mais
       // batendo de longe sem nunca serem alcançados); quem atira de longe anda no passo normal
-      const mstep = m.fly ? 0.22 : (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) * (m.sprint ? 0.64 : 1);
+      const mstep = (m.fly ? 0.22 : (m.d.squish ? MOB_STEP * 1.25 : MOB_STEP) * (m.sprint ? 0.64 : 1)) * (m.slowT > 0 ? 1.7 : 1); // rodada 153: gelo e recuo deixam lento
       if (m.prog < 1) { m.prog = Math.min(1, m.prog + dt / mstep / (m.fly ? 1 : m.fx !== m.x && m.fy !== m.y ? Math.SQRT2 : 1)); m.dist += dt / MOB_STEP; if (m.prog >= 1) m.fly = false; } // rodada 105: passo diagonal mais longo; 133: voo do salto
       if (m.aggro && m.prog >= 1 && activeMob(m)) MOBAI.chase(m); // rodada 113: emenda o passo / golpeia sem esperar o tick
       // slime: agacha, salta e aterrissa; os outros andam com easing (perseguindo, em ritmo constante)
       const k = m.d.squish ? (m.prog < 0.2 ? 0 : m.prog > 0.8 ? 1 : ease.inOutSine((m.prog - 0.2) / 0.6)) : m.aggro ? m.prog : ease.inOutSine(m.prog);
       m.px = m.fx + (m.x - m.fx) * k; m.py = m.fy + (m.y - m.fy) * k;
       mobAnim(m, dt);
+      if (m.slowT > 0) m.slowT -= dt;
       if (m.bleed && (m.bleed.t -= dt) <= 0) { const b = m.bleed; b.t = RULES.BLEED.every; if (--b.n <= 0) m.bleed = null; hurtMob(m, b.dmg, false, { dot: true }); if (m.dead) continue; }
       m.flash = Math.max(0, m.flash - dt); m.lunge = Math.max(0, m.lunge - dt * 4.5); if (m.stun > 0) m.stun -= dt; m.kb = Math.max(0, m.kb - dt * 5); m.prep = Math.max(0, (m.prep || 0) - dt);
     }
@@ -3517,6 +3612,7 @@
     if (player.deadT > 0) return;
     if (player.style === "defensivo" && rand() < RULES.BLOCK.chance) { player.blockT = 0.22; dmg = RULES.blockDmg(dmg); addFloat(player.px + 0.5, player.py - 0.75, "aparou!", "#9fd0ff", 0.9, 13); }
     if (!o.raw) dmg = RULES.armorCut(dmg, combatStats().armor || 0); // rodada 137: a armadura segura parte do dano
+    dmg = guardDmg(dmg); // rodada 153
     player.hp -= dmg; player.flash = 0.18; player.hitT = 0.3; player.lastHurt = tickN; hudDirty = true;
     hitSplat(player.px + 0.5, player.py - 0.3, dmg, "#ff5a4a"); SND.play("hurt");
     burst(player.px + 0.5, player.py + 0.5, [o.color || "#c0392b"], o.heavy ? 12 : 5, 2.5); if (o.heavy && SND.opts.shake) shake = Math.max(shake, 0.3);
@@ -3784,7 +3880,7 @@
 
   // ---------- Salvamento (localStorage) ----------
   function readSave() {
-    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (d && d.v === 2 && typeof d.name === "string") return d; } catch (e) { /* save inválido */ }
+    try { const d = JSON.parse(localStorage.getItem(SAVE_KEY)); if (d && d.v === 3 && typeof d.name === "string") return d; } catch (e) { /* save inválido */ } // rodada 152: v2 (com classe) não vale mais
     return null;
   }
   // rodada 109: personagem de conta (servidor) salva pelo SINK de js/net.js; sem conta, o save do navegador de sempre
@@ -3793,11 +3889,11 @@
     if (!player) return;
     try {
       const pos = inCrypt ? overworld.ret : player; // dentro da cripta, salva a entrada
-      const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
+      const data = ({ v: 3, wv: 4, t: Date.now(), name: player.name, hero: player.hero, look: player.look, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
         bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
-      if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
+      if (SINK) SINK(data, totalLevel(), urgent === true); // rodada 152: nível da conta (sem as classes)
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }
   }

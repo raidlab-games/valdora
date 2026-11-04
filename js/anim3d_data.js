@@ -247,8 +247,7 @@ window.ANIM3D = {
     "loop": false
    }
   },
-  "b3d": true,
-  "dressed": "assets/flow/anim3d/hero_1_dressed.png"
+  "b3d": true
  },
  "hero_1_walk6": {
   "src": "assets/flow/anim3d/hero_1_walk6.png",
@@ -352,8 +351,7 @@ window.ANIM3D = {
     "loop": true
    }
   },
-  "b3d": true,
-  "dressed": "assets/flow/anim3d/hero_1_walk6_dressed.png"
+  "b3d": true
  },
  "hero_1_dash": {
   "src": "assets/flow/anim3d/hero_1_dash.png",
@@ -893,8 +891,7 @@ window.ANIM3D = {
     "loop": false
    }
   },
-  "b3d": true,
-  "dressed": "assets/flow/anim3d/hero_2_dressed.png"
+  "b3d": true
  },
  "hero_2_walk6": {
   "src": "assets/flow/anim3d/hero_2_walk6.png",
@@ -998,8 +995,7 @@ window.ANIM3D = {
     "loop": true
    }
   },
-  "b3d": true,
-  "dressed": "assets/flow/anim3d/hero_2_walk6_dressed.png"
+  "b3d": true
  },
  "hero_2_dash": {
   "src": "assets/flow/anim3d/hero_2_dash.png",

@@ -115,16 +115,16 @@ window.ValdoraHud = (() => {
       // rodada 137: o painel é uma janela que abre pelo menu de baixo à direita (estilo Cambria)
       const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Tasks", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros", passive: "Passivas" };
       $("panel").classList.toggle("big", ["journal", "livro", "coll", "guild"].includes(hudTab)); $("panel").classList.toggle("small", ["inv", "book", "passive"].includes(hudTab)); // rodada 139
-      $("panel").classList.toggle("inv-w", hudTab === "inv"); $("panel").classList.toggle("passive-w", hudTab === "passive"); // rodada 140
+      $("panel").classList.toggle("inv-w", hudTab === "inv"); $("panel").classList.toggle("book-w", hudTab === "book"); $("panel").classList.toggle("passive-w", hudTab === "passive"); // rodada 140
       $("panel").hidden = !hudTab; $("panel-title").textContent = TITLES[hudTab] || "";
       for (const b of document.querySelectorAll("#menubar [data-menu], #roundbar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
       if (hudTab === "book") { // rodada 138: estilo Cambria: todas as skills em ícones com o nível; liberadas arrastam para a barra
         const acts = api.hotActions().filter((a) => a.skill), hb = player.hotbar || [], pick = api.hotPick && api.hotPick(); // rodada 139: só as skills de combate
         const groups = [...new Set(acts.map((a) => a.kind.replace(/ \(.*\)/, "")))];
         $("tab-book").innerHTML = `<small class="desc">Arraste a skill até a barra (1 a 9). Comida e poções: arraste da mochila.</small>`
-          + groups.map((g) => `<div class="sk-group"><div class="sk-h">${esc(g === "Passiva" ? "Passivas" : g === "Skill ativa" ? "Skills de combate" : g === "Poção" ? "Poções" : "Ações")}</div><div class="sk-grid">${acts.filter((a) => a.kind.replace(/ \(.*\)/, "") === g).map((a) => {
+          + groups.map((g) => `<div class="sk-group"><div class="sk-h">${esc(g === "Passiva" ? "Passivas" : g === "Poção" ? "Poções" : g === "Ação" ? "Ações" : g.replace(/^Skill de /, "Skills de "))}</div><div class="sk-grid">${acts.filter((a) => a.kind.replace(/ \(.*\)/, "") === g).map((a) => {
             const ok = api.hotUnlocked(a), on = hb.includes(a.id);
-            const tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)} · nível ${a.lvl || 1}${a.cd ? ` · recarga ${a.cd} s` : ""}</small><div>${esc(a.desc)}</div>${ok ? (a.passive ? "<small>Ativa sozinha com o estilo escolhido</small>" : "<small>Arraste para a barra</small>") : `<small style="color:#ff9a7a">Libera no Combate ${a.lvl}</small>`}`;
+            const tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)} · nível ${a.lvl || 1}${a.cls ? ` de ${esc(VD.SKILLS[a.cls])}` : ""}${a.cd ? ` · recarga ${a.cd} s` : ""}</small><div>${esc(a.desc)}</div>${ok ? (a.passive ? "<small>Ativa sozinha com o estilo escolhido</small>" : "<small>Arraste para a barra</small>") : `<small style="color:#ff9a7a">Libera no ${esc(VD.SKILLS[a.cls || "combate"])} ${a.lvl}</small>`}`;
             return `<div class="sk-card${ok ? "" : " locked"}${on ? " on" : ""}${pick === a.id ? " pick" : ""}" data-skillcard="${esc(a.id)}" ${a.passive ? 'data-passive="1"' : ""} draggable="${ok && !a.passive ? "true" : "false"}" data-tip="${esc(tip)}">
               ${a.icon ? `<img src="${a.icon}" alt="" draggable="false">` : `<span class="ic">•</span>`}<b class="lv">${a.lvl || 1}</b>${ok ? "" : `<i class="lock">🔒</i>`}${on ? `<i class="eq">${hb.indexOf(a.id) + 1}</i>` : ""}<small>${esc(a.name)}</small></div>`;
           }).join("")}</div></div>`).join("");
@@ -191,8 +191,9 @@ window.ValdoraHud = (() => {
         if (fi != null) { const el = $("tab-inv").querySelector(`[data-i="${fi}"]`) || $("tab-inv").querySelector(".slot[tabindex]"); if (el) el.focus(); }
       } else if (hudTab === "skills") {
         $("tab-skills").innerHTML = Object.entries(SKILLS).map(([k, n]) => {
-          const xp = player.xp[k], l = level(xp), a = xpFor(l), b = xpFor(l + 1), pct = l >= MAX_LVL ? 100 : ((xp - a) / (b - a)) * 100;
-          return `<div class="skill" title="${Math.floor(xp)} xp${l < MAX_LVL ? ` · faltam ${Math.ceil(b - xp)} para o nível ${l + 1}` : ""}"><span>${n}</span><b>${l}</b><div class="bar xp"><i style="width:${pct}%"></i></div></div>`;
+          const xp = player.xp[k], l = RULES.skillLevel(k, xp), a = RULES.skillXpFor(k, l), b = RULES.skillXpFor(k, l + 1), pct = l >= MAX_LVL ? 100 : ((xp - a) / (b - a)) * 100;
+          const head = k === "guerreiro" ? `<div class="skill-h">Classes <small>sobem usando a arma de cada uma</small></div>` : ""; // rodada 151
+          return `${head}<div class="skill${RULES.isClass(k) ? " cls" : ""}" title="${Math.floor(xp)} xp${l < MAX_LVL ? ` · faltam ${Math.ceil(b - xp)} para o nível ${l + 1}` : ""}"><img class="sk-ic" src="assets/ui/skill_${k}.png" alt=""><span>${n}</span><b>${l}</b><div class="bar xp"><i style="width:${pct}%"></i></div></div>`;
         }).join("");
       } else if (hudTab === "combat") {
         // rodada 104: espaço do boneco. espada/armadura = peças forjadas (GEAR); o resto vem da mochila (VD.EQUIP_SLOTS)

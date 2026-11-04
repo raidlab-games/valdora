@@ -42,11 +42,12 @@ window.ValdoraCrafting = (() => {
         // rodada 104: cada peça forjada vai para a mochila; mostra o que já dá para forjar e os próximos níveis
         for (const [k, g] of Object.entries(GEAR)) g.tiers.forEach((t, i) => {
           const f = t.forge; if (!f || f.lvl > lvl + 7) return;
-          for (const v of k === "espada" ? ["", ...(t.bow ? ["bow"] : []), ...(t.two ? ["two"] : [])] : [""]) { // rodada 105: + montante
-            const ff = v === "two" ? t.twoForge : f, name = v === "bow" ? t.bow : v === "two" ? t.two : t.name, lvOk = lvl >= ff.lvl, mats = hasMats(ff.mats);
+          for (const v of k === "espada" ? ["", ...(t.bow ? ["bow"] : []), ...(t.two ? ["two"] : []), ...(t.staff ? ["staff"] : [])] : [""]) { // rodada 105: + montante; 151: + cajado
+            const ff = v === "two" ? t.twoForge : f, name = v === "bow" ? t.bow : v === "two" ? t.two : v === "staff" ? t.staff : t.name, lvOk = lvl >= ff.lvl, mats = hasMats(ff.mats);
             const pq = pre("forge:" + name), why = !lvOk ? `requer Ferraria ${ff.lvl}` : pq ? pq : !mats ? "faltam materiais" : "";
-            const extra = v === "bow" ? " · atira flechas" : v === "two" ? ` · duas mãos, +${ITEMS[name].bonus.dmg} dano, sem escudo · só o Guerreiro` : k === "espada" ? " · uma mão (deixa usar escudo)" : "";
-            html += craftRow(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · usar: ${SKILLS[g.skill]} ${t.req || 1}`, ff.mats, ff.lvl, lvOk, ff.xp,
+            const extra = v === "bow" ? " · atira flechas" : v === "staff" ? " · usa orbe ou livro" : v === "two" ? ` · duas mãos, +${ITEMS[name].bonus.dmg} dano, sem escudo` : k === "espada" ? " · uma mão (deixa usar escudo)" : "";
+            const useSk = ValdoraRules.weaponClass(ITEMS[name]) || g.skill; // rodada 151: a arma pede o nível da classe dela
+            html += craftRow(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · usar: ${SKILLS[useSk]} ${t.req || 1}`, ff.mats, ff.lvl, lvOk, ff.xp,
               `<button data-forge="${k}:${i}${v ? ":" + v : ""}" ${!why ? "" : "disabled"} title="${why}">Forjar</button>`);
           }
         });

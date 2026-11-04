@@ -54,15 +54,15 @@ window.ValdoraAccount = (() => {
   async function charList() {
     chars = await N.listChars(server.id); show("acct-chars");
     $("chars-title").textContent = `Personagens em ${server.name} (${chars.length}/${N.MAX_CHARS})`;
-    $("char-list").innerHTML = chars.length ? chars.map((c) => { const h = (HEROES || []).find((x) => x.id === c.hero) || {};
-      return `<div class="char" data-char="${esc(c.id)}"><img src="${window.ASSETS && ASSETS[c.hero] || ""}" alt=""><div class="char-txt"><b>${esc(c.name)}</b><small>${esc(h.name || "")} · nível total ${+c.level || 1}</small>
+    $("char-list").innerHTML = chars.length ? chars.map((c) => {
+      return `<div class="char" data-char="${esc(c.id)}"><img src="${window.ASSETS && ASSETS[c.hero] || ""}" alt=""><div class="char-txt"><b>${esc(c.name)}</b><small>Nível da conta ${+c.level || 1}</small>
         ${c.updated ? `<small class="saved">jogou em ${new Date(c.updated).toLocaleString("pt-BR")}</small>` : ""}</div>
         <button type="button" class="char-play" data-play="${esc(c.id)}">ENTRAR</button><button type="button" class="char-del link" data-del="${esc(c.id)}" title="Apagar personagem">apagar</button></div>`; }).join("")
       : `<p class="acct-empty">Nenhum personagem neste servidor ainda.</p>`;
     $("char-new").disabled = chars.length >= N.MAX_CHARS;
-    $("char-import").hidden = !(G.readSave() && chars.length < N.MAX_CHARS && store.get("valdora.imported." + server.id) !== "1");
+    $("char-import").hidden = true; // rodada 152: o herói salvo antigo (com classe) não vale mais
     $("char-list").querySelectorAll("[data-play]").forEach((b) => { b.onclick = () => guard(b, () => enter(chars.find((c) => c.id === b.dataset.play))); });
-    $("char-list").querySelectorAll(".char").forEach((d) => { d.onmouseenter = () => { const c = chars.find((x) => x.id === d.dataset.char); if (c && L) L.setHero(c.hero); }; });
+    $("char-list").querySelectorAll(".char").forEach((d) => { d.onmouseenter = () => { const c = chars.find((x) => x.id === d.dataset.char); if (c && L) L.setLook(c.data && c.data.look, c.hero); }; });
     $("char-list").querySelectorAll("[data-del]").forEach((b) => { b.onclick = () => { // dois cliques: o primeiro só arma
       if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "confirmar?"; setTimeout(() => { b.classList.remove("armed"); b.textContent = "apagar"; }, 4000); return; }
       guard(null, async () => { await N.deleteChar(b.dataset.del); await charList(); }); }; });
@@ -79,8 +79,9 @@ window.ValdoraAccount = (() => {
     const s = G.readSave(); if (!s) return;
     await N.createChar(server.id, { name: s.name, hero: s.hero, data: s }); store.set("valdora.imported." + server.id, "1"); await charList();
   });
-  async function create(name, hero) {
-    await guard($("play"), async () => { const c = await N.createChar(server.id, { name: (name || "").trim(), hero }); await enter(c); });
+  async function create(name, look) { // rodada 152: personagem básico com a aparência escolhida
+    look = lookSanitize(look);
+    await guard($("play"), async () => { const c = await N.createChar(server.id, { name: (name || "").trim(), hero: lookHero(look), data: { v: 3, look } }); await enter(c); });
   }
   document.addEventListener("valdora:lobby", () => { if (me && server) guard(null, charList); });
 

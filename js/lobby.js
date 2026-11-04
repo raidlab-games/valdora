@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.36", "Sem classe na criação: você escolhe o caminho", ["Todo mundo recomeça: um servidor só (Lumeira) e personagens novos para todos",
+      "Criação nova: masculino ou feminino, 5 peles, 10 penteados, 6 cores de cabelo e 8 olhos", "Classes pela arma: espada sobe Guerreiro, arco sobe Arqueiro e cajado (novo) sobe Mago; vão até o nível 200 e sobem 1,2x mais rápido",
+      "7 skills por classe, liberadas pelo nível da classe; armas pedem o nível da classe delas", "Ícones em todos os níveis, PvP com PK e Pacificador, saco de morte, Porto da Tumba e muito mais"]],
     ["v1.35", "Mundo maior e menu novo", ["Continente 50% maior (biomas, lagos e estradas), com o dobro de monstros; as vilas continuam iguais", "Menu embaixo à direita: Bolsa, Níveis, Equip., Skills, Diário, Livro, Coleção, Montaria, Guilda e Config", "Barra de 9 atalhos (teclas 1 a 9) montada na aba Skills", "Coleção: registre itens dos monstros e ganhe status para sempre", "Livro dos monstros: o que cada um derruba e com qual chance", "Equipamento de cada mapa do comum ao lendário, para todas as classes", "Um peixe novo em cada bioma", "Combate: defesa vem da armadura, monstros acertam e batem mais, tiros teleguiados, perseguem mais longe e voltam para o ponto, chamam a matilha; XP 5x menor; chefes voltam em 2 a 4 h; pesca mais lenta", "Todos os monstros refeitos no estilo novo, com sapo e lebre redesenhados", "Aba de Skills no estilo Cambria: todas as skills com nível, arraste as liberadas para a barra", "Cada espécie tem um nível só dela", "O herói anda inclinado para a frente, com passada mais curta"]],
     ["v1.34", "Ursos novos", ["Os 4 ursos refeitos: corpo gordo esculpido, couraça de pedra no lombo e cores de cada região", "Metade do tamanho no mapa e com pixel fino (o dobro de detalhe na tela)", "No ataque o urso empina e desce as duas patas"]],
     ["v1.33", "Bestiário novo", ["Todos os monstros redesenhados: mais pixels e detalhes, cores vivas, contorno colorido e rosto desenhado (olhos, sobrancelha, boca e presas)", "40 espécies novas: 12 a 13 por bioma grande, 5 a 7 em cada região do Campo", "Cada espécie luta do seu jeito: arqueiros e magos atiram de longe, xamãs e necromantes invocam, ursos rugem, javalis investem, morcegos roubam vida...", "Avisos no chão: saia do tile marcado, da linha da investida e da área do rugido"]],
@@ -380,6 +383,7 @@
   ];
 
   let heroId = HEROES[0].id, confirmNew = false;
+  let look = { ...LOOK.def }; // rodada 152: aparência da criação (sexo, pele, penteado, cor do cabelo, olhos)
 
   // ---------- abas ----------
   // rodada 69: abas e nome do herói na fonte de títulos (a aba aberta em dourado); sem a fonte, fica o texto
@@ -413,18 +417,40 @@
     ff.appendChild(s);
   }
 
-  // ---------- heróis ----------
+  // ---------- rodada 152: criação do personagem (sem classe): sexo, pele, penteado, cor do cabelo e olhos ----------
   function renderHeroes() {
-    $("heroes").innerHTML = "";
-    for (const h of HEROES) {
-      const b = document.createElement("button");
-      b.className = "hero" + (h.id === heroId ? " sel" : "");
-      b.innerHTML = `<img src="${ASSETS[h.id]}" alt=""><span>${esc(h.name)}</span>`;
-      b.onclick = () => { heroId = h.id; renderHeroes(); };
-      $("heroes").appendChild(b);
-    }
-    const h = HEROES.find((x) => x.id === heroId);
-    $("hero-title").innerHTML = UI ? UI.titleHTML(h.name, "#ffd84a", 2) : esc(h.name); $("hero-desc").textContent = LORE[h.id] || "";
+    heroId = lookHero(look);
+    const opt = (k, v, label, extra = "") => `<button type="button" class="cr-o${look[k] === v ? " sel" : ""}" data-k="${k}" data-v="${v}" ${extra}>${label}</button>`;
+    const sw = (k, list, names) => list.map((c, i) => opt(k, i, "", `style="--sw:${c}" title="${esc(names[i])}" aria-label="${esc(names[i])}"`)).join("");
+    $("heroes").innerHTML = `<div class="creator">
+      <div class="cr-row"><span>Sexo</span><div class="cr-opts">${opt("g", "m", "Masculino")}${opt("g", "f", "Feminino")}</div></div>
+      <div class="cr-row"><span>Pele</span><div class="cr-opts sw">${sw("skin", LOOK.skins, LOOK.skinNames)}</div></div>
+      <div class="cr-row"><span>Penteado</span><div class="cr-opts hairs">${LOOK.hairs.map((n, i) => opt("hair", i + 1, esc(n))).join("")}</div></div>
+      <div class="cr-row"><span>Cor do cabelo</span><div class="cr-opts sw">${sw("hc", LOOK.hairColors, LOOK.hairColorNames)}</div></div>
+      <div class="cr-row"><span>Olhos</span><div class="cr-opts">${LOOK.eyes.map((n, i) => opt("eyes", i + 1, esc(n))).join("")}</div></div></div>`;
+    $("heroes").querySelectorAll("[data-k]").forEach((b) => { b.onclick = () => { const k = b.dataset.k; look[k] = k === "g" ? b.dataset.v : +b.dataset.v; renderHeroes(); }; });
+    $("hero-title").innerHTML = UI ? UI.titleHTML(look.g === "f" ? "Aventureira" : "Aventureiro", "#ffd84a", 2) : esc(look.g === "f" ? "Aventureira" : "Aventureiro");
+    $("hero-desc").textContent = "Todos começam iguais, com uma espada. Use espada para subir Guerreiro, arco para Arqueiro e cajado para Mago: o caminho é seu.";
+    composeLook();
+  }
+  // a prévia monta as mesmas camadas do jogo: corpo tingido pela pele + roupa de baixo + olhos + cabelo tingido
+  const imgCache = {};
+  const loadImg = (src) => imgCache[src] || (imgCache[src] = new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = (window.assetV || String)(src); }));
+  function tintDraw(g, img, w, h, rgb) {
+    if (!img) return; if (!rgb) { g.drawImage(img, 0, 0, w, h); return; }
+    const t = document.createElement("canvas"); t.width = w; t.height = h; const tg = t.getContext("2d"); tg.drawImage(img, 0, 0, w, h);
+    tg.globalCompositeOperation = "multiply"; tg.fillStyle = rgb; tg.fillRect(0, 0, w, h); tg.globalCompositeOperation = "destination-in"; tg.drawImage(img, 0, 0, w, h); g.drawImage(t, 0, 0);
+  }
+  const comp = { key: "", c: null, A: null };
+  function composeLook() {
+    const hero = lookHero(look), A = window.ANIM_SHEETS && ANIM_SHEETS[hero]; if (!A) return;
+    const key = JSON.stringify(look); if (comp.key === key) return; comp.key = key;
+    const srcs = [[A.src, LOOK.skins[look.skin]], ...lookLayers(look).map(([l, c]) => [`assets/flow/anim3d/gear_${l}.png`, c])];
+    Promise.all(srcs.map(([src]) => loadImg(src))).then((ims) => {
+      if (comp.key !== key || !ims[0]) return;
+      const c = document.createElement("canvas"); c.width = ims[0].naturalWidth; c.height = ims[0].naturalHeight; const g = c.getContext("2d");
+      ims.forEach((im, k) => tintDraw(g, im, c.width, c.height, srcs[k][1])); comp.c = c; comp.A = A;
+    });
   }
 
   // prévia animada: o herói anda e vira nas 4 direções sobre um tufo de grama
@@ -443,9 +469,9 @@
       grd.addColorStop(0, "#5ea34acc"); grd.addColorStop(0.6, "#3d7a2f88"); grd.addColorStop(1, "#3d7a2f00");
       pg.fillStyle = grd; pg.beginPath(); pg.ellipse(cx, base, 86, 26, 0, 0, 7); pg.fill();
       pg.fillStyle = "#00000055"; pg.beginPath(); pg.ellipse(cx, base, 34, 9, 0, 0, 7); pg.fill();
-      const im = sheets[heroId], idle = idles[heroId], cycle = Math.floor(t / 1800) % 8;
-      if (idle && idle.img.complete && idle.img.naturalWidth && cycle % 2 === 1) { // alterna: parado (respirando) e andando
-        const A = idle.A, dir = ["down", "right", "up", "left"][Math.floor(cycle / 2) % 4], R = A.rows["idle_" + dir], f = Math.floor(t / 1000 * R.fps) % R.frames;
+      const im = sheets[heroId], idle = comp.c ? { img: comp.c, A: comp.A } : null, cycle = Math.floor(t / 1800) % 8; // rodada 152: a aparência montada
+      if (idle) { // alterna: parado (respirando) e andando
+        const A = idle.A, dir = ["down", "downright", "right", "upright", "up", "upleft", "left", "downleft"][Math.floor(t / 1400) % 8], R = A.rows["idle_" + dir] || A.rows.idle_down, f = Math.floor(t / 1000 * R.fps) % R.frames;
         const sc = Math.max(1, Math.floor(170 / (A.cell / (window.ANIM_META ? ANIM_META.margin : 1.6)))), s = A.cell * sc / 1.6 * 1.6;
         pg.imageSmoothingEnabled = true;
         pg.drawImage(idle.img, f * A.cell, R.row * A.cell, A.cell, A.cell, cx - s / 2, base + 6 - s * (1 - (window.ANIM_META ? ANIM_META.ground : 0.125)), s, s);
@@ -514,11 +540,12 @@
   }
   if (ASSETS.icon_continue_play) $("continue").innerHTML = `<img class="btn-icon" src="${ASSETS.icon_continue_play}" alt="">CONTINUAR`;
   // rodada 109: com contas (js/account.js), o lobby só guarda a escolha de aparência; criar e entrar passam pela conta
-  window.ValdoraLobby = { hero: () => heroId, setHero: (id) => { if (HEROES.some((h) => h.id === id)) { heroId = id; renderHeroes(); } }, esc };
+  window.ValdoraLobby = { hero: () => heroId, look: () => ({ ...look }), setHero: (id) => { if (HEROES.some((h) => h.id === id)) { look.g = id === "hero_2" ? "f" : "m"; renderHeroes(); } },
+    setLook: (L, id) => { if (L) look = lookSanitize(L); else if (id) look.g = id === "hero_2" ? "f" : "m"; renderHeroes(); }, esc };
   $("play").onclick = () => {
-    if (window.ValdoraAccount) return ValdoraAccount.create($("name").value, heroId);
+    if (window.ValdoraAccount) return ValdoraAccount.create($("name").value, look);
     if (G.readSave() && !confirmNew) { confirmNew = true; $("new-warn").hidden = false; $("play").textContent = "CONFIRMAR NOVO JOGO"; return; }
-    G.start({ name: $("name").value.trim().slice(0, 14) || "Aventureiro", hero: heroId });
+    G.start({ name: $("name").value.trim().slice(0, 14) || "Aventureiro", hero: lookHero(look), look: { ...look } });
   };
   $("continue").onclick = () => { const s = G.readSave(); if (s) G.start(s); };
   document.addEventListener("valdora:lobby", render);

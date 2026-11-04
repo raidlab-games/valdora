@@ -1,7 +1,8 @@
 // Dados de jogo do Valdora: itens, recursos, monstros, equipamentos, receitas e tutorial.
 // Tudo aqui é configuração: dá para equilibrar o jogo mexendo só neste arquivo.
 window.VD = (() => {
-  const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia" }; // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
+  const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia",
+    guerreiro: "Guerreiro", arqueiro: "Arqueiro", mago: "Mago" }; // rodada 151: classes (sobem usando a arma de cada uma) // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
 
   // Raridade dos acessórios (cor usada no inventário, no chão e nos textos)
   const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" },
@@ -237,12 +238,33 @@ window.VD = (() => {
   };
 
   // Habilidades ativas de combate (teclas Q, E, R): liberadas por nível de Combate, com recarga em segundos
+  // rodada 153: skills de classe (7 por classe), liberadas pelo nível da classe (1, 8, 18, 30, 50, 75, 110) e só com a arma dela na mão:
+  // Guerreiro = espada/montante (perto, aguenta e segura o bando), Arqueiro = arco (de longe, mobilidade e veneno; gasta flechas),
+  // Mago = cajado (magia de longe, controle, cura e escudo). A Corrida é de todos.
   const ACTIVE = {
-    spin: { name: "Golpe giratório", key: "Q", icon: "⟳", lvl: 5, cd: 8, mult: 1.2, desc: "Gira a lâmina e acerta todos os monstros ao seu redor." },
-    dash: { name: "Investida", key: "E", icon: "➤", lvl: 12, cd: 12, mult: 1.3, range: 5, stun: 1.6, desc: "Avança até o alvo (até 5 passos) e o deixa atordoado." },
-    // rodada 139: Corrida: 1,5x a velocidade por 2 s (parado não faz nada)
+    spin: { name: "Golpe giratório", cls: "guerreiro", key: "Q", icon: "⟳", lvl: 1, cd: 8, mult: 1.2, desc: "Gira a lâmina e acerta todos os monstros ao seu redor." },
+    dash: { name: "Investida", cls: "guerreiro", key: "E", icon: "➤", lvl: 8, cd: 12, mult: 1.3, range: 5, stun: 1.6, desc: "Avança até o alvo (até 5 passos) e o deixa atordoado." },
+    smash: { name: "Golpe esmagador", cls: "guerreiro", key: "R", icon: "✸", lvl: 18, cd: 15, mult: 2.2, stun: 0.8, desc: "Carrega um golpe lento que sempre acerta, atordoa e solta uma onda de choque." },
+    warcry: { name: "Grito de guerra", cls: "guerreiro", lvl: 30, cd: 30, mult: 1.25, dur: 10, desc: "Ruge e puxa para você os monstros até 4 passos; por 10 s seus golpes causam +25% de dano." },
+    rend: { name: "Corte profundo", cls: "guerreiro", lvl: 50, cd: 14, mult: 1.3, desc: "Golpe que abre uma ferida: o alvo sangra forte por 6 s." },
+    ironwall: { name: "Muralha de ferro", cls: "guerreiro", lvl: 75, cd: 40, mult: 1, dur: 6, desc: "Ergue a guarda: por 6 s você recebe metade do dano." },
+    execute: { name: "Execução", cls: "guerreiro", lvl: 110, cd: 20, mult: 2, desc: "Golpe final que sempre acerta: 2x de dano; em alvo com menos de 30% de vida, 4x." },
+    aimed: { name: "Tiro certeiro", cls: "arqueiro", lvl: 1, cd: 6, mult: 1.5, range: 7, desc: "Mira com calma: a flecha sempre acerta e causa 1,5x de dano." },
+    double: { name: "Tiro duplo", cls: "arqueiro", lvl: 8, cd: 9, mult: 1, range: 7, desc: "Duas flechas seguidas no mesmo alvo (gasta 2 flechas)." },
+    pierce: { name: "Flecha perfurante", cls: "arqueiro", lvl: 18, cd: 12, mult: 1.3, range: 7, desc: "Atravessa o alvo e fere quem estiver atrás dele na mesma linha (até 3 passos)." },
+    rain: { name: "Chuva de flechas", cls: "arqueiro", lvl: 30, cd: 18, mult: 0.9, range: 7, desc: "Uma saraivada cai na área 3x3 em volta do alvo (gasta 3 flechas)." },
+    venom: { name: "Flecha venenosa", cls: "arqueiro", lvl: 50, cd: 15, mult: 1, range: 7, desc: "Envenena o alvo: perde vida a cada segundo por 8 s." },
+    leap: { name: "Salto de recuo", cls: "arqueiro", lvl: 75, cd: 16, mult: 1, range: 4, desc: "Salta até 3 passos para longe do monstro mais perto e o deixa lento por 4 s." },
+    hawk: { name: "Olho de falcão", cls: "arqueiro", lvl: 110, cd: 45, mult: 1, dur: 12, desc: "Por 12 s: +30% de chance de crítico e +2 de alcance nos tiros." },
+    fireball: { name: "Bola de fogo", cls: "mago", lvl: 1, cd: 5, mult: 1.4, range: 6, desc: "Lança uma bola de fogo que sempre acerta (1,4x de dano)." },
+    frost: { name: "Raio de gelo", cls: "mago", lvl: 8, cd: 9, mult: 1.1, range: 6, desc: "Um raio gelado: dano e o alvo fica lento por 4 s." },
+    chain: { name: "Corrente elétrica", cls: "mago", lvl: 18, cd: 12, mult: 1.1, range: 6, desc: "Um raio acerta o alvo e salta para mais 2 monstros perto dele." },
+    heal: { name: "Cura", cls: "mago", lvl: 30, cd: 25, mult: 1, desc: "Recupera 30% da vida máxima." },
+    nova: { name: "Explosão arcana", cls: "mago", lvl: 50, cd: 16, mult: 1.6, desc: "Explosão em volta de você (2 passos): dano e atordoa por 0,6 s." },
+    manashield: { name: "Escudo de mana", cls: "mago", lvl: 75, cd: 40, mult: 1, dur: 10, desc: "Por 10 s, um escudo absorve dano igual a 25% da sua vida máxima." },
+    meteor: { name: "Meteoro", cls: "mago", lvl: 110, cd: 30, mult: 3, range: 6, desc: "Depois de 1 s, um meteoro cai na área 3x3 do alvo: 3x de dano e atordoa." },
+    // rodada 139: Corrida: 1,5x a velocidade por 1 s (parado não faz nada)
     run: { name: "Corrida", key: "Shift", icon: "»", lvl: 1, cd: 10, mult: 1.5, dur: 1, desc: "Dispara a 1,5x da velocidade por 1 s, com o corpo inclinado e o vento atrás. Parado, não faz nada." },
-    smash: { name: "Golpe esmagador", key: "R", icon: "✸", lvl: 20, cd: 15, mult: 2.2, stun: 0.8, desc: "Carrega um golpe lento que sempre acerta, atordoa e solta uma onda de choque." },
   };
 
   // Missões com história curta (2-3 passos). ev = evento que conta; deliver = itens entregues ao NPC; talk = voltar a falar
@@ -996,6 +1018,9 @@ window.VD = (() => {
     GEAR.armadura.tiers.push({ name: armor, filter, icon: "item_armor_lumita", def: [28, 36, 46, 58][k], cost, req, forge: { mats: { [bar]: 5 }, lvl, xp: [600, 880, 1200, 1600][k] } });
     for (const t of ["machado", "picareta", "vara", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
   });
+  // rodada 151: cajado do Mago em cada nível de arma (mesmos números da espada; treina e pede o nível de Mago)
+  ["Cajado gasto", "Cajado de bronze", "Cajado de ferro", "Cajado de aço", "Cajado de lumita", "Cajado estelar", "Cajado de obsidiana", "Cajado de mitril", "Cajado solar", "Cajado glacial"]
+    .forEach((n, i) => { if (GEAR.espada.tiers[i]) GEAR.espada.tiers[i].staff = n; });
   // rodada 104: cada nível de arma, ferramenta e peitoral é um item (comprado, forjado, achado ou ganho do Ivo);
   // nada fica preso ao herói. Armas e ferramentas dividem o espaço "arma"; o peitoral vai no espaço "armadura".
   // O arco tem os mesmos números da espada do mesmo nível e atira flechas (munição).
@@ -1004,13 +1029,15 @@ window.VD = (() => {
       price: Math.max(3, Math.round((t.cost || 12) * 0.35)), ...(t.cost && !t.rolls ? { buy: t.cost } : {}) };
     ITEMS[t.name] = { icon: t.icon || g.icon, ...base, ...(t.filter ? { filter: t.filter } : {}) };
     if (t.bow) ITEMS[t.bow] = { icon: "tool_bow", ...base, bow: true, ...(t.filter ? { filter: t.filter } : {}) };
+    if (t.staff) ITEMS[t.staff] = { icon: "item_staff", ...base, staff: true, ...(t.filter ? { filter: t.filter } : {}) }; // rodada 151: cajado do Mago
     // aparência no herói (js/outfit.js): [camada, cor de tinta ou null]
     if (k === "armadura") ITEMS[t.name].look = [["shirt", "#f0e6cc"], ["shirt", "#c08250"], ["plate", "#c4c8d4"], ["plate", "#f4f6fc"], ["plate", "#92eaf8"], ["plate", "#d6bcff"], ["plate", "#6a5a8a"], ["plate", "#ffd66a"], ["plate", "#b8e0ff"], ["plate", "#f0fbff"]][i];
     // rodada 105: montante (duas mãos, só o Guerreiro): mais dano, mas sem escudo; forja com 50% a mais de metal
-    if (t.two) { ITEMS[t.two] = { icon: "item_greatsword", ...base, twoH: true, onlyHero: "hero_1", bonus: { dmg: [0, 2, 3, 4, 6, 7, 9, 11, 13, 15][i] }, ...(t.filter ? { filter: t.filter } : {}),
+    if (t.two) { ITEMS[t.two] = { icon: "item_greatsword", ...base, twoH: true, bonus: { dmg: [0, 2, 3, 4, 6, 7, 9, 11, 13, 15][i] }, ...(t.filter ? { filter: t.filter } : {}),
       look: ["sword2", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]] };
       if (t.forge) t.twoForge = { ...t.forge, mats: Object.fromEntries(Object.entries(t.forge.mats).map(([m, n]) => [m, Math.ceil(n * 1.5)])), xp: Math.round(t.forge.xp * 1.3) }; }
     if (k === "espada") { ITEMS[t.name].look = ["sword", ["#b8b8b8", "#e8aa66", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]];
+      if (t.staff) ITEMS[t.staff].look = ["staff", ["#a08a70", "#d8a070", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]];
       if (t.bow) ITEMS[t.bow].look = ["bow", [null, "#f0b878", "#d8dce8", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]]; }
   });
 
@@ -1151,8 +1178,8 @@ window.VD = (() => {
       say: "Os veios de cobre são as pedras com manchas alaranjadas. Elas se esgotam e voltam depois de um tempo." },
     { text: "Funda 2 barras de bronze na fornalha.", ev: "smelt:Barra de bronze", n: 2, reward: { coins: 15 },
       say: "A fornalha fica no canto sudeste da praça. Cada barra de bronze usa 2 cobres." },
-    { text: "Forje um equipamento na bigorna.", ev: "forge", n: 1, reward: { coins: 20, items: { "Vara gasta": 1 } },
-      say: "Na bigorna, ao lado da fornalha, transforme barras em armas, armaduras e ferramentas melhores." },
+    { text: "Forje uma Espada de bronze na bigorna.", ev: "forgeitem:Espada de bronze", n: 1, reward: { coins: 20, items: { "Vara gasta": 1 } }, // rodada 152: todos começam pela espada
+      say: "Na bigorna, ao lado da fornalha, transforme as barras numa espada: toda aventura começa por ela. Depois, se quiser, forje um arco (Arqueiro) ou um cajado (Mago) e siga o seu caminho: Guerreiro, Arqueiro ou Mago." },
     { text: "Pesque um lambari e asse na fogueira.", ev: "cook:Lambari assado", n: 1, reward: { items: { "Poção de vida": 2 }, weapon: 1 }, // rodada 104: a primeira arma (arco para o Arqueiro)
       say: "Pesque nos cardumes (ondulações na água) e asse na fogueira da vila. Peixe assado cura em combate." },
     { text: "Derrote 3 slimes.", ev: "kill:slime", n: 3, reward: { coins: 25 },

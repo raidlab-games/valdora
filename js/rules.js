@@ -5,6 +5,17 @@ window.ValdoraRules = (() => {
   // curva de XP: nível 10 ≈ 3,6 mil, 20 ≈ 23,6 mil, 30 ≈ 68 mil, 40 ≈ 142 mil
   const xpFor = (l) => l <= 40 ? Math.round(15 * Math.pow(l - 1, 2.5)) : Math.round(15 * Math.pow(39, 2.5) + 500 * Math.pow(l - 40, 1.85)); // até 40, a curva de sempre
   const level = (xp) => { let l = 1; while (l < MAX_LVL && xp >= xpFor(l + 1)) l++; return l; };
+  // rodada 151: níveis de classe (Guerreiro, Arqueiro, Mago) vão até 200 e sobem 1,2x mais rápido que o Combate com o mesmo xp:
+  // o nível L de classe custa o xp do nível 1 + (L - 1) / 1,2 de Combate (1 nível de Combate = 1,2 de classe)
+  const CLASS_SKILLS = ["guerreiro", "arqueiro", "mago"], CLASS_RATE = 1.2;
+  const isClass = (k) => CLASS_SKILLS.includes(k);
+  const xpForClass = (l) => xpFor(1 + (l - 1) / CLASS_RATE);
+  const levelClass = (xp) => { let l = 1; while (l < MAX_LVL && xp >= xpForClass(l + 1)) l++; return l; };
+  const skillLevel = (k, xp) => (isClass(k) ? levelClass : level)(xp || 0);
+  const skillXpFor = (k, l) => (isClass(k) ? xpForClass : xpFor)(l);
+  // arma -> classe que ela treina e pede: cajado = Mago, arco = Arqueiro, espada e montante = Guerreiro
+  const weaponClass = (it) => !it || it.slot !== "arma" || it.gear !== "espada" ? null : it.staff ? "mago" : it.bow ? "arqueiro" : "guerreiro";
+  const CLASS_SEC = { guerreiro: "escudo", arqueiro: "flecha", mago: "orbe" };
   // rodada 137: acerto pela diferença entre acerto e defesa. Muito acima da defesa do alvo: acerta sempre (um monstro do gelo
   // não erra um herói pelado de nível baixo); muito abaixo: 10%. Mesma força: 80%.
   const hitChance = (acc, def) => Math.max(0.1, Math.min(1, 0.8 + (acc - def) * 0.015));
@@ -85,5 +96,5 @@ window.ValdoraRules = (() => {
   const talkerNear = (npcs, p, r = 6) => npcs.some((n) => n && TALKERS.includes(n.type) && Math.abs(n.x - p.x) + Math.abs(n.y - p.y) <= r);
   // rodada 89: XP de Combate das recompensas (missões, caçadas, caçada do dia) leva junto Vitalidade na proporção do estilo, até 1:1
   const vitShare = (style, n) => Math.round(n * Math.min(1, style.xp.vitalidade / style.xp.combate));
-  return { PET, petBond, petStats, petStage, petMaxHp, petDef, petName, talkerNear, vitShare, mulberry32, burnChance, MAX_LVL, xpFor, level, hitChance, armorCut, MOB_XP, critChance, critBonus, BLEED, BLOCK, bleedDmg, blockDmg, AFFIXES, rollAffixes, itemBonus, affixNames, bonusText, combatStats, gatherChance };
+  return { CLASS_SKILLS, CLASS_RATE, isClass, xpForClass, levelClass, skillLevel, skillXpFor, weaponClass, CLASS_SEC, PET, petBond, petStats, petStage, petMaxHp, petDef, petName, talkerNear, vitShare, mulberry32, burnChance, MAX_LVL, xpFor, level, hitChance, armorCut, MOB_XP, critChance, critBonus, BLEED, BLOCK, bleedDmg, blockDmg, AFFIXES, rollAffixes, itemBonus, affixNames, bonusText, combatStats, gatherChance };
 })();

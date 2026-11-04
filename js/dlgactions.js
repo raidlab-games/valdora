@@ -41,7 +41,7 @@ window.ValdoraDlgActions = (() => {
       const player = api.player(), dlg = api.dlg();
       if (ds.smelt) { player.job = { kind: "smelt", item: ds.smelt, left: Math.max(1, +ds.n), obj: dlg.obj }; player.target = null; player.path = []; }
       if (ds.craft) craft(ds.craft);
-      if (ds.forge) { const [key, tier, v] = ds.forge.split(":"); player.job = { kind: "forge", key, tier: +tier, bow: v === "bow", two: v === "two", hits: 0, obj: dlg.obj }; player.target = null; player.path = []; } // rodada 104
+      if (ds.forge) { const [key, tier, v] = ds.forge.split(":"); player.job = { kind: "forge", key, tier: +tier, bow: v === "bow", two: v === "two", staff: v === "staff", hits: 0, obj: dlg.obj }; player.target = null; player.path = []; } // rodada 104
     }
     function dlgQuest(ds) { // missões (Ivo, Bento, Tomé)
       const player = api.player(), dlg = api.dlg();
