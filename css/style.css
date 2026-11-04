@@ -880,6 +880,11 @@ button.link:hover { color: #cfe3ff; }
 .cr-xp { font-size: 11px; opacity: .55; margin-top: 3px; }
 .cr-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; }
 .cr-lvl { font-size: 11px; color: #f2ead8; letter-spacing: .5px; } .cr-lvl.no { color: #ff5a4a; }
+/* rodada 146: saco de morte */
+.bag-all { margin: 4px 0 8px; font-weight: bold; letter-spacing: 1px; color: #ffe680; }
+.grid.deathbag { grid-template-columns: repeat(6, 1fr); margin-bottom: 6px; }
+.grid.deathbag .slot { cursor: pointer; }
+.grid.deathbag .slot:hover { border-color: var(--gold); }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }

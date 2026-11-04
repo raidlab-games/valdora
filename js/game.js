@@ -170,6 +170,7 @@
 
   // ---------- Mundo ----------
   let map, occ, objects, resources, mobs, lakes, ground, groundItems, corpses, npc = {};
+  let deathBags = []; // rodada 146: sacos de morte no mundo de cima ({ x, y, items, owner, killer, lockUntil, until })
   let inCrypt = false, overworld = null, dungeon = "crypt"; // masmorra: o mundo de cima fica guardado enquanto o jogador está lá embaixo
   function seeded(s) { return () => (s = (s * 16807) % 2147483647) / 2147483647; }
 
@@ -1367,7 +1368,8 @@
     player.hotbar = Array.isArray(data.hotbar) && data.hotbar.length === 9 ? data.hotbar.slice() : VD.HOTBAR_DEFAULT.slice(); // rodada 137
     if (!player.seen.runHot) { player.seen.runHot = 1; const i = player.hotbar.indexOf(null); if (i >= 0 && !player.hotbar.includes("skill:run")) player.hotbar[i] = "skill:run"; } // rodada 139: Corrida na barra uma vez
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
-    player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade(); // rodada 139: quantas vezes fez cada receita
+    player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
+    deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
     for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
     homeSync(); resize(); running = true; last = performance.now(); requestAnimationFrame(loop); // rodada 100: casa conforme o save
@@ -1554,7 +1556,7 @@
 
   // ---------- Entrada ----------
   const INTERACT_TEXT = { harbor: "falar com o mestre do cais", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
-    anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
+    deathbag: "abrir o saco de morte", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
   function interactLabel(b) {
@@ -1574,6 +1576,7 @@
     const dRect = (o) => Math.max(Math.max(o.x - player.x, 0, player.x - (o.x + o.w - 1)), Math.max(o.y - player.y, 0, player.y - (o.y + o.h - 1)));
     let best = null, bd = 3;
     for (const g of groundItems) { const d = Math.max(Math.abs(g.x - player.x), Math.abs(g.y - player.y)); if (d < bd) { bd = d; best = { kind: "loot", tx: g.x, ty: g.y, ref: { x: g.x, y: g.y, w: 1, h: 1 } }; } }
+    if (!inCrypt) for (const b of deathBags) { const d = Math.max(Math.abs(b.x - player.x), Math.abs(b.y - player.y)); if (d <= bd) { bd = d; best = { kind: "deathbag", tx: b.x, ty: b.y, ref: bagRef(b) }; } } // rodada 146
     for (const o of objects) {
       const kind = o.type === "res" ? (o.respawn > 0 ? null : "res") : STATIONS[o.type] || (o.type === "sign" ? "sign" : null); if (!kind) continue;
       const d = dRect(o); if (kind === "res" && d > 1) continue; // rodada 111: recurso só encostado (antes aparecia a 2 tiles)
@@ -1696,6 +1699,7 @@
     if (best) return best;
     const tx = Math.floor(fx), ty = Math.floor(fy);
     if (!inside(tx, ty)) return null;
+    const bag = !inCrypt && deathBags.find((b) => b.x === tx && b.y === ty); if (bag) return { kind: "deathbag", tx, ty, ref: bagRef(bag) }; // rodada 146
     if (groundItems.some((g) => g.x === tx && g.y === ty)) return { kind: "loot", tx, ty, ref: { x: tx, y: ty, w: 1, h: 1 } };
     const art = pickArt(fx, fy); if (art) return art;
     const o = occ[ty * W + tx];
@@ -1834,6 +1838,12 @@
       }
       faceTo(r.x, r.y);
       if (player.actT <= 0) { startAttack(r); player.actT = 3; ambushRoll(r); } // rodada 113: emboscada
+      return;
+    }
+    if (t.kind === "deathbag") { // rodada 146: encostado ou em cima do saco, abre como um baú
+      if (!deathBags.includes(r.bag)) { player.target = null; return; }
+      const near = (x, y) => Math.max(Math.abs(x - r.x), Math.abs(y - r.y)) <= 1;
+      if (near(player.x, player.y)) { player.target = null; openDlg("deathbag", r); SND.play("ui"); } else if (!goTo(near)) player.target = null;
       return;
     }
     if (t.kind === "loot") { if (player.x === r.x && player.y === r.y) { pickupAt(r.x, r.y, true); player.target = null; } else if (!goTo((x, y) => x === r.x && y === r.y)) player.target = null; return; }
@@ -2487,12 +2497,34 @@
     player.dot = null; player.slowT = 0; MSKILL.clear(); // rodada 134
     SND.play("death"); hudDirty = true;
   }
+  // rodada 146: morrer custa 10% da barra do nível atual (Combate e Vitalidade; nunca desce de nível: para no 0% da barra) e
+  // metade de cada pilha da mochila (item único: 50% de chance), que fica num saco no lugar da morte por 30 min. Morto por outro
+  // jogador, só ele pode abrir o saco nos primeiros 30 s; por monstro ou outra causa, qualquer um pode.
+  const BAG_LIFE = 30 * 60 * 1000, BAG_LOCK = 30 * 1000;
+  function deathPenalty() {
+    const lostXp = {};
+    for (const k of ["combate", "vitalidade"]) {
+      const xp = player.xp[k] || 0, l = level(xp); if (l >= RULES.MAX_LVL) continue;
+      const a = xpFor(l), cut = Math.min(xp - a, Math.floor((xpFor(l + 1) - a) * 0.1));
+      if (cut > 0) { player.xp[k] = xp - cut; lostXp[k] = cut; }
+    }
+    const items = [];
+    player.inv.forEach((s, i) => {
+      if (!s || ITEMS[s.name].quest) return;
+      const q = s.n > 1 ? Math.floor(s.n / 2) + (s.n % 2 && rand() < 0.5 ? 1 : 0) : rand() < 0.5 ? 1 : 0; if (!q) return;
+      items.push({ name: s.name, n: q, ...(s.aff ? { aff: s.aff } : {}), ...(s.master ? { master: 1 } : {}) });
+      s.n -= q; if (s.n <= 0) player.inv[i] = null;
+    });
+    return { lostXp, items };
+  }
   function respawnAfterDeath() {
     player.deadT = 0;
+    const at = inCrypt && overworld ? overworld.ret : { x: player.x, y: player.y }; // na masmorra, o saco fica na entrada dela
+    const { lostXp, items } = deathPenalty(), killer = player.killedBy && player.killedBy.player || null; player.killedBy = null;
     leaveCrypt();
-    const lost = Math.floor(player.coins * 0.1);
-    player.coins -= lost;
-    log(`☠ Você desmaiou e acordou na vila.${lost ? ` Perdeu ${lost} moedas.` : ""}`, "warn");
+    if (items.length) deathBags.push({ x: at.x, y: at.y, items, owner: player.name, killer, lockUntil: killer ? Date.now() + BAG_LOCK : 0, until: Date.now() + BAG_LIFE });
+    const nItems = items.reduce((t, it) => t + it.n, 0);
+    log(`☠ Você desmaiou e acordou na vila. Perdeu ${lostXp.combate ? `${lostXp.combate} xp de Combate (10% do nível)` : "nada de Combate (já estava no 0% do nível)"}${nItems ? ` e deixou ${nItems} ite${nItems > 1 ? "ns" : "m"} num saco onde caiu: volte em até 30 min antes que alguém pegue!` : "."}`, "warn");
     player.stats.deaths = (player.stats.deaths || 0) + 1; // rodada 55: na segunda morte, a dica do estilo Defensivo (uma vez por save)
     if (player.stats.deaths >= 2 && player.style !== "defensivo" && !player.seen.defTip) { player.seen.defTip = 1; log(DEF_TIP, "tip", STYLES.defensivo.passive && STYLES.defensivo.passive.icon); }
     const RS = player.spawnStone && player.spawnStone !== "lumeira" && stoneOf(player.spawnStone) ? stoneSpot(stoneOf(player.spawnStone)) : SPAWN; // rodada 105: Pedra marcada
@@ -2773,12 +2805,38 @@
     close: () => closeDlg(), scene: (id, cb) => SCENE.play(id, cb), travel: (k) => CAMPAIGN_RT.travel(k), alchemy: (n) => brew(n), claimDaily: () => claimDaily(), petName: (v) => petRename(v), petStay: () => petStay(), home: (k, v) => homeAct(k, v), stone: (k, v) => stoneAct(k, v) }); // rodada 78/79; rodada 96: nome do filhote
   $("dlg").addEventListener("click", (e) => {
     if (!dlg) return;
-    const b = e.target.closest("button, .slot[data-dep], .slot[data-wd]"); if (!b) return;
+    const b = e.target.closest("button, .slot[data-dep], .slot[data-wd], .slot[data-bagi]"); if (!b) return;
     const ds = b.dataset; SND.play("ui");
-    if (DLG_VIEW.uiClick(b, dlg)) return; // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
+    if (DLG_VIEW.uiClick(b, dlg)) return;
+    if (dlg.kind === "deathbag" && (ds.bagall || ds.bagi != null)) { takeFromBag(dlg.obj.bag, ds.bagall ? null : +ds.bagi); if (dlg) renderDlg(); save(); return; } // rodada 146 // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
     renderDlg(); save();
   });
+  // rodada 146: janela do saco de morte: PEGAR TUDO (o que couber, empilhando com a mochila) ou um item de cada vez
+  function bagLocked(b) { return b.killer && b.killer !== player.name && b.lockUntil > Date.now(); }
+  function deathBagHtml(r) {
+    const b = r && r.bag; if (!b || !deathBags.includes(b)) return `<p class="empty">O saco sumiu.</p>`;
+    const m = Math.max(1, Math.ceil((b.until - Date.now()) / 60000)), lock = bagLocked(b);
+    const who = b.owner === player.name ? "Suas coisas: o que caiu quando você desmaiou." : `Coisas de ${esc(b.owner)}.`;
+    return `<p class="desc">${who} Some em ${m} min${lock ? ` · só ${esc(b.killer)} pode abrir por mais ${Math.ceil((b.lockUntil - Date.now()) / 1000)} s` : ""}.</p>`
+      + `<button class="wide bag-all" data-bagall="1" ${lock ? "disabled" : ""}>PEGAR TUDO</button>`
+      + `<div class="grid deathbag">${b.items.map((it, i) => `<div class="slot${it.aff ? " rare" : ""}" data-bagi="${i}" role="button" tabindex="0" title="${esc(accName(it))}">${iconImg(it.name)}${it.n > 1 ? `<span>${it.n}</span>` : ""}</div>`).join("")}</div>`
+      + `<small class="desc">Clique num item para pegar só ele.</small>`;
+  }
+  function takeFromBag(b, idx) {
+    if (!deathBags.includes(b)) return;
+    if (bagLocked(b)) { log(`Só ${b.killer} pode abrir este saco agora.`, "warn"); return; }
+    let got = 0, full = false;
+    for (const i of idx == null ? b.items.map((_, k) => k).reverse() : [idx]) {
+      const it = b.items[i]; if (!it) continue;
+      if (!addTo(player.inv, it.name, it.n, it.aff, it.master)) { full = true; continue; }
+      player.seen[it.name] = 1; got += it.n; b.items.splice(i, 1);
+      addFloat(player.px + 0.5, player.py - 0.2 - (got % 3) * 0.25, `+${it.n} ${accName(it)}`, it.aff ? "#ffd84a" : "#ffffff");
+    }
+    if (full) log("Sua mochila está cheia: o resto fica no saco.", "warn");
+    if (got) { SND.play("pickup"); burst(b.x + 0.5, b.y + 0.6, ["#d6a8ff", "#f1c40f", "#ffffff"], 8, 1.6); hudDirty = true; }
+    if (!b.items.length) { deathBags.splice(deathBags.indexOf(b), 1); closeDlg(); log("Você recolheu tudo do saco.", "gold"); }
+  }
   // rodada 79: alquimia da Juna (tônicos), depois de "Raízes inquietas"; XP em Culinária
   function alchemyHtml() {
     if (!CAMPAIGN_RT.alchemyOpen()) return "";
@@ -2904,7 +2962,7 @@
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), prereqText: (k) => prereqText(k) });
-  const DLG_VIEW = ValdoraDialogs.create({ potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+  const DLG_VIEW = ValdoraDialogs.create({ deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
@@ -3371,6 +3429,7 @@
       }
     }
     for (let i = groundItems.length - 1; i >= 0; i--) if ((groundItems[i].age += dt) > groundItems[i].life) groundItems.splice(i, 1);
+    if (tickN % 8 === 0 && deathBags.length) { const now = Date.now(), n0 = deathBags.length; deathBags = deathBags.filter((b) => b.until > now); if (deathBags.length !== n0 && dlg && dlg.kind === "deathbag" && !deathBags.includes(dlg.obj.bag)) closeDlg(); } // rodada 146: some em 30 min
     fx.update(dt);
     if ((saveT += dt) > 10) { saveT = 0; save(); }
   }
@@ -3475,6 +3534,7 @@
       ents.push({ y: o.y + o.h - 1, o });
     }
     drawGroundItems(t, x0, y0, x1, y1);
+    if (!inCrypt) drawDeathBags(t, x0, y0, x1, y1); // rodada 146
     RENDER.drawOnce("ground"); // poeira e rachaduras no chão, antes das entidades
     fx.drawGround(ctx, cam); // rodada 67: ondas de choque e marcas de impacto por baixo dos personagens
     AMBIENT.drawGround(ctx, cam, VW, VH, t, inCrypt); // rodada 75: poças depois da chuva
@@ -3559,6 +3619,21 @@
     const img = SPR[key]; if (!img) return;
     ctx.drawImage(img, Math.round(x * TILE - cam.x - (img.width - TILE) / 2), Math.round((y + 1) * TILE - cam.y - img.height * (1 - ((window.SPRITE_SINK || {})[key] || 0))));
   }
+  // rodada 146: saco de morte: bolsinha de couro com broche de caveira, sombra, brilho roxo pulsando e fagulhas subindo
+  const bagRef = (b) => ({ x: b.x, y: b.y, w: 1, h: 1, bag: b });
+  function drawDeathBags(t, x0, y0, x1, y1) {
+    const img = SPR.death_bag; if (!img) return;
+    for (const b of deathBags) {
+      if (b.x < x0 - 1 || b.x > x1 || b.y < y0 - 1 || b.y > y1) continue;
+      const cx = (b.x + 0.5) * TILE - cam.x, by = (b.y + 0.92) * TILE - cam.y, pulse = 0.5 + 0.5 * Math.sin(t * 3 + b.x);
+      ctx.save(); ctx.globalAlpha = 0.28 + 0.22 * pulse; ctx.fillStyle = "#b46cff";
+      ctx.beginPath(); ctx.ellipse(cx, by - 2, TILE * 0.5, TILE * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.45; ctx.fillStyle = "#000"; ctx.beginPath(); ctx.ellipse(cx, by - 2, TILE * 0.32, TILE * 0.1, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      const w = img.width, h = img.height, bob = Math.round(Math.sin(t * 2 + b.y) * 1.5);
+      ctx.drawImage(img, Math.round(cx - w / 2), Math.round(by - h - 2 + bob));
+      if (rand() < 0.06) ember(b.x + 0.3 + rand() * 0.4, b.y + 0.3, ["#d6a8ff", "#ffffff"]);
+    }
+  }
   function drawGroundItems(t, x0, y0, x1, y1) {
     const perTile = {};
     for (const g of groundItems) {
@@ -3640,6 +3715,8 @@
       return [`${R.verb}: ${R.name}`, ok ? "#ffffff" : "#ff6b5a", ok ? "" : `requer ${SKILLS[R.skill]} ${R.req}`];
     }
     if (p.kind === "loot") { const gs = groundItems.filter((g) => g.x === r.x && g.y === r.y); return [gs.map((g) => `${g.n}x ${g.name}`).join(", "), "#ffe680", "Pegar"]; }
+    if (p.kind === "deathbag") { const b = r.bag, n = b.items.reduce((t, it) => t + it.n, 0), m = Math.max(1, Math.ceil((b.until - Date.now()) / 60000));
+      return [b.owner === player.name ? "Seu saco de morte" : `Saco de morte de ${b.owner}`, "#d6a8ff", `${n} ite${n > 1 ? "ns" : "m"} · some em ${m} min · Abrir`]; }
     return {
       shop: ["Bento, o mercador", "#f5e27a", "Comprar, vender e encomendas"], guard: ["Guarda Ivo", "#9fd0ff", TUTORIAL[player.tut.step] ? "Tutorial e dicas" : "Dicas"],
       bank: ["Cofre da vila", "#f5e27a", "Guardar itens"], dummy: ["Boneco de treino", "#e8d9b0", "Golpeie e saia da área vermelha"], furnace: ["Fornalha", "#f5c060", "Fundir minério em barras"],
@@ -3674,7 +3751,7 @@
       const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }
