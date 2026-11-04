@@ -1030,7 +1030,7 @@
     for (let x = 0; x < Wd.W; x++) if (B[x] || B[(Wd.H - 1) * Wd.W + x]) { r.push("terra na borda de cima/baixo"); break; }
     for (let y = 0; y < Wd.H; y++) if (B[y * Wd.W] || B[y * Wd.W + Wd.W - 1]) { r.push("terra na borda dos lados"); break; }
     for (const v of Wd.VILLAGES) { const w = v.x1 - v.x0 + 1, h = v.y1 - v.y0 + 1; if (w < 32 || h < 30) r.push(`${v.key} ${w}x${h}`); }
-    if (Wd.DOCKS.length !== 10) r.push(Wd.DOCKS.length + " cais");
+    if (Wd.DOCKS.length !== 11 || !Wd.DOCKS.some((D) => D.key === "dock_tumba")) r.push(Wd.DOCKS.length + " cais"); /* rodada 142: + Porto da Tumba */
     for (const D of Wd.DOCKS) {
       if (!Wd.biomeAt(D.x, D.y) || Wd.biomeAt(D.x + D.dx, D.y + D.dy) || Wd.biomeAt(D.x + D.dx * D.len, D.y + D.dy * D.len)) r.push(D.key + " fora do litoral");
       if (!D.name || !D.keeper) r.push(D.key + " sem nome");

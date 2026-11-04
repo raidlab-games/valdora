@@ -590,7 +590,8 @@
       if (free(signAt)) deco("sign", "deco_sign", ...signAt, 1, 1, { label: `${D.name}: ${D.keeper} cuida do cais. Em breve, barcos para outras costas.` });
       // estradinha até a estrada (ou vila) mais perto
       const [sx, sy] = land(3, 0);
-      const pts = meander(routeRoad(sx, sy, (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; }, D.x + D.y), D.x, 3);
+      const to = D.roadTo && G.DOCKS.find((o) => o.key === D.roadTo), tx = to && to.x - to.dx * 3, ty = to && to.y - to.dy * 3; // rodada 142: estrada só até aquele cais
+      const pts = meander(routeRoad(sx, sy, to ? (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2 : (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; }, D.x + D.y), D.x, 3);
       if (pts.length) paint(pts.filter(([X, Y]) => Math.hypot(X - x, Y - y) > 2.5));
     }
   }

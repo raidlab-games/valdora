@@ -241,7 +241,7 @@ window.VD = (() => {
     spin: { name: "Golpe giratório", key: "Q", icon: "⟳", lvl: 5, cd: 8, mult: 1.2, desc: "Gira a lâmina e acerta todos os monstros ao seu redor." },
     dash: { name: "Investida", key: "E", icon: "➤", lvl: 12, cd: 12, mult: 1.3, range: 5, stun: 1.6, desc: "Avança até o alvo (até 5 passos) e o deixa atordoado." },
     // rodada 139: Corrida: 1,5x a velocidade por 2 s (parado não faz nada)
-    run: { name: "Corrida", key: "Shift", icon: "»", lvl: 1, cd: 10, mult: 1.5, dur: 2, desc: "Dispara a 1,5x da velocidade por 2 s, com o corpo inclinado e o vento atrás. Parado, não faz nada." },
+    run: { name: "Corrida", key: "Shift", icon: "»", lvl: 1, cd: 10, mult: 1.5, dur: 1, desc: "Dispara a 1,5x da velocidade por 1 s, com o corpo inclinado e o vento atrás. Parado, não faz nada." },
     smash: { name: "Golpe esmagador", key: "R", icon: "✸", lvl: 20, cd: 15, mult: 2.2, stun: 0.8, desc: "Carrega um golpe lento que sempre acerta, atordoa e solta uma onda de choque." },
   };
 

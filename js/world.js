@@ -249,7 +249,8 @@ window.ValdoraWorld = (() => {
   }
   // rodada 121: no litoral sul, Breu, Névoa e Dunas ficavam colados; o segundo cais da Mata Sombria vai para o meio da costa dela
   // e o do deserto para a ponta leste da costa sul (o ponto válido mais perto do alvo, varrendo tile a tile)
-  const DOCK_AT = { 2: [304, 492], 4: [516, 464] };
+  // rodada 142: o alvo do Cais da Névoa estava nas coordenadas de antes do mapa crescer e caía em cima do Cais do Breu
+  const DOCK_AT = { 2: [440, 760], 4: [516, 464] };
   const DOCKS = [], SPOTS = {};
   for (const B of BIOMES) {
     const c = SPOTS[B.n] = dockSpots(B.n); if (!c.length) continue;
@@ -267,6 +268,10 @@ window.ValdoraWorld = (() => {
     for (const B of BIOMES) for (const q of SPOTS[B.n] || []) { const d = Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))); if (d > bd) { bd = d; best = { ...q, biome: B.n }; } }
     if (!best) break; DOCKS.push({ ...best, key: "dock_x" + e, name: EXTRA_DOCK[e][0], keeper: EXTRA_DOCK[e][1], len: DOCK_LEN });
   }
+  // rodada 142: Porto da Tumba, na ponta sul do deserto (embaixo da Tumba do Faraó); a estrada dele vem só do Cais da Névoa
+  { const T = [665, 792], c = dockSpots(4, 1).filter((q) => q.dy > 0 && Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))) > 40);
+    if (c.length) { const z = c.reduce((p, q) => (Math.hypot(q.x - T[0], q.y - T[1]) < Math.hypot(p.x - T[0], p.y - T[1]) ? q : p));
+      DOCKS.push({ ...z, biome: 4, key: "dock_tumba", name: "Porto da Tumba", keeper: "Barqueiro Amon", len: DOCK_LEN, roadTo: "dock_darkwood1" }); } }
   // ---------- lagos novos (fora do quadro antigo): [cx, cy, raio, cardume, quantos] ----------
   const LAKES_G = [...sh(LAKES.map(([cx, cy, ...r]) => ({ x: cx, y: cy, r }))).map((o) => [o.x, o.y, ...o.r])];
   for (let [b, u, v, r] of [[1, 0.06, 0.48, 5], [1, 0.16, 0.90, 6], [1, 0.20, 0.45, 4.5], [2, 0.30, 0.80, 6], [2, 0.40, 0.55, 5], [3, 0.18, 0.30, 4.5], [3, 0.42, 0.36, 5],
