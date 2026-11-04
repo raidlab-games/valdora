@@ -3381,7 +3381,8 @@
     if (player.deadT > 0) { /* caído */ }
     else if (player.job && !player.path.length && !player.fineG && player.prog >= 1) doJob();
     else if (player.target && !player.path.length && !player.fineG && player.prog >= 1) doTarget();
-    if (tickN - player.lastHurt > 8 && tickN % ValdoraHome.regenTicks(player.home, !!player.buffs.descansado) === 0 && player.hp < maxHp()) { player.hp++; hudDirty = true; } // rodada 100: descansado regenera mais rápido (REST.regen)
+    // rodada 143: a vida só se recupera sozinha dentro das vilas; fora delas, só comida, poções e efeitos curam
+    if (inTown(player.x, player.y) && tickN - player.lastHurt > 8 && tickN % ValdoraHome.regenTicks(player.home, !!player.buffs.descansado) === 0 && player.hp < maxHp()) { player.hp++; hudDirty = true; } // rodada 100: descansado regenera mais rápido (REST.regen)
     if (tickN % 20 === 0) hudDirty = true; // relógio
     for (const k of Object.keys(player.buffs)) {
       if (BUFFS[k].regen && tickN % 2 === 0 && player.hp < maxHp() && player.deadT <= 0) { player.hp = Math.min(maxHp(), player.hp + BUFFS[k].regen); hudDirty = true; } // rodada 79: Tônico de vigor
