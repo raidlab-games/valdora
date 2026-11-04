@@ -20,15 +20,52 @@ window.ValdoraUI = (() => {
   const badgeImg = (id, title = "") => window.BADGES && ASSETS[BADGES[id]] ? `<img class="badge" src="${ASSETS[BADGES[id]]}" alt="" title="${esc(title)}">` : "";
   const affBadges = (e) => (e && e.aff || []).map((a) => badgeImg(a.id, affLine(a))).join("");
   const masterBadge = (isMaster) => isMaster ? badgeImg("obra", "Obra-prima: bônus extra nesta peça") : "";
-  // dica rica (HTML) das peças: nome na cor da raridade, selos e cada afixo numa linha
+  // rodada 161: nível de toda peça = o que ela pede para vestir. Arma: a classe; ferramenta: a coleta; peitoral forjado: Vitalidade;
+  // peças dos biomas, joias e secundárias: Combate; roupas de classe: a classe. Sem pedido nenhum: nível 1.
+  const itemOf = (x) => typeof x === "string" ? ITEMS[x] : x;
+  function reqsOf(x) {
+    const it = itemOf(x), r = []; if (!it || !it.slot) return r;
+    if (it.gear) r.push({ sk: RULES.weaponClass(it) || VD.GEAR[it.gear].skill, lvl: VD.GEAR[it.gear].tiers[it.tier].req || 1 });
+    if (it.need) r.push({ sk: "combate", lvl: it.need });
+    if (it.cls) r.push({ sk: it.cls, lvl: it.clsLvl || 1 });
+    return r.length ? r : [{ sk: "combate", lvl: 1 }];
+  }
+  const itemLvl = (x) => Math.max(1, ...reqsOf(x).map((q) => q.lvl));
+  let lvOf = null; const setLevels = (fn) => { lvOf = fn; }; // o jogo passa o nível de cada skill: o que ainda não dá fica vermelho
+  const reqOk = (x) => !lvOf || reqsOf(x).every((q) => lvOf(q.sk) >= q.lvl);
+  const reqText = (x) => reqsOf(x).map((q) => `${VD.SKILLS[q.sk]} ${q.lvl}`).join(" e ");
+  const rarOf = (x) => { const it = itemOf(x); return RARITY[it && it.rarity] || RARITY.comum; };
+  // "Nível 8 · Raro" para listas (loja, mesa, leilão); vermelho quando o herói ainda não veste
+  const lvRar = (x) => `<b class="lvtag${reqOk(x) ? "" : " no"}">Nível ${itemLvl(x)}</b> · <b style="color:${rarOf(x).color}">${esc(rarOf(x).name)}</b>`;
+  // números de uma peça (bônus + afixos + tier da forja); ferramentas contam o tier como "tool"
+  function statsOf(e) {
+    if (!e) return {};
+    const it = ITEMS[e.name], o = { ...(accBonus(e) || {}) };
+    if (it.gear) { const t = VD.GEAR[it.gear].tiers[it.tier];
+      if (it.gear === "espada") { o.acc = (o.acc || 0) + (t.acc || 0); o.dmg = (o.dmg || 0) + (t.dmg || 0); }
+      else if (it.gear === "armadura") o.def = (o.def || 0) + (t.def || 0);
+      else o.tool = t.bonus || 0; }
+    for (const k of Object.keys(o)) if (!o[k]) delete o[k];
+    return o;
+  }
+  // rodada 161: bloco fixo da dica de toda peça: nível, raridade, tipo, o que pede para vestir e tudo o que ela faz
+  function gearHead(s) {
+    const it = ITEMS[s.name]; if (!it || !it.slot) return "";
+    const R = rarOf(it), S = VD.EQUIP_SLOTS[it.slot], G = it.gear && VD.GEAR[it.gear], tool = G && it.gear !== "espada" && it.gear !== "armadura", ok = reqOk(it), st = statsOf(s);
+    const kind = it.sec ? `${VD.SEC[it.sec].name} · secundária do ${VD.SEC[it.sec].who}` : tool ? `Ferramenta · ${G.label}` : S ? S.name : "";
+    const lines = [bonusText(st),
+      tool && `Ferramenta nível ${(G.tiers[it.tier].bonus || 0) + 1}: coleta mais rápido e abre recursos melhores`,
+      it.bow && "Arco: atira flechas (flechas na secundária)", it.staff && "Cajado: usa orbe ou livro na secundária",
+      it.twoH ? "Duas mãos: não deixa usar escudo" : it.gear === "espada" && !it.bow && !it.staff ? "Uma mão: deixa usar escudo" : "",
+      it.pack && `+${it.pack.slots} espaços na mochila · +${it.pack.cap} kg de carga`, it.ammo && "Munição do Arqueiro: o maço vai todo para a aljava"].filter(Boolean);
+    return `<div class="tip-lv"><b class="lvtag${ok ? "" : " no"}">Nível ${itemLvl(it)}</b> · <b style="color:${R.color}">${esc(R.name)}</b>${kind ? ` · ${esc(kind)}` : ""}${s.aff ? " · peça única" : ""}</div>`
+      + `<small class="tip-req${ok ? "" : " no"}">requer ${esc(reqText(it))}</small>` + lines.map((l) => `<div>${esc(l)}</div>`).join("");
+  }
+  // dica rica (HTML) das peças: nome na cor da raridade, nível, raridade, atributos, selos e cada afixo numa linha
   function itemTip(s, hint) {
     const it = ITEMS[s.name], col = s.aff ? "#ffd84a" : it.rarity ? RARITY[it.rarity].color : "#fff";
-    return `<b style="color:${col}">${esc(s.name)}</b>` + (it.rarity ? `<br><small>${it.slot && VD.EQUIP_SLOTS[it.slot] ? esc(VD.EQUIP_SLOTS[it.slot].name) + " · " : ""}${esc(RARITY[it.rarity].name)}${s.aff ? " · peça única" : ""}</small>` : "")
-      + (it.bonus ? `<div>${esc(bonusText(it.bonus))}</div>` : "")
-      + (it.pack ? `<div>+${it.pack.slots} espaços na mochila · +${it.pack.cap} kg de carga</div>` : "") // rodada 112
-      + (it.need ? `<small>requer Combate ${it.need}</small><br>` : "")
-      + (it.cls ? `<small>requer ${esc(VD.SKILLS[it.cls])} ${it.clsLvl}</small><br>` : "") // rodada 155: peças de classe
-      + (VD.weightOf ? `<small>peso ${String(VD.weightOf(s.name)).replace(".", ",")} kg</small>` : "")
+    return `<b style="color:${col}">${esc(s.name)}</b>` + (it.slot ? gearHead(s) : (it.rarity ? `<br><small>${esc(RARITY[it.rarity].name)}</small>` : "") + (it.bonus ? `<div>${esc(bonusText(it.bonus))}</div>` : ""))
+      + (VD.weightOf ? `<small class="tip-w">peso ${String(VD.weightOf(s.name)).replace(".", ",")} kg</small>` : "")
       + (s.aff || []).map((a) => `<div class="tip-aff">${badgeImg(a.id)}${esc(affLine(a))}</div>`).join("")
       + (hint ? `<small class="tip-hint">${esc(hint)}</small>` : "");
   }
@@ -129,5 +166,5 @@ window.ValdoraUI = (() => {
     if (url === undefined) { const c = titleCanvas(text, col); url = c ? c.toDataURL() : null; if (tfCache.size > 120) tfCache.clear(); tfCache.set(key, url); }
     return url ? `<img class="tfont s${size}" src="${url}" alt="${esc(text)}">` : esc(text);
   }
-  return { setTitleFont, titleCanvas, titleHTML, TF_ORDER, esc, iconImg, isSpecial, itemColor, accBonus, accName, affLine, badgeImg, affBadges, masterBadge, itemTip, initTooltips, initHudToggle, paintSign, paintPost, paintStone, paintSignSheet };
+  return { reqsOf, itemLvl, setLevels, reqOk, reqText, rarOf, lvRar, statsOf, gearHead, setTitleFont, titleCanvas, titleHTML, TF_ORDER, esc, iconImg, isSpecial, itemColor, accBonus, accName, affLine, badgeImg, affBadges, masterBadge, itemTip, initTooltips, initHudToggle, paintSign, paintPost, paintStone, paintSignSheet };
 })();

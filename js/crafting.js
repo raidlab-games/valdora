@@ -4,7 +4,7 @@
 window.ValdoraCrafting = (() => {
   "use strict";
   function create(api) {
-    const { SMELT, CRAFT, GEAR, ITEMS, RARITY, SKILLS } = VD, { esc, iconImg } = ValdoraUI, { row, gearIcon, lockedIcon } = ValdoraDialogs, bonusText = ValdoraRules.bonusText;
+    const { SMELT, CRAFT, GEAR, ITEMS, RARITY, SKILLS } = VD, { esc, iconImg, itemTip } = ValdoraUI, { row, gearIcon, lockedIcon } = ValdoraDialogs, bonusText = ValdoraRules.bonusText;
     const { lv, count, hasMats, matsText, gearEffect } = api, pre = (k) => (api.prereqText ? api.prereqText(k) : "");
     // rodada 145: receita em blocos separados: o que o item dá, os materiais (branco = tem, vermelho = falta, com quanto tem)
     // e, em cima do botão, o nível pedido (vermelho se ainda não tem)
@@ -40,8 +40,9 @@ window.ValdoraCrafting = (() => {
           const owned = r.bag && player.bags.includes(n), needBag = r.req && !player.bags.includes(r.req);
           const it = ITEMS[n], icon = it ? iconImg(n) : `<img src="${ASSETS.item_pouch || ASSETS.item_leather}" alt="">`;
           const why = owned ? "já tem" : lvl < r.lvl ? `requer ${SKILLS[sk]} ${r.lvl}` : needBag ? `requer ${r.req}` : pre(n) ? pre(n) : !hasMats(r.mats) ? "faltam materiais" : !here ? (heavy ? "só na bigorna" : "só na mesa de artesanato") : "";
-          const what = (r.desc || (it && it.bonus ? `${RARITY[it.rarity].name}: ${bonusText(it.bonus)}` : "")) + (it && it.cls ? ` · vestir: ${SKILLS[it.cls]} ${it.clsLvl}` : "");
-          return craftRow(icon, `${esc(n)}${owned ? " <small>(já tem)</small>" : ""}`, esc(what), r.mats, r.lvl, lvl >= r.lvl, r.xp,
+          const eq = it && it.slot, what = (r.desc || (it && it.bonus ? `${eq ? "" : RARITY[it.rarity].name + ": "}${bonusText(it.bonus)}` : "")) + (eq ? ` · ${it.gear ? "usar" : "vestir"}: ${ValdoraUI.reqText(n)}` : ""); // rodada 161
+          const title = eq ? `<span data-tip="${esc(itemTip({ name: n }))}" style="color:${ValdoraUI.rarOf(n).color}">${esc(n)}</span>` : esc(n);
+          return craftRow(icon, `${title}${owned ? " <small>(já tem)</small>" : ""}`, (eq ? ValdoraUI.lvRar(n) + " · " : "") + esc(what), r.mats, r.lvl, lvl >= r.lvl, r.xp,
             `<button data-craft="${esc(n)}" ${why ? "disabled" : ""} title="${why}">${heavy ? "Forjar" : "Criar"}</button>`);
         }).join("")).join("");
     }
@@ -61,7 +62,7 @@ window.ValdoraCrafting = (() => {
             const pq = pre("forge:" + name), why = !lvOk ? `requer Ferraria ${ff.lvl}` : pq ? pq : !mats ? "faltam materiais" : "";
             const extra = v === "bow" ? " · atira flechas" : v === "staff" ? " · usa orbe ou livro" : v === "two" ? ` · duas mãos, +${ITEMS[name].bonus.dmg} dano, sem escudo` : k === "espada" ? " · uma mão (deixa usar escudo)" : "";
             const useSk = ValdoraRules.weaponClass(ITEMS[name]) || g.skill; // rodada 151: a arma pede o nível da classe dela
-            html += craftRow(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${extra} · usar: ${SKILLS[useSk]} ${t.req || 1}`, ff.mats, ff.lvl, lvOk, ff.xp,
+            html += craftRow(lvOk ? iconImg(name) : lockedIcon(g, t), `<span data-tip="${esc(itemTip({ name }))}" style="color:${ValdoraUI.rarOf(name).color}">${esc(name)}</span>`, `${ValdoraUI.lvRar(name)} · ${gearEffect(k, t)}${extra} · usar: ${SKILLS[useSk]} ${t.req || 1}`, ff.mats, ff.lvl, lvOk, ff.xp,
               `<button data-forge="${k}:${i}${v ? ":" + v : ""}" ${!why ? "" : "disabled"} title="${why}">Forjar</button>`);
           }
         });

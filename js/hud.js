@@ -10,28 +10,16 @@ window.ValdoraHud = (() => {
     const { QUEST, TICK, combatStats, gearName, masterBadge, maxHp, tier, totalLevel } = api;
     // rodada 113: resumo do item ao passar o mouse na mochila: o que ele faz e quanto muda em relação ao que está vestido
     const ST = { acc: "acerto", dmg: "dano", def: "defesa", gather: "% coleta", tool: "ferramenta" };
-    function statsOf(e) { // números de uma peça (bônus + afixos + tier da forja); ferramentas contam o tier como "ferramenta"
-      if (!e) return {};
-      const it = ITEMS[e.name], o = { ...(accBonus(e) || {}) };
-      if (it.gear) { const t = GEAR[it.gear].tiers[it.tier];
-        if (it.gear === "espada") { o.acc = (o.acc || 0) + (t.acc || 0); o.dmg = (o.dmg || 0) + (t.dmg || 0); }
-        else if (it.gear === "armadura") o.def = (o.def || 0) + (t.def || 0);
-        else o.tool = t.bonus || 0; }
-      for (const k of Object.keys(o)) if (!o[k]) delete o[k];
-      return o;
-    }
+    const statsOf = ValdoraUI.statsOf; // rodada 161: a mesma conta da dica das lojas (js/ui.js)
+    const lvBadge = (n) => `<i class="lv${ValdoraUI.reqOk(n) ? "" : " no"}">${ValdoraUI.itemLvl(n)}</i>`; // rodada 161: nível no canto da peça
     const sgn = (v) => (v > 0 ? `<b class="up">+${v}</b>` : `<b class="down">−${-v}</b>`);
     function invTip(s, player) {
       const it = ITEMS[s.name], kg = (w) => String(Math.round(w * 10) / 10).replace(".", ",");
       const col = s.aff ? "#ffd84a" : it.rarity ? RARITY[it.rarity].color : "#fff";
       let h = `<b style="color:${col}">${esc(accName(s))}</b>${s.n > 1 ? ` <small>x${s.n}</small>` : ""}`;
       if (it.slot) {
-        const S = VD.EQUIP_SLOTS[it.slot], cur = player.equip[it.slot], mine = statsOf(s), now = statsOf(cur);
-        h += `<br><small>${esc(S.name)}${it.rarity ? " · " + esc(RARITY[it.rarity].name) : ""}${it.need ? ` · requer Combate ${it.need}` : ""}</small>`;
-        const line = Object.entries(mine).map(([k, v]) => `+${v} ${ST[k] || k}`).join(", ");
-        if (line) h += `<div>${esc(line)}</div>`;
-        if (it.pack) h += `<div>+${it.pack.slots} espaços · +${it.pack.cap} kg de carga</div>`;
-        if (it.ammo) h += `<div>munição do Arqueiro</div>`;
+        const cur = player.equip[it.slot], mine = statsOf(s), now = statsOf(cur);
+        h += ValdoraUI.gearHead(s); // rodada 161: nível, raridade, o que pede e tudo o que faz
         if (cur && cur.name !== s.name) {
           const keys = [...new Set([...Object.keys(mine), ...Object.keys(now)])], d = keys.map((k) => [k, (mine[k] || 0) - (now[k] || 0)]).filter(([, v]) => v);
           const cp = cur && ITEMS[cur.name].pack;
@@ -192,7 +180,7 @@ window.ValdoraHud = (() => {
           const tip = `${s.name}${it.heal ? ` · cura ${it.heal} (clique para comer)` : ""}${B ? ` · ${B.name} por ${B.ticks * TICK} s (clique para beber)` : ""}${it.cook ? (level(player.xp.culinaria) < it.cookLvl ? ` · asse numa fogueira (requer Culinária ${it.cookLvl})` : ` · asse numa fogueira (${Math.round(RULES.burnChance(level(player.xp.culinaria), it.cookLvl) * 100)}% de queimar)`) : ""} · vale ${it.price} · clique direito larga no chão`;
           const tip2 = it.slot ? `${accName(s)} · ${RARITY[it.rarity].name}${s.aff ? " com afixos" : ""} · ${bonusText(accBonus(s))} · clique para equipar` : tip;
           const tipAttr = `data-tip="${esc(invTip(s, player))}" aria-label="${esc(tip2)}"`; // rodada 113: resumo com a comparação; o texto curto vai para o leitor de tela
-          return `<div class="slot${isSpecial(s.name) || s.aff ? " rare" : ""}${s.aff ? " affix" : ""}" data-i="${i}" data-drag="inv:${i}" data-to="inv:${i}" draggable="true" tabindex="${i === rov ? 0 : -1}" role="button" ${tipAttr} ${it.rarity ? `style="border-color:${RARITY[it.rarity].color}"` : ""}>${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}${it.heal && !s.name.startsWith("Poção") && ASSETS.icon_heal_small ? `<i class="heal"><img src="${ASSETS.icon_heal_small}" alt="">${it.heal}</i>` : ""}${it.cook && ASSETS.icon_cook_level && RULES.burnChance(level(player.xp.culinaria), it.cookLvl) === 0 ? `<img class="cookok" src="${ASSETS.icon_cook_level}" alt="" title="Não queima mais no seu nível">` : ""}${s.aff ? `<i class="aff">${affBadges(s)}</i>` : ""}</div>`;
+          return `<div class="slot${isSpecial(s.name) || s.aff ? " rare" : ""}${s.aff ? " affix" : ""}" data-i="${i}" data-drag="inv:${i}" data-to="inv:${i}" draggable="true" tabindex="${i === rov ? 0 : -1}" role="button" ${tipAttr} ${it.rarity ? `style="border-color:${RARITY[it.rarity].color}"` : ""}>${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}${it.heal && !s.name.startsWith("Poção") && ASSETS.icon_heal_small ? `<i class="heal"><img src="${ASSETS.icon_heal_small}" alt="">${it.heal}</i>` : ""}${it.cook && ASSETS.icon_cook_level && RULES.burnChance(level(player.xp.culinaria), it.cookLvl) === 0 ? `<img class="cookok" src="${ASSETS.icon_cook_level}" alt="" title="Não queima mais no seu nível">` : ""}${s.aff ? `<i class="aff">${affBadges(s)}</i>` : ""}${it.slot ? lvBadge(s.name) : ""}</div>`;
         }).join("") + `<button class="craft-btn">Artesanato · criar itens</button>`;
         if (fi != null) { const el = $("tab-inv").querySelector(`[data-i="${fi}"]`) || $("tab-inv").querySelector(".slot[tabindex]"); if (el) el.focus(); }
       } else if (hudTab === "skills") {
@@ -211,8 +199,8 @@ window.ValdoraHud = (() => {
           const phSec = hs ? ph(sk, hs.empty) : ph("municao", S.empty);
           if (S.sec && !e && w && w.twoH) return `<div class="dslot empty locked" title="${esc(player.equip.arma.name)} usa as duas mãos: sem escudo."><span class="q">${phSec}</span><small>${S.name}</small></div>`;
           if (S.sec && !e) return `<div class="dslot empty" title="${S.name}: ${hs ? esc(hs.name.toLowerCase()) : "vazio"} (equipe pela mochila)"><span class="q">${phSec}</span><small>${S.name}</small></div>`;
-          if (S.sec && e && ITEMS[e.name].ammo) return `<div class="dslot" data-unequip="${k}" style="border-color:${itemColor(e.name)}" data-tip="${esc(itemTip(e, `${e.n} na aljava · clique para guardar`))}">${iconImg(e.name)}<i class="aff ammo">${e.n}</i><small>${S.name}</small></div>`;
-          return `<div class="dslot${e ? "" : " empty"}" ${e ? `data-unequip="${k}" style="border-color:${e.aff ? "#ffd84a" : itemColor(e.name)}" data-tip="${esc(itemTip(e, "clique para guardar"))}"` : `title="${S.name}: vazio (equipe pela mochila)"`}>${e ? iconImg(e.name) + (e.aff || e.master ? `<i class="aff">${affBadges(e)}${e.master ? masterBadge(k === "armadura" ? "armadura" : ITEMS[e.name].gear) : ""}</i>` : "") : `<span class="q">${ph(k, S.empty)}</span>`}<small>${S.name}</small></div>`;
+          if (S.sec && e && ITEMS[e.name].ammo) return `<div class="dslot" data-unequip="${k}" style="border-color:${itemColor(e.name)}" data-tip="${esc(itemTip(e, `${e.n} na aljava · clique para guardar`))}">${iconImg(e.name)}<i class="aff ammo">${e.n}</i>${lvBadge(e.name)}<small>${S.name}</small></div>`;
+          return `<div class="dslot${e ? "" : " empty"}" ${e ? `data-unequip="${k}" style="border-color:${e.aff ? "#ffd84a" : itemColor(e.name)}" data-tip="${esc(itemTip(e, "clique para guardar"))}"` : `title="${S.name}: vazio (equipe pela mochila)"`}>${e ? lvBadge(e.name) + iconImg(e.name) + (e.aff || e.master ? `<i class="aff">${affBadges(e)}${e.master ? masterBadge(k === "armadura" ? "armadura" : ITEMS[e.name].gear) : ""}</i>` : "") : `<span class="q">${ph(k, S.empty)}</span>`}<small>${S.name}</small></div>`;
         };
         const st = combatStats();
         $("tab-combat").innerHTML = `<div class="styles">${Object.entries(STYLES).map(([k, s]) => `<button data-style="${k}" class="${player.style === k ? "on" : ""}" title="${esc(s.desc)}">${s.name}</button>`).join("")}</div>

@@ -961,3 +961,14 @@ button.link:hover { color: #cfe3ff; }
 #skillbar .mount-slot.on { border-color: #6fbf5a; box-shadow: 0 0 0 2px #000, 0 0 10px #6fbf5a88; }
 #skillbar .mount-slot.locked img.ic { filter: grayscale(1) brightness(.6); }
 #skillbar .mount-slot.combat { border-color: #d83a2a; box-shadow: 0 0 0 2px #000, 0 0 10px #ff3a2a99; } /* rodada 159: em combate */
+
+/* rodada 161: nível de toda peça no canto do espaço (vermelho = ainda não dá para vestir), nas listas e na dica */
+.slot i.lv, .dslot i.lv { position: absolute; left: 1px; top: 1px; z-index: 1; font: bold 10px/1 "Valdora Pixel", "Courier New", monospace; font-style: normal; color: #ffe9a8; background: #000b; padding: 1px 2px 0; border-radius: 2px; pointer-events: none; }
+.slot i.lv.no, .dslot i.lv.no { color: #ff6b5a; }
+b.lvtag { color: #ffe9a8; } b.lvtag.no { color: #ff6b5a; }
+#tip .tip-lv { margin-top: 2px; }
+#tip .tip-req, #tip .tip-w { display: block; }
+#tip .tip-req.no { color: #ff6b5a; opacity: 1; }
+#market .mk-item small.rar { display: none; }
+#market .mk-row > span.mk-no { color: #ff6b5a; }
+@media (max-width: 760px) { #market .mk-item small.rar { display: inline; } }

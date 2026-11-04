@@ -1248,6 +1248,7 @@
   // ---------- Jogador ----------
   let player = null;
   const lv = (s) => RULES.skillLevel(s, player.xp[s]); // rodada 151: classes têm curva própria
+  ValdoraUI.setLevels(lv); // rodada 161: as dicas pintam de vermelho a peça que o herói ainda não veste
   // rodada 104: o nível vem da peça vestida (arma/ferramenta no espaço "arma", peitoral no "armadura")
   const NO_GEAR = { espada: { name: "Sem arma", acc: 0, dmg: 0 }, armadura: { name: "Sem peitoral", def: 0 } };
   const gearItem = (k) => { const e = player.equip[k === "armadura" ? "armadura" : "arma"], it = e && ITEMS[e.name]; return it && it.gear === k ? e : null; };
@@ -3363,7 +3364,7 @@
     else if (act === "craft") { SND.play("ui"); openDlg("craft", null); }
     else if (act === "info") {
       const w = VD.weightOf(s.name), what = it.slot ? `${VD.EQUIP_SLOTS[it.slot].name.toLowerCase()} · ${bonusText(accBonus(s)) || "sem bônus"}` : it.heal ? `cura ${it.heal}` : it.buff ? BUFFS[it.buff].name : it.cook ? `cru · asse com Culinária ${it.cookLvl}` : it.quest ? "item de missão" : "material";
-      log(`${accName(s)}: ${what}${it.need ? ` · requer Combate ${it.need}` : ""} · peso ${String(w).replace(".", ",")} kg (x${s.n} = ${String(Math.round(w * s.n * 10) / 10).replace(".", ",")} kg) · vale ${it.price} moedas.`, "dim");
+      log(`${accName(s)}: ${what}${it.slot ? ` · nível ${ValdoraUI.itemLvl(it)}, ${ValdoraUI.rarOf(it).name.toLowerCase()} (requer ${ValdoraUI.reqText(it)})` : ""} · peso ${String(w).replace(".", ",")} kg (x${s.n} = ${String(Math.round(w * s.n * 10) / 10).replace(".", ",")} kg) · vale ${it.price} moedas.`, "dim");
     }
     else if (act === "drop1") { if (s.n > 1 && !s.aff) { s.n--; hudDirty = true; dropItem(s.name, 1, player.x, player.y); log(`Você largou 1x ${s.name} no chão.`, "dim"); } else dropSlot(i); }
     else if (act === "drop") dropSlot(i);

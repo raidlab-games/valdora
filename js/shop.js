@@ -5,14 +5,18 @@ window.ValdoraShop = (() => {
   function create(api) {
     const { ITEMS, SKILLS, BUFFS, GEAR, SHOP_ITEMS } = VD, { esc, iconImg, itemTip, accName, accBonus, affBadges } = ValdoraUI, { row, gearIcon, lockedIcon } = ValdoraDialogs;
     const bonusText = ValdoraRules.bonusText, { count, lv, gearEffect, questHtml, TICK } = api;
+    // rodada 161: toda peça mostra nível e raridade (e a dica completa ao passar o mouse na linha)
+    const { lvRar, reqText, reqOk, rarOf } = ValdoraUI, eqTag = (n) => ITEMS[n].slot ? `${lvRar(n)} · ` : "";
+    const tipRow = (n, h, hint) => ITEMS[n] && ITEMS[n].slot ? h.replace('<div class="row">', `<div class="row" data-tip="${esc(itemTip({ name: n }, hint))}">`) : h;
+    const nameCol = (n, txt) => ITEMS[n] && ITEMS[n].slot ? `<span style="color:${rarOf(n).color}">${txt}</span>` : txt;
     function html(tab) {
       const player = api.player(); let html = "";
         if (tab === "sell") {
           const rows = player.inv.filter((s) => s && ITEMS[s.name].price > 0);
           html = rows.length ? rows.map((s) => s.aff
             ? row(iconImg(s.name), `<span style="color:#ffd84a" data-tip="${esc(itemTip(s))}">${esc(accName(s))}</span> ${affBadges(s)}`, bonusText(accBonus(s)), ITEMS[s.name].price * 2, `<button data-sellslot="${player.inv.indexOf(s)}">Vender</button>`)
-            : row(iconImg(s.name), `${esc(s.name)} <small>x${s.n}</small>`, "", ITEMS[s.name].price,
-            `<button data-sell="${esc(s.name)}" data-n="1">1</button><button data-sell="${esc(s.name)}" data-n="all">Tudo</button>`)).join("")
+            : tipRow(s.name, row(iconImg(s.name), `${nameCol(s.name, esc(s.name))} <small>x${s.n}</small>`, ITEMS[s.name].slot ? lvRar(s.name) : "", ITEMS[s.name].price,
+            `<button data-sell="${esc(s.name)}" data-n="1">1</button><button data-sell="${esc(s.name)}" data-n="all">Tudo</button>`))).join("")
             + `<button class="wide" data-sellall="1">Vender tudo, menos comida e barras</button>` : `<p class="empty">Nada para vender. Traga madeira, minério, peixe ou espólios de monstros.</p>`;
         } else if (tab === "orders") {
           html = questHtml("shop") + `<p class="empty">Entregue o pedido completo e receba moedas e XP. Novos pedidos acompanham seus níveis.</p>` + player.orders.map((o, i) => {
@@ -24,15 +28,15 @@ window.ValdoraShop = (() => {
         } else {
           html = (api.homeShop ? api.homeShop() : "") + SHOP_ITEMS.map((n) => { // rodada 100: escritura do lote e banco
             const it = ITEMS[n], B = it.buff && BUFFS[it.buff];
-            const sub = it.ammo ? `maço de ${it.buyN || 1} · secundária do Arqueiro` : it.sec ? `secundária do ${VD.SEC[it.sec].who} · ${bonusText(it.bonus || {})}` : it.slot ? `${VD.EQUIP_SLOTS[it.slot].name} · ${bonusText(it.bonus || {})}` : it.heal ? `cura ${it.heal}` : `${B.name}: ${[B.acc && `+${B.acc} acerto`, B.dmg && `+${B.dmg} dano`, B.def && `+${B.def} defesa`].filter(Boolean).join(", ")} por ${B.ticks * TICK} s`;
-            return row(iconImg(n), esc(n) + (it.buyN ? ` x${it.buyN}` : ""), sub, it.buy, `<button data-buy="${esc(n)}" ${player.coins < it.buy ? "disabled" : ""}>Comprar</button>`); }).join("");
+            const sub = eqTag(n) + (it.ammo ? `maço de ${it.buyN || 1} · secundária do Arqueiro` : it.sec ? `secundária do ${VD.SEC[it.sec].who} · ${bonusText(it.bonus || {})}` : it.slot ? `${VD.EQUIP_SLOTS[it.slot].name} · ${bonusText(it.bonus || {})}` : it.heal ? `cura ${it.heal}` : !B ? "material de artesanato" : `${B.name}: ${[B.acc && `+${B.acc} acerto`, B.dmg && `+${B.dmg} dano`, B.def && `+${B.def} defesa`].filter(Boolean).join(", ")} por ${B.ticks * TICK} s`);
+            return tipRow(n, row(iconImg(n), nameCol(n, esc(n)) + (it.buyN ? ` x${it.buyN}` : ""), sub, it.buy, `<button data-buy="${esc(n)}" ${player.coins < it.buy ? "disabled" : ""}>Comprar</button>`)); }).join("");
           // rodada 104: armas, ferramentas e peitorais à venda (vão para a mochila); o estelar só sai da bigorna
           for (const [k, g] of Object.entries(GEAR)) g.tiers.forEach((t, i) => {
             if (!t.cost || t.rolls || (t.req || 1) > lv(g.skill) + 8) return;
             for (const name of k === "espada" && t.bow ? [t.name, t.bow] : [t.name]) {
-              const lvOk = lv(g.skill) >= (t.req || 1), money = player.coins >= t.cost;
-              html += row(lvOk ? iconImg(name) : lockedIcon(g, t), esc(name), `${gearEffect(k, t)}${ITEMS[name].bow ? " · atira flechas" : ""} · ${lvOk ? "" : '<b class="lock">'}usar: ${SKILLS[g.skill]} ${t.req || 1}${lvOk ? "" : "</b>"}`, t.cost,
-                `<button data-buy="${esc(name)}" ${money ? "" : "disabled"} title="${!money ? "Moedas insuficientes" : ""}">Comprar</button>`);
+              const lvOk = reqOk(name), money = player.coins >= t.cost; // rodada 161: arco e cajado pedem a classe deles
+              html += tipRow(name, row(lvOk ? iconImg(name) : lockedIcon(g, t), nameCol(name, esc(name)), `${lvRar(name)} · ${gearEffect(k, t)}${ITEMS[name].bow ? " · atira flechas" : ""} · ${lvOk ? "" : '<b class="lock">'}requer ${reqText(name)}${lvOk ? "" : "</b>"}`, t.cost,
+                `<button data-buy="${esc(name)}" ${money ? "" : "disabled"} title="${!money ? "Moedas insuficientes" : ""}">Comprar</button>`));
             }
           });
         }

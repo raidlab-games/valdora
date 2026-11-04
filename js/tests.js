@@ -823,6 +823,18 @@
     if (RU.MOB_XP !== 0.2) r.push("monstro continua 5x");
     return miss(r);
   });
+  test("rodada 161: toda peça tem nível e raridade, e a dica sempre mostra os dois e o que ela pede", () => {
+    const r = [], UI = ValdoraUI;
+    for (const [n, it] of Object.entries(ITEMS)) { if (!it.slot) continue;
+      if (!VD.RARITY[it.rarity]) r.push("raridade " + n);
+      if (!it.need && !it.cls && !(it.gear && VD.GEAR[it.gear].tiers[it.tier].req) && it.rarity !== "comum") r.push("sem nível " + n);
+      const t = UI.itemTip({ name: n }); if (!t.includes("Nível " + UI.itemLvl(n)) || !t.includes(VD.RARITY[it.rarity].name) || !t.includes("requer ")) r.push("dica " + n); }
+    if (UI.itemLvl("Anel ancestral") !== 18 || UI.itemLvl("Colete de couro de lobo") !== 1 || UI.itemLvl("Lâmina de lumita") !== 24 || UI.itemLvl("Espada gasta") !== 1) r.push("níveis");
+    if (UI.reqText("Arco de ferro") !== "Arqueiro 8") r.push("arco " + UI.reqText("Arco de ferro"));
+    const P = { coins: 0, inv: [{ name: "Anel ancestral", n: 1 }], orders: [], quests: {} }, SH = ValdoraShop.create({ player: () => P, count: () => 0, lv: () => 1, gearEffect: () => "", questHtml: () => "", TICK: 0.6 });
+    try { const h = SH.html("buy"); if (!h.includes("Pedra") || !h.includes("Nível ")) r.push("aba Comprar"); if (!SH.html("sell").includes("Nível 18")) r.push("aba Vender"); } catch (e) { r.push("banca quebrou: " + e.message); } // a Pedra (material) quebrava a aba Comprar
+    return miss(r);
+  });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];
     r.push(a.type === b.type && a.n === b.n && !MOBS[a.type].boss && !MOBS[a.type].noBounty && a.n >= 8 && a.n <= 12);

@@ -27,8 +27,7 @@ window.ValdoraAuction = (() => {
       : ["capacete", "calca", "botas", "capa"].includes(it.slot) ? "roupas" : ["anel", "amuleto", "bracelete"].includes(it.slot) ? "acessorios" : it.slot === "mochila" ? "mochilas"
       : it.region ? "regiao" : it.heal || it.buff ? "consumiveis" : "materiais";
     const classOf = (it) => it.sec === "escudo" || it.onlyHero === "hero_1" ? "hero_1" : it.bow || it.sec === "flecha" ? "hero_2" : it.sec === "orbe" ? "hero_3" : "todas";
-    const lvlOf = (it) => it.need || (it.gear ? GEAR[it.gear].tiers[it.tier].req || 0 : 0);
-    const skillOf = (it) => it.need ? "combate" : it.gear ? GEAR[it.gear].skill : "combate";
+    const lvlOf = (it) => it.slot ? ValdoraUI.itemLvl(it) : 0; // rodada 161: toda peça tem nível (js/ui.js reqsOf)
 
     function pool() { // tudo o que tem valor; o equipamento só até ~30 níveis acima do Combate do herói
       const L = Math.max(1, api.lv("combate"));
@@ -99,7 +98,7 @@ window.ValdoraAuction = (() => {
     const isOpen = () => !el.hidden;
     function open() { el.hidden = false; (document.getElementById("game") || document.body).classList.add("market-open"); render(); api.opened && api.opened(); }
     function close() { el.hidden = true; (document.getElementById("game") || document.body).classList.remove("market-open"); }
-    function usableBy(it, p) { const c = classOf(it); return (c === "todas" || c === p.hero) && lvlOf(it) <= api.lv(skillOf(it)); }
+    function usableBy(it, p) { const c = classOf(it); return (c === "todas" || c === p.hero) && ValdoraUI.reqsOf(it).every((q) => api.lv(q.sk) >= q.lvl); }
 
     function buyHtml() {
       const p = api.player(), A = st(), O = offers(), got = A.bought[O.key] || [];
@@ -108,7 +107,7 @@ window.ValdoraAuction = (() => {
       const q = F.q.trim().toLowerCase(), lmin = +F.lmin || 0, lmax = F.lmax === "" ? Infinity : +F.lmax, pmax = F.pmax === "" ? Infinity : +F.pmax;
       rows = rows.filter((o) => { const it = ITEMS[o.name]; return (!q || o.name.toLowerCase().includes(q)) && (F.cat === "todas" || catOf(it) === F.cat) && (F.cls === "todas" || classOf(it) === F.cls || classOf(it) === "todas" && F.cls !== "todas" && it.slot && !it.sec && !it.bow && !it.onlyHero)
         && (F.rar === "todas" || it.rarity === F.rar) && lvlOf(it) >= lmin && lvlOf(it) <= lmax && o.unit <= pmax && (!F.usable || usableBy(it, p)); });
-      const R = { comum: 0, raro: 1, epico: 2 }, S = { preco: (a, b) => a.unit - b.unit, preco_d: (a, b) => b.unit - a.unit, nivel: (a, b) => lvlOf(ITEMS[b.name]) - lvlOf(ITEMS[a.name]),
+      const R = { comum: 0, raro: 1, epico: 2, lendario: 3 }, S = { preco: (a, b) => a.unit - b.unit, preco_d: (a, b) => b.unit - a.unit, nivel: (a, b) => lvlOf(ITEMS[b.name]) - lvlOf(ITEMS[a.name]),
         nome: (a, b) => a.name.localeCompare(b.name, "pt-BR"), raridade: (a, b) => (R[ITEMS[b.name].rarity] ?? -1) - (R[ITEMS[a.name].rarity] ?? -1) }[F.sort];
       rows.sort(S);
       const opt = (o, v) => Object.entries(o).map(([k, n]) => `<option value="${k}"${v === k ? " selected" : ""}>${esc(n)}</option>`).join("");
@@ -116,7 +115,7 @@ window.ValdoraAuction = (() => {
           <input id="mk-q" type="search" placeholder="Buscar item pelo nome" value="${esc(F.q)}" aria-label="Buscar item">
           <select id="mk-cat" aria-label="Categoria">${opt(CATS, F.cat)}</select>
           <select id="mk-cls" aria-label="Classe">${opt(CLS, F.cls)}</select>
-          <select id="mk-rar" aria-label="Raridade">${opt({ todas: "Toda raridade", comum: "Comum", raro: "Raro", epico: "Épico" }, F.rar)}</select>
+          <select id="mk-rar" aria-label="Raridade">${opt({ todas: "Toda raridade", comum: "Comum", raro: "Raro", epico: "Épico", lendario: "Lendário" }, F.rar)}</select>
           <label>Nível <input id="mk-lmin" type="number" min="0" placeholder="de" value="${esc(F.lmin)}"> – <input id="mk-lmax" type="number" min="0" placeholder="até" value="${esc(F.lmax)}"></label>
           <label>Preço máx. <input id="mk-pmax" type="number" min="0" placeholder="por unidade" value="${esc(F.pmax)}"></label>
           <label class="chk"><input id="mk-usable" type="checkbox"${F.usable ? " checked" : ""}> Só o que posso usar</label>
@@ -127,8 +126,8 @@ window.ValdoraAuction = (() => {
         <div class="mk-table"><div class="mk-row mk-th"><span>Item</span><span>Categoria</span><span>Nível</span><span>Raridade</span><span>Vendedor</span><span>Preço</span><span></span></div>
         ${rows.map((o) => { const it = ITEMS[o.name], rc = it.rarity ? RARITY[it.rarity] : null, lv = lvlOf(it), cls = classOf(it);
           return `<div class="mk-row${o.mine ? " mine" : ""}" data-tip="${esc(itemTip({ name: o.name, n: o.n }, o.mine ? "seu lote" : "lote de " + o.seller))}">
-            <span class="mk-item">${iconImg(o.name)}<b style="color:${rc ? rc.color : "#e8dcc0"}">${o.n > 1 ? o.n + "x " : ""}${esc(o.name)}</b>${cls !== "todas" ? `<small>${CLS[cls]}</small>` : ""}</span>
-            <span>${esc(CATS[catOf(it)])}</span><span>${lv ? lv : "–"}</span><span>${rc ? rc.name : "–"}</span><span>${esc(o.seller)}</span>
+            <span class="mk-item">${iconImg(o.name)}<b style="color:${rc ? rc.color : "#e8dcc0"}">${o.n > 1 ? o.n + "x " : ""}${esc(o.name)}</b>${cls !== "todas" ? `<small>${CLS[cls]}</small>` : ""}${it.slot && rc ? `<small class="rar" style="color:${rc.color}">nv ${lv} · ${rc.name}</small>` : ""}</span>
+            <span>${esc(CATS[catOf(it)])}</span><span${it.slot && !ValdoraUI.reqOk(it) ? ' class="mk-no"' : ""}>${lv ? lv : "–"}</span><span>${rc ? rc.name : "–"}</span><span>${esc(o.seller)}</span>
             <span class="mk-price">${o.price.toLocaleString("pt-BR")}${o.n > 1 ? `<small>${o.unit} cada</small>` : ""}</span>
             <span>${o.mine ? `<em>à venda</em>` : `<button data-mbuy="${o.i}" ${p.coins < o.price ? "disabled" : ""}>Comprar</button>`}</span></div>`; }).join("") || `<p class="empty">Nenhum lote com esses filtros.</p>`}</div>`;
     }

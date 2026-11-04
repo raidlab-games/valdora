@@ -1671,6 +1671,18 @@ window.VD = (() => {
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
   }
+  // ---------- rodada 161: toda peça tem nível ----------
+  // As que ainda não pediam nada ganham o Combate do material e do mapa: couro do campo 2 a 6, ferro e âmbar 8, caçador 10 a 12,
+  // lumita e chefes do Planalto 15 a 20; joias dos mapas novos no nível das peças do mesmo metal; mochilas no nível da receita.
+  // As roupas iniciais, as da loja e as gastas ou de pedra ficam no nível 1 (js/ui.js reqsOf).
+  const ITEM_LVL = { "Botas de couro": 2, "Capuz de couro": 3, "Calça de couro": 3, "Anel de cobre": 3, "Capa de pele": 4, "Amuleto de âmbar": 6,
+    "Flecha de ferro": 8, "Escudo de ferro": 8, "Orbe de âmbar": 8, "Grimório de âmbar": 8, "Bracelete de ferro": 8, "Mochila de couro": 8,
+    "Anel do caçador": 10, "Botas de viajante": 10, "Capa do caçador": 10, "Amuleto do coletor": 12, "Amuleto de musgo": 12,
+    "Flecha de lumita": 15, "Escudo de lumita": 15, "Orbe de lumita": 15, "Códice de lumita": 15, "Bracelete de lumita": 15, "Amuleto dos ecos": 15,
+    "Manto das ruínas": 16, "Anel ancestral": 18, "Mochila de explorador": 18, "Coroa do Ancião": 20,
+    "Mochila de expedição": 40, "Anel de ametista": 45, "Mochila das dunas e do gelo": 62, "Amuleto de adamante": 78, "Anel de rubi": 112, "Amuleto de gelo astral": 150 };
+  for (const [n, l] of Object.entries(ITEM_LVL)) if (ITEMS[n] && !ITEMS[n].need && !ITEMS[n].cls) ITEMS[n].need = l;
+
   // ---------- rodada 158: progressão 3x mais lenta em tudo que ainda não tinha sido cortado ----------
   // A XP de bater em monstro (Combate, Vitalidade e classes) e a da primeira morte no bestiário já eram 5x menores (rodada 137:
   // RULES.MOB_XP): ficam como estão. Todo o resto rende 3x menos: coleta (Corte, Mineração, Pesca, Herbalismo), Culinária,

@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.44", "Nível e raridade em toda peça", ["Todo equipamento tem nível: joias, secundárias, roupas e mochilas que não pediam nada agora pedem o nível do mapa e do material",
+      "Mochila e boneco mostram o nível no canto de cada peça (vermelho = ainda não dá para vestir)",
+      "Loja, mesa, bigorna e leilão mostram nível e raridade; a dica ao passar o mouse sempre traz nível, raridade, o que a peça pede e tudo o que ela faz"]],
     ["v1.43", "Equitação mais fácil", ["Equitação sobe 2x mais rápido (2 xp por tile cavalgado): a skill mais fácil de subir"]],
     ["v1.42", "Rédeas e montaria em combate", ["O cavaleiro segura as rédeas: correias grossas da boca do cavalo até as mãos",
       "Levou golpe: a montaria trava 5 s (borda vermelha no botão); cada golpe novo volta aos 5 s"]],
