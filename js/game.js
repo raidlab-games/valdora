@@ -2916,10 +2916,39 @@
     hudDirty = true; SND.play("ui");
   }
   for (const b of document.querySelectorAll("#menubar [data-menu], #roundbar [data-menu]")) b.onclick = () => openTab(b.dataset.menu);
-  $("tab-inv").addEventListener("dragstart", (e) => { // rodada 139: comida e poções vão da mochila para a barra de atalhos arrastando
-    const el = e.target.closest(".slot[data-i]"), s = el && player.inv[+el.dataset.i]; if (!s) { e.preventDefault(); return; }
-    const it = ITEMS[s.name], act = POT_LVL[s.name] ? "pot:" + s.name : it.heal ? "eat" : null; if (!act) { e.preventDefault(); return; }
-    e.dataTransfer.setData("text/plain", "act:" + act); e.dataTransfer.effectAllowed = "copy"; });
+  // rodada 141: arrastar itens: trocar de casa na mochila, levar da mochila ao cofre (e de volta) e soltar no mapa para largar no
+  // chão. Comida e poções continuam podendo ir para a barra de atalhos (text/plain "act:...").
+  const DRAG_T = "application/x-vd-item", boxOf = (b) => b === "bank" ? player.bank : player.inv;
+  document.addEventListener("dragstart", (e) => {
+    const el = e.target.closest && e.target.closest("[data-drag]"); if (!el || !player) return;
+    const [b, k] = el.dataset.drag.split(":"), s = boxOf(b)[+k]; if (!s) { e.preventDefault(); return; }
+    e.dataTransfer.setData(DRAG_T, el.dataset.drag);
+    const it = ITEMS[s.name], act = b === "inv" && (POT_LVL[s.name] ? "pot:" + s.name : it.heal ? "eat" : null);
+    if (act) e.dataTransfer.setData("text/plain", "act:" + act);
+    e.dataTransfer.effectAllowed = "copyMove"; el.classList.add("dragging"); closeInvMenu();
+  });
+  document.addEventListener("dragend", (e) => { const el = e.target.closest && e.target.closest("[data-drag]"); if (el) el.classList.remove("dragging"); });
+  const itemDrag = (e) => e.dataTransfer && [...e.dataTransfer.types].includes(DRAG_T);
+  document.addEventListener("dragover", (e) => {
+    if (!itemDrag(e)) return; const t = e.target.closest && e.target.closest("[data-to]");
+    if (t || e.target === canvas) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }
+  });
+  document.addEventListener("drop", (e) => {
+    if (!itemDrag(e) || !player) return; const src = e.dataTransfer.getData(DRAG_T), t = e.target.closest && e.target.closest("[data-to]");
+    if (!src || (!t && e.target !== canvas)) return; e.preventDefault();
+    const [fb, fi] = src.split(":");
+    if (!t) { if (fb === "inv") { dropSlot(+fi); SND.play("ui"); } else log("Retire do cofre antes de largar no chão.", "dim"); }
+    else { const [tb, ti] = t.dataset.to.split(":"); moveSlot(boxOf(fb), +fi, boxOf(tb), +ti); }
+    hudDirty = true; if (dlg) renderDlg(); save();
+  });
+  function moveSlot(from, i, to, j) { // casa vazia: muda; mesmo item sem afixo: empilha; senão troca as duas casas
+    if (from === to && i === j) return; const a = from[i], b = to[j]; if (!a) return;
+    if (!b) { to[j] = a; from[i] = null; }
+    else if (b.name === a.name && !a.aff && !b.aff && !a.master && !b.master) { b.n += a.n; from[i] = null; }
+    else { to[j] = a; from[i] = b; }
+    if (from !== to && dlg && dlg.obj) (to === player.bank ? storeFx : takeFx)(dlg.obj, a.name);
+    SND.play("ui");
+  }
   $("panel-close").onclick = () => { hudTab = null; hudDirty = true; };
   $("quest").onclick = () => { hudTab = "journal"; hudDirty = true; };
   $("tab-book").addEventListener("click", (e) => { const c = e.target.closest("[data-skillcard]"); if (!c || c.classList.contains("locked") || c.dataset.passive) return;

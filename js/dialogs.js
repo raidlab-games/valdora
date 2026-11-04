@@ -103,7 +103,8 @@ window.ValdoraDialogs = (() => {
           html = questHtml("guard") || `<p class="empty">Você concluiu o treinamento. Volte para ouvir mais conselhos.</p>`;
         }
       } else if (dlg.kind === "bank") {
-        const grid = (arr, attr) => { const first = arr.findIndex(Boolean); return arr.map((s, i) => s ? `<div class="slot${ITEMS[s.name].rare ? " rare" : ""}" tabindex="${i === first ? 0 : -1}" role="button" data-${attr}="${i}" title="${esc(s.name)}">${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}</div>` : `<div class="slot"></div>`).join(""); }; // rodada 41: um espaço no Tab por grade
+        const box = (attr) => attr === "wd" ? "bank" : "inv"; // rodada 141: casas arrastáveis (mochila <-> cofre)
+        const grid = (arr, attr) => { const first = arr.findIndex(Boolean); return arr.map((s, i) => s ? `<div class="slot${ITEMS[s.name].rare ? " rare" : ""}" tabindex="${i === first ? 0 : -1}" role="button" data-${attr}="${i}" data-drag="${box(attr)}:${i}" data-to="${box(attr)}:${i}" draggable="true" title="${esc(s.name)}">${iconImg(s.name)}${s.n > 1 ? `<span>${s.n}</span>` : ""}</div>` : `<div class="slot" data-to="${box(attr)}:${i}"></div>`).join(""); }; // rodada 41: um espaço no Tab por grade
         html = `<div class="bank-head">Mochila <button data-depall="1" title="Guarda tudo menos comida, poções e acessórios">${ASSETS.icon_bank_move ? `<img src="${ASSETS.icon_bank_move}" alt="">` : ""}Guardar materiais</button></div><div class="grid">${grid(player.inv, "dep")}</div>
           <div class="bank-head">Cofre <small>${player.bank.filter(Boolean).length}/${player.bank.length}</small>
             ${player.bank.length < (bankMax || 99) ? `<button data-bankup="1" ${player.coins < bankUpCost() ? "disabled" : ""} title="Cada ampliação dá +2 espaços; o preço sobe 20% do inicial a cada vez">Ampliar +2 · ${bankUpCost()} moedas</button>` : ""}
