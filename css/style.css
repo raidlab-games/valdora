@@ -885,6 +885,10 @@ button.link:hover { color: #cfe3ff; }
 .grid.deathbag { grid-template-columns: repeat(6, 1fr); margin-bottom: 6px; }
 .grid.deathbag .slot { cursor: pointer; }
 .grid.deathbag .slot:hover { border-color: var(--gold); }
+/* rodada 147: zona PvP e marca de PK embaixo do minimapa */
+.loc-z { display: flex; justify-content: center; gap: 6px; font-size: 10px; margin-top: 1px; }
+.loc-z .pvp { color: #ff6b5a; } .loc-z .safe { color: #9fe08a; opacity: .8; }
+.loc-z .pk { color: #ff3b30; font-weight: bold; display: inline-flex; align-items: center; gap: 2px; } .loc-z .pk img { width: 12px; height: 12px; }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }

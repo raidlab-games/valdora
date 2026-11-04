@@ -87,7 +87,9 @@ window.ValdoraHud = (() => {
         const L = api.load && api.load(), lb = $("me-load"); // rodada 112: peso carregado / carga
         if (L && lb) { lb.className = ["", "heavy", "crawl"][L.k]; lb.firstChild.style.width = Math.min(100, L.r * 100) + "%"; lb.lastChild.textContent = `${L.w.toLocaleString("pt-BR")}/${L.cap} kg`;
           lb.title = L.k === 2 ? "Peso demais: anda igual a uma tartaruga. Guarde ou venda itens." : L.k === 1 ? "Pesado: anda mais devagar." : "Peso: leve"; } }
-      { const lh = `${reg.icon && ASSETS[reg.icon] ? `<img class="ricon" src="${ASSETS[reg.icon + "_32"] || ASSETS[reg.icon]}" alt="">` : ""}${esc(reg.name)}${reg.lvl ? `<small>${esc(reg.lvl)}</small>` : ""}`;
+      { const pv = api.pvpHere && api.pvpHere(), pk = player.pk > 0; // rodada 147: zona PvP e marca de PK embaixo do lugar
+        const lh = `${reg.icon && ASSETS[reg.icon] ? `<img class="ricon" src="${ASSETS[reg.icon + "_32"] || ASSETS[reg.icon]}" alt="">` : ""}${esc(reg.name)}${reg.lvl ? `<small>${esc(reg.lvl)}</small>` : ""}`
+          + `<div class="loc-z"><span class="${pv ? "pvp" : "safe"}">${pv ? "⚔ zona PvP" : "zona sem PvP"}</span>${pk ? `<span class="pk"><img src="${ASSETS.pk_skull}" alt=""> PK ${ValdoraPvP.fmt(player.pk)}</span>` : ""}</div>`;
         if ($("loc").dataset.h !== lh) { $("loc").dataset.h = lh; $("loc").innerHTML = lh; } } // rodada 139: o lugar sempre embaixo do minimapa
       $("player-info").innerHTML = `<div class="who"><b${PR ? ` style="color:${PR.color}" title="${esc(PR.title)}"` : ""}>${PR && ValdoraShrine.badge(PR) ? `<img class="tbadge" src="${ValdoraShrine.badge(PR)}" alt="">` : ""}${esc(player.name)}</b><span class="lvl" title="Nível total (soma das habilidades)">${player.name.length + (PR ? 2 : 0) > 13 ? "Nv." : "Nível total"} ${totalLevel()}</span></div>
         <div class="bar hp"><i style="width:${Math.min(100, (hp / mh) * 100)}%"></i><em>${hp} / ${mh}</em>${vm ? `<span class="votive" title="Chama votiva: mais ${vm} min">${ASSETS.icon_votive_hud ? `<img src="${ASSETS.icon_votive_hud_32 || ASSETS.icon_votive_hud}" alt="">` : "✦"}<span class="vm">${vm} min</span></span>` : ""}</div>

@@ -15,6 +15,7 @@ window.ValdoraDialogs = (() => {
     warden: { title: "Guardião", talk: "" },
     harbor: { title: "Cais", talk: "" }, // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
     deathbag: { title: "Saco de morte", talk: "" }, // rodada 146
+    peace: { title: "Pacificador", talk: "\"Sangue não lava sangue, viajante. Mas ouro compra o perdão dos homens.\"" }, // rodada 147
     craft: { title: "Mesa de artesanato", talk: "Mochilas, roupas de couro e pano, joias, escudos e flechas. Cada peça pede um nível de Artesanato: escolha o que criar para subir." },
     bard: { title: "Tomé, o bardo", talk: "" },
     char: { title: "Ficha do personagem", talk: "" },
@@ -133,6 +134,8 @@ window.ValdoraDialogs = (() => {
         const B = BUFFS.inspirado;
         html = questHtml("bard") + `<button class="wide" data-song="1">Pedir outra canção</button>
           <button class="wide" data-gift="1" ${player.coins < 10 ? "disabled" : ""}>Dar 10 moedas: ${esc(B.name)} (+${B.acc} acerto, +${B.def} defesa, ${B.ticks * TICK / 60} min)</button>`;
+      } else if (dlg.kind === "peace") { // rodada 147
+        html = api.peaceHtml ? api.peaceHtml() : "";
       } else if (dlg.kind === "deathbag") { // rodada 146: o que caiu na morte
         html = api.deathBagHtml ? api.deathBagHtml(dlg.obj) : "";
       } else if (dlg.kind === "craft") {

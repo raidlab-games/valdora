@@ -505,6 +505,16 @@
   });
   test("tutorial tem o passo da esquiva no boneco", () => TUTORIAL.some((t) => t.ev === "dodge") || "faltando");
   test("módulo de coleta carrega", () => !!window.ValdoraGather || "faltando");
+  test("rodada 147: PvP fora do Campo e das vilas; PK 2 h, 50 monstros tiram 1 min, ataque volta a 2 h, paz por 1000", () => {
+    const P = window.ValdoraPvP, r = [], p = { coins: 1500 };
+    if (P.zoneOk({ biome: 1, town: false }) || P.zoneOk({ biome: 4, town: true }) || !P.zoneOk({ biome: 2, town: false })) r.push("zonas");
+    if (P.zoneOk({ biome: 0, dungeon: "crypt" }) || !P.zoneOk({ biome: 0, dungeon: "dg_desert" })) r.push("masmorras");
+    P.onKillPlayer(p); if (p.pk !== 7200) r.push("PK 2 h");
+    for (let i = 0; i < 50; i++) P.onKillMob(p); if (p.pk !== 7140) r.push("50 monstros = -1 min");
+    P.tick(p, 100); P.onAttackPlayer(p); if (p.pk !== 7200) r.push("ataque volta a 2 h");
+    if (!P.peace(p) || p.pk || p.coins !== 500 || P.peace(p)) r.push("paz por 1000");
+    return miss(r);
+  });
   test("iluminação: dia claro, noite escura", () => ValdoraLight.darkness(0.2) === 0 && ValdoraLight.darkness(0.8) === 0 && ValdoraLight.darkness(0.92) > 0.5 || "curva inesperada"); // rodada 139: dia 2 h, noite 20 min
   test("rodada 66: números de dano têm estilo por tipo (causado, crítico, recebido, sangramento)", () => {
     const fx = ValdoraFX.create(48, () => 0.5);

@@ -223,6 +223,7 @@
     npc.stall = deco("stall", "stall", 61, 37, 2, 1);
     npc.merchant = deco("merchant", "npc_merchant", 63, 37, 1, 1, { name: "Bento" });
     npc.guard = deco("guard", "npc_guard", 54, 41, 1, 1, { name: "Ivo" });
+    { const ps = bigSpot(57, 42, 1, 1); if (ps) npc.peace = deco("peace", "npc_odilia", ...ps, 1, 1, { name: "Pacificador", tint: PEACE_TINT }); } // rodada 147
     npc.bank = deco("bank", "chest", 53, 39, 1, 1);
     npc.furnace = deco("furnace", "furnace", 62, 49, 1, 1);
     npc.anvil = deco("anvil", "anvil", 64, 49, 1, 1);
@@ -619,6 +620,7 @@
   // na frente de baú, NPC, placa ou bancada (não esconde o que se usa). Grupo = [[dx, dy, arte, largura]]
   // rodada 129: lugar para peça grande (poço, Pedra da vila): a base de w x 1 e o retângulo em volta (1 tile dos lados e na frente,
   // "up" linhas acima, onde a arte alta sobe) livres, a base fora da estrada, e sem ficar na frente de baú, NPC ou placa
+  const PEACE_TINT = "grayscale(0.85) brightness(1.45) sepia(0.15)"; // rodada 147: Pacificador de branco
   function bigSpot(x0, y0, w, up, r = 7) {
     let best = null, bd = 1e9;
     for (let y = y0 - r; y <= y0 + r; y++) for (let x = x0 - r; x <= x0 + r; x++) {
@@ -812,6 +814,7 @@
         deco("house", hs[0], ...at(3, 3), 3, 2); deco("house", hs[1], ...at(27, 3), 3, 2); deco("house", hs[2], ...at(3, 26), 3, 2);
         deco("house", hs[3], ...at(9, 4), 3, 2); deco("house", hs[4], ...at(26, 26), 3, 2);
         deco("stall", "stall", ...at(21, 6), 2, 1); deco("merchant", "npc_merchant", ...at(23, 6), 1, 1, { name: MERCH[v.key], village: v.key });
+        { const ps = bigSpot(...at(17, 14), 1, 1); if (ps) deco("peace", "npc_odilia", ...ps, 1, 1, { name: "Pacificador", tint: PEACE_TINT, village: v.key }); } // rodada 147
         deco("bank", "chest", ...at(13, 12)); deco("furnace", "furnace", ...at(21, 22)); deco("anvil", "anvil", ...at(23, 22)); deco("craftdesk", "craft_desk", ...at(25, 20), 2, 1, { dcx: 0.5 });
         deco("board", ASSETS.deco_board ? "deco_board" : "deco_sign", ...at(19, 12), ASSETS.deco_board ? 2 : 1, 1); { const ws = bigSpot(...at(8, 10), 2, 2); if (ws) deco("well", "well", ...ws, 2, 1); } // rodada 129: um poço por vila deco("fire", "campfire", ...at(8, 22));
         deco("barrel", "barrel", ...at(20, 6)); deco("barrel", "barrel", ...at(25, 22)); deco("barrel", "barrel", ...at(6, 22)); deco("barrel", "barrel", ...at(30, 12));
@@ -1369,6 +1372,7 @@
     if (!player.seen.runHot) { player.seen.runHot = 1; const i = player.hotbar.indexOf(null); if (i >= 0 && !player.hotbar.includes("skill:run")) player.hotbar[i] = "skill:run"; } // rodada 139: Corrida na barra uma vez
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
     player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
+    player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; // rodada 147: PK (segundos de jogo que faltam)
     deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
     for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
@@ -1556,7 +1560,7 @@
 
   // ---------- Entrada ----------
   const INTERACT_TEXT = { harbor: "falar com o mestre do cais", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
-    deathbag: "abrir o saco de morte", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
+    deathbag: "abrir o saco de morte", peace: "falar com o Pacificador", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
   function interactLabel(b) {
@@ -1646,7 +1650,7 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const STATIONS = { harbor: "harbor", witch: "witch", warden: "warden", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
+  const STATIONS = { harbor: "harbor", witch: "witch", warden: "warden", peace: "peace", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1796,7 +1800,7 @@
     tile: (x, y) => map[y] && map[y][x], tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM],
     spawn: (type, x, y) => spawnMob(type, regionAt(x, y), { x, y, r: 0 }, null, { at: { x, y } }), // rodada 135: teste de comportamento de cada espécie
-    shotsN: () => MSKILL.warnTiles().length }; // rodada 104: inspeção pelo console (só com ?debug)
+    shotsN: () => MSKILL.warnTiles().length, pvpHere: (x, y) => pvpHere(x, y), pvpAttack: () => pvpAttack(), pvpKill: (n) => pvpKill(n) }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
   const POINTER = ValdoraPointer.create({ fineTo: (fx, fy, tx, ty) => fineTo(fx, fy, tx, ty), blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
@@ -1852,7 +1856,7 @@
     if (!onPlant && !adjRect(player.x, player.y, r)) { if (!goTo((x, y) => adjRect(x, y, r))) player.target = null; return; }
     if (!onPlant) faceRect(r);
     if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "craftdesk") { player.target = null; openDlg("craft", r); return; } // rodada 139: mesa de artesanato
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
@@ -2397,7 +2401,8 @@
     const d = m.d;
     // rodada 139: renascem em 2-3 min (monstros) ou 3-5 min (animais: javali, cervo, lebre, lobo...); quem tem tempo próprio usa o dele
     const animal = /bear|boar|deer|elk|hare|fox|wolf|ram|mammoth|toad|eagle|owl|vulture|bee|bat|moth|beetle|crab|scorpion|scarab|spider|weaver|lizard(?!man)/.test(d.spr || "");
-    m.dead = true; m.respawnT = d.respawn >= 100 ? d.respawn : (animal ? 180 + rand() * 120 : 120 + rand() * 60); // chefes e invocados mantêm o próprio tempo m.bleed = null; player.target = null;
+    m.dead = true; m.respawnT = d.respawn >= 100 ? d.respawn : (animal ? 180 + rand() * 120 : 120 + rand() * 60);
+    if (PVP.onKillMob(player)) { addFloat(player.px + 0.5, player.py - 1, "PK -1 min", "#ff8a7a", 1.4, 13); hudDirty = true; } // rodada 147: 50 monstros = -1 min de PK // chefes e invocados mantêm o próprio tempo m.bleed = null; player.target = null;
     if (d.respawnMin) { // rodada 137: chefe volta entre 2 e 4 h depois de morrer (sorteado agora; guardado no save, conta com o jogo fechado)
       const secs = d.respawnMin + rand() * (d.respawnMax - d.respawnMin); m.respawnT = secs;
       (player.bossNext = player.bossNext || {})[m.type] = Date.now() + secs * 1000;
@@ -2501,6 +2506,12 @@
   // metade de cada pilha da mochila (item único: 50% de chance), que fica num saco no lugar da morte por 30 min. Morto por outro
   // jogador, só ele pode abrir o saco nos primeiros 30 s; por monstro ou outra causa, qualquer um pode.
   const BAG_LIFE = 30 * 60 * 1000, BAG_LOCK = 30 * 1000;
+  // rodada 147: PvP (js/pvp.js). pvpHere: o tile vale PvP? pvpAttack/pvpKill: chamados quando houver jogadores online
+  const PVP = window.ValdoraPvP;
+  const pvpHere = (x = player.x, y = player.y) => PVP.zoneOk({ biome: inCrypt ? 0 : WORLD_G.biomeAt(x, y) || 1, town: inTown(x, y), dungeon: inCrypt ? dungeon : null });
+  function pvpAttack() { PVP.onAttackPlayer(player); hudDirty = true; }
+  function pvpKill(name) { const was = player.pk > 0; PVP.onKillPlayer(player); hudDirty = true;
+    log(`☠ Você derrotou ${name || "um jogador"} e agora é PK por 2 h: nome vermelho e caveira no mapa para todos.${was ? "" : " O Pacificador de qualquer vila desfaz isso por 1000 moedas."}`, "warn"); }
   function deathPenalty() {
     const lostXp = {};
     for (const k of ["combate", "vitalidade"]) {
@@ -2808,10 +2819,19 @@
     const b = e.target.closest("button, .slot[data-dep], .slot[data-wd], .slot[data-bagi]"); if (!b) return;
     const ds = b.dataset; SND.play("ui");
     if (DLG_VIEW.uiClick(b, dlg)) return;
+    if (dlg.kind === "peace" && ds.peace) { if (PVP.peace(player)) { log("☮ Trato de paz feito: o PK sumiu e seu nome voltou ao normal.", "gold"); SND.play("coin"); burst(player.px + 0.5, player.py + 0.2, ["#ffffff", "#bfe8ff", "#f1c40f"], 18, 2.5); hudDirty = true; } renderDlg(); save(); return; } // rodada 147
     if (dlg.kind === "deathbag" && (ds.bagall || ds.bagi != null)) { takeFromBag(dlg.obj.bag, ds.bagall ? null : +ds.bagi); if (dlg) renderDlg(); save(); return; } // rodada 146 // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
     renderDlg(); save();
   });
+  // rodada 147: o Pacificador: trato de paz por 1000 moedas (só para quem está PK)
+  function peaceHtml() {
+    const pk = player.pk > 0, can = pk && player.coins >= PVP.PEACE_COST;
+    return `<p class="desc">${pk ? `Você está marcado como PK por mais <b style="color:#ff6b5a">${PVP.fmt(player.pk)}</b>. Cada 50 monstros derrotados tiram 1 minuto; atacar outro jogador volta para 2 h.`
+      : "Seu nome está limpo. Quem derrota outro jogador fica PK por 2 h: nome vermelho e caveira no mapa para todos."}</p>
+      <p class="desc">PvP vale fora das vilas em todos os mapas, menos no Campo.</p>
+      <button class="wide" data-peace="1" ${can ? "" : "disabled"}>Aceitar o trato de paz · ${PVP.PEACE_COST} moedas</button>${pk && !can ? `<small class="desc" style="color:#ff8a7a">Faltam ${PVP.PEACE_COST - player.coins} moedas.</small>` : ""}`;
+  }
   // rodada 146: janela do saco de morte: PEGAR TUDO (o que couber, empilhando com a mochila) ou um item de cada vez
   function bagLocked(b) { return b.killer && b.killer !== player.name && b.lockUntil > Date.now(); }
   function deathBagHtml(r) {
@@ -2962,7 +2982,7 @@
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), prereqText: (k) => prereqText(k) });
-  const DLG_VIEW = ValdoraDialogs.create({ deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+  const DLG_VIEW = ValdoraDialogs.create({ peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
@@ -3014,7 +3034,7 @@
     hotPick = hotPick === c.dataset.skillcard ? null : c.dataset.skillcard; hudDirty = true; SND.play("ui"); });
   $("tab-coll").addEventListener("click", (e) => { const b = e.target.closest("[data-coll]"); if (b) collRegister(b.dataset.coll, b.dataset.item); });
   // painel lateral (js/hud.js)
-  const HUD = ValdoraHud.create({ QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
+  const HUD = ValdoraHud.create({ pvpHere: () => !!player && pvpHere(), QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
     tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), mobThumb: (s) => mobThumb(s), hotUnlocked: (a) => hotUnlocked(a), hotPick: () => hotPick, dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96
@@ -3331,6 +3351,7 @@
     } else if (player.pickTile && player.pickTile !== tileKey && !moving) player.pickTile = null;
     player.flash = Math.max(0, player.flash - dt); player.hitT = Math.max(0, (player.hitT || 0) - dt); player.blockT = Math.max(0, (player.blockT || 0) - dt); player.cancelT = Math.max(0, (player.cancelT || 0) - dt); player.cheerT = Math.max(0, (player.cheerT || 0) - dt); player.eatT = Math.max(0, (player.eatT || 0) - dt);
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
+    if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
     if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
       if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
@@ -3600,8 +3621,9 @@
     // rodada 66: em luta, o nome (e o título) do herói quase some, para os números e a barra do monstro ficarem legíveis
     const fight = (player.target && player.target.kind === "mob" && !player.target.ref.dead) || tickN - (player.lastHurt ?? -99) < 6;
     nameA += ((fight ? 0.12 : 1) - nameA) * Math.min(1, Math.max(0, t - nameLt) * 6); nameLt = t;
-    for (const [text, x, y, c, small] of tags) {
+    for (let [text, x, y, c, small] of tags) {
       const mine = text === player.name || (small && text.startsWith("‹"));
+      if (text === player.name && player.pk > 0) c = "#ff3b30"; // rodada 147: PK de nome vermelho
       if (mine) ctx.globalAlpha = nameA; nameTag(text, x, y, c, small); ctx.globalAlpha = 1;
     } // nomes por cima de tudo
     MSKILL.draw(ctx, cam, TILE); // rodada 134: flechas, pedras, feitiços dos monstros
@@ -3720,7 +3742,7 @@
     return {
       shop: ["Bento, o mercador", "#f5e27a", "Comprar, vender e encomendas"], guard: ["Guarda Ivo", "#9fd0ff", TUTORIAL[player.tut.step] ? "Tutorial e dicas" : "Dicas"],
       bank: ["Cofre da vila", "#f5e27a", "Guardar itens"], dummy: ["Boneco de treino", "#e8d9b0", "Golpeie e saia da área vermelha"], furnace: ["Fornalha", "#f5c060", "Fundir minério em barras"],
-      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
+      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], peace: ["Pacificador", "#ffffff", "Trato de paz: tira o PK por 1000 moedas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
       crypt: ["Escada da cripta", "#c79bff", "Masmorra · Combate 18+"], crypt_exit: ["Saída", "#e8d9b0", "Voltar à superfície"],
       den: ["Toca dos Lobos", "#b8d8ff", player.quests.balada && player.quests.balada.done ? "Masmorra · Combate 14+" : "Bloqueada · missão do Tomé"],
       chest: [dungeon === "den" ? "Baú da toca" : "Baú da cripta", "#f1c40f", r.opened ? "Vazio" : mobs.some((m) => !m.dead) ? "Selado: derrote todos os inimigos" : "Abrir!"], board: ["Quadro de caçadas", "#f5e27a", "Recompensas por monstros"], fire: ["Fogueira", "#f5c060", "Assar peixe e carne"], sign: ["Placa", "#e8d9b0", r.label],
@@ -3751,13 +3773,13 @@
       const data = ({ v: 2, wv: 4, t: Date.now(), name: player.name, hero: player.hero, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, Object.keys(SKILLS).reduce((a, k) => a + level(player.xp[k] || 0), 0), urgent === true);
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }
   }
   addEventListener("pagehide", () => { if (running) save(true); });
-  window.ValdoraGame = { start, readSave, level, SKILLS, // usado por js/lobby.js
+  window.ValdoraGame = { start, readSave, level, SKILLS, pvp: { here: (x, y) => pvpHere(x, y), attack: () => pvpAttack(), kill: (n) => pvpKill(n) }, // usado por js/lobby.js; pvp: para o online (rodada 147)
     seed: (n) => { RNG = n == null ? Math.random : mulberry32(n); } }; // rodada 63: só para medições (null volta ao normal)
   document.addEventListener("visibilitychange", () => { if (document.hidden && running) save(true); });
 })();

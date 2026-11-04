@@ -17,6 +17,7 @@ window.ValdoraOverlay = (() => {
       return { x0, y0, w, h };
     }
     const fishIcon = new Image(); if (ASSETS.icon_fish_spot) fishIcon.src = ASSETS.icon_fish_spot;
+    const pkIcon = new Image(); if (ASSETS.pk_skull) pkIcon.src = ASSETS.pk_skull; // rodada 147: caveira do PK
     const backArrow = new Image(); if (ASSETS.icon_minimap_back) backArrow.src = ASSETS.icon_minimap_back; // rodada 59
     function buildMinimap() {
       const { map, objects, mobs, npc, player, groundItems, inCrypt } = api.state();
@@ -80,6 +81,7 @@ window.ValdoraOverlay = (() => {
         g.save(); g.translate(hx, hy); g.rotate(a); g.beginPath(); g.moveTo(5, 0); g.lineTo(-3.5, -3.8); g.lineTo(-1.5, 0); g.lineTo(-3.5, 3.8); g.closePath();
         g.fillStyle = "#ffffff"; g.strokeStyle = "#140c06"; g.lineWidth = 1.5; g.stroke(); g.fill(); g.restore();
       }
+      if (player.pk > 0 && pkIcon.complete && pkIcon.naturalWidth) g.drawImage(pkIcon, (player.px + 0.5) * sx - 6, (player.py + 0.5) * sy - 17, 12, 12); // rodada 147: PK no minimapa
       const B = player.backHint; // rodada 58: caminho de volta na primeira entrada em região perigosa (pisca por 12 s; parado com "reduzir movimento")
       if (B && player.playT < B.until && !inCrypt) {
         const still = matchMedia("(prefers-reduced-motion: reduce)").matches, on = still || Math.floor(performance.now() / 300) % 2 === 0;
@@ -177,6 +179,7 @@ window.ValdoraOverlay = (() => {
       }
       const hx = X(p.px + 0.5), hy = Y(p.py + 0.5), pulse = 7 + Math.sin(performance.now() / 200) * 2;
       g.strokeStyle = "#ffffff"; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, pulse, 0, 6.29); g.stroke(); g.fillStyle = "#f1c40f"; g.beginPath(); g.arc(hx, hy, 4, 0, 6.29); g.fill();
+      if (p.pk > 0 && pkIcon.complete && pkIcon.naturalWidth) g.drawImage(pkIcon, hx - 9, hy - 30, 18, 18); // rodada 147: PK no mapa do continente
       g.strokeStyle = "#ffffff99"; g.lineWidth = 1; g.strokeRect(X(cam.x / TILE), Y(cam.y / TILE), (canvas.width / (window.VD_SS || 1)) / TILE * k, (canvas.height / (window.VD_SS || 1)) / TILE * k);
     }
     return { buildMinimap, drawMinimap, drawLights, miniView, drawWorldMap };

@@ -239,6 +239,7 @@ ASSETS.house_auction = "assets/flow/house_auction.png"; SPRITE_SIZE.house_auctio
 // rodada 117: o da Celeste virou de frente para a direita (espelhado); a bancada de poções da Morgana fica de frente para a esquerda
 ASSETS.auction_desk = "assets/flow/auction_desk.png"; SPRITE_SIZE.auction_desk = [164 / 75, 113 / 75];
 ASSETS.witch_desk = "assets/flow/witch_desk.png"; SPRITE_SIZE.witch_desk = [164 / 75, 113 / 75];
+ASSETS.pk_skull = "assets/ui/pk_skull.png"; // rodada 147: marca de PK no mapa
 ASSETS.death_bag = "assets/ui/death_bag.png"; SPRITE_SIZE.death_bag = [0.92, 0.92]; // rodada 146: saco de morte no chão
 ASSETS.craft_desk = "assets/flow/craft_desk.png"; SPRITE_SIZE.craft_desk = [164 / 75, 113 / 75]; // rodada 139: mesa de artesanato
 ASSETS.npc_witch = "assets/flow/npc_witch.png"; ASSETS.npc_witch_sheet = "assets/flow/npc_witch_sheet.png";
