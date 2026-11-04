@@ -1656,7 +1656,7 @@ window.VD = (() => {
   const MOUNTS = {};
   for (const T of MOUNT_TIERS) COATS[T.t].forEach((coat, i) => { const key = `t${T.t}_s${i + 1}`;
     MOUNTS[key] = { key, tier: T.t, style: i + 1, coat, name: `${T.name} ${coat.toLowerCase()}`, speed: T.speed, price: T.price, lvl: T.lvl, sheet: "horse_" + key, icon: `assets/ui/horse_${key}.png` }; });
-  const RIDE_XP = 1; // xp de Equitação por tile cavalgado (rodada 158: era 3; subia rápido demais)
+  const RIDE_XP = 2; // xp de Equitação por tile cavalgado (rodada 158: era 3; rodada 160: 2, a skill mais fácil de subir)
 
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.

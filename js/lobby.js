@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.43", "Equitação mais fácil", ["Equitação sobe 2x mais rápido (2 xp por tile cavalgado): a skill mais fácil de subir"]],
     ["v1.42", "Rédeas e montaria em combate", ["O cavaleiro segura as rédeas: correias grossas da boca do cavalo até as mãos",
       "Levou golpe: a montaria trava 5 s (borda vermelha no botão); cada golpe novo volta aos 5 s"]],
     ["v1.41", "Progressão mais lenta", ["Equitação sobe 3x mais devagar (1 xp por tile)", "Coleta, Culinária, fornalha, bigorna, mesa, poções, missões, encomendas e caçadas dão 3x menos XP",

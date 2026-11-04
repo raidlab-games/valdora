@@ -816,7 +816,7 @@
   });
   test("rodada 158: progressão 3x mais lenta fora da XP de monstro (já 5x menor)", () => {
     const r = [];
-    if (VD.XP_CUT !== 3 || VD.RIDE_XP !== 1) r.push("constantes");
+    if (VD.XP_CUT !== 3 || VD.RIDE_XP !== 2) r.push("constantes"); /* rodada 160: Equitação 2x mais fácil */
     if (VD.RES.tree.xp !== 2 || VD.RES.rock.xp !== 2) r.push("coleta " + VD.RES.tree.xp + "/" + VD.RES.rock.xp);
     if (ITEMS["Lambari cru"].cookXp !== 2) r.push("culinária " + ITEMS["Lambari cru"].cookXp);
     if (VD.QUESTS.c1_tremor.reward.xp.combate >= 800) r.push("missão");
