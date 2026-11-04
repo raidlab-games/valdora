@@ -86,6 +86,20 @@
   // rodada 105: folhas "lazy" (vistas extras dos monstros) e as dos heróis que ninguém está usando não carregam no início:
   // lazyAnim() as busca quando aparecem na tela e as descarta depois de 40 s sem uso; o herói escolhido carrega no start().
   const isHeroKey = (k) => /^hero_\d(_|$)/.test(k);
+  // rodada 140: miniatura do monstro tirada do 1º quadro da animação (a imagem parada dos voadores saía cortada no alto do voo)
+  const THUMBS = {};
+  function mobThumb(spr) {
+    if (THUMBS[spr]) return THUMBS[spr];
+    const A = ANIMS[spr], R = A && A.rows && (A.rows.idle || A.rows.walk || Object.values(A.rows)[0]); if (!R) return ASSETS[spr];
+    const w = A.cw * A.k, h = A.ch * A.k, c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d"); g.drawImage(A.c, 0, R.row * h, w, h, 0, 0, w, h);
+    const d = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 30) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) return ASSETS[spr];
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1, s = Math.max(bw, bh) + 2, o = document.createElement("canvas"); o.width = o.height = s;
+    o.getContext("2d").drawImage(c, x0, y0, bw, bh, Math.round((s - bw) / 2), s - 1 - bh, bw, bh);
+    return (THUMBS[spr] = o.toDataURL());
+  }
   const loadAnim = (key, A) => new Promise((done) => {
     if (A.fx && !(A.tiles > 0) && !OVERLAY_HOST[key]) return done(); // rodada 40: folha da tela inicial (fx_banner_wave, 640 × 120): o lobby usa direto por CSS
     const img = new Image();
@@ -2913,7 +2927,7 @@
   $("tab-coll").addEventListener("click", (e) => { const b = e.target.closest("[data-coll]"); if (b) collRegister(b.dataset.coll, b.dataset.item); });
   // painel lateral (js/hud.js)
   const HUD = ValdoraHud.create({ QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
-    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), hotUnlocked: (a) => hotUnlocked(a), hotPick: () => hotPick, dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
+    tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), mobThumb: (s) => mobThumb(s), hotUnlocked: (a) => hotUnlocked(a), hotPick: () => hotPick, dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96
   function updateHud() { hudDirty = false; HUD.render(); }

@@ -108,8 +108,9 @@ window.ValdoraHud = (() => {
       for (const b of document.querySelectorAll("#panel .tabs button")) b.classList.toggle("on", b.dataset.tab === hudTab);
       for (const t of ["inv", "skills", "combat", "journal", "book", "coll", "mount", "guild", "livro", "passive"]) $("tab-" + t).hidden = t !== hudTab;
       // rodada 137: o painel é uma janela que abre pelo menu de baixo à direita (estilo Cambria)
-      const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Diário", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros", passive: "Passivas" };
+      const TITLES = { inv: "Mochila", skills: "Níveis", combat: "Equipamento", journal: "Tasks", book: "Skills e atalhos", coll: "Coleção", mount: "Montaria", guild: "Guilda", livro: "Livro dos monstros", passive: "Passivas" };
       $("panel").classList.toggle("big", ["journal", "livro", "coll", "guild"].includes(hudTab)); $("panel").classList.toggle("small", ["inv", "book", "passive"].includes(hudTab)); // rodada 139
+      $("panel").classList.toggle("inv-w", hudTab === "inv"); $("panel").classList.toggle("passive-w", hudTab === "passive"); // rodada 140
       $("panel").hidden = !hudTab; $("panel-title").textContent = TITLES[hudTab] || "";
       for (const b of document.querySelectorAll("#menubar [data-menu], #roundbar [data-menu]")) b.classList.toggle("on", b.dataset.menu === hudTab || (b.dataset.menu === "config" && !$("options").hidden));
       if (hudTab === "book") { // rodada 138: estilo Cambria: todas as skills em ícones com o nível; liberadas arrastam para a barra
@@ -145,7 +146,7 @@ window.ValdoraHud = (() => {
           $("tab-livro").innerHTML = head + list.map(([k, d]) => {
             const loot = (VD.mapLoot ? VD.mapLoot(d) : []).map(([rar, p, items]) => `<span title="${esc(items.join(", "))}" style="color:${RARITY[rar].color}">Equip. ${esc(RARITY[rar].name.toLowerCase())} <b>${pct(p)}</b></span>`).join("");
             const drops = (d.drops || []).map(([n, p, a = 1, b = a]) => `<span style="color:${col(n)}">${esc(n)}${b > 1 ? ` ${a}-${b}` : ""} <b>${pct(p)}</b></span>`).join("");
-            return `<div class="lv-mob"><img src="${ASSETS[d.spr] || ""}" alt="" ${d.tint ? `style="filter:${d.tint}"` : ""}><div><b>${esc(d.name)}</b> <small>nível ${d.lvl}${d.boss ? " · chefe" : ""}</small><br><small>${esc(d.where || "")}</small></div>
+            return `<div class="lv-mob"><img src="${(api.mobThumb && api.mobThumb(d.spr)) || ASSETS[d.spr] || ""}" alt="" ${d.tint ? `style="filter:${d.tint}"` : ""}><div><b>${esc(d.name)}</b> <small>nível ${d.lvl}${d.boss ? " · chefe" : ""}</small><br><small>${esc(d.where || "")}</small></div>
               <div class="dl">${drops}${loot}</div></div>`;
           }).join("");
         } else {
@@ -231,17 +232,13 @@ window.ValdoraHud = (() => {
             const lock = !q && !QUEST.available(id) ? (Q.minCombat && player.quests[Q.after] && player.quests[Q.after].done ? ` (Combate ${Q.minCombat})` : "") : "";
             return `<li class="${q && q.done ? "ok" : q ? "now" : ""}">${q && q.done ? "✔ " : q ? "▸ " : "· "}${esc(Q.name)}${st ? `: ${esc(st.text)}` : q ? "" : lock || (QUEST.available(id) ? ` (fale com ${ValdoraQuests.NPC_NAME[Q.giver]})` : "")}</li>`; }).join("")}</ul>
             <small>${nDone === A.quests.length ? "Liberado: " : "Recompensa: "}${esc(A.reward)}</small></div>`; }).join("") : "";
-        $("tab-journal").innerHTML = campHtml + questsHtml + `<div class="journal-h">Conquistas <small>${got}/${ACHIEVEMENTS.length}</small></div><div class="achs">${ACHIEVEMENTS.map((a) =>
-          `<span class="ach${player.ach[a.id] ? " on" : ""}" title="${esc(a.desc)} · ${a.coins} moedas">${player.ach[a.id] ? "★" : "☆"} ${esc(a.name)}</span>`).join("")}</div>
-          <div class="journal-h">Bestiário${window.ValdoraDaily ? (() => { const DY = ValdoraDaily, c = DY.seenCount(player.kills, MOBS), nx = DY.next(player.kills, player.bestiary, MOBS);
-            return ` <small>${c} descobertas${nx ? ` · prêmio aos ${nx.n}` : ""}</small>`; })() : ""}</div>` + Object.entries(MOBS).map(([k, d]) => {
-          const n = player.kills[k] || 0;
-          if (!n) return `<div class="beast unknown"><span class="q">?</span><div><b>???</b><br><small>${esc(d.where)}</small></div></div>`;
-          const drops = d.drops.map(([item, p]) => player.seen["drop:" + k + ":" + item]
-            ? `<span class="${ITEMS[item].rare ? "r" : ""}">${esc(item)} ${p >= 1 ? "sempre" : p >= 0.1 ? Math.round(p * 100) + "%" : "1/" + Math.round(1 / p)}</span>` : `<span class="u">???</span>`).join("");
-          return `<div class="beast"><img src="${ASSETS[d.spr]}" alt="" ${d.tint ? `style="filter:${d.tint}"` : ""}><div><b>${esc(d.name)}</b>${d.boss ? ` <span class="btag boss">chefe</span>` : d.mini ? ` <span class="btag">mini-chefe</span>` : ""} <small>nv ${d.lvl} · vida ${d.hp} · ${n} abatido${n > 1 ? "s" : ""}</small>
-            <div class="bwhere"><small>${esc(whereText(k, d))}</small>${respawnHtml(k, d)}</div><div class="drops">${drops}</div></div></div>`;
-        }).join("");
+        // rodada 140: Tasks em 3 colunas que cabem na tela (sem rolar); monstros e saques ficam no Livro dos monstros
+        const bestTxt = window.ValdoraDaily ? (() => { const DY = ValdoraDaily, c = DY.seenCount(player.kills, MOBS), nx = DY.next(player.kills, player.bestiary, MOBS);
+          return `${c} monstros descobertos${nx ? ` · prêmio aos ${nx.n}` : ""}`; })() : "";
+        $("tab-journal").innerHTML = `<div class="tk-col tk-camp">${campHtml}</div><div class="tk-col">${questsHtml}</div><div class="tk-col">`
+          + `<div class="journal-h">Conquistas <small>${got}/${ACHIEVEMENTS.length}</small></div><div class="achs">${ACHIEVEMENTS.map((a) =>
+          `<span class="ach${player.ach[a.id] ? " on" : ""}" title="${esc(a.desc)} · ${a.coins} moedas">${player.ach[a.id] ? "★" : "☆"} ${esc(a.name)}</span>`).join("")}</div>`
+          + `<div class="journal-h">Bestiário</div><p class="desc">${esc(bestTxt)}. Os monstros, onde vivem e o que deixam cair estão no Livro dos monstros (B).</p></div>`;
       }
     }
     return { render, passiveHtml };
