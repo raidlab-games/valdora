@@ -1498,28 +1498,15 @@ window.VD = (() => {
   ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
   // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
   const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", null];
-  // ---------- rodada 139: ofícios com progressão lenta ----------
-  // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções e elixires ficam com a Morgana.
-  // Cada receita só libera depois de fazer a anterior da mesma linha algumas vezes (botas de couro → de viajante → de lumita...),
-  // e o xp dos três ofícios (Artesanato, Ferraria e Alquimia) caiu para 60%.
-  const CRAFT_NEED = 3, BREW_NEED = 4, FORGE_NEED = 2, PREREQ = {};
-  for (const [n, r] of Object.entries(CRAFT)) if (ITEMS[n] && (ITEMS[n].heal || ITEMS[n].buff)) {
+  // ---------- rodada 139/144: ofícios com progressão lenta ----------
+  // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
+  // Cada receita pede só o nível do ofício (o jogador escolhe o que criar para subir); o xp dos três ofícios (Artesanato,
+  // Ferraria e Alquimia) caiu para 60%. PREREQ fica vazio (rodada 144: saiu a regra de fazer a receita anterior antes).
+  const PREREQ = {};
+  for (const [n] of Object.entries(CRAFT)) if (ITEMS[n] && (ITEMS[n].heal || ITEMS[n].buff)) {
     delete CRAFT[n]; // os elixires antigos curavam menos que as poções da Morgana do mesmo nível: a linha dela os substitui
   }
   {
-    const fam = (n, r) => r.bag ? "bag" : ITEMS[n] ? `${ITEMS[n].slot || "x"}:${ITEMS[n].ammo ? "ammo" : ITEMS[n].sec || ""}` : "x:" + n;
-    const by = {};
-    for (const [n, r] of Object.entries(CRAFT)) (by[fam(n, r)] = by[fam(n, r)] || []).push([n, r]);
-    delete by.bag; // mochilas se fazem uma vez só e já pedem a anterior (r.req)
-    for (const L of Object.values(by)) { L.sort((a, b) => a[1].lvl - b[1].lvl); for (let i = 1; i < L.length; i++) PREREQ[L[i][0]] = [L[i - 1][0], CRAFT_NEED]; }
-    const P = Object.entries(POTIONS).sort((a, b) => a[1].lvl - b[1].lvl);
-    for (let i = 1; i < P.length; i++) PREREQ["pot:" + P[i][0]] = [P[i - 1][0], BREW_NEED];
-    for (const g of Object.values(GEAR)) g.tiers.forEach((t, i) => {
-      const p = g.tiers[i - 1]; if (!p || !p.forge || !t.forge) return;
-      PREREQ["forge:" + t.name] = [p.name, FORGE_NEED];
-      if (t.bow) PREREQ["forge:" + t.bow] = [p.bow || p.name, FORGE_NEED];
-      if (t.two) PREREQ["forge:" + t.two] = [p.two || p.name, FORGE_NEED];
-    });
     const slow = (r) => { if (r && r.xp) r.xp = Math.max(1, Math.round(r.xp * 0.6)); };
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
