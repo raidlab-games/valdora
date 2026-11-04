@@ -73,7 +73,10 @@ window.ValdoraRules = (() => {
     };
   }
   // chance de sucesso por tentativa de coleta
-  const gatherChance = (lvl, req, toolBonus, extra = 0) => Math.max(0.1, Math.min(0.95, 0.3 + (lvl - req) * 0.025 + toolBonus * 0.08 + extra));
+  // rodada 154: toolBonus = níveis de ferramenta ACIMA do exigido pelo recurso. Madeira (slow) demora mais e a ferramenta pesa mais nela
+  const gatherChance = (lvl, req, toolBonus, extra = 0, slow = false) => slow
+    ? Math.max(0.06, Math.min(0.85, 0.16 + (lvl - req) * 0.018 + toolBonus * 0.1 + extra))
+    : Math.max(0.1, Math.min(0.95, 0.3 + (lvl - req) * 0.025 + toolBonus * 0.08 + extra));
 
   // rodada 28: chance de queimar ao assar (24% no nível exigido, -3 pontos por nível, zera 8 níveis acima); antes 32% e -3,5
   const burnChance = (lvl, req) => Math.max(0, Math.min(0.24, 0.24 - (lvl - req) * 0.03));

@@ -10,7 +10,7 @@ window.ValdoraDialogs = (() => {
     guard: { title: "Guarda Ivo", talk: "" },
     bank: { title: "Cofre da vila", talk: "Clique num item da mochila para guardar; clique no cofre para retirar." },
     furnace: { title: "Fornalha", talk: "Funda minério em barras. Fique ao lado enquanto trabalha." },
-    anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras. A peça pronta vai para a mochila: clique nela para vestir." },
+    anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras (as primeiras ferramentas, de cobre, saem direto do minério). A peça pronta vai para a mochila: clique nela para vestir." },
     witch: { title: "Feiticeira Morgana", talk: "\"Ervas certas, fogo baixo e paciência. Traga os ingredientes e eu ensino o resto.\"" }, // rodada 117
     warden: { title: "Guardião", talk: "" },
     harbor: { title: "Cais", talk: "" }, // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
@@ -125,7 +125,7 @@ window.ValdoraDialogs = (() => {
           gather: Object.values(player.equip).reduce((t, e) => t + (e ? accBonus(e).gather : 0), 0), buffs: Object.keys(player.buffs).map((k) => BUFFS[k].name),
           skills: Object.entries(SKILLS).map(([k, n]) => { const xp = player.xp[k], l = level(xp), a = xpFor(l), b = xpFor(l + 1); return { name: n, lvl: l, pct: l >= MAX_LVL ? 100 : (xp - a) / (b - a) * 100 }; }),
           chances: [ // rodada 29: coleta (recursos liberados) e queima ao assar
-            ...Object.values(RES).filter((R) => lv(R.skill) >= R.req).map((R) => [R.name, Math.round(RULES.gatherChance(lv(R.skill), R.req, tier(R.tool).bonus, Object.values(player.equip).reduce((t, e) => t + (e ? accBonus(e).gather : 0), 0) / 100 + (player.master[R.tool] ? 0.05 : 0)) * 100) + "%"]),
+            ...Object.values(RES).filter((R) => lv(R.skill) >= R.req).map((R) => [R.name, Math.round(RULES.gatherChance(lv(R.skill), R.req, Math.max(0, tier(R.tool).bonus - (R.need || 0)), Object.values(player.equip).reduce((t, e) => t + (e ? accBonus(e).gather : 0), 0) / 100 + (player.master[R.tool] ? 0.05 : 0), R.skill === "corte") * 100) + "%"]),
             ...Object.entries(ITEMS).filter(([, it]) => it.cook && lv("culinaria") >= it.cookLvl).map(([n, it]) => [`Queimar ${it.cook.toLowerCase()}`, Math.round(RULES.burnChance(lv("culinaria"), it.cookLvl) * 100) + "%"])],
           gearRows, feats: [["Monstros", S.kills], ["Chefes", S.bosses], ["Criptas", S.crypts || 0], ...(S.riftBest ? [["Fenda (recorde)", `${Math.floor(S.riftBest / 60)}:${String(S.riftBest % 60).padStart(2, "0")} · ${S.rifts || 0}x`]] : []), ["Tocas", S.dens || 0], ["Raros", S.rares], ["Forjas", S.forged], ["Obras-primas", S.masterworks || 0],
             ["Conquistas", `${Object.keys(player.ach).length}/${ACHIEVEMENTS.length}`], ["Moedas", player.coins]] });

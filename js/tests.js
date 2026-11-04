@@ -105,8 +105,8 @@
       const R = RES[k]; if (!R || R.tool !== "foice" || R.skill !== "herbalismo" || !ITEMS[R.item] || !ASSETS[k] || !ASSETS[R.empty]) miss.push(k);
       if (!AS[k] || !AS[k].rows.sway) miss.push(k + " (vento)");
     }
-    if (!VD.TUTORIAL.some((s) => s.reward.items && s.reward.items["Foice gasta"])) miss.push("foice no tutorial");
-    for (const n of ["Foice gasta", "Machado gasto", "Espada de bronze", "Arco de bronze", "Gibão de couro"]) if (!ITEMS[n] || !ITEMS[n].gear) miss.push(n + " (item)");
+    if (!VD.TUTORIAL.some((s) => s.reward.items && s.reward.items["Foice de pedra"])) miss.push("foice no tutorial");
+    for (const n of ["Foice de pedra", "Machado de pedra", "Picareta de cobre", "Espada de bronze", "Arco de bronze", "Gibão de couro"]) if (!ITEMS[n] || !ITEMS[n].gear) miss.push(n + " (item)");
     if (!VD.EQUIP_SLOTS.arma || !VD.EQUIP_SLOTS.armadura) miss.push("espaços arma/peitoral");
     if (!["Erva-cidreira", "Flor-de-mel"].every((n) => Object.values(VD.ALCHEMY).some((r) => r.mats[n]))) miss.push("ervas na alquimia");
     if (![1, 2, 3].every((n) => ASSETS[`hero_${n}_reap`])) miss.push("folha de colheita");
@@ -740,6 +740,32 @@
     const D = ValdoraDaily, r = [];
     for (const [cl, day] of [[100, "2026-11-01"], [100, "2026-11-02"], [60, "2026-11-03"], [140, "2026-11-04"]]) { const d = MOBS[D.today(null, day, cl, MOBS).type];
       if (d.lvl < cl - 4 || d.lvl > cl + 6) r.push(`${cl}: ${d.name} nv ${d.lvl}`); }
+    return miss(r);
+  });
+  test("rodada 154: machado e picareta: pedra (tutorial) → cobre do mapa 1 → um minério por mapa, cada um melhor", () => {
+    const r = [], fromOre = (t) => t.forge && Object.keys(t.forge.mats).flatMap((m) => VD.SMELT[m] ? Object.keys(VD.SMELT[m].mats) : [m]);
+    for (const g of ["machado", "picareta"]) { const T = VD.GEAR[g].tiers;
+      if (!/de pedra$/.test(T[0].name) || !/de cobre$/.test(T[1].name) || !T[1].forge.mats.Cobre) r.push(g + ": pedra/cobre");
+      T.forEach((t, i) => { if (i && t.bonus <= T[i - 1].bonus) r.push(t.name + " não é melhor"); if (!ASSETS[ITEMS[t.name].icon]) r.push(t.name + " sem ícone"); });
+      for (const ore of ["Obsidiana", "Mitril", "Ouro solar", "Gelo eterno"]) if (!T.some((t) => (fromOre(t) || []).includes(ore))) r.push(g + " sem " + ore); }
+    const ores = { 2: "rock_obsidian", 3: "rock_mithril", 4: "rock_sun", 5: "rock_frost" };
+    for (const k of Object.values(ores)) if (!VD.RES[k] || !ASSETS[k]) r.push(k + " sem arte");
+    const tut = VD.TUTORIAL.flatMap((s) => Object.keys((s.reward && s.reward.items) || {})).filter((n) => /^(Machado|Picareta|Foice) /.test(n));
+    if (tut.some((n) => !/de pedra$/.test(n)) || !VD.TUTORIAL.some((s) => s.ev === "forgeitem:Picareta de cobre")) r.push("tutorial: " + tut);
+    if (VD.RENAMED["Machado gasto"] !== "Machado de pedra" || !Object.values(VD.RENAMED).every((n) => ITEMS[n])) r.push("nomes antigos");
+    return miss(r);
+  });
+  test("rodada 154: cada mapa com recursos únicos; base do mapa N pede a ferramenta do minério do mapa N-1; madeira mais lenta", () => {
+    const r = [], biome = { tree: 1, tree_oak: 1, tree_cedar: 1, rock: 1, rock_iron: 1, rock_lumita: 1, tree_dark: 2, rock_obsidian: 2, tree_pine: 3, rock_mithril: 3, palm: 4, rock_sun: 4, tree_snowpine: 5, rock_frost: 5 };
+    const T = VD.GEAR.machado.tiers, oreOf = (t) => t.forge && Object.keys(t.forge.mats).flatMap((m) => VD.SMELT[m] ? Object.keys(VD.SMELT[m].mats) : [m]);
+    const MAP_ORE = { 1: ["Cobre", "Ferro"], 2: ["Obsidiana"], 3: ["Mitril"], 4: ["Ouro solar"] };
+    for (const [k, b] of Object.entries(biome)) { const R = RES[k], n = R.need; if (n == null) { r.push(k + " sem need"); continue; }
+      if (b >= 2 && !(oreOf(T[n]) || []).some((o) => MAP_ORE[b - 1].includes(o))) r.push(`${k}: ${T[n].name} não é do mapa ${b - 1}`);
+      if (b >= 2 && T[n - 1] && (oreOf(T[n - 1]) || []).some((o) => (MAP_ORE[b - 1] || []).includes(o)) && b > 2) r.push(k + " aceita ferramenta pior"); }
+    for (const b of [2, 3, 4, 5]) if (VD.FISH_BY_BIOME[b - 1].need !== b + 1) r.push("peixe do mapa " + b);
+    const items = VD.FISH_BY_BIOME.map((f) => f.item); if (new Set(items).size !== 5 || items.includes("Tucunaré cru")) r.push("peixes repetidos");
+    if (!(RU.gatherChance(10, 10, 0, 0, true) < RU.gatherChance(10, 10, 0) && RU.gatherChance(10, 10, 3, 0, true) - RU.gatherChance(10, 10, 0, 0, true) > 0.25)) r.push("madeira");
+    for (const t of T.slice(4)) if (!Object.keys(t.forge.mats).some((m) => /Madeira|Pinho/.test(m))) r.push(t.name + " sem madeira");
     return miss(r);
   });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {

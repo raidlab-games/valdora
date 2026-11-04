@@ -26,6 +26,8 @@ window.VD = (() => {
     "Lambari assado": { icon: "item_lambari_cooked", price: 4, heal: 5 },
     "Tucunaré assado": { icon: "item_tucunare_cooked", price: 11, heal: 15 },
     // rodada 137: um peixe novo por bioma (os anteriores também saem lá, e o mais fraco sai mais)
+    "Enguia-sombria crua": { icon: "item_tucunare", filter: "hue-rotate(230deg) saturate(1.5) brightness(0.75)", price: 7, cook: "Enguia-sombria assada", cookLvl: 16, cookXp: 22 }, // rodada 154: peixe da Floresta Sombria
+    "Enguia-sombria assada": { icon: "item_tucunare_cooked", filter: "hue-rotate(230deg) saturate(1.5) brightness(0.8)", price: 15, heal: 20 },
     "Truta da serra crua": { icon: "item_tucunare", filter: "hue-rotate(160deg) saturate(1.2)", price: 9, cook: "Truta da serra assada", cookLvl: 22, cookXp: 28 },
     "Truta da serra assada": { icon: "item_tucunare_cooked", filter: "hue-rotate(160deg) saturate(1.2)", price: 20, heal: 26 },
     "Bagre do oásis cru": { icon: "item_tucunare", filter: "sepia(0.8) saturate(1.8)", price: 15, cook: "Bagre do oásis assado", cookLvl: 36, cookXp: 42 },
@@ -153,7 +155,7 @@ window.VD = (() => {
     fishspot: { name: "Cardume raso", skill: "pesca", tool: "vara", req: 1, xp: 6, charges: [4, 9], verb: "Pescar", fx: ["#8fc1ee", "#ffffff"],
       fish: [{ item: "Lambari cru", req: 1, xp: 6 }] },
     fishspot_deep: { name: "Cardume fundo", skill: "pesca", tool: "vara", req: 1, xp: 6, charges: [4, 9], verb: "Pescar", fx: ["#8fc1ee", "#ffffff"],
-      fish: [{ item: "Tucunaré cru", req: 10, xp: 12 }, { item: "Lambari cru", req: 1, xp: 6 }] },
+      fish: [{ item: "Tucunaré cru", req: 10, xp: 12, need: 1 }, { item: "Lambari cru", req: 1, xp: 6 }] },
   };
 
   // Monstros: nível, vida, ataque/defesa (contra os do jogador), dano máx., velocidade (ticks por ataque),
@@ -978,11 +980,13 @@ window.VD = (() => {
     }
   }
 
-  const tool = (n, worn, first) => [
-    { name: `${n} ${worn}`, bonus: 0 },
-    { name: `${n} de bronze`, bonus: 1, cost: 30, req: 1, forge: { mats: first, lvl: 1, xp: 12 } },
-    { name: `${n} de ferro`, bonus: 2, cost: 150, req: 8, forge: { mats: { "Barra de ferro": 2 }, lvl: 8, xp: 36 } },
-    { name: `${n} de aço`, bonus: 3, cost: 800, req: 16, forge: { mats: { "Barra de aço": 2 }, lvl: 15, xp: 64 } }];
+  // rodada 154: machado, picareta e foice começam de pedra (o Ivo dá) e o primeiro nível é de cobre, forjado com o cobre do mapa 1;
+  // depois ferro e aço (mapa 1) e um minério por mapa: obsidiana (Floresta), mitril (Montanhas), ouro solar (Deserto), gelo eterno (Geleira)
+  const tool = (n, worn, first, ic) => [
+    { name: `${n} ${worn}`, bonus: 0, ...(ic ? { icon: ic[0] } : {}) },
+    { name: `${n} de ${ic ? "cobre" : "bronze"}`, bonus: 1, cost: 30, req: 1, forge: { mats: first, lvl: 1, xp: 12 }, ...(ic ? { icon: ic[1] } : {}) },
+    { name: `${n} de ferro`, bonus: 2, cost: 150, req: 8, forge: { mats: { "Barra de ferro": 2, "Madeira de carvalho": 1 }, lvl: 8, xp: 36 } },
+    { name: `${n} de aço`, bonus: 3, cost: 800, req: 16, forge: { mats: { "Barra de aço": 2, "Madeira de carvalho": 2 }, lvl: 15, xp: 64 } }];
   const GEAR = {
     espada: { label: "Arma", icon: "tool_sword", skill: "combate", tiers: [
       { name: "Espada gasta", bow: "Arco gasto", acc: 0, dmg: 0 },
@@ -1000,10 +1004,10 @@ window.VD = (() => {
       // rodada 21: quarto tier (a armadura parava no aço enquanto a espada ia até a lumita; dá destino às barras de lumita dos chefes)
       { name: "Couraça de lumita", icon: "item_armor_lumita", def: 17, cost: 3600, req: 15, /* rodada 46: 24 → 15 (acompanha a Lâmina de lumita, Combate 24) */ forge: { mats: { "Barra de lumita": 5 }, lvl: 24, xp: 240 } },
       { name: "Couraça estelar", icon: "item_star_armor", def: 22, cost: 16000, req: 22, rolls: true, forge: { mats: { "Barra estelar": 5 }, lvl: 32, xp: 480 } }] }, // rodada 82
-    machado: { label: "Machado", icon: "tool_axe", skill: "corte", tiers: tool("Machado", "gasto", { "Barra de bronze": 1 }) },
-    picareta: { label: "Picareta", icon: "tool_pick", skill: "mineracao", tiers: tool("Picareta", "gasta", { "Barra de bronze": 1 }) },
+    machado: { label: "Machado", icon: "tool_axe", skill: "corte", tiers: tool("Machado", "de pedra", { "Cobre": 3, "Madeira": 2 }, ["tool_axe_stone", "tool_axe_copper"]) },
+    picareta: { label: "Picareta", icon: "tool_pick", skill: "mineracao", tiers: tool("Picareta", "de pedra", { "Cobre": 3, "Madeira": 2 }, ["tool_pick_stone", "tool_pick_copper"]) },
     vara: { label: "Vara", icon: "tool_rod", skill: "pesca", tiers: tool("Vara", "gasta", { "Madeira": 3, "Barra de bronze": 1 }) },
-    foice: { label: "Foice", icon: "tool_sickle", skill: "herbalismo", tiers: tool("Foice", "gasta", { "Barra de bronze": 1 }) }, // rodada 104
+    foice: { label: "Foice", icon: "tool_sickle", skill: "herbalismo", tiers: tool("Foice", "de pedra", { "Cobre": 2, "Madeira": 1 }, ["tool_sickle_stone", "tool_sickle_copper"]) }, // rodada 104
   };
 
   // rodada 105: equipamento dos biomas novos (obsidiana 45, solar 78, mitril 112, glacial 150), forjado com as barras de cada bioma
@@ -1016,7 +1020,8 @@ window.VD = (() => {
     const lvl = req, cost = [32000, 70000, 140000, 260000][k];
     GEAR.espada.tiers.push({ name: sword, bow, two, filter, acc: [26, 34, 44, 56][k], dmg: [11, 15, 20, 26][k], cost, req, forge: { mats: { [bar]: 4 }, lvl, xp: [520, 760, 1050, 1400][k] } });
     GEAR.armadura.tiers.push({ name: armor, filter, icon: "item_armor_lumita", def: [28, 36, 46, 58][k], cost, req, forge: { mats: { [bar]: 5 }, lvl, xp: [600, 880, 1200, 1600][k] } });
-    for (const t of ["machado", "picareta", "vara", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
+    const wood = ["Madeira de ébano", "Madeira de pinho", "Madeira de palmeira", "Pinho nevado"][k]; // rodada 154: o cabo é da madeira do mapa
+    for (const t of ["machado", "picareta", "vara", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2, [wood]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
   });
   // rodada 151: cajado do Mago em cada nível de arma (mesmos números da espada; treina e pede o nível de Mago)
   ["Cajado gasto", "Cajado de bronze", "Cajado de ferro", "Cajado de aço", "Cajado de lumita", "Cajado estelar", "Cajado de obsidiana", "Cajado de mitril", "Cajado solar", "Cajado glacial"]
@@ -1169,24 +1174,29 @@ window.VD = (() => {
   };
 
   // Tutorial do Guarda Ivo. ev = evento que conta progresso (prefixo basta: "forge" conta qualquer forja).
+  // rodada 154: nomes antigos das ferramentas (saves de antes viram o item novo)
+  const RENAMED = { "Machado gasto": "Machado de pedra", "Picareta gasta": "Picareta de pedra", "Foice gasta": "Foice de pedra",
+    "Machado de bronze": "Machado de cobre", "Picareta de bronze": "Picareta de cobre", "Foice de bronze": "Foice de cobre" };
   const TUTORIAL = [
-    { text: "Fale com o Guarda Ivo, na praça.", ev: "talk", n: 1, reward: { items: { "Machado gasto": 1 } }, // rodada 104: nada vem preso ao herói; o Ivo empresta o kit
+    { text: "Fale com o Guarda Ivo, na praça.", ev: "talk", n: 1, reward: { items: { "Machado de pedra": 1 } }, // rodada 104: nada vem preso ao herói; o Ivo empresta o kit
       say: "Bem-vindo a Lumeira! Vou te ensinar o básico: coletar, forjar, cozinhar e lutar. Siga as tarefas no painel, à direita. Cada região diz o nível recomendado ao entrar." },
-    { text: "Corte 3 madeiras numa árvore.", ev: "gather:Madeira", n: 3, reward: { coins: 10, items: { "Picareta gasta": 1 } },
-      say: "Tome este machado velho e clique numa árvore dos campos. Quanto maior seu nível de Corte, mais rápido ela rende." },
+    { text: "Corte 3 madeiras numa árvore.", ev: "gather:Madeira", n: 3, reward: { coins: 10, items: { "Picareta de pedra": 1 } },
+      say: "Tome este machado de pedra e clique numa árvore dos campos. Quanto maior seu nível de Corte, mais rápido ela rende." },
     { text: "Minere 4 cobres.", ev: "gather:Cobre", n: 4, reward: { coins: 10 },
-      say: "Os veios de cobre são as pedras com manchas alaranjadas. Elas se esgotam e voltam depois de um tempo." },
+      say: "Tome também esta picareta de pedra. Os veios de cobre são as pedras com manchas alaranjadas. Elas se esgotam e voltam depois de um tempo." },
     { text: "Funda 2 barras de bronze na fornalha.", ev: "smelt:Barra de bronze", n: 2, reward: { coins: 15 },
       say: "A fornalha fica no canto sudeste da praça. Cada barra de bronze usa 2 cobres." },
     { text: "Forje uma Espada de bronze na bigorna.", ev: "forgeitem:Espada de bronze", n: 1, reward: { coins: 20, items: { "Vara gasta": 1 } }, // rodada 152: todos começam pela espada
       say: "Na bigorna, ao lado da fornalha, transforme as barras numa espada: toda aventura começa por ela. Depois, se quiser, forje um arco (Arqueiro) ou um cajado (Mago) e siga o seu caminho: Guerreiro, Arqueiro ou Mago." },
+    { text: "Forje uma Picareta de cobre na bigorna.", ev: "forgeitem:Picareta de cobre", n: 1, reward: { coins: 15 }, // rodada 154: a primeira ferramenta de metal
+      say: "Pedra quebra o galho, mas cobre rende mais. Minere mais 3 cobres e, com 2 madeiras, forje uma picareta de cobre (o machado de cobre é igual). Cada mapa novo tem um minério melhor para machados e picaretas mais fortes." },
     { text: "Pesque um lambari e asse na fogueira.", ev: "cook:Lambari assado", n: 1, reward: { items: { "Poção de vida": 2 }, weapon: 1 }, // rodada 104: a primeira arma (arco para o Arqueiro)
       say: "Pesque nos cardumes (ondulações na água) e asse na fogueira da vila. Peixe assado cura em combate." },
     { text: "Derrote 3 slimes.", ev: "kill:slime", n: 3, reward: { coins: 25 },
       say: "Clique num slime para atacar. Os espólios caem no chão: clique neles para pegar." },
     { text: "No boneco de treino (leste da praça), golpeie e saia da área vermelha 2 vezes.", ev: "dodge", n: 2, reward: { coins: 15, items: { "Poção de vida": 1 } },
       say: "Chefes e monstros fortes avisam antes do golpe pesado: o chão fica vermelho. Golpeie o boneco e saia da área antes que ele revide." },
-    { text: "Venda algo ao Bento ou entregue uma encomenda.", ev: "trade", n: 1, reward: { coins: 10, items: { "Foice gasta": 1 } }, // rodada 104: foice para colher plantas
+    { text: "Venda algo ao Bento ou entregue uma encomenda.", ev: "trade", n: 1, reward: { coins: 10, items: { "Foice de pedra": 1 } }, // rodada 104: foice para colher plantas
       say: "O Bento compra tudo e faz encomendas que pagam melhor. Guarde o que não quer vender no cofre da vila." },
   ];
   const TIPS = [
@@ -1373,8 +1383,18 @@ window.VD = (() => {
     return MAP_RAR.filter(([rar]) => !slime || rar === "comum").map(([rar, , , p]) => [rar, p * f * (slime ? 0.5 : 1), MAP_LOOT[M.n][rar]]);
   }
   // rodada 137: peixe de cada bioma (o 1º é o do Campo); no bioma N saem os N primeiros, o mais fraco com mais chance
-  const FISH_BY_BIOME = [{ item: "Lambari cru", req: 1, xp: 6 }, { item: "Tucunaré cru", req: 10, xp: 12 }, { item: "Truta da serra crua", req: 22, xp: 20 },
-    { item: "Bagre do oásis cru", req: 36, xp: 30 }, { item: "Salmão glacial cru", req: 50, xp: 44 }];
+  // rodada 154: um peixe próprio por mapa (no mapa 1 o cardume fundo dá tucunaré); need = nível mínimo da vara (como as outras ferramentas)
+  const FISH_BY_BIOME = [{ item: "Lambari cru", req: 1, xp: 6 }, { item: "Enguia-sombria crua", req: 16, xp: 16, need: 3 }, { item: "Truta da serra crua", req: 22, xp: 20, need: 4 },
+    { item: "Bagre do oásis cru", req: 36, xp: 30, need: 5 }, { item: "Salmão glacial cru", req: 50, xp: 44, need: 6 }];
+  // rodada 154: cada recurso pede uma ferramenta mínima (índice do nível: 0 pedra, 1 cobre, 2 ferro, 3 aço, 4 obsidiana, 5 mitril, 6 solar, 7 glacial).
+  // O mapa 1 vai de pedra a ferro; os recursos base do mapa N pedem a ferramenta feita com o minério do mapa N-1 (o melhor do mapa 1 é o aço),
+  // e os raros do mapa N pedem a ferramenta do próprio mapa N.
+  const TOOL_NEED = { tree: 0, rock: 0, res_herb: 0, res_flower: 0, tree_oak: 1, rock_iron: 1, res_moonlily: 1, tree_cedar: 2, rock_lumita: 2, res_crystalbloom: 2,
+    tree_dark: 3, rock_obsidian: 3, res_shadecap: 3, rock_amethyst: 4, res_nightbloom: 4,
+    tree_pine: 4, rock_mithril: 4, res_rockmoss: 4, rock_adamant: 5, res_edelweiss: 5,
+    palm: 5, cactus: 5, rock_sun: 5, res_desertrose: 5, rock_ruby: 6, res_sunlotus: 6,
+    tree_snowpine: 6, rock_frost: 6, res_frostbloom: 6, rock_starice: 7, res_aurora: 7 };
+  for (const [k, n] of Object.entries(TOOL_NEED)) if (RES[k]) RES[k].need = n;
   const REGION_DROP = (reg, d) => { const n = regionItem(reg); return n ? [n, d.boss ? 1 : d.mini ? 0.5 : 0.12, 1, d.boss ? 4 : 1] : null; };
 
   // Peso (kg). Pesa tudo o que vai na mochila e no corpo; o cofre não. Carga = 50 kg + 0,4 por nível de Vitalidade + a mochila.
@@ -1538,6 +1558,6 @@ window.VD = (() => {
     for (const S of [CRAFT, POTIONS, SMELT]) Object.values(S).forEach(slow);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) { slow(t.forge); if (t.twoForge !== t.forge) slow(t.twoForge); }
   }
-  return { PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

@@ -391,10 +391,10 @@
   const GROUND_OF = { darkwood: ["grass_night", "grass_night_2", "grass_dark", "grass_dark_2"], desert: ["sand_2", "sand_2", "sand", "sand"], mountains: ["rockg", "rockg_2", "dirt", "stone"], snow: ["snow", "snow_2", "stone", "stone"] };
   // recursos e enfeites por região (chance por tile livre); as do Campo são as da tabela antiga
   const TABLE_NEW = {
-    darkwood: [["boulder_biome", 0.006], ["tree_dark", 0.07], ["tree_cedar", 0.012], ["rock_obsidian", 0.014], ["rock_iron", 0.006], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
-    desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.012], ["rock", 0.005], ["boulder_sand", 0.008], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
-    mountains: [["tree_pine", 0.034], ["rock_mithril", 0.014], ["rock_iron", 0.01], ["boulder", 0.022], ["res_rockmoss", 0.008], ["bushv:deco_bush_mountain", 0.006], ["rare:rock_adamant", 0.004], ["rare:res_edelweiss", 0.004]],
-    snow: [["tree_snowpine", 0.05], ["rock_frost", 0.014], ["rock_lumita", 0.004], ["res_frostbloom", 0.009], ["boulder_snow", 0.01], ["bushv:deco_bush_snow", 0.006], ["rare:rock_starice", 0.003], ["rare:res_aurora", 0.003]],
+    darkwood: [["boulder_biome", 0.006], ["tree_dark", 0.08], ["rock_obsidian", 0.018], ["res_shadecap", 0.01], ["bushv:deco_bush_dark", 0.01], ["rare:rock_amethyst", 0.004], ["rare:res_nightbloom", 0.004]],
+    desert: [["cactus", 0.026], ["palm", 0.012], ["rock_sun", 0.016], ["boulder_sand", 0.008], ["res_desertrose", 0.009], ["bushv:deco_bush_dry", 0.008], ["deco:deco_bones_1", 0.003], ["rare:rock_ruby", 0.0035], ["rare:res_sunlotus", 0.0035]],
+    mountains: [["tree_pine", 0.034], ["rock_mithril", 0.02], ["boulder", 0.022], ["res_rockmoss", 0.008], ["bushv:deco_bush_mountain", 0.006], ["rare:rock_adamant", 0.004], ["rare:res_edelweiss", 0.004]],
+    snow: [["tree_snowpine", 0.05], ["rock_frost", 0.017], ["res_frostbloom", 0.009], ["boulder_snow", 0.01], ["bushv:deco_bush_snow", 0.006], ["rare:rock_starice", 0.003], ["rare:res_aurora", 0.003]],
   };
   const TABLE_CAMPO = {
     fields: [["tree", 0.06], ["rock", 0.014], ["bush", 0.006], ["res_herb", 0.012], ["res_flower", 0.006]],
@@ -1282,6 +1282,7 @@
   const hitChance = RULES.hitChance;
   const validAff = (aff) => Array.isArray(aff) ? aff.filter((a) => a && RULES.AFFIXES.some((A) => A.id === a.id) && a.v > 0).map((a) => ({ id: a.id, v: a.v | 0 })) : undefined;
   const slotsFrom = (arr, n) => { const out = Array(n).fill(null); if (Array.isArray(arr)) arr.slice(0, n).forEach((s, i) => {
+    if (s && VD.RENAMED[s.name]) s = { ...s, name: VD.RENAMED[s.name] }; // rodada 154: ferramentas renomeadas (pedra/cobre)
     if (s && ITEMS[s.name] && s.n > 0) { out[i] = { name: s.name, n: Math.floor(s.n) }; const aff = validAff(s.aff); if (aff && aff.length) { out[i].aff = aff; out[i].n = 1; }
       if (s.master) { out[i].master = 1; out[i].n = 1; } } }); return out; };
 
@@ -1329,7 +1330,7 @@
     player.auction = AUCTION.sanitize(data.auction); // rodada 114: lotes na Casa de Leilões
     if (player.bankUps == null) player.bankUps = Math.max(0, Math.ceil((player.bank.length - BANK.start) / BANK.step)); // rodada 117
     for (const k of EQUIP_KEYS) { // aceita o formato antigo (só o nome) e o novo ({ name, aff })
-      const e = data.equip && data.equip[k], name = e && (typeof e === "string" ? e : e.name);
+      const e = data.equip && data.equip[k], n0 = e && (typeof e === "string" ? e : e.name), name = VD.RENAMED[n0] || n0;
       if (name && ITEMS[name] && ITEMS[name].slot === k) { player.equip[k] = { name }; const aff = validAff(e.aff); if (aff && aff.length) player.equip[k].aff = aff; if (e.master) player.equip[k].master = 1; }
       if (k === "municao" && player.equip.municao && ITEMS[player.equip.municao.name].ammo) { const n = Math.floor(+e.n || 0); if (n > 0) player.equip.municao.n = n; else player.equip.municao = null; }
     }
@@ -3093,7 +3094,7 @@
   }
   const MASTER_TEXT = { espada: "+1 acerto e +1 dano", armadura: "+2 defesa" };
   const gearName = (k) => { const e = gearItem(k); return (e ? e.name : tier(k).name) + (e && e.master ? " ★" : ""); };
-  const gearEffect = (k, t) => k === "espada" ? `+${t.acc} acerto, +${t.dmg} dano` : k === "armadura" ? `+${t.def} defesa` : `+${t.bonus * 8}% de chance de coleta`;
+  const gearEffect = (k, t) => k === "espada" ? `+${t.acc} acerto, +${t.dmg} dano` : k === "armadura" ? `+${t.def} defesa` : `ferramenta nível ${t.bonus + 1} (mais rápida, abre recursos melhores)`; // rodada 154
   // telas da fornalha, da bigorna e do artesanato (js/crafting.js)
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
@@ -3856,8 +3857,8 @@
     if (p.kind === "mob") return [`${r.d.name} (nv ${r.d.lvl})`, r.d.lvl > lv("combate") + 6 ? "#ff6b5a" : r.d.lvl > lv("combate") ? "#f5c060" : "#9fe08a",
       `Atacar · ${Math.round(hitChance(combatStats().acc, r.d.def) * 100)}% de acerto${r.d.aggro ? " · agressivo" : ""}`];
     if (p.kind === "res") {
-      const R = RES[r.kind], ok = lv(R.skill) >= R.req;
-      return [`${R.verb}: ${R.name}`, ok ? "#ffffff" : "#ff6b5a", ok ? "" : `requer ${SKILLS[R.skill]} ${R.req}`];
+      const R = RES[r.kind], ok = lv(R.skill) >= R.req, tOk = tier(R.tool).bonus >= (R.need || 0); // rodada 154: ferramenta mínima
+      return [`${R.verb}: ${R.name}`, ok && tOk ? "#ffffff" : "#ff6b5a", !ok ? `requer ${SKILLS[R.skill]} ${R.req}` : !tOk ? `requer ${GEAR[R.tool].tiers[R.need].name} ou melhor` : ""];
     }
     if (p.kind === "loot") { const gs = groundItems.filter((g) => g.x === r.x && g.y === r.y); return [gs.map((g) => `${g.n}x ${g.name}`).join(", "), "#ffe680", "Pegar"]; }
     if (p.kind === "deathbag") { const b = r.bag, n = b.items.reduce((t, it) => t + it.n, 0), m = Math.max(1, Math.ceil((b.until - Date.now()) / 60000));

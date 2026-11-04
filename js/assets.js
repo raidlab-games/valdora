@@ -329,6 +329,7 @@ for (const k of ["tool_bow", "item_arrows_wood", "item_arrows_iron", "item_arrow
 // rodada 104: Herbalismo — plantas do mapa, colhidas (toco) e ícones (Blender); a foice e a folha de colheita dos heróis
 for (const k of ["res_herb", "res_flower", "res_moonlily", "res_crystalbloom", "herb_cut"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.2, 1.2]; }
 for (const k of ["item_herb", "item_flower_honey", "item_moonlily", "item_crystal_bloom", "tool_sickle"]) ASSETS[k] = `assets/flow/${k}.png`;
+for (const t of ["axe", "pick", "sickle"]) for (const m of ["stone", "copper"]) ASSETS[`tool_${t}_${m}`] = `assets/flow/tool_${t}_${m}.png`; // rodada 154
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_reap.png`; SPRITE_SIZE[`hero_${n}_reap`] = [3 * 1.45 * 1.5, 4 * 1.45 * 1.5]; }
 
 // rodada 105: ícones da secundária (escudos, orbes) e dos braceletes
