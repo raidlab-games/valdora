@@ -960,3 +960,4 @@ button.link:hover { color: #cfe3ff; }
 #skillbar .mount-slot img.ic { image-rendering: pixelated; }
 #skillbar .mount-slot.on { border-color: #6fbf5a; box-shadow: 0 0 0 2px #000, 0 0 10px #6fbf5a88; }
 #skillbar .mount-slot.locked img.ic { filter: grayscale(1) brightness(.6); }
+#skillbar .mount-slot.combat { border-color: #d83a2a; box-shadow: 0 0 0 2px #000, 0 0 10px #ff3a2a99; } /* rodada 159: em combate */

@@ -1773,7 +1773,7 @@
   }
   // rodada 157: botão fixo da montaria no fim da barra (o retrato do seu cavalo); rodada 158: monta e desce na hora, recarga de 2 s
   function mountSlotHtml() {
-    const m = ValdoraMount.cur(player), tip = m ? `<b style="color:#ffd84a">Montaria</b> <small>(tecla H)</small><div>${esc(m.name)}: +${Math.round((m.speed - 1) * 100)}% de velocidade. Monta e desce na hora; recarga de 2 s.</div>`
+    const m = ValdoraMount.cur(player), tip = m ? `<b style="color:#ffd84a">Montaria</b> <small>(tecla H)</small><div>${esc(m.name)}: +${Math.round((m.speed - 1) * 100)}% de velocidade. Monta e desce na hora; recarga de 2 s. Levou golpe: espere 5 s sem apanhar para montar (borda vermelha).</div>`
       : `<b style="color:#ffd84a">Montaria</b><div>Sem cavalo: o Teodoro vende no Celeiro, logo ao sul de Lumeira.</div>`;
     return `<button id="mount-slot" class="mount-slot${m ? "" : " locked"}" data-mount="1" data-tip="${esc(tip)}" aria-label="Montaria"><img class="ic" src="${(window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png")}" alt=""><b>H</b><i class="cd"></i></button>`;
   }
@@ -1783,7 +1783,8 @@
     useHot(+b.dataset.slot); };
   function updateSkillbar() {
     { const b = $("mount-slot"), m = ValdoraMount.cur(player); // rodada 157: estado do botão da montaria
-      if (b) { b.classList.toggle("on", !!player.riding); b.classList.toggle("locked", !m); b.style.setProperty("--p", player.cd.mount > 0 ? player.cd.mount / MOUNT_CD : 0); b.classList.toggle("ready", !!m && !(player.cd.mount > 0));
+      if (b) { b.classList.toggle("on", !!player.riding); b.classList.toggle("locked", !m); const fight = player.combatT > 0; b.classList.toggle("combat", fight); // rodada 159: borda vermelha = em combate
+        b.style.setProperty("--p", fight ? player.combatT / COMBAT_LOCK : player.cd.mount > 0 ? player.cd.mount / MOUNT_CD : 0); b.classList.toggle("ready", !!m && !fight && !(player.cd.mount > 0));
         const src = (window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png"), im = b.querySelector("img"); if (im && im.getAttribute("src") !== src) im.setAttribute("src", src); } }
     for (const b of $("skillbar").children) {
       const id = b.dataset.act; if (!id) continue;
@@ -3033,12 +3034,14 @@
     if (!m) { log("Você ainda não tem cavalo. O Teodoro vende no Celeiro, logo ao sul de Lumeira.", "dim"); return; }
     if (inCrypt) { log("Aqui dentro não dá para cavalgar.", "warn"); return; }
     if (player.deadT > 0) return;
+    if (player.combatT > 0) { log(`Em combate: fique ${Math.ceil(player.combatT)} s sem levar golpe para montar.`, "warn"); return; } // rodada 159
     if (player.cd.mount > 0) { log(`Montaria em recarga: ${Math.ceil(player.cd.mount)} s.`, "dim"); return; } // rodada 158: 2 s entre montar e descer
     if (player.job && player.job.kind === "cook") stopCook();
     player.riding = true; player.runT = 0; player.job = null; player.cd.mount = MOUNT_CD; lazyAnim(m.sheet); SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
     log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true;
   }
   const MOUNT_CD = 2; // rodada 158: recarga do botão da montaria (monta e desce na hora, em qualquer momento)
+  const COMBAT_LOCK = 5; // rodada 159: segundos sem levar golpe para poder montar
   function dismount(msg, manual) {
     if (!player.riding) return;
     if (manual && player.cd.mount > 0) { log(`Montaria em recarga: ${Math.ceil(player.cd.mount)} s.`, "dim"); return; }
@@ -3637,6 +3640,10 @@
     { const K = player.sk || (player.sk = {}); for (const k of ["furyT", "wallT", "hawkT", "shieldT"]) if (K[k] > 0) K[k] = Math.max(0, K[k] - dt); if (!(K.shieldT > 0)) K.shield = 0; } // rodada 153
     if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
     if (!player.dash && player.prog >= 1 && !(player.deadT > 0) && blockAt(player.x, player.y)) unstick(true); // rodada 158
+    // rodada 159: em combate. Cada golpe recebido trava a montaria por 5 s (o botão fica com a borda vermelha); outro golpe volta aos 5 s
+    if (player.hurtSeen === undefined) player.hurtSeen = player.lastHurt;
+    if (player.lastHurt !== player.hurtSeen) { player.hurtSeen = player.lastHurt; player.combatT = COMBAT_LOCK; }
+    if (player.combatT > 0) player.combatT = Math.max(0, player.combatT - dt);
     if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
       if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }

@@ -20,6 +20,8 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.42", "Rédeas e montaria em combate", ["O cavaleiro segura as rédeas: correias grossas da boca do cavalo até as mãos",
+      "Levou golpe: a montaria trava 5 s (borda vermelha no botão); cada golpe novo volta aos 5 s"]],
     ["v1.41", "Progressão mais lenta", ["Equitação sobe 3x mais devagar (1 xp por tile)", "Coleta, Culinária, fornalha, bigorna, mesa, poções, missões, encomendas e caçadas dão 3x menos XP",
       "A XP de bater em monstro continua como estava (já era 5x menor)", "Lobby direto nos seus personagens do Lumeira (um servidor só)"]],
     ["v1.40", "Acerto pelo nível e botão da montaria", ["A lista de personagens mostra cada um como saiu: aparência e o que estava vestindo",
