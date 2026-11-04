@@ -894,6 +894,10 @@ button.link:hover { color: #cfe3ff; }
 #roundbar .pvp-btn.hostile { background: #c8241f; border-color: #ff6b5a; box-shadow: 0 0 0 2px #000, 0 0 8px #ff3b3088; }
 #roundbar .pvp-btn.locked::after { content: ""; position: absolute; right: -3px; bottom: -3px; width: 12px; height: 12px; border-radius: 50%; background: #000 url(../assets/ui/pk_skull.png) center / 10px no-repeat; }
 #roundbar .pvp-btn img { width: 22px; height: 22px; }
+/* rodada 149: silhuetas dos espaços vazios do equipamento */
+.dslot.empty .q { opacity: 1; }
+.dslot img.slotph { width: 30px; height: 30px; opacity: .55; image-rendering: pixelated; }
+.dslot.empty:hover img.slotph { opacity: .8; }
 .soon { text-align: center; padding: 18px 8px; opacity: .8; }
 .soon .big { font-size: 40px; display: block; margin-bottom: 6px; }
 @media (max-width: 900px) { #menubar button { width: 40px; height: 42px; } #menubar small { display: none; } #panel { bottom: 66px; width: 280px; } #options { bottom: 66px; } }

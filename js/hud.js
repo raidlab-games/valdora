@@ -199,11 +199,13 @@ window.ValdoraHud = (() => {
         const dollSlot = (k) => {
           const S = VD.EQUIP_SLOTS[k], e = player.equip[k];
           // rodada 105: secundária pela classe (escudo, flechas, orbe ou livro); montante (duas mãos) tranca o escudo
-          const hs = S.sec && VD.SEC[(HEROES.find((h) => h.id === player.hero) || {}).sec], w = player.equip.arma && ITEMS[player.equip.arma.name];
-          if (S.sec && !e && w && w.twoH) return `<div class="dslot empty locked" title="${esc(player.equip.arma.name)} usa as duas mãos: sem escudo."><span class="q">${hs ? hs.empty : S.empty}</span><small>${S.name}</small></div>`;
-          if (S.sec && !e) return `<div class="dslot empty" title="${S.name}: ${hs ? esc(hs.name.toLowerCase()) : "vazio"} (equipe pela mochila)"><span class="q">${hs ? hs.empty : S.empty}</span><small>${S.name}</small></div>`;
+          const sk = S.sec && (HEROES.find((h) => h.id === player.hero) || {}).sec, hs = S.sec && VD.SEC[sk], w = player.equip.arma && ITEMS[player.equip.arma.name];
+          const ph = (key, alt) => `<img class="slotph" src="assets/ui/slot_${key}.png" alt="" onerror="this.replaceWith(document.createTextNode('${alt}'))">`; // rodada 149: silhueta do espaço vazio
+          const phSec = hs ? ph(sk, hs.empty) : ph("municao", S.empty);
+          if (S.sec && !e && w && w.twoH) return `<div class="dslot empty locked" title="${esc(player.equip.arma.name)} usa as duas mãos: sem escudo."><span class="q">${phSec}</span><small>${S.name}</small></div>`;
+          if (S.sec && !e) return `<div class="dslot empty" title="${S.name}: ${hs ? esc(hs.name.toLowerCase()) : "vazio"} (equipe pela mochila)"><span class="q">${phSec}</span><small>${S.name}</small></div>`;
           if (S.sec && e && ITEMS[e.name].ammo) return `<div class="dslot" data-unequip="${k}" style="border-color:${itemColor(e.name)}" data-tip="${esc(itemTip(e, `${e.n} na aljava · clique para guardar`))}">${iconImg(e.name)}<i class="aff ammo">${e.n}</i><small>${S.name}</small></div>`;
-          return `<div class="dslot${e ? "" : " empty"}" ${e ? `data-unequip="${k}" style="border-color:${e.aff ? "#ffd84a" : itemColor(e.name)}" data-tip="${esc(itemTip(e, "clique para guardar"))}"` : `title="${S.name}: vazio (equipe pela mochila)"`}>${e ? iconImg(e.name) + (e.aff || e.master ? `<i class="aff">${affBadges(e)}${e.master ? masterBadge(k === "armadura" ? "armadura" : ITEMS[e.name].gear) : ""}</i>` : "") : `<span class="q">${S.empty}</span>`}<small>${S.name}</small></div>`;
+          return `<div class="dslot${e ? "" : " empty"}" ${e ? `data-unequip="${k}" style="border-color:${e.aff ? "#ffd84a" : itemColor(e.name)}" data-tip="${esc(itemTip(e, "clique para guardar"))}"` : `title="${S.name}: vazio (equipe pela mochila)"`}>${e ? iconImg(e.name) + (e.aff || e.master ? `<i class="aff">${affBadges(e)}${e.master ? masterBadge(k === "armadura" ? "armadura" : ITEMS[e.name].gear) : ""}</i>` : "") : `<span class="q">${ph(k, S.empty)}</span>`}<small>${S.name}</small></div>`;
         };
         const st = combatStats();
         $("tab-combat").innerHTML = `<div class="styles">${Object.entries(STYLES).map(([k, s]) => `<button data-style="${k}" class="${player.style === k ? "on" : ""}" title="${esc(s.desc)}">${s.name}</button>`).join("")}</div>
