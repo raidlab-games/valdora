@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.40", "Acerto pelo nível e botão da montaria", ["A lista de personagens mostra cada um como saiu: aparência e o que estava vestindo",
+      "Acerto conta o nível: monstro bem acima de você acerta quase sempre; você erra mais em monstro acima do seu nível",
+      "Corrigido: golpe de monstro na diagonal contava como \"esquivou\" mesmo com você parado", "Botão fixo da Montaria no fim da barra de skills (ou H): fique 2 s parado para montar; descer é na hora"]],
     ["v1.39", "Cavalos e o Celeiro de Lumeira", ["Celeiro novo logo ao sul de Lumeira (siga o caminho ao lado da placa \"Sul\"): o Teodoro vende cavalos",
       "4 níveis de cavalo, 3 pelagens cada: lida, viagem, guerra e lenda; cada nível corre mais e é mais bonito (arreios, barda, crina acesa)",
       "Skill nova: Equitação, sobe cavalgando; cada nível de cavalo pede mais Equitação", "H (ou o atalho Montar) monta e desce; golpear, coletar ou levar um golpe faz descer",
@@ -441,7 +444,7 @@
       <div class="cr-row"><span>Penteado</span><div class="cr-opts hairs">${LOOK.hairs.map((n, i) => opt("hair", i + 1, esc(n))).join("")}</div></div>
       <div class="cr-row"><span>Cor do cabelo</span><div class="cr-opts sw">${sw("hc", LOOK.hairColors, LOOK.hairColorNames)}</div></div>
       <div class="cr-row"><span>Olhos</span><div class="cr-opts">${LOOK.eyes.map((n, i) => opt("eyes", i + 1, esc(n))).join("")}</div></div></div>`;
-    $("heroes").querySelectorAll("[data-k]").forEach((b) => { b.onclick = () => { const k = b.dataset.k; look[k] = k === "g" ? b.dataset.v : +b.dataset.v; renderHeroes(); }; });
+    $("heroes").querySelectorAll("[data-k]").forEach((b) => { b.onclick = () => { const k = b.dataset.k; look[k] = k === "g" ? b.dataset.v : +b.dataset.v; gearLooks = []; renderHeroes(); }; });
     $("hero-title").innerHTML = UI ? UI.titleHTML(look.g === "f" ? "Aventureira" : "Aventureiro", "#ffd84a", 2) : esc(look.g === "f" ? "Aventureira" : "Aventureiro");
     $("hero-desc").textContent = "Todos começam iguais, com uma espada. Use espada para subir Guerreiro, arco para Arqueiro e cajado para Mago: o caminho é seu.";
     composeLook();
@@ -455,10 +458,22 @@
     tg.globalCompositeOperation = "multiply"; tg.fillStyle = rgb; tg.fillRect(0, 0, w, h); tg.globalCompositeOperation = "destination-in"; tg.drawImage(img, 0, 0, w, h); g.drawImage(t, 0, 0);
   }
   const comp = { key: "", c: null, A: null };
+  // rodada 157: camadas do personagem salvo (aparência + o que ele vestia), na ordem do jogo (js/outfit.js)
+  let gearLooks = [];
+  const COVER = ["helm", "hood", "mhood", "hat"];
+  function looksOf(data) {
+    const out = [], E = (data && data.equip) || {};
+    for (const e of Object.values(E)) { const n = e && (typeof e === "string" ? e : e.name), it = n && VD.ITEMS[(VD.RENAMED || {})[n] || n]; if (it && it.look) out.push(it.look); }
+    return out;
+  }
+  function layersOf(L, gear) {
+    const covered = gear.some(([l]) => COVER.includes(l)), all = [...lookLayers(L, covered), ...gear], ORD = (window.ValdoraOutfit && ValdoraOutfit.ORDER) || [];
+    return ORD.flatMap((l) => all.filter((x) => x[0] === l));
+  }
   function composeLook() {
     const hero = lookHero(look), A = window.ANIM_SHEETS && ANIM_SHEETS[hero]; if (!A) return;
-    const key = JSON.stringify(look); if (comp.key === key) return; comp.key = key;
-    const srcs = [[A.src, LOOK.skins[look.skin]], ...lookLayers(look).map(([l, c]) => [`assets/flow/anim3d/gear_${l}.png`, c])];
+    const key = JSON.stringify([look, gearLooks]); if (comp.key === key) return; comp.key = key;
+    const srcs = [[A.src, LOOK.skins[look.skin]], ...layersOf(look, gearLooks).map(([l, c]) => [`assets/flow/anim3d/gear_${l}.png`, c])];
     Promise.all(srcs.map(([src]) => loadImg(src))).then((ims) => {
       if (comp.key !== key || !ims[0]) return;
       const c = document.createElement("canvas"); c.width = ims[0].naturalWidth; c.height = ims[0].naturalHeight; const g = c.getContext("2d");
@@ -554,7 +569,20 @@
   if (ASSETS.icon_continue_play) $("continue").innerHTML = `<img class="btn-icon" src="${ASSETS.icon_continue_play}" alt="">CONTINUAR`;
   // rodada 109: com contas (js/account.js), o lobby só guarda a escolha de aparência; criar e entrar passam pela conta
   window.ValdoraLobby = { hero: () => heroId, look: () => ({ ...look }), setHero: (id) => { if (HEROES.some((h) => h.id === id)) { look.g = id === "hero_2" ? "f" : "m"; renderHeroes(); } },
-    setLook: (L, id) => { if (L) look = lookSanitize(L); else if (id) look.g = id === "hero_2" ? "f" : "m"; renderHeroes(); }, esc };
+    setLook: (L, id, gear) => { if (L) look = lookSanitize(L); else if (id) look.g = id === "hero_2" ? "f" : "m"; gearLooks = gear || []; renderHeroes(); }, esc, looksOf, thumb: charThumb };
+  // rodada 157: miniatura da lista de personagens: o personagem como ele saiu (aparência e o que vestia), parado de frente
+  const thumbCache = {};
+  function charThumb(data) {
+    const L = lookSanitize(data && data.look), hero = lookHero(L), A = window.ANIM_SHEETS && ANIM_SHEETS[hero], R = A && A.rows.idle_down;
+    if (!R) return Promise.resolve(null);
+    const srcs = [[A.src, LOOK.skins[L.skin]], ...layersOf(L, looksOf(data)).map(([l, c]) => [`assets/flow/anim3d/gear_${l}.png`, c])], key = JSON.stringify(srcs);
+    return thumbCache[key] || (thumbCache[key] = Promise.all(srcs.map(([s]) => loadImg(s))).then((ims) => {
+      if (!ims[0]) return null; const cell = A.cell, c = document.createElement("canvas"); c.width = c.height = cell; const g = c.getContext("2d");
+      ims.forEach((im, k) => { if (!im) return; const t = document.createElement("canvas"); t.width = t.height = cell; t.getContext("2d").drawImage(im, 0, R.row * cell, cell, cell, 0, 0, cell, cell); tintDraw(g, t, cell, cell, srcs[k][1]); });
+      const s = Math.round(cell / 1.6), x0 = Math.round((cell - s) / 2), y0 = Math.round(cell * 0.875 - s), f = document.createElement("canvas"); f.width = f.height = s;
+      f.getContext("2d").drawImage(c, x0, y0, s, s, 0, 0, s, s); return f.toDataURL();
+    }));
+  }
   $("play").onclick = () => {
     if (window.ValdoraAccount) return ValdoraAccount.create($("name").value, look);
     if (G.readSave() && !confirmNew) { confirmNew = true; $("new-warn").hidden = false; $("play").textContent = "CONFIRMAR NOVO JOGO"; return; }

@@ -70,7 +70,7 @@ window.ValdoraMobs = (() => {
                 const st = combatStats(), SR = ANIMS[d.spr].rows.special;
               // a folha toca mais devagar para o impacto (quadro 6) cair perto do fim do aviso: dá tempo de sair andando (robô: rodada 13)
               m.an = { s: "special", t: 0, still: 0, speed: Math.min(1, (SR.impact ?? 6) / SR.fps / Math.max(0.3, m.windup * TICK - 0.12)) };
-                m.pending = { special: true, slamAoE: !!d.slam, heavy: !d.slam, hit: rand() < hitChance(d.atk + 6, st.def), dmg: ri(Math.ceil(d.maxHit * 0.8), Math.ceil(d.maxHit * 1.6)) };
+                m.pending = { special: true, slamAoE: !!d.slam, heavy: !d.slam, hit: rand() < hitChance(d.atk + 6, st.def, (d.lvl || 1) - lv("combate")), dmg: ri(Math.ceil(d.maxHit * 0.8), Math.ceil(d.maxHit * 1.6)) }; // rodada 157: nível conta
               }
               addFloat(m.px + 0.5, m.py - 1.8, d.slam ? "Tremor! Saia de perto!" : typeof d.special === "string" ? d.special : "Golpe pesado!", "#ff6b5a", 1.4, 16);
             } else { mobAttack(m); m.atkT = spd; }

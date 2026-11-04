@@ -801,8 +801,17 @@
     p.riding = true; if (MT.speed(p) !== T[0].speed) r.push("velocidade"); p.riding = false; if (MT.speed(p) !== 1) r.push("a pé");
     const sv = MT.sanitize({ mounts: ["t1_s2", "xx", "t1_s2"], mount: "zz" }); if (sv.mounts.join() !== "t1_s2" || sv.mount !== "t1_s2") r.push("sanitize");
     if (MT.rideXp({}, 10) !== 10 * VD.RIDE_XP) r.push("xp");
-    if (!VD.HOTBAR_DEFAULT.includes("mount")) r.push("atalho");
+    if (VD.HOTBAR_DEFAULT.includes("mount")) r.push("a montaria tem botão próprio");
     for (const k of ["deco_barn", "deco_hay_stack", "deco_hay_pile", "deco_hay_bale", "deco_trough", "deco_pen_back", "deco_pen_front"]) if (!ASSETS[k] || !SPRITE_SIZE[k]) r.push(k);
+    return miss(r);
+  });
+  test("rodada 157: acerto pesa o nível (lobo 32 sempre acerta herói pelado 13; herói 13 erra bastante no lobo 32)", () => {
+    const r = [];
+    if (RU.hitChance(33, 6, 32 - 13) !== 1) r.push("lobo no herói " + RU.hitChance(33, 6, 19));
+    if (!(RU.hitChance(17, 26, 13 - 32) < 0.5)) r.push("herói no lobo " + RU.hitChance(17, 26, -19));
+    if (RU.hitChance(20, 20) !== 0.8 || RU.hitChance(20, 20, 0) !== 0.8) r.push("mesmo nível");
+    if (!(RU.hitChance(20, 20, 10) > RU.hitChance(20, 20, 0) && RU.hitChance(20, 20, -10) < RU.hitChance(20, 20, 0))) r.push("sentido");
+    if (RU.hitChance(0, 200, -200) < 0.05) r.push("mínimo");
     return miss(r);
   });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {

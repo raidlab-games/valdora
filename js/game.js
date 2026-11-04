@@ -1756,12 +1756,22 @@
       const S = a.skill && ACTIVE[a.skill];
       const tip = S ? skillTip(S) : `<b style="color:#ffd84a">${esc(a.name)}</b> <small>(tecla ${i + 1})</small><div>${esc(a.desc)}</div>`;
       return `<button data-slot="${i}" data-act="${esc(id)}" draggable="true" data-tip="${esc(tip)}" aria-label="${esc(a.name)}">${a.icon ? `<img class="ic" src="${a.icon}" alt="">` : ""}<b>${i + 1}</b><i class="cd"></i>${S ? `<small class="lock">nv ${S.lvl}</small>` : `<small class="slot-n"></small>`}</button>`;
-    }).join("");
+    }).join("") + mountSlotHtml();
   }
+  // rodada 157: botão fixo da montaria no fim da barra (o retrato do seu cavalo); 2 s parado para montar, descer é na hora
+  function mountSlotHtml() {
+    const m = ValdoraMount.cur(player), tip = m ? `<b style="color:#ffd84a">Montaria</b> <small>(tecla H)</small><div>${esc(m.name)}: +${Math.round((m.speed - 1) * 100)}% de velocidade. Fique 2 s parado para montar; descer é na hora.</div>`
+      : `<b style="color:#ffd84a">Montaria</b><div>Sem cavalo: o Teodoro vende no Celeiro, logo ao sul de Lumeira.</div>`;
+    return `<button id="mount-slot" class="mount-slot${m ? "" : " locked"}" data-mount="1" data-tip="${esc(tip)}" aria-label="Montaria"><img class="ic" src="${(window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png")}" alt=""><b>H</b><i class="cd"></i></button>`;
+  }
+  $("skillbar").addEventListener("click", (e) => { if (e.target.closest("[data-mount]")) { SND.play("ui"); toggleRide(); } });
   $("skillbar").onclick = (e) => { const b = e.target.closest("[data-slot]"); if (!b) return;
     if (hotPick) { setHot(+b.dataset.slot, hotPick); hotPick = null; hudDirty = true; return; } // rodada 138: escolhida na aba Skills (toque)
     useHot(+b.dataset.slot); };
   function updateSkillbar() {
+    { const b = $("mount-slot"), m = ValdoraMount.cur(player); // rodada 157: estado do botão da montaria
+      if (b) { b.classList.toggle("on", !!player.riding); b.classList.toggle("locked", !m); b.style.setProperty("--p", player.mountCast > 0 ? player.mountCast / MOUNT_CAST : 0);
+        const src = (window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png"), im = b.querySelector("img"); if (im && im.getAttribute("src") !== src) im.setAttribute("src", src); } }
     for (const b of $("skillbar").children) {
       const id = b.dataset.act; if (!id) continue;
       if (id.startsWith("skill:")) {
@@ -2043,7 +2053,7 @@
     }
   }
   const headOf = (m) => m.py + 1 - (SPR[m.d.spr] ? SPR[m.d.spr].height * (m.d.scale || 1) / TILE : 1);
-  function rollHit(m, bonusAcc = 0) { const st = combatStats(); return rand() < hitChance(st.acc + bonusAcc, m.d.def); }
+  function rollHit(m, bonusAcc = 0) { const st = combatStats(); return rand() < hitChance(st.acc + bonusAcc, m.d.def, lv("combate") - (m.d.lvl || 1)); } // rodada 157: nível conta
   function rollDmg(mult = 1) { // dano de um golpe; devolve [dano, crítico]
     const st = combatStats(), crit = rand() < RULES.critChance(player.style) + ((player.sk || {}).hawkT > 0 ? 0.3 : 0); // rodada 153: Olho de falcão
     if ((player.sk || {}).furyT > 0) mult *= ACTIVE.warcry.mult; // Grito de guerra
@@ -2584,7 +2594,7 @@
   }
   function mobAttack(m, heavy, slamAoE) {
     const d = m.d, st = combatStats();
-    const pe = { heavy, slamAoE, hit: rand() < hitChance(d.atk + (heavy ? 6 : 0), st.def) };
+    const pe = { heavy, slamAoE, hit: rand() < hitChance(d.atk + (heavy ? 6 : 0), st.def, (d.lvl || 1) - lv("combate")) }; // rodada 157
     pe.dmg = heavy ? ri(Math.ceil(d.maxHit * 0.8), Math.ceil(d.maxHit * 1.6)) : ri(1, d.maxHit);
     if (ANIMS[d.spr] && !(m.an && m.an.s === "death")) { m.an = { s: "attack", t: 0, still: 0 }; m.pending = pe; } // dano sai no quadro de impacto
     else { m.lunge = 1; applyMobHit(m, pe); }
@@ -2597,7 +2607,7 @@
     if (pe.pet) return petHurt(m, pe); // rodada 96
     if (pe.slamAoE) return slam(m);
     if (pe.heavy) fx.mark(m.px + 0.5 + Math.sign(player.x - m.x) * 0.85, m.py + 0.9 + Math.sign(player.y - m.y) * 0.85, 1.15); // rodada 68
-    const dist = Math.abs(m.x - player.x) + Math.abs(m.y - player.y);
+    const dist = Math.max(Math.abs(m.x - player.x), Math.abs(m.y - player.y)); // rodada 157: encostado vale também na diagonal (como o ataque)
     if (dist !== 1) { addFloat(player.px + 0.5, player.py - 0.6, "esquivou!", "#9fe08a", 0.9, 13); return; } // saiu do alcance antes do impacto
     let blocked = false;
     if (pe.hit && player.style === "defensivo" && rand() < RULES.BLOCK.chance) { // passiva do Defensivo: bloqueio
@@ -3010,9 +3020,20 @@
     if (inCrypt) { log("Aqui dentro não dá para cavalgar.", "warn"); return; }
     if (player.deadT > 0 || player.dash || player.act) return;
     if (tickN - player.lastHurt < 6) { log("No meio da luta não dá para montar.", "warn"); return; }
+    if (player.mountCast > 0) { player.mountCast = 0; log("Montaria cancelada.", "dim"); hudDirty = true; return; } // apertou de novo: cancela
     if (player.job && player.job.kind === "cook") stopCook();
-    player.riding = true; player.runT = 0; player.job = null; lazyAnim(m.sheet); SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
-    log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true;
+    // rodada 157: montar leva 2 s parado (andar, atacar ou levar golpe cancela); o cavalo já começa a baixar
+    player.mountCast = MOUNT_CAST; player.castHurt = player.lastHurt; player.path = []; player.target = null; lazyAnim(m.sheet); SND.play("ui"); hudDirty = true;
+  }
+  const MOUNT_CAST = 2;
+  function mountTick(dt) {
+    if (!(player.mountCast > 0)) return;
+    if (player.prog < 1 || player.path.length || player.target || player.act || player.dash || player.lastHurt !== player.castHurt || player.deadT > 0 || inCrypt) {
+      player.mountCast = 0; log("Montaria cancelada: fique parado 2 s para montar.", "dim"); hudDirty = true; return; }
+    player.mountCast -= dt;
+    if (player.mountCast <= 0) { const m = ValdoraMount.cur(player); player.mountCast = 0; if (!m) return;
+      player.riding = true; player.runT = 0; player.job = null; SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
+      log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true; }
   }
   function dismount(msg) {
     if (!player.riding) return; player.riding = false; fx.dust(player.px + 0.5, player.py + 0.95, 8); if (msg) log(msg, "dim"); hudDirty = true;
@@ -3609,6 +3630,7 @@
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     { const K = player.sk || (player.sk = {}); for (const k of ["furyT", "wallT", "hawkT", "shieldT"]) if (K[k] > 0) K[k] = Math.max(0, K[k] - dt); if (!(K.shieldT > 0)) K.shield = 0; } // rodada 153
     if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
+    mountTick(dt); // rodada 157: 2 s para montar
     if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
       if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
@@ -3736,7 +3758,7 @@
   // IA e animação dos monstros (js/mobs.js)
   const MSKILL = ValdoraMobSkills.create({ inTown: (x, y) => inTown(x, y), rand, ri, TICK, player: () => player, mobs: () => mobs, mobCan: (m, x, y) => MOBAI.mobCan(m, x, y), mobAt: (x, y) => mobAt(x, y),
     mobStepToward: (m, x, y) => MOBAI.mobStepToward(m, x, y), faceAt: (m, x, y) => MOBAI.faceAt(m, x, y), reindex: (m) => mobIdx.set(m.y * W + m.x, m),
-    hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d) => hitChance(a, d),
+    hasRow: (m, r) => !!(ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r]), row: (m, r) => ANIMS[m.d.spr] && ANIMS[m.d.spr].rows[r], combatStats: () => combatStats(), hitChance: (a, d, l) => hitChance(a, d, l || 0), pLvl: () => lv("combate"),
     SND, addFloat: (...a) => addFloat(...a), log: (...a) => log(...a), applyMobHit: (m, pe) => applyMobHit(m, pe), mark: (x, y, r) => fx.mark(x, y, r),
     dust: (x, y) => { if (!RENDER.playOnce("fx_dust_slam_light", x, y, { foot: true })) burst(x + 0.5, y + 0.6, ["#8a7a5a", "#c8b060"], 10, 2); }, // rodada 133
     // rodada 134: o resto do bestiário (tiro, invocação, efeitos no herói)
@@ -3871,7 +3893,7 @@
     ents.push({ y: player.py, me: true });
     ents.sort((a, b) => a.y - b.y);
     tags.length = 0;
-    for (const e of ents) e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t)) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
+    for (const e of ents) e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t), drawMountCast()) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
     RENDER.drawOnce(); // folhas caindo do toco
     drawStores(Math.min(0.1, t - (drawStores.lt ?? t))); drawStores.lt = t; // rodada 42: item entrando no baú
     drawShots(); // rodada 104: flechas do arqueiro
@@ -3959,6 +3981,12 @@
     shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player,
     horse: () => { const m = player.riding && ValdoraMount.cur(player); return m ? lazyAnim(m.sheet) : null; } }); // rodada 156
   const drawPlayer = (t) => HERO.drawPlayer(t);
+  function drawMountCast() { // rodada 157: barrinha "montando" sobre o herói
+    if (!(player.mountCast > 0)) return;
+    const k = 1 - player.mountCast / MOUNT_CAST, w = Math.round(TILE * 1.1), x = Math.round((player.px + 0.5) * TILE - cam.x - w / 2), y = Math.round((player.py - 0.85) * TILE - cam.y);
+    ctx.fillStyle = "#000c"; ctx.fillRect(x - 2, y - 2, w + 4, 9); ctx.fillStyle = "#3a2a16"; ctx.fillRect(x, y, w, 5);
+    ctx.fillStyle = "#f1c40f"; ctx.fillRect(x, y, Math.round(w * k), 5);
+  }
   // desenho dos monstros (js/actors.js)
   const ACTORS = ValdoraActors.create({ lazyAnim: (k) => lazyAnim(k), ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
   const { drawMob, drawMobAnim, drawCorpse, drawStun } = ACTORS;
@@ -3992,7 +4020,7 @@
   function describe(p) {
     const r = p.ref;
     if (p.kind === "mob") return [`${r.d.name} (nv ${r.d.lvl})`, r.d.lvl > lv("combate") + 6 ? "#ff6b5a" : r.d.lvl > lv("combate") ? "#f5c060" : "#9fe08a",
-      `Atacar · ${Math.round(hitChance(combatStats().acc, r.d.def) * 100)}% de acerto${r.d.aggro ? " · agressivo" : ""}`];
+      `Atacar · ${Math.round(hitChance(combatStats().acc, r.d.def, lv("combate") - (r.d.lvl || 1)) * 100)}% de acerto${r.d.aggro ? " · agressivo" : ""}`];
     if (p.kind === "res") {
       const R = RES[r.kind], ok = lv(R.skill) >= R.req, tOk = tier(R.tool).bonus >= (R.need || 0); // rodada 154: ferramenta mínima
       return [`${R.verb}: ${R.name}`, ok && tOk ? "#ffffff" : "#ff6b5a", !ok ? `requer ${SKILLS[R.skill]} ${R.req}` : !tOk ? `requer ${GEAR[R.tool].tiers[R.need].name} ou melhor` : ""];

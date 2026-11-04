@@ -153,7 +153,7 @@ window.ValdoraMobSkills = (() => {
     }
     function startLeap(m, p, L) {
       const d = m.d, st = api.combatStats(); api.faceAt(m, p.x, p.y);
-      prep(m, "leap", { tx: p.x, ty: p.y, lx: L.x, ly: L.y, moved: false, pe: { heavy: true, hit: rand() < api.hitChance(d.atk + 6, st.def), dmg: ri(Math.ceil(d.maxHit * 1.0), Math.ceil(d.maxHit * 1.7)) } }, "special");
+      prep(m, "leap", { tx: p.x, ty: p.y, lx: L.x, ly: L.y, moved: false, pe: { heavy: true, hit: rand() < api.hitChance(d.atk + 6, st.def, (d.lvl || 1) - api.pLvl()), dmg: ri(Math.ceil(d.maxHit * 1.0), Math.ceil(d.maxHit * 1.7)) } }, "special");
       api.addFloat(m.px + 0.5, m.py - 1.9, d.skills.leap.cry || "Salto!", "#ff6b5a", 1.3, 16);
     }
     function leapFly(m) {
@@ -177,7 +177,7 @@ window.ValdoraMobSkills = (() => {
     }
     function startCharge(m, tiles) {
       const d = m.d, st = api.combatStats(); api.faceAt(m, tiles[0][0], tiles[0][1]);
-      prep(m, "charge", { tiles, pe: { heavy: true, hit: rand() < api.hitChance(d.atk + 8, st.def), dmg: ri(Math.ceil(d.maxHit * 1.1), Math.ceil(d.maxHit * 1.8)) } }, null);
+      prep(m, "charge", { tiles, pe: { heavy: true, hit: rand() < api.hitChance(d.atk + 8, st.def, (d.lvl || 1) - api.pLvl()), dmg: ri(Math.ceil(d.maxHit * 1.1), Math.ceil(d.maxHit * 1.8)) } }, null);
       api.addFloat(m.px + 0.5, m.py - 1.9, "Investida!", "#ff6b5a", 1.2, 16);
     }
     function chargeGo(m) {

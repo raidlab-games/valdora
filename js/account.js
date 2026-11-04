@@ -62,7 +62,9 @@ window.ValdoraAccount = (() => {
     $("char-new").disabled = chars.length >= N.MAX_CHARS;
     $("char-import").hidden = true; // rodada 152: o herói salvo antigo (com classe) não vale mais
     $("char-list").querySelectorAll("[data-play]").forEach((b) => { b.onclick = () => guard(b, () => enter(chars.find((c) => c.id === b.dataset.play))); });
-    $("char-list").querySelectorAll(".char").forEach((d) => { d.onmouseenter = () => { const c = chars.find((x) => x.id === d.dataset.char); if (c && L) L.setLook(c.data && c.data.look, c.hero); }; });
+    $("char-list").querySelectorAll(".char").forEach((d) => { const c = chars.find((x) => x.id === d.dataset.char);
+      d.onmouseenter = () => { if (c && L) L.setLook(c.data && c.data.look, c.hero, L.looksOf ? L.looksOf(c.data) : []); };
+      if (c && L && L.thumb) L.thumb(c.data || {}).then((url) => { const im = d.querySelector("img"); if (url && im) { im.src = url; im.classList.add("look"); } }); }); // rodada 157: como ele saiu
     $("char-list").querySelectorAll("[data-del]").forEach((b) => { b.onclick = () => { // dois cliques: o primeiro só arma
       if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "confirmar?"; setTimeout(() => { b.classList.remove("armed"); b.textContent = "apagar"; }, 4000); return; }
       guard(null, async () => { await N.deleteChar(b.dataset.del); await charList(); }); }; });

@@ -18,7 +18,10 @@ window.ValdoraRules = (() => {
   const CLASS_SEC = { guerreiro: "escudo", arqueiro: "flecha", mago: "orbe" };
   // rodada 137: acerto pela diferença entre acerto e defesa. Muito acima da defesa do alvo: acerta sempre (um monstro do gelo
   // não erra um herói pelado de nível baixo); muito abaixo: 10%. Mesma força: 80%.
-  const hitChance = (acc, def) => Math.max(0.1, Math.min(1, 0.8 + (acc - def) * 0.015));
+  // rodada 157: o nível pesa no acerto. lvlDiff = nível de quem ataca - nível de quem defende: cada nível vale 1,2 ponto (até 35).
+  // Monstro mais alto acerta quase sempre um herói baixo de pouca defesa; herói baixo erra bastante num monstro bem acima dele.
+  const LVL_HIT = 0.012, LVL_HIT_MAX = 0.35;
+  const hitChance = (acc, def, lvlDiff = 0) => Math.max(0.05, Math.min(1, 0.8 + (acc - def) * 0.015 + Math.max(-LVL_HIT_MAX, Math.min(LVL_HIT_MAX, lvlDiff * LVL_HIT))));
   // rodada 137: a armadura também segura parte do dano (até ~40% com a melhor armadura e bônus)
   const armorCut = (dmg, armorDef) => Math.max(1, Math.round(dmg * (1 - Math.min(0.45, armorDef * 2 / (armorDef * 2 + 90)))));
   const MOB_XP = 0.2; // rodada 137: XP de monstro 5x menor (1 xp -> 0,2 xp)

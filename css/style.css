@@ -954,3 +954,9 @@ button.link:hover { color: #cfe3ff; }
 .mt-cur span { display: flex; flex-direction: column; flex: 1; }
 .mt-big { width: 48px; height: 48px; display: block; margin: 0 auto 4px; }
 #dlg .row.mount img.mt-ic, #tab-mount .row.mount img.mt-ic { width: 64px; height: 64px; image-rendering: pixelated; }
+
+/* rodada 157: botão fixo da montaria no fim da barra de skills */
+#skillbar .mount-slot { margin-left: 10px; border-color: #b08a4a; }
+#skillbar .mount-slot img.ic { image-rendering: pixelated; }
+#skillbar .mount-slot.on { border-color: #6fbf5a; box-shadow: 0 0 0 2px #000, 0 0 10px #6fbf5a88; }
+#skillbar .mount-slot.locked img.ic { filter: grayscale(1) brightness(.6); }

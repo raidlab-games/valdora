@@ -1544,7 +1544,7 @@ window.VD = (() => {
     { id: "cacador", name: "Grande Caçador", items: { "Pele de urso": 10, "Galhada de cervo": 10, "Barra de obsidiana": 2 }, bonus: { dmg: 2 } },
   ].map((c) => ({ ...c, items: Object.fromEntries(Object.entries(c.items).filter(([n]) => ITEMS[n])), bonus: { acc: 0, dmg: 0, def: 0, hp: 0, ...c.bonus } }));
   // rodada 137: o que dá para pôr na barra de 9 atalhos (teclas 1 a 9)
-  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", "mount"]; // rodada 156: montar
+  const HOTBAR_DEFAULT = ["eat", "pot:Poção de vida", "pot:Poção de força", "pot:Poção de pedra", "skill:spin", "skill:dash", "skill:smash", "skill:run", null]; // rodada 157: a montaria tem botão próprio no fim da barra
   // ---------- rodada 155: equipamento de ofício das 3 classes, mapa a mapa ----------
   // Guerreiro: placas de metal (bigorna). Arqueiro: couro (mesa de artesanato). Mago: tecido (mesa de artesanato).
   // Cada mapa tem o seu couro (feras) e o seu fio (aranhas, mariposas, carneiros, múmias, mamutes...); a mesa tece 3 fios em 1 tecido.
