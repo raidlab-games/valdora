@@ -3227,6 +3227,10 @@
     const el = e.target.closest(".slot[data-i]"); if (!el) return;
     e.preventDefault(); openInvMenu(+el.dataset.i, el);
   });
+  $("tab-passive").addEventListener("click", (e) => { // a passiva vem do estilo: clicar numa troca o estilo de luta
+    const c = e.target.closest("[data-pstyle]"); if (!c || !STYLES[c.dataset.pstyle] || player.style === c.dataset.pstyle) return;
+    player.style = c.dataset.pstyle; hudDirty = true; SND.play("ui"); log(`Passiva ativa: ${STYLES[player.style].passive.name} (estilo ${STYLES[player.style].name}).`, "dim");
+  });
   $("tab-combat").addEventListener("click", (e) => {
     const u = e.target.closest("[data-unequip]"); if (u) return unequip(u.dataset.unequip);
     if (e.target.closest(".char-btn")) { SND.play("ui"); return openDlg("char", null); }

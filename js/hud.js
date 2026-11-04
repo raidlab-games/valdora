@@ -167,9 +167,9 @@ window.ValdoraHud = (() => {
         }
       } else if (hudTab === "passive") { // rodada 139: aba só das passivas (vêm do estilo de luta escolhido)
         const P = api.hotActions().filter((a) => a.passive);
-        $("tab-passive").innerHTML = `<small class="desc">A passiva do estilo escolhido (aba Equip.) fica ativa sozinha.</small><div class="sk-grid">${P.map((a) => {
-          const on = a.id === "passive:" + player.style, tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)}</small><div>${esc(a.desc)}</div>`;
-          return `<div class="sk-card${on ? " on" : " locked"}" data-tip="${esc(tip)}">${a.icon ? `<img src="${a.icon}" alt="">` : ""}<b class="lv">${a.lvl}</b><small>${esc(a.name)}</small></div>`; }).join("")}</div>`;
+        $("tab-passive").innerHTML = `<small class="desc">Clique numa passiva para usá-la (troca o estilo de luta). Só uma fica ativa por vez.</small><div class="sk-grid">${P.map((a) => {
+          const on = a.id === "passive:" + player.style, tip = `<b style="color:#ffd84a">${esc(a.name)}</b><br><small>${esc(a.kind)}</small><div>${esc(a.desc)}</div><small>${on ? "Ativa agora" : "Clique para ativar"}</small>`;
+          return `<div class="sk-card pick-p${on ? " on" : " off"}" data-pstyle="${esc(a.id.slice(8))}" role="button" tabindex="0" data-tip="${esc(tip)}">${a.icon ? `<img src="${a.icon}" alt="">` : ""}<b class="lv">${a.lvl}</b><small>${esc(a.name)}</small></div>`; }).join("")}</div>`;
       } else if (hudTab === "mount") {
         $("tab-mount").innerHTML = `<div class="soon"><span class="big">🐎</span><b>Montarias</b><br><small>Em breve: montarias para atravessar o continente mais rápido.</small></div>`;
       } else if (hudTab === "guild") {

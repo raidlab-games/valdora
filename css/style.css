@@ -825,6 +825,10 @@ button.link:hover { color: #cfe3ff; }
 .sk-card.locked { cursor: not-allowed; }
 .sk-card.locked img { filter: grayscale(1) brightness(.5); }
 .sk-card.on { border-color: #6fbf5a; }
+.sk-card.pick-p { cursor: pointer; }
+.sk-card.pick-p.off img { filter: grayscale(.6) brightness(.75); }
+.sk-card.pick-p.off:hover { border-color: var(--gold); }
+.sk-card.pick-p.off:hover img { filter: none; }
 .sk-card.pick { border-color: var(--gold); box-shadow: 0 0 8px #f1c40f; }
 .sk-card[data-passive] { cursor: help; }
 #skillbar button.dropok { border-color: var(--gold); box-shadow: 0 0 10px #f1c40f; }
