@@ -1081,7 +1081,7 @@
         const patrol = o.type === "guard" && atHome ? PATROL[(o.patrolI = ((o.patrolI ?? -1) + 1) % PATROL.length)] : null; // rodada 73: ronda do Ivo
         o.goal = seat ? { ...seat, sit: true } : patrol ? { x: o.hx + patrol[0], y: o.hy + patrol[1] } : atHome ? { x: o.hx + ri(-r, r), y: o.hy + ri(-r, r) } : { x: o.hx, y: o.hy };
       }
-      const free = (x, y) => inside(x, y) && inTown(x, y) && map[y][x] !== "water" && !occ[y * W + x] && !mobAt(x, y) && !(player.x === x && player.y === y);
+      const free = (x, y) => inside(x, y) && inTown(x, y) && map[y][x] !== "water" && !occ[y * W + x] && !mobAt(x, y) && !heroOn(x, y); // rodada 158: nem no meio do passo
       // rodada 105: também anda na diagonal (sem cortar quina); distância em 8 direções
       const oct = (x, y) => { const a = Math.abs(x - o.goal.x), b = Math.abs(y - o.goal.y); return Math.max(a, b) + 0.414 * Math.min(a, b); }, d0 = oct(o.x, o.y);
       const steps = DIRS8V.map(([dx, dy]) => [o.x + dx, o.y + dy, dx, dy]).filter(([x, y, dx, dy]) => free(x, y) && (!dx || !dy || (free(o.x + dx, o.y) && free(o.x, o.y + dy))) && oct(x, y) < d0 - 0.01);
@@ -1220,6 +1220,19 @@
   function indexMobs() { mobIdx.clear(); for (const m of mobs) if (!m.dead) mobIdx.set(m.y * W + m.x, m); }
   const mobAt = (x, y) => { const m = mobIdx.get(y * W + x); return m && !m.dead && m.x === x && m.y === y ? m : undefined; };
   const blockAt = (x, y) => { const o = occ[y * W + x]; return isBlockingObj(o) && !(o.open && o.open.some(([dx, dy]) => o.x + dx === x && o.y + dy === y)); }; // rodada 124
+  // rodada 158: o herói nunca fica preso dentro de NPC, poste ou caixa (renascer, carregar, teleporte, NPC andando)
+  const heroOn = (x, y) => (player.x === x && player.y === y) || (player.gx != null && Math.abs(2 * x - player.gx) <= 1 && Math.abs(2 * y - player.gy) <= 1);
+  function freeNear(x, y, r = 12) {
+    for (let k = 0; k <= r; k++) for (let dy = -k; dy <= k; dy++) for (let dx = -k; dx <= k; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== k) continue; const X = x + dx, Y = y + dy;
+      if (walkable(X, Y) && !occ[Y * W + X]) return { x: X, y: Y }; }
+    return { x, y };
+  }
+  function unstick(msg) {
+    const p = freeNear(player.x, player.y); if (p.x === player.x && p.y === player.y) return;
+    Object.assign(player, { x: p.x, y: p.y, fx: p.x, fy: p.y, px: p.x, py: p.y, prog: 1, path: [], goal: null }); syncG();
+    if (msg) log("Você estava preso num lugar ocupado: foi para o lado.", "dim");
+  }
   const walkable = (x, y) => inside(x, y) && map[y][x] !== "water" && map[y][x] !== "void" && !(MTN && !inCrypt && MTN.block[y * W + x]) && !blockAt(x, y) && !mobAt(x, y);
   // rodada 105: encostar vale nas 8 direções. Na diagonal, pelo menos um dos dois tiles do meio precisa estar livre de parede/água
   // (não se golpeia através de uma quina fechada); monstros e o herói no meio não atrapalham.
@@ -1758,9 +1771,9 @@
       return `<button data-slot="${i}" data-act="${esc(id)}" draggable="true" data-tip="${esc(tip)}" aria-label="${esc(a.name)}">${a.icon ? `<img class="ic" src="${a.icon}" alt="">` : ""}<b>${i + 1}</b><i class="cd"></i>${S ? `<small class="lock">nv ${S.lvl}</small>` : `<small class="slot-n"></small>`}</button>`;
     }).join("") + mountSlotHtml();
   }
-  // rodada 157: botão fixo da montaria no fim da barra (o retrato do seu cavalo); 2 s parado para montar, descer é na hora
+  // rodada 157: botão fixo da montaria no fim da barra (o retrato do seu cavalo); rodada 158: monta e desce na hora, recarga de 2 s
   function mountSlotHtml() {
-    const m = ValdoraMount.cur(player), tip = m ? `<b style="color:#ffd84a">Montaria</b> <small>(tecla H)</small><div>${esc(m.name)}: +${Math.round((m.speed - 1) * 100)}% de velocidade. Fique 2 s parado para montar; descer é na hora.</div>`
+    const m = ValdoraMount.cur(player), tip = m ? `<b style="color:#ffd84a">Montaria</b> <small>(tecla H)</small><div>${esc(m.name)}: +${Math.round((m.speed - 1) * 100)}% de velocidade. Monta e desce na hora; recarga de 2 s.</div>`
       : `<b style="color:#ffd84a">Montaria</b><div>Sem cavalo: o Teodoro vende no Celeiro, logo ao sul de Lumeira.</div>`;
     return `<button id="mount-slot" class="mount-slot${m ? "" : " locked"}" data-mount="1" data-tip="${esc(tip)}" aria-label="Montaria"><img class="ic" src="${(window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png")}" alt=""><b>H</b><i class="cd"></i></button>`;
   }
@@ -1770,7 +1783,7 @@
     useHot(+b.dataset.slot); };
   function updateSkillbar() {
     { const b = $("mount-slot"), m = ValdoraMount.cur(player); // rodada 157: estado do botão da montaria
-      if (b) { b.classList.toggle("on", !!player.riding); b.classList.toggle("locked", !m); b.style.setProperty("--p", player.mountCast > 0 ? player.mountCast / MOUNT_CAST : 0);
+      if (b) { b.classList.toggle("on", !!player.riding); b.classList.toggle("locked", !m); b.style.setProperty("--p", player.cd.mount > 0 ? player.cd.mount / MOUNT_CD : 0); b.classList.toggle("ready", !!m && !(player.cd.mount > 0));
         const src = (window.assetV || String)(m ? m.icon : "assets/ui/skill_equitacao.png"), im = b.querySelector("img"); if (im && im.getAttribute("src") !== src) im.setAttribute("src", src); } }
     for (const b of $("skillbar").children) {
       const id = b.dataset.act; if (!id) continue;
@@ -2685,7 +2698,8 @@
     player.stats.deaths = (player.stats.deaths || 0) + 1; // rodada 55: na segunda morte, a dica do estilo Defensivo (uma vez por save)
     if (player.stats.deaths >= 2 && player.style !== "defensivo" && !player.seen.defTip) { player.seen.defTip = 1; log(DEF_TIP, "tip", STYLES.defensivo.passive && STYLES.defensivo.passive.icon); }
     const RS = player.spawnStone && player.spawnStone !== "lumeira" && stoneOf(player.spawnStone) ? stoneSpot(stoneOf(player.spawnStone)) : SPAWN; // rodada 105: Pedra marcada
-    Object.assign(player, { x: RS.x, y: RS.y, fx: RS.x, fy: RS.y, prog: 1, px: RS.x, py: RS.y, hp: maxHp(), path: [], target: null, goal: null, job: null });
+    const FS = freeNear(RS.x, RS.y); // rodada 158: nunca em cima de NPC, poste ou caixa
+    Object.assign(player, { x: FS.x, y: FS.y, fx: FS.x, fy: FS.y, prog: 1, px: FS.x, py: FS.y, hp: maxHp(), path: [], target: null, goal: null, job: null }); syncG();
     for (const m of mobs) m.aggro = false;
     hudDirty = true; save();
   }
@@ -3014,29 +3028,21 @@
   });
   // ---------- rodada 156: montaria ----------
   function toggleRide() {
-    if (player.riding) return dismount("Você desceu do cavalo.");
+    if (player.riding) return dismount("Você desceu do cavalo.", true);
     const m = ValdoraMount.cur(player);
     if (!m) { log("Você ainda não tem cavalo. O Teodoro vende no Celeiro, logo ao sul de Lumeira.", "dim"); return; }
     if (inCrypt) { log("Aqui dentro não dá para cavalgar.", "warn"); return; }
-    if (player.deadT > 0 || player.dash || player.act) return;
-    if (tickN - player.lastHurt < 6) { log("No meio da luta não dá para montar.", "warn"); return; }
-    if (player.mountCast > 0) { player.mountCast = 0; log("Montaria cancelada.", "dim"); hudDirty = true; return; } // apertou de novo: cancela
+    if (player.deadT > 0) return;
+    if (player.cd.mount > 0) { log(`Montaria em recarga: ${Math.ceil(player.cd.mount)} s.`, "dim"); return; } // rodada 158: 2 s entre montar e descer
     if (player.job && player.job.kind === "cook") stopCook();
-    // rodada 157: montar leva 2 s parado (andar, atacar ou levar golpe cancela); o cavalo já começa a baixar
-    player.mountCast = MOUNT_CAST; player.castHurt = player.lastHurt; player.path = []; player.target = null; lazyAnim(m.sheet); SND.play("ui"); hudDirty = true;
+    player.riding = true; player.runT = 0; player.job = null; player.cd.mount = MOUNT_CD; lazyAnim(m.sheet); SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
+    log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true;
   }
-  const MOUNT_CAST = 2;
-  function mountTick(dt) {
-    if (!(player.mountCast > 0)) return;
-    if (player.prog < 1 || player.path.length || player.target || player.act || player.dash || player.lastHurt !== player.castHurt || player.deadT > 0 || inCrypt) {
-      player.mountCast = 0; log("Montaria cancelada: fique parado 2 s para montar.", "dim"); hudDirty = true; return; }
-    player.mountCast -= dt;
-    if (player.mountCast <= 0) { const m = ValdoraMount.cur(player); player.mountCast = 0; if (!m) return;
-      player.riding = true; player.runT = 0; player.job = null; SND.play("whoosh"); fx.dust(player.px + 0.5, player.py + 0.95, 10);
-      log(`Montado: ${m.name} (${Math.round((m.speed - 1) * 100)}% mais rápido). H desce.`, "dim"); hudDirty = true; }
-  }
-  function dismount(msg) {
-    if (!player.riding) return; player.riding = false; fx.dust(player.px + 0.5, player.py + 0.95, 8); if (msg) log(msg, "dim"); hudDirty = true;
+  const MOUNT_CD = 2; // rodada 158: recarga do botão da montaria (monta e desce na hora, em qualquer momento)
+  function dismount(msg, manual) {
+    if (!player.riding) return;
+    if (manual && player.cd.mount > 0) { log(`Montaria em recarga: ${Math.ceil(player.cd.mount)} s.`, "dim"); return; }
+    player.riding = false; player.cd.mount = MOUNT_CD; fx.dust(player.px + 0.5, player.py + 0.95, 8); if (msg) log(msg, "dim"); hudDirty = true;
   }
   function stableAct(ds) {
     const k = ds.buymount || ds.usemount, M = VD.MOUNTS[k]; if (!M) return;
@@ -3630,7 +3636,7 @@
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     { const K = player.sk || (player.sk = {}); for (const k of ["furyT", "wallT", "hawkT", "shieldT"]) if (K[k] > 0) K[k] = Math.max(0, K[k] - dt); if (!(K.shieldT > 0)) K.shield = 0; } // rodada 153
     if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
-    mountTick(dt); // rodada 157: 2 s para montar
+    if (!player.dash && player.prog >= 1 && !(player.deadT > 0) && blockAt(player.x, player.y)) unstick(true); // rodada 158
     if (player.runT > 0) { player.runT = Math.max(0, player.runT - dt); // rodada 139: vento atrás enquanto corre
       if (moving && Math.random() < dt * 40) { const [vx, vy] = DIR_VEC[player.dir] || [0, 1]; fx.wind(player.px + 0.5, player.py + 0.7, vx, vy, 1); } }
     if (player.ghosts) { for (const g of player.ghosts) g.a -= dt * 2.2; player.ghosts = player.ghosts.filter((g) => g.a > 0); if (!player.ghosts.length) player.ghosts = null; }
@@ -3893,7 +3899,7 @@
     ents.push({ y: player.py, me: true });
     ents.sort((a, b) => a.y - b.y);
     tags.length = 0;
-    for (const e of ents) e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t), drawMountCast()) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
+    for (const e of ents) e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t)) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
     RENDER.drawOnce(); // folhas caindo do toco
     drawStores(Math.min(0.1, t - (drawStores.lt ?? t))); drawStores.lt = t; // rodada 42: item entrando no baú
     drawShots(); // rodada 104: flechas do arqueiro
@@ -3981,12 +3987,7 @@
     shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player,
     horse: () => { const m = player.riding && ValdoraMount.cur(player); return m ? lazyAnim(m.sheet) : null; } }); // rodada 156
   const drawPlayer = (t) => HERO.drawPlayer(t);
-  function drawMountCast() { // rodada 157: barrinha "montando" sobre o herói
-    if (!(player.mountCast > 0)) return;
-    const k = 1 - player.mountCast / MOUNT_CAST, w = Math.round(TILE * 1.1), x = Math.round((player.px + 0.5) * TILE - cam.x - w / 2), y = Math.round((player.py - 0.85) * TILE - cam.y);
-    ctx.fillStyle = "#000c"; ctx.fillRect(x - 2, y - 2, w + 4, 9); ctx.fillStyle = "#3a2a16"; ctx.fillRect(x, y, w, 5);
-    ctx.fillStyle = "#f1c40f"; ctx.fillRect(x, y, Math.round(w * k), 5);
-  }
+
   // desenho dos monstros (js/actors.js)
   const ACTORS = ValdoraActors.create({ lazyAnim: (k) => lazyAnim(k), ctx, cam, TILE, TICK, ANIMS, SPR, ease, tags, animFrame, drawAnim, shadowAt: (...a) => shadowAt(...a), whiteOf: (...a) => whiteOf(...a), player: () => player });
   const { drawMob, drawMobAnim, drawCorpse, drawStun } = ACTORS;

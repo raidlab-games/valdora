@@ -22,7 +22,8 @@
   const NEWS = [
     ["v1.40", "Acerto pelo nível e botão da montaria", ["A lista de personagens mostra cada um como saiu: aparência e o que estava vestindo",
       "Acerto conta o nível: monstro bem acima de você acerta quase sempre; você erra mais em monstro acima do seu nível",
-      "Corrigido: golpe de monstro na diagonal contava como \"esquivou\" mesmo com você parado", "Botão fixo da Montaria no fim da barra de skills (ou H): fique 2 s parado para montar; descer é na hora"]],
+      "Corrigido: golpe de monstro na diagonal contava como \"esquivou\" mesmo com você parado", "Botão fixo da Montaria no fim da barra de skills (ou H): monta e desce na hora, com recarga de 2 s",
+      "O herói nunca mais fica preso dentro de um NPC, poste ou caixa ao renascer, entrar ou teleportar"]],
     ["v1.39", "Cavalos e o Celeiro de Lumeira", ["Celeiro novo logo ao sul de Lumeira (siga o caminho ao lado da placa \"Sul\"): o Teodoro vende cavalos",
       "4 níveis de cavalo, 3 pelagens cada: lida, viagem, guerra e lenda; cada nível corre mais e é mais bonito (arreios, barda, crina acesa)",
       "Skill nova: Equitação, sobe cavalgando; cada nível de cavalo pede mais Equitação", "H (ou o atalho Montar) monta e desce; golpear, coletar ou levar um golpe faz descer",
