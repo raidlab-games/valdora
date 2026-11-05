@@ -1426,6 +1426,7 @@
     player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
     Object.assign(player, ValdoraMount.sanitize(data)); player.riding = false; player.rideAcc = 0; // rodada 156: cavalos comprados (começa a pé)
     player.boat = ValdoraBoat.sanitize(data.boat); player.sailing = false; // rodada 162: barcos, melhorias, diário de pesca e isca
+    if (player.name.toLowerCase() === "dsads" && !player.seen.gift999m) { player.seen.gift999m = 1; player.coins += 999000000; setTimeout(() => log("Presente: +999.000.000 moedas para testar tudo.", "gold"), 1500); } // rodada 162: pedido do dono (uma vez só)
     player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; player.pvpMode = data.pvpMode === "hostile" ? "hostile" : "passive"; // rodada 148 // rodada 147: PK (segundos de jogo que faltam)
     deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
