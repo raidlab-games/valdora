@@ -20,6 +20,8 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.50", "Áreas de pesca mais limpas", ["O anzol da área de pesca não mostra mais quantos peixes restam: o jogo conta sozinho e, quando os 30 acabam, a área some e renasce em outro ponto do oceano",
+      "As áreas de pesca do mar não aparecem mais no minimapa: é preciso navegar e achar o anzol na água"]],
     ["v1.49", "Mais vida no mar e a bolsa do naufrágio", ["20% mais monstros espalhados pelo oceano",
       "O nível dos monstros do mar segue a costa mais perto: perto dos biomas difíceis, do fundo de cada bioma e das ilhas distantes eles são mais fortes; cada um ainda varia um pouco para cima ou para baixo",
       "7 espécies novas, cada uma com a sua skill: cardume de peixes-voadores que saltam no barco, gaivota-de-tempestade que mergulha, marinheiro afogado com arpão que puxa o barco, sereia que encanta e leva o barco até ela, caranguejo-de-ferro com garrada e defesa, golem-de-coral que atira pedras e orcas-espectrais que saltam por baixo do barco",

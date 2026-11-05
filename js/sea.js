@@ -83,7 +83,7 @@ window.ValdoraSea = (() => {
         const H0 = { x, y, type: t, L }; homes.push(H0);
         const nP = SEA_MOBS[t].pack || 1; for (let j = 0; j < nP; j++) { const m = spawnMob(t, x + (j ? (rand() - 0.5) * 2.5 : 0), y + (j ? (rand() - 0.5) * 2.5 : 0), L); m.home = { x, y }; m.orbit += j * TAU / nP; m.cd += j * 0.8; }
       }
-      G.SEA_LAIRS = lairs; G.SEA_SPOTS = spots; // o mapa M marca os covis; o minimapa, as áreas de pesca
+      G.SEA_LAIRS = lairs; G.SEA_SPOTS = spots; // o mapa M marca os covis (rodada 167: as áreas de pesca não aparecem no minimapa)
       wind.a = wind.to = rand() * TAU; wind.t = 40; ready = true;
     }
     const SPOT_FISH = 30, SPOT_GAP = 34, SPOT_AREA = 8000; // peixes por área, distância mínima entre áreas, tiles de mar por área
@@ -586,13 +586,13 @@ window.ValdoraSea = (() => {
       api.log(`Pescou ${f.item.toLowerCase()} (${R.name.toLowerCase()}) de ${fmtKg(kg)}${rec && !first ? ` — recorde! (antes ${fmtKg(prev)})` : ""}${first ? " · espécie nova no diário de pesca (XP em dobro)" : ""}.`, f.rar === "comum" ? "dim" : "gold");
       if (rec && !first) api.toast("Recorde de peso!", `${f.item}: ${fmtKg(kg)}`, R.color);
       fish = null; p.cast = null; panel(false);
-      if (--spot.charges <= 0) relocate(spot); else if (spot.charges <= 3) api.log(`A área de pesca está acabando: ${spot.charges} peixe${spot.charges > 1 ? "s" : ""}.`, "dim");
+      if (--spot.charges <= 0) relocate(spot);
     }
     const fmtKg = (kg) => `${kg < 2 ? kg.toFixed(2) : kg.toFixed(1)} kg`.replace(".", ",");
     function relocate(s) { // rodada 164: 30 peixes pescados: a área some e renasce num ponto sorteado do oceano inteiro
       api.fx.burst(s.x, s.y, ["#e8f6ff", "#8fc1ee"], 14, 2.4);
       s.charges = s.max; s.r = rand() < 0.4 ? 1 : 2; s.ph = rand() * 10; placeSpot(s); s.gone = 3;
-      api.log("Os 30 peixes desta área acabaram: ela sumiu e renasceu em outro ponto do oceano. Procure o anzol na água.", "dim");
+      api.log("Os peixes desta área acabaram: ela sumiu e renasceu em outro ponto do oceano. Procure o anzol na água.", "dim");
     }
     function updateFish(dt) {
       const p = P();
@@ -728,12 +728,11 @@ window.ValdoraSea = (() => {
         ctx.strokeStyle = `rgba(240,250,255,${(1 - k) * 0.5})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 0, r * 0.35, r, 0, -1.2, 1.2); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0, r * 0.35, r, 0, Math.PI - 1.2, Math.PI + 1.2); ctx.stroke(); ctx.restore(); }
     }
     // rodada 163: área de pesca: água mais clara no quadrado todo, ondulações e peixinhos pelos tiles, contorno pontilhado e o anzol
-    // flutuando no meio (com quantos peixes faltam), como o anzol na água que marca os pontos de pesca no RavenQuest
-    function drawHook(ctx, x, y, n, big) {
+    // flutuando no meio, como o anzol na água que marca os pontos de pesca no RavenQuest (rodada 167: sem o número de peixes)
+    function drawHook(ctx, x, y, big) {
       ctx.fillStyle = "#0c1c2ae6"; ctx.strokeStyle = big ? "#ffd84a" : "#bfe8ff"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 11, 0, TAU); ctx.fill(); ctx.stroke();
       ctx.strokeStyle = "#f4f4ee"; ctx.lineWidth = 2.5; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(x + 2, y - 7); ctx.lineTo(x + 2, y + 2); ctx.arc(x - 1.5, y + 2, 3.5, 0, Math.PI, false); ctx.lineTo(x - 5, y - 1); ctx.stroke(); ctx.lineCap = "butt";
       ctx.fillStyle = "#f4f4ee"; ctx.fillRect(Math.round(x) + 0, Math.round(y) - 9, 4, 2);
-      ctx.font = "bold 10px 'Valdora Pixel', 'Courier New', monospace"; ctx.textAlign = "left"; ctx.lineWidth = 3; ctx.strokeStyle = "#000c"; ctx.strokeText("x" + n, x + 12, y + 4); ctx.fillStyle = "#e8f6ff"; ctx.fillText("x" + n, x + 12, y + 4);
     }
     function drawSpots(t) {
       const ctx = api.ctx(), cx = api.cam.x / TILE, cy = api.cam.y / TILE, vw = api.VW() / TILE, vh = api.VH() / TILE, mine = fish && fish.spot;
@@ -750,7 +749,7 @@ window.ValdoraSea = (() => {
         const j = (t * 0.6 + s.ph) % 2.4; // um peixe pulando num tile da área
         if (j < 0.5) { const k = j / 0.5, jt = Math.floor((t * 0.6 + s.ph) / 2.4), hx0 = s.cx - s.r + (jt * 7 + s.id) % n, hy0 = s.cy - s.r + (jt * 3 + s.id) % n, hx = X(hx0 + 0.2 + k * 0.6), hy = Y(hy0 + 0.5) - Math.sin(Math.PI * k) * TILE * 0.5;
           ctx.fillStyle = s.deep ? "#ffd86a" : "#d8e8f0"; ctx.save(); ctx.translate(hx, hy); ctx.rotate(-0.8 + k * 1.6); ctx.fillRect(-5, -2, 10, 4); ctx.fillRect(4, -3, 3, 6); ctx.restore(); }
-        drawHook(ctx, X(s.x), Y(s.y) - TILE * (0.55 + 0.08 * Math.sin(t * 2.2 + s.ph)), s.charges, s.big);
+        drawHook(ctx, X(s.x), Y(s.y) - TILE * (0.55 + 0.08 * Math.sin(t * 2.2 + s.ph)), s.big);
       }
     }
     function drawGulls(t) { // gaivotas em volta dos cardumes fundos (por cima de tudo)
@@ -974,8 +973,8 @@ window.ValdoraSea = (() => {
     }
     function describe(k) {
       if (k.kind === "seamob") { const m = k.ref, sk = m.d.skill ? m.d.skill.split(/[.:]/)[0] : ""; return [`${m.d.name} · nv ${m.L}`, m.d.boss ? "#c47aff" : "#ff8a7a", sk || (ship ? "clique: dispara o bordo virado para ele" : "monstro do mar (só de barco)")]; }
-      if (k.kind === "seaspot") { const s = k.ref, n = `${s.charges} peixe${s.charges > 1 ? "s" : ""}`;
-        return [s.big ? `Área de pesca grande${s.deep ? " (mar fundo)" : ""}` : "Área de pesca da costa", "#8fd8ff", `${n} · só navegando: pare o barco perto e clique num ponto dela`]; }
+      if (k.kind === "seaspot") { const s = k.ref;
+        return [s.big ? `Área de pesca grande${s.deep ? " (mar fundo)" : ""}` : "Área de pesca da costa", "#8fd8ff", "só navegando: pare o barco perto e clique num ponto dela"]; }
       if (k.kind === "seaboat") return k.ref.anchor ? ["Seu barco (ancorado)", "#f0c878", "clique perto dele para embarcar"] : owns() ? ["Seu barco", "#f0c878", "clique para zarpar deste cais"] : ["Bote do cais", "#f0c878", "o mestre do cais vende barcos"];
       return null;
     }
