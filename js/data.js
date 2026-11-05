@@ -2,7 +2,7 @@
 // Tudo aqui é configuração: dá para equilibrar o jogo mexendo só neste arquivo.
 window.VD = (() => {
   const SKILLS = { corte: "Corte", mineracao: "Mineração", pesca: "Pesca", culinaria: "Culinária", ferraria: "Ferraria", artesanato: "Artesanato", combate: "Combate", vitalidade: "Vitalidade", herbalismo: "Herbalismo", alquimia: "Alquimia",
-    guerreiro: "Guerreiro", arqueiro: "Arqueiro", mago: "Mago", equitacao: "Equitação" }; // rodada 156: Equitação (sobe cavalgando) // rodada 151: classes (sobem usando a arma de cada uma) // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
+    guerreiro: "Guerreiro", arqueiro: "Arqueiro", mago: "Mago", equitacao: "Equitação", navegacao: "Navegação" }; // rodada 162: Navegação (navegando e vencendo no mar) // rodada 156: Equitação (sobe cavalgando) // rodada 151: classes (sobem usando a arma de cada uma) // rodada 104: plantas e flores com a foice; 117: poções com a feiticeira
 
   // Raridade dos acessórios (cor usada no inventário, no chão e nos textos)
   const RARITY = { comum: { name: "Comum", color: "#e8e0c8" }, raro: { name: "Raro", color: "#5fb0ff" }, epico: { name: "Épico", color: "#c47aff" },
@@ -1152,6 +1152,7 @@ window.VD = (() => {
   // rodada 55: icon = ícone da região (painel; no celular ele substitui o nome)
   const REGIONS = {
     town: { name: "Vila de Lumeira", icon: "icon_region_village", lvl: "zona segura" },
+    sea: { name: "Alto-mar", icon: "icon_region_fields", lvl: "monstros do mar e corsários" }, // rodada 162: a bordo
     fields: { name: "Campos de Lumeira", icon: "icon_region_fields", lvl: "nível 1-6" },
     // rodada 31: min = Combate mínimo recomendado (aviso ao entrar abaixo dele); danger = o que mata quem chega cedo
     east: { name: "Bosque dos Carvalhos", icon: "icon_region_grove", lvl: "nível 6-12", min: 6, danger: "Goblins andam em bando por aqui" },
@@ -1658,6 +1659,66 @@ window.VD = (() => {
     MOUNTS[key] = { key, tier: T.t, style: i + 1, coat, name: `${T.name} ${coat.toLowerCase()}`, speed: T.speed, price: T.price, lvl: T.lvl, sheet: "horse_" + key, icon: `assets/ui/horse_${key}.png` }; });
   const RIDE_XP = 2; // xp de Equitação por tile cavalgado (rodada 158: era 3; rodada 160: 2, a skill mais fácil de subir)
 
+
+  // ---------- rodada 162: o mar (barcos, pesca em alto-mar, monstros do mar e o Gaspar, o anão pescador do cais) ----------
+  // Navegação sobe navegando (SAIL_XP por tile) e afundando monstros do mar. Cascos comprados com o mestre do cais (arte em
+  // 16 direções: tools/b3d/boats.py); as melhorias (velas, leme, casco e canhões) valem para qualquer casco que o herói tiver.
+  // guns = canhões por bordo (Q dispara a bombordo, E a estibordo); gun = força de cada bala; turn = radianos por segundo.
+  const HULLS = {
+    bote: { name: "Bote de pesca", lvl: 1, price: 400, mats: { "Madeira": 20 }, hp: 150, speed: 1.0, turn: 2.4, guns: 1, gun: 0.8, len: 1.0, beam: 0.4, art: "bote",
+      desc: "Leve e ágil, com um falconete em cada borda. Bom para pescar e caçar perto da costa." },
+    chalupa: { name: "Chalupa", lvl: 12, price: 3000, mats: { "Madeira de carvalho": 30, "Barra de ferro": 6, "Fio de linho": 12 }, hp: 340, speed: 1.12, turn: 2.0, guns: 1, gun: 1, len: 1.45, beam: 0.55, art: "chalupa",
+      desc: "Um mastro com vela grande e bujarrona; um canhão de ferro em cada bordo." },
+    bergantim: { name: "Bergantim", lvl: 28, price: 12000, mats: { "Madeira de cedro": 40, "Barra de aço": 10, "Fio de linho": 24 }, hp: 650, speed: 1.22, turn: 1.7, guns: 2, gun: 1, len: 1.85, beam: 0.65, art: "bergantim",
+      desc: "Dois mastros, velas redondas e dois canhões por bordo." },
+    galeao: { name: "Galeão", lvl: 45, price: 40000, mats: { "Madeira de ébano": 40, "Barra de lumita": 12, "Fio de linho": 40 }, hp: 1150, speed: 1.18, turn: 1.35, guns: 3, gun: 1.15, len: 2.3, beam: 0.8, art: "galeao",
+      desc: "Três mastros, castelo de popa e três canhões por bordo. Lento na curva e duro de afundar." } };
+  const SHIP_PARTS = {
+    velas: { name: "Velas", desc: "+6% de velocidade por nível", icon: "item_thread" },
+    leme: { name: "Leme", desc: "+12% de curva por nível", icon: "item_log_oak" },
+    casco: { name: "Reforço do casco", desc: "+15% de vida e 4% menos dano por nível", icon: "item_bar_iron" },
+    canhoes: { name: "Canhões", desc: "+15% de dano e 6% menos recarga por nível", icon: "item_bar_steel" } };
+  const SAIL_XP = 2; // xp de Navegação por tile navegado
+  // peixes do mar: zona = mar do bioma (1 Campo ... 5 Geleira; 0 = qualquer mar). hp = fôlego na luta da linha; kg = peso sorteado
+  const SEA_FISH = [
+    { item: "Sardinha", zone: 1, rar: "comum", req: 1, xp: 10, kg: [0.1, 0.35], hp: 90, price: 5, ico: "sardinha", cook: "Sardinha assada", heal: 9, cookLvl: 1 },
+    { item: "Robalo", zone: 1, rar: "raro", req: 6, xp: 20, kg: [1, 7], hp: 150, price: 18, ico: "robalo" },
+    { item: "Dourado-do-mar", zone: 1, rar: "epico", req: 14, xp: 40, kg: [5, 22], hp: 230, price: 60, ico: "dourado" },
+    { item: "Cavala-negra", zone: 2, rar: "comum", req: 20, xp: 24, kg: [0.4, 1.6], hp: 110, price: 12, ico: "cavala", cook: "Cavala assada", heal: 24, cookLvl: 20 },
+    { item: "Moreia-sombria", zone: 2, rar: "raro", req: 26, xp: 44, kg: [2, 12], hp: 180, price: 38, ico: "moreia" },
+    { item: "Peixe-lanterna", zone: 2, rar: "epico", req: 34, xp: 80, kg: [3, 15], hp: 260, price: 120, ico: "lanterna" },
+    { item: "Arenque-de-ferro", zone: 3, rar: "comum", req: 32, xp: 36, kg: [0.2, 0.8], hp: 120, price: 20, ico: "arenque", cook: "Arenque defumado", heal: 36, cookLvl: 32 },
+    { item: "Bacalhau", zone: 3, rar: "raro", req: 38, xp: 64, kg: [4, 20], hp: 190, price: 64, ico: "bacalhau" },
+    { item: "Esturjão-couraçado", zone: 3, rar: "epico", req: 46, xp: 110, kg: [20, 90], hp: 280, price: 200, ico: "esturjao" },
+    { item: "Peixe-papagaio", zone: 4, rar: "comum", req: 44, xp: 50, kg: [0.8, 3], hp: 130, price: 32, ico: "papagaio", cook: "Peixe-papagaio grelhado", heal: 48, cookLvl: 44 },
+    { item: "Garoupa-coral", zone: 4, rar: "raro", req: 50, xp: 90, kg: [5, 30], hp: 200, price: 100, ico: "garoupa" },
+    { item: "Peixe-espada", zone: 4, rar: "epico", req: 58, xp: 150, kg: [40, 160], hp: 300, price: 320, ico: "espada" },
+    { item: "Peixe-gelo", zone: 5, rar: "comum", req: 56, xp: 66, kg: [0.3, 1.2], hp: 140, price: 48, ico: "peixe_gelo", cook: "Peixe-gelo assado", heal: 62, cookLvl: 56 },
+    { item: "Halibute", zone: 5, rar: "raro", req: 62, xp: 120, kg: [10, 60], hp: 220, price: 150, ico: "halibute" },
+    { item: "Atum-azul", zone: 5, rar: "epico", req: 70, xp: 200, kg: [60, 250], hp: 320, price: 480, ico: "atum" },
+    { item: "Rei-das-marés", zone: 0, rar: "lendario", req: 25, xp: 400, kg: [80, 300], hp: 420, price: 1500, ico: "rei_mares" }];
+  // iscas (o Gaspar vende): bite = tempo até morder (x), rare/epic/leg = chance de peixe raro, épico e lendário (x)
+  const BAITS = {
+    "Isca de minhoca": { icon: "item_isca_minhoca", buy: 4, price: 1, bite: 0.6, desc: "o peixe morde bem mais rápido" },
+    "Isca de camarão": { icon: "item_isca_camarao", buy: 18, price: 4, bite: 0.9, rare: 1.7, epic: 2, desc: "mais peixes raros e épicos" },
+    "Isca de lula brilhante": { icon: "item_isca_lula", buy: 70, price: 15, bite: 0.8, rare: 1.3, epic: 2.6, leg: 5, desc: "atrai os épicos e o Rei-das-marés" } };
+  // monstros do mar: multiplicadores sobre a base do nível (vida 30 + 7 por nível, golpe 4 + 0,9 por nível); w = peso no sorteio
+  const SEA_MOBS = {
+    tubarao: { name: "Tubarão-de-cicatriz", hp: 1.0, dmg: 1.0, speed: 3.6, radius: 0.75, aggro: 9, xp: 1.0, kind: "bite", art: "sea_shark", w: 36, drops: [["Barbatana de tubarão", 0.55]] },
+    medusa: { name: "Medusa-lanterna", hp: 0.8, dmg: 0.8, speed: 1.2, radius: 0.8, aggro: 6, xp: 0.8, kind: "pulse", art: "sea_jelly", w: 30, drops: [["Geleia de medusa", 0.7]] },
+    serpente: { name: "Serpente das marés", hp: 1.5, dmg: 1.1, speed: 2.8, radius: 0.95, aggro: 11, xp: 1.4, kind: "spit", art: "sea_serpent", w: 22, drops: [["Escama de serpente", 0.6], ["Pérola", 0.03]] },
+    pirata: { name: "Corsário", hp: 2.4, dmg: 1.0, speed: 2.7, radius: 1.3, aggro: 12, xp: 2.0, kind: "ship", art: "chalupa_pirata", w: 12, coins: 3, drops: [["Pérola", 0.06], ["Barra de ferro", 0.4, 1, 3]] },
+    polvo: { name: "Polvo Abissal", boss: true, hp: 16, dmg: 1.5, speed: 0, radius: 2.2, aggro: 13, xp: 14, kind: "boss", art: "sea_octopus", w: 0, coins: 25, drops: [["Tinta de polvo", 1, 2, 4], ["Pérola", 0.7, 1, 2]] } };
+  const SEA_LOOT = { "Barbatana de tubarão": { icon: "item_barbatana", price: 30 }, "Geleia de medusa": { icon: "item_gel", price: 22, filter: "hue-rotate(250deg) saturate(1.6)" },
+    "Escama de serpente": { icon: "item_escama", price: 45 }, "Tinta de polvo": { icon: "item_tinta", price: 120, rare: true }, "Pérola": { icon: "item_perola", price: 400, rare: true } };
+  for (const f of SEA_FISH) {
+    ITEMS[f.item] = { icon: "item_" + f.ico, price: f.price, sea: f.rar, ...(f.rar === "epico" || f.rar === "lendario" ? { rare: true } : {}),
+      ...(f.cook ? { cook: f.cook, cookLvl: f.cookLvl, cookXp: Math.round(f.xp * 0.9), cookT: Math.max(1, f.zone) } : {}) };
+    if (f.cook) ITEMS[f.cook] = { icon: `item_${f.ico}_assado`, price: f.price * 2 + 2, heal: f.heal };
+  }
+  for (const [n, b] of Object.entries(BAITS)) ITEMS[n] = { icon: b.icon, price: b.price, bait: true, w: 0.05 };
+  for (const [n, it] of Object.entries(SEA_LOOT)) ITEMS[n] = { ...it };
+
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
   // Cada receita pede só o nível do ofício (o jogador escolhe o que criar para subir); o xp dos três ofícios (Artesanato,
@@ -1697,6 +1758,6 @@ window.VD = (() => {
   const cutRw = (o) => { if (!o || typeof o !== "object") return; if (o.reward && o.reward.xp && typeof o.reward.xp === "object") for (const k of Object.keys(o.reward.xp)) o.reward.xp[k] = cut(o.reward.xp[k]);
     for (const v of Object.values(o)) if (v && typeof v === "object" && v !== o.reward) cutRw(v); };
   cutRw(QUESTS); cutRw(TUTORIAL);
-  return { XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { HULLS, SHIP_PARTS, SAIL_XP, SEA_FISH, BAITS, SEA_MOBS, SEA_LOOT, XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

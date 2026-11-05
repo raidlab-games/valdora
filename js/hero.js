@@ -34,7 +34,7 @@ window.ValdoraHero = (() => {
     function drawTool(t, cx, cy) { // ferramenta na mão, rastro do golpe e linha de pesca
       const player = api.player();
       const a = player.act, dir = D4(player.dir), flip = dir === "left" ? -1 : 1;
-      const fishing = player.cast && player.target && player.target.ref === player.cast.spot && !player.path.length;
+      const fishing = player.cast && (player.cast.sea || (player.target && player.target.ref === player.cast.spot)) && !player.path.length; // rodada 162: linha do mar
       const key = a && a.key ? a.key : fishing ? "rod" : null; if (!key) return;
       const hx = cx + (dir === "left" ? -11 : dir === "right" ? 11 : dir === "down" ? 10 : -10), hy = cy + 4;
       let ang = toolAngle(a && a.key ? a : null, key) + (key === "rod" ? Math.sin(t * 2) * 0.04 : 0);
@@ -66,6 +66,7 @@ window.ValdoraHero = (() => {
         let bx = (o.x + 0.5) * TILE - cam.x, by = (o.y + 0.5) * TILE - cam.y + Math.sin(t * 4) * 2;
         if (!player.cast.landed) { const k = ease.outQuad(Math.min(1, player.cast.t / 0.42)); bx = tipX + (bx - tipX) * k; by = tipY + (by - tipY) * k - Math.sin(Math.PI * k) * 34; }
         if (a && a.key === "rod" && a.t > a.prep && player.cast.landed) by += 5 * (1 - Math.min(1, (a.t - a.prep) / 0.2)); // boia afunda na fisgada
+        if (player.cast.tug && player.cast.landed) { bx += Math.sin(t * 31) * 2.5; by += 4 + Math.sin(t * 23) * 2; } // rodada 162: peixe brigando na linha
         ctx.strokeStyle = "#ffffffaa"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(tipX, tipY);
         ctx.quadraticCurveTo((tipX + bx) / 2, Math.max(tipY, by) + (player.cast.landed ? 12 : -10), bx, by); ctx.stroke();
         ctx.fillStyle = "#e0402a"; ctx.fillRect(Math.round(bx) - 3, Math.round(by) - 3, 6, 4); ctx.fillStyle = "#fff"; ctx.fillRect(Math.round(bx) - 3, Math.round(by) + 1, 6, 2);
@@ -128,7 +129,7 @@ window.ValdoraHero = (() => {
       const breath = moving || pose.phase >= 0 ? 1 : 1 + Math.sin(t * 2.2) * 0.014; // respiração parado
       const cx = Math.round(player.px * TILE - cam.x + TILE / 2 + vx * pose.off), by = Math.round((player.py + 1 + player.upOff) * TILE - cam.y + vy * pose.off * 0.6);
       shadowAt(cx, by - 2, TILE * 0.3 * (1 - bob / 25), TILE * 0.1 * (1 - bob / 25));
-      const fishing = player.cast && player.target && player.target.ref === player.cast.spot && !player.path.length;
+      const fishing = player.cast && (player.cast.sea || (player.target && player.target.ref === player.cast.spot)) && !player.path.length; // rodada 162: linha do mar
       const aSheet = pose.phase >= 0 ? actSheet(hero, player.act.key) : fishing && !moving ? actSheet(hero, "rod") : null;
       const DS = ANIMS[hero.id + "_dash"], DA = DS && DS.rows[rk(DS, "dash_", player.dir)] ? DS : HA, DR = DA && DA.rows[rk(DA, "dash_", player.dir)]; // investida com espada (hero_N_dash)
       if (DR && (player.ghosts || player.dash)) { // investida (Blender): corpo esticado para a frente; rastro em código com o último quadro
@@ -190,7 +191,8 @@ window.ValdoraHero = (() => {
         else ctx.drawImage(aSheet, col * cell, row * cell, cell, cell, cx - cell / 2, by - cell, cell, cell);
         if (sword && !shot && !back) drawSlash(cx, by, fh, D4(player.dir), pose); // o tiro de arco não deixa rastro de lâmina
         if (player.cast && (fishing || (player.act && player.act.key === "rod")) && col === 2) {
-          const tips = (window.ROD_TIP3D || {})[hero.id] || ROD_TIP, [tx, ty] = tips[player.dir] || tips[D4(player.dir)], k = cell / 96; // 3D: ponta medida no Blender drawFishLine(cx + tx * k, by + ty * k, t);
+          const tips = (window.ROD_TIP3D || {})[hero.id] || ROD_TIP, [tx, ty] = tips[player.dir] || tips[D4(player.dir)], k = cell / 96; // 3D: ponta medida no Blender
+          drawFishLine(cx + tx * k, by + ty * k, t); // rodada 162: a linha voltou (estava presa no comentário acima)
         }
         if (player.flash > 0) ctx.globalAlpha = 1;
         tags.push([player.name, player.px + 0.5, (by - fh + cam.y) / TILE + 0.12, "#f1c40f"]);

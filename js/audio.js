@@ -60,6 +60,10 @@ window.ValdoraAudio = (() => {
     smelt: () => { noise(0.4, 0.25, 400, 0.6, 0, "lowpass"); tone(140, 0.3, "sine", 0.12, 1.4); },
     cook: () => { noise(0.3, 0.2, 2200, 0.5, 0, "highpass"); },
     warn: () => { tone(330, 0.18, "sawtooth", 0.2, 1, 0); tone(330, 0.18, "sawtooth", 0.2, 1, 0.22); },
+    cannon: () => { tone(70, 0.45, "sine", 0.5, 0.45, 0, sfxGain, 0.5); noise(0.55, 0.55, 260, 0.6, 0, "lowpass", 0.5); noise(0.07, 0.3, 2600, 0.9, 0, "highpass"); }, // rodada 162: canhão
+    reel: () => { tone(1500, 0.025, "square", 0.05, 0.8); tone(1200, 0.025, "square", 0.04, 0.8, 0.04); }, // carretilha recolhendo
+    snap: () => { noise(0.05, 0.4, 4200, 1.2, 0, "highpass"); tone(900, 0.12, "triangle", 0.12, 0.3); }, // linha arrebentando
+    bell: () => { tone(1320, 0.5, "sine", 0.12, 1); tone(1980, 0.35, "sine", 0.06, 1, 0.02); }, // sino do cais
     slam: () => { tone(90, 0.5, "sine", 0.5, 0.4, 0, sfxGain, 0.6); noise(0.4, 0.5, 200, 0.7, 0, "lowpass", 0.5); noise(0.06, 0.35, 3000, 1, 0.01, "bandpass", 0.4); },
     quest: () => { [659, 784, 988].forEach((f, i) => tone(f, 0.16, "triangle", 0.22, 1, i * 0.08)); },
     ui: () => tone(800, 0.04, "square", 0.08),

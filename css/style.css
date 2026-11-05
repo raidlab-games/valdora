@@ -972,3 +972,40 @@ b.lvtag { color: #ffe9a8; } b.lvtag.no { color: #ff6b5a; }
 #market .mk-item small.rar { display: none; }
 #market .mk-row > span.mk-no { color: #ff6b5a; }
 @media (max-width: 760px) { #market .mk-item small.rar { display: inline; } }
+
+/* rodada 162: o mar. Painel do barco (vida do casco, vento, nós e recarga dos canhões) e a luta da linha */
+#seahud { position: absolute; left: 50%; top: 64px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 5px 12px; background: #13202ce6;
+  border: 2px solid #3f6a86; color: #e8f2f8; font: 12px "Valdora Pixel", "Courier New", monospace; zoom: var(--ui, 1); pointer-events: none; white-space: nowrap; z-index: 6; }
+#seahud .hp { position: relative; width: 150px; height: 12px; background: #3a1a16; border: 1px solid #000; }
+#seahud .hp i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#7fd06a, #4a9a3a); }
+#seahud .hp em { position: absolute; inset: 0; text-align: center; font-style: normal; font-size: 10px; line-height: 12px; text-shadow: 1px 1px 0 #000; }
+#seahud .wind i { display: inline-block; color: #bfe8ff; margin-right: 4px; font-style: normal; }
+#seahud .guns { display: flex; align-items: center; gap: 4px; }
+#seahud .gun { display: inline-block; width: 26px; height: 8px; background: linear-gradient(90deg, #ffd23a calc((1 - var(--p)) * 100%), #3a2a16 0); border: 1px solid #000; }
+#seahud .gun.ok { box-shadow: 0 0 6px #ffd23a; }
+#seafish { position: absolute; left: 50%; bottom: 118px; transform: translateX(-50%); width: 330px; padding: 8px 10px; background: #13202cf0; border: 2px solid #3f6a86;
+  color: #e8f2f8; font: 12px "Valdora Pixel", "Courier New", monospace; zoom: var(--ui, 1); z-index: 7; box-shadow: 0 4px 0 #0008; }
+#seafish .sf-title { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; font-size: 13px; }
+#seafish .sf-title small { color: #9fb4c2; }
+#seafish .sf-mood { margin-left: auto; font-weight: bold; }
+#seafish .sf-wait .dots { animation: sfdots 1.2s steps(4) infinite; display: inline-block; width: 1.4em; overflow: hidden; vertical-align: bottom; }
+@keyframes sfdots { from { width: 0; } to { width: 1.4em; } }
+#seafish .sf-bar { position: relative; height: 14px; margin: 3px 0; background: #0a1218; border: 1px solid #000; }
+#seafish .sf-bar span { position: absolute; left: 4px; top: 0; font-size: 10px; line-height: 14px; z-index: 1; text-shadow: 1px 1px 0 #000; }
+#seafish .sf-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#7fd06a, #3f8a32); transition: width .08s linear; }
+#seafish .sf-bar.ten i { background: linear-gradient(90deg, #e8c050, #ff6b3a); }
+#seafish .sf-bar.ten.danger { animation: sfshake .12s infinite; }
+#seafish .sf-bar.ten em { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #ff3b30; }
+#seafish .sf-bar.time { height: 6px; }
+#seafish .sf-bar.time i { background: #e8e0c8; }
+@keyframes sfshake { 50% { transform: translateX(1px); } }
+#seafish .sf-btns { display: flex; gap: 6px; margin: 7px 0 4px; }
+#seafish .sf-btns button, #seafish small button { position: relative; flex: 1; padding: 5px 4px; font: inherit; color: #fff; background: #2a4a62; border: 2px solid #6fa8c8; cursor: pointer; overflow: hidden; }
+#seafish .sf-btns button b { color: #ffd84a; margin-right: 3px; }
+#seafish .sf-btns button.cd::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--p) * 100%); background: #0008; }
+#seafish .sf-btns button:hover { background: #3a6482; }
+#seafish .sf-tip { display: block; color: #bfd8e6; }
+#dlg .row.boat.on { box-shadow: inset 3px 0 0 #6fbf5a; }
+#dlg .row .slot.locked { display: inline-block; width: 32px; height: 32px; background: #0004; border: 1px dashed #8a8070; }
+@media (max-width: 700px) { #seahud { top: 54px; gap: 6px; font-size: 10px; } #seahud .hp { width: 90px; } #seafish { bottom: 150px; width: 300px; } }
+#seahud { top: 8px; }

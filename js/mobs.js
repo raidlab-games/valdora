@@ -21,7 +21,7 @@ window.ValdoraMobs = (() => {
       if (m.atkT > 0) m.atkT--;
       if (m.aggro && m.atkT === 1 && near && !m.windup && m.prog >= 1 && !ANIMS[d.spr]) m.prep = TICK; // recua antes de atacar (sem folha animada)
       if (!m.aggro && m.hp < d.hp && api.tickN() % 4 === 0) m.hp++; // regenera fora de combate
-      if (!m.aggro && d.aggro && dist <= d.aggro && lv("combate") < d.lvl * 2 && !inTown(player.x, player.y) && !(player.deadT > 0) && !(api.calm && api.calm(m))) { // rodada 79: Marco da Mata aceso acalma os lobos
+      if (!m.aggro && d.aggro && dist <= d.aggro && lv("combate") < d.lvl * 2 && !inTown(player.x, player.y) && !player.sailing && !(player.deadT > 0) && !(api.calm && api.calm(m))) { // rodada 79: Marco da Mata aceso acalma os lobos
         m.aggro = true; m.atkT = 0; // rodada 113: chegou perto, já bate (antes esperava 1 s)
         if (!d.mini && ANIMS[d.spr] && ANIMS[d.spr].rows.howl) { m.an = { s: "howl", t: 0, still: 0 }; m.howlFast = true; faceAt(m, player.x, player.y); api.howl(m, true); return; } // uivo curto
       }

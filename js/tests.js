@@ -22,7 +22,7 @@
     const names = new Set(d.drops.map((x) => x[0])), tier = VD.TIER_LVL.reduce((b, v, i) => (d.lvl >= v ? i : b), 0);
     return !Object.values(VD.LADDER).some((l) => names.has(l[Math.min(l.length - 1, tier)]));
   }).map(([k]) => k)));
-  test("rodada 112: toda região com monstros tem item de região", () => miss(Object.keys(VD.REGIONS).filter((r) => r !== "town" && !VD.REGION_DROP(r, { lvl: 1 }))));
+  test("rodada 112: toda região com monstros tem item de região", () => miss(Object.keys(VD.REGIONS).filter((r) => r !== "town" && r !== "sea" && !VD.REGION_DROP(r, { lvl: 1 })))); // rodada 162: o alto-mar tem espólios próprios (VD.SEA_MOBS)
   test("rodada 112: item de região existe e o chefe sempre solta", () => { const r = VD.REGION_DROP("snow", { boss: true }); return r && ITEMS[r[0]] && r[1] === 1 || "neve sem item garantido no chefe"; });
   test("rodada 112: todo item tem peso (missões pesam 0) e mochilas crescem", () => {
     const bad = Object.keys(ITEMS).filter((n) => { const w = VD.weightOf(n); return !(w >= 0) || (w === 0 && !ITEMS[n].quest); });
@@ -315,7 +315,7 @@
   test("rodada 31: aviso de matilha, varal de carne com sway, nível mínimo por região, peixe queimado vendável", () => miss([
     ...["icon_danger_pack", "icon_danger_pack_64", "deco_meat_rack"].filter((k) => !ASSETS[k]),
     ...(AS.deco_meat_rack ? ["deco_meat_rack não deveria balançar"] : []),
-    ...Object.entries(VD.REGIONS).filter(([k, R]) => k !== "town" && k !== "fields" && !(R.min > 0 && R.danger)).map(([k]) => "região " + k),
+    ...Object.entries(VD.REGIONS).filter(([k, R]) => k !== "town" && k !== "fields" && k !== "sea" && !(R.min > 0 && R.danger)).map(([k]) => "região " + k),
     ...(ITEMS["Peixe queimado"].price > 0 ? [] : ["peixe queimado"])]));
   test("rodada 32: caveira de alerta, tronco-banco da fogueira, boas-vindas do Ivo citam os níveis", () => miss([
     ...["icon_danger_generic", "icon_danger_generic_64", "deco_campfire_log"].filter((k) => !ASSETS[k]),
@@ -834,6 +834,69 @@
     const P = { coins: 0, inv: [{ name: "Anel ancestral", n: 1 }], orders: [], quests: {} }, SH = ValdoraShop.create({ player: () => P, count: () => 0, lv: () => 1, gearEffect: () => "", questHtml: () => "", TICK: 0.6 });
     try { const h = SH.html("buy"); if (!h.includes("Pedra") || !h.includes("Nível ")) r.push("aba Comprar"); if (!SH.html("sell").includes("Nível 18")) r.push("aba Vender"); } catch (e) { r.push("banca quebrou: " + e.message); } // a Pedra (material) quebrava a aba Comprar
     return miss(r);
+  });
+  // rodada 162: o mar (barcos, pesca em alto-mar, monstros do mar e o anão pescador)
+  test("rodada 162: peixes do mar, iscas, espólios e cascos usam itens e ícones que existem", () => {
+    const bad = [];
+    for (const f of VD.SEA_FISH) { const it = ITEMS[f.item]; if (!it || !ASSETS[it.icon]) bad.push(f.item); if (f.cook && !(ITEMS[f.cook] && ITEMS[f.cook].heal > 0 && ASSETS[ITEMS[f.cook].icon])) bad.push(f.cook); if (!RARITY[f.rar]) bad.push("raridade " + f.item); }
+    for (const n of Object.keys(VD.BAITS)) if (!ITEMS[n] || !ASSETS[ITEMS[n].icon]) bad.push(n);
+    for (const n of Object.keys(VD.SEA_LOOT)) if (!ITEMS[n] || !ASSETS[ITEMS[n].icon]) bad.push(n);
+    for (const d of Object.values(VD.SEA_MOBS)) for (const [n] of d.drops) if (!ITEMS[n]) bad.push(n);
+    for (const h of Object.values(VD.HULLS)) for (const n of Object.keys(h.mats)) if (!ITEMS[n]) bad.push(n);
+    for (let L = 1; L <= 4; L++) for (const k of Object.keys(VD.SHIP_PARTS)) for (const n of Object.keys(ValdoraBoat.partCost(k, L).mats)) if (!ITEMS[n]) bad.push(n);
+    if (!SKILLS.navegacao) bad.push("skill Navegação");
+    for (let z = 1; z <= 5; z++) for (const r of ["comum", "raro", "epico"]) if (!VD.SEA_FISH.some((f) => f.zone === z && f.rar === r)) bad.push(`mar ${z} sem ${r}`);
+    return miss(bad);
+  });
+  test("rodada 162: arte dos barcos (16 direções e os pés do herói) e dos monstros do mar", () => {
+    const bad = [], A = window.BOAT_ART || {}, S = window.SEA_ART || {};
+    for (const h of Object.values(VD.HULLS)) { const a = A[h.art]; if (!a || a.hero.length !== 16 || !(a.cw > 0 && a.ch > 0)) bad.push(h.art); }
+    for (const d of Object.values(VD.SEA_MOBS)) if (d.kind === "ship" ? !A[d.art] : !S[d.art]) bad.push(d.art);
+    if (!S.sea_tentacle) bad.push("sea_tentacle");
+    if (!(window.ANIM_SHEETS || {}).npc_dwarf || !ANIM_SHEETS.npc_dwarf.rows.idle || !ANIM_SHEETS.npc_dwarf.rows.thumbs) bad.push("npc_dwarf");
+    return miss(bad);
+  });
+  test("rodada 162: barco — comprar pede Navegação, moedas e material; melhorias sobem atributos; conserto custa o que falta", () => {
+    const B = ValdoraBoat, r = [], inv = { "Madeira": 20 }, have = (n) => inv[n] || 0, take = (n, q) => { inv[n] -= q; };
+    const p = { coins: 1000, boat: B.sanitize({ owned: ["xx"], parts: { velas: 9 }, journal: { "Robalo": { n: 2, kg: 3.1 }, "Nada": { n: 1 } } }) };
+    r.push(p.boat.owned.length === 0 && p.boat.parts.velas === 4 && p.boat.journal.Robalo.kg === 3.1 && !p.boat.journal.Nada && B.stats(p.boat) === null);
+    p.boat.parts.velas = 0;
+    r.push(B.whyNotHull(p, "chalupa", 1, have).startsWith("requer Navegação"), B.whyNotHull(p, "bote", 1, () => 0).startsWith("faltam"));
+    r.push(B.buyHull(p, "bote", 1, have, take) && p.coins === 600 && inv.Madeira === 0 && p.boat.hull === "bote" && B.whyNotHull(p, "bote", 1, have) === "já é seu");
+    const s0 = B.stats(p.boat); r.push(s0.maxHp === 150 && s0.guns === 1 && B.hpOf(p.boat) === 150 && B.repairCost(p.boat) === 0);
+    p.boat.hp = 100; r.push(B.repairCost(p.boat) > 0);
+    const all = { "Fio de linho": 99, "Madeira de carvalho": 99, "Barra de ferro": 99 }; p.coins = 5000;
+    r.push(B.whyNotPart(p, "velas", 1, (n) => all[n] || 0).startsWith("requer Navegação"), B.upgrade(p, "velas", 5, (n) => all[n] || 0, () => {}) && p.boat.parts.velas === 1 && B.stats(p.boat).speed > s0.speed);
+    r.push(B.upgrade(p, "casco", 5, (n) => all[n] || 0, () => {}) && B.stats(p.boat).maxHp > 150 && B.hpOf(p.boat) === 100 + (B.stats(p.boat).maxHp - 150));
+    r.push([1, 2, 3, 4].every((L) => !L || B.partCost("canhoes", L).coins > (L > 1 ? B.partCost("canhoes", L - 1).coins : 0)) && B.partCost("canhoes", 5) === null);
+    return r.every(Boolean) || "falhou no item " + r.indexOf(false);
+  });
+  test("rodada 162: vento, direções, peixes que mordem e peso", () => {
+    const B = ValdoraBoat, r = [];
+    r.push(Math.abs(B.windFactor(0, 0) - 1.1) < 1e-9, Math.abs(B.windFactor(Math.PI, 0) - 0.62) < 1e-9, B.windFactor(Math.PI / 2, 0) > 0.8);
+    r.push(B.dir16(0) === 0, B.dir16(Math.PI / 2) === 4, B.dir16(-Math.PI / 2) === 12, B.dir16(Math.PI) === 8);
+    const t1 = B.catchTable(1, 1, null, false); r.push(t1.length === 1 && t1[0].f.item === "Sardinha");
+    const t2 = B.catchTable(1, 30, "Isca de lula brilhante", true), leg = t2.find((c) => c.f.rar === "lendario"), base = B.catchTable(1, 30, null, true).find((c) => c.f.rar === "lendario");
+    r.push(!!leg && leg.w > base.w * 4.9, t2.every((c) => c.f.zone === 1 || c.f.zone === 0));
+    r.push(B.catchTable(4, 1, null, false)[0].low === true); // sem nível para o mar 4: o comum de lá, com aviso
+    r.push(B.rollFish(t1, 0.5).item === "Sardinha");
+    const f = VD.SEA_FISH.find((x) => x.item === "Atum-azul"), ws = [0, 0.3, 0.99].map((x) => B.weightRoll(f, x)); r.push(ws.every((w) => w >= f.kg[0] && w <= f.kg[1]) && ws[0] < ws[2]);
+    r.push(B.reelPower(1, 1, 0) >= 4 && B.reelPower(60, 1, 5) <= 22 && B.reelPower(20, 1, 2) > B.reelPower(1, 1, 0));
+    r.push(B.mobHp(VD.SEA_MOBS.polvo, 30) > B.mobHp(VD.SEA_MOBS.tubarao, 30) * 10);
+    return r.every(Boolean) || "falhou no item " + r.indexOf(false);
+  });
+  test("rodada 162: o anão compra peixe 50% mais caro e o estaleiro mostra barcos, melhorias e conserto", () => {
+    const p = { coins: 50, inv: [{ name: "Robalo", n: 2 }, { name: "Lambari cru", n: 3 }, { name: "Madeira", n: 5 }, null], boat: ValdoraBoat.sanitize({}), seen: {}, stats: {} };
+    const cnt = (n) => (p.inv.find((s) => s && s.name === n) || { n: 0 }).n;
+    const S = ValdoraSea.create({ TILE: 48, fx: {}, SND: { play() {} }, cam: { x: 0, y: 0 }, player: () => p, count: cnt, lv: () => 1, G: () => ({ DOCKS: [{ key: "d1", name: "Porto", keeper: "Mestre", x: 5, y: 5, dx: 1, dy: 0, len: 6 }] }), rand: Math.random });
+    const r = [];
+    r.push(S.fishPrice("Robalo") === Math.round(ITEMS.Robalo.price * 1.5), S.isFish("Lambari cru") && S.isFish("Robalo") && !S.isFish("Madeira"));
+    const sell = S.dwarfHtml("sell", { name: "Gaspar" }); r.push(sell.includes("Robalo") && sell.includes("Lambari cru") && !sell.includes("Madeira") && sell.includes("Vender todos os peixes"));
+    r.push(S.dwarfHtml("bait", { name: "Gaspar" }).includes("Isca de minhoca"), S.dwarfHtml("log", { name: "Gaspar" }).includes("???"));
+    const h = S.harborHtml({ dock: "d1", name: "Mestre", label: "Porto" }, "boats"); r.push(h.includes("Bote de pesca") && h.includes("Galeão") && !h.includes("Zarpar"));
+    p.boat.owned = ["bote"]; p.boat.hull = "bote";
+    r.push(S.harborHtml({ dock: "d1" }, "boats").includes("Zarpar"), S.harborHtml({ dock: "d1" }, "up").includes("Reforço do casco"), S.harborHtml({ dock: "d1" }, "fix").includes("inteiro"));
+    return r.every(Boolean) || "falhou no item " + r.indexOf(false);
   });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];

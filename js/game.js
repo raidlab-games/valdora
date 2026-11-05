@@ -573,7 +573,9 @@
   // animada embaixo e a madeira é recortada tile a tile de pier_<lado>.png); em terra, um largo de terra batida com o mestre do
   // cais (NPC para o sistema de barcos), poste, caixotes, barris e placa; uma estradinha liga o largo à estrada mais perto.
   function placeDocks(deco, paint) {
-    const G = WORLD_G; npc.docks = {};
+    const G = WORLD_G; npc.docks = {}; npc.dwarves = {};
+    const DWARVES = ["Gaspar", "Brunildo", "Tórvio", "Dagoberto", "Hilmo", "Grenda", "Bóris", "Olavo", "Rúrik", "Mirta", "Fredo", "Gunda"]; // rodada 162: o de Lumeira é o Gaspar
+    const docks = (G.DOCKS || []).slice().sort((a, b) => Math.hypot(a.x - G.TCX, a.y - G.TCY) - Math.hypot(b.x - G.TCX, b.y - G.TCY));
     for (const D of G.DOCKS || []) {
       const { x, y, dx, dy } = D, px = dy ? 1 : 0, py = dx ? 1 : 0, side = dy > 0 ? "s" : dy < 0 ? "n" : dx > 0 ? "e" : "w";
       for (let k = 1; k <= D.len; k++) for (let s = 0; s <= 1; s++) {
@@ -592,8 +594,18 @@
       if (free(keeperAt)) npc.docks[D.key] = D.obj = deco("harbor", SPR.npc_harbor ? "npc_harbor" : "npc_guard", ...keeperAt, 1, 1, { name: D.keeper, dock: D.key, label: D.name });
       if (free(lampAt)) deco("prop", SPR.deco_lamppost ? "deco_lamppost" : "deco_sign", ...lampAt);
       if (free(crateAt) && SPR.deco_crates) deco("prop", "deco_crates", ...crateAt);
-      if (free(barrelAt)) deco("barrel", "barrel", ...barrelAt);
-      if (free(signAt)) deco("sign", "deco_sign", ...signAt, 1, 1, { label: `${D.name}: ${D.keeper} cuida do cais. Em breve, barcos para outras costas.` });
+      if (free(barrelAt)) deco("prop", SPR.deco_fish_barrel ? "deco_fish_barrel" : "barrel", ...barrelAt); // rodada 162: barril cheio de peixe (com a gaivota)
+      { // rodada 162: varal de peixes, rede estendida, armadilhas de caranguejo e a âncora em volta do largo (fora das faixas do meio)
+        const spots = [[2, 2], [3, 2], [2, 3], [3, -1], [3, -2], [2, -2], [4, 2], [4, -1], [1, 3], [1, -2], [4, 3], [4, -2]];
+        const fits = (X, Y, w) => [...Array(w)].every((_, i) => free([X + i, Y]) && map[Y][X + i] !== "path");
+        const put = (spr, w) => { if (!SPR[spr]) return; for (const [k, s2] of spots) { const [X, Y] = land(k, s2); if (fits(X, Y, w)) { deco("prop", spr, X, Y, w, 1); return; } } };
+        put("deco_fish_rack", 2); put("deco_net_rack", 2); put("deco_crab_pots", 1); put("deco_anchor", 1);
+      }
+      if (free(signAt)) deco("sign", "deco_sign", ...signAt, 1, 1, { label: `${D.name}: ${D.keeper} vende, melhora e conserta barcos; o anão do píer compra peixe e vende iscas.` });
+      { // rodada 162: o anão pescador em pé no píer (faixa de fora, perto da ponta), de vara na mão; o píer continua por baixo dele
+        const X = x + dx * 4, Y = y + dy * 4, under = occ[Y * W + X], name = DWARVES[docks.indexOf(D) % DWARVES.length], art = /a$/.test(name) ? "da" : "do";
+        if (inside(X, Y) && map[Y][X] === "pier") npc.dwarves[D.key] = place({ type: "dwarf", spr: SPR.npc_dwarf ? "npc_dwarf" : "npc_merchant", x: X, y: Y, w: 1, h: 1, solid: true, name, art, dock: D.key, under: under && under.type === "decal" ? under : null });
+      }
       // estradinha até a estrada (ou vila) mais perto
       const [sx, sy] = land(3, 0);
       const to = D.roadTo && G.DOCKS.find((o) => o.key === D.roadTo), tx = to && to.x - to.dx * 3, ty = to && to.y - to.dy * 3; // rodada 142: estrada só até aquele cais
@@ -960,6 +972,7 @@
   function decalAt(x, y) { // decorações do chão (não bloqueiam): canteiros, tufos, pedrinhas...
     const o = occ[y * W + x];
     if (o && o.type === "decal") return o.spr;
+    if (o && o.under && o.under.type === "decal") return o.under.spr; // rodada 162: o anão em pé no píer
     if (o) return null;
     const fam = ground ? ground.family(map[y][x]) : map[y][x], h = hash(x, y, 31);
     if (fam === "grass") return h < 0.006 ? null : h < 0.05 ? "tuft" : h < 0.07 ? "flowers" : h < 0.08 ? "pebbles" : null; // canteiros viram objetos animados
@@ -1037,7 +1050,7 @@
   // rodada 73: ronda do Ivo pela praça (pontos em volta de casa, um por saída; volta para casa entre eles)
   const PATROL = [[3, 2], [-2, 3], [2, -1], [-1, -2]];
   // rodada 34/35: reação ao entregar missão/encomenda — Ivo bate continência ("salute"), Bento faz joinha ("thumbs"); segura o último quadro 0,6 s
-  const REACT = { harbor: "salute", witch: "brew", auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
+  const REACT = { dwarf: "thumbs", harbor: "salute", witch: "brew", auction: "gavel", guard: "salute", warden: "salute", merchant: "thumbs", bard: "bow" }; // rodada 37: reverência do Tomé
   const reactDur = (o) => { const S = o.npcSpr || o.spr, R = ANIMS[S] && ANIMS[S].rows[o.react.row]; return R ? R.frames / R.fps + 0.6 : 0; }; // rodada 116: npcSpr = NPC desenhado junto de um objeto
   function react(o) {
     const S = o && (o.npcSpr || o.spr), row = o && REACT[o.type]; if (!row || !ANIMS[S] || !ANIMS[S].rows[row]) return;
@@ -1051,7 +1064,7 @@
       if (!B.rise.moved && B.rise.t * R.fps >= 2) { B.rise.moved = true; standUp(B); if (B.sitT > 0) B.rise = null; } // sem tile livre: continua sentado
       if (B.rise && B.rise.t * R.fps >= R.frames) { B.rise = null; B.react = { row: "bow", t: 0 }; }
     }
-    for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, npc.witch, ...Object.values(npc.wardens || {}), ...Object.values(npc.docks || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
+    for (const o of [npc.guard, npc.merchant, npc.bard, npc.auction, npc.witch, ...Object.values(npc.wardens || {}), ...Object.values(npc.docks || {}), ...Object.values(npc.dwarves || {})]) if (o && o.react) { // rodada 36/37 (115: leiloeira e guardiões): brilho dourado no quadro 3 (mão do Bento, elmo do Ivo, chapéu do Tomé)
       const R = ANIMS[o.npcSpr || o.spr] && ANIMS[o.npcSpr || o.spr].rows[o.react.row], before = o.react.t;
       if ((o.react.t += dt) > reactDur(o)) { o.react = null; continue; }
       const SP = { merchant: [-0.25, -0.4], guard: [0.05, -1.05], bard: [0.3, -0.1] }[o.type]; // centro do brilho (tiles; y já desconta o meio do quadro)
@@ -1325,19 +1338,21 @@
     $("play").disabled = $("continue").disabled = true;
     data = { ...data, look: lookSanitize(data.look) }; data.hero = lookHero(data.look); // rodada 152: o corpo vem da aparência escolhida
     await assetsReady; await animsReady; await heroAnims(HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id); // rodada 105
-    if (document.fonts) await Promise.race([document.fonts.load('12px "Valdora Pixel"'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {}); // rodada 79: o canvas só usa a fonte depois de carregada fx.setDigits(SPR.ui_digits); UI.setTitleFont(SPR.ui_font_title); // rodadas 67-68: números e títulos em pixel art
+    if (document.fonts) await Promise.race([document.fonts.load('12px "Valdora Pixel"'), new Promise((r) => setTimeout(r, 1500))]).catch(() => {}); // rodada 79: o canvas só usa a fonte depois de carregada
+    fx.setDigits(SPR.ui_digits); UI.setTitleFont(SPR.ui_font_title); // rodadas 67-68: números e títulos em pixel art (rodada 162: estavam presos no comentário acima)
     $("play").disabled = $("continue").disabled = false;
     { // rodada 106: aviso enquanto o continente é montado (deixa o navegador pintar antes do trabalho pesado)
       let ld = $("loading"); if (!ld) { ld = document.createElement("div"); ld.id = "loading"; document.body.appendChild(ld); }
       ld.textContent = "Preparando o mundo..."; ld.hidden = false; await new Promise((r) => setTimeout(r, 40));
     }
-    genWorld();
+    genWorld(); SEA.init(); // rodada 162: distância até a terra, oceano, cardumes e covis do mar
     $("loading").hidden = true;
     const xp = {}, gear = {};
     for (const k of Object.keys(SKILLS)) xp[k] = Math.max(0, +data.xp?.[k] || 0);
     for (const k of Object.keys(GEAR)) gear[k] = clamp(Math.floor(+data.gear?.[k] || 0), 0, GEAR[k].tiers.length - 1);
     let { x, y } = data;
-    if ((data.wv || 0) < 4) ({ x, y } = SPAWN); // rodada 137: mapa 50% mais extenso (wv 4); rodada 120: o mapa cresceu (biomas maiores, Lumeira em dobro, mar em volta): save de antes volta para a praça
+    if ((data.wv || 0) < 4) ({ x, y } = SPAWN);
+    else if (data.wv === 4) { x += WORLD_G.PAD; y += WORLD_G.PAD; for (const b of data.deathBags || []) if (b) { b.x += WORLD_G.PAD; b.y += WORLD_G.PAD; } } // rodada 162: oceano maior em volta (o continente andou PAD tiles) // rodada 137: mapa 50% mais extenso (wv 4); rodada 120: o mapa cresceu (biomas maiores, Lumeira em dobro, mar em volta): save de antes volta para a praça
     if (!Number.isInteger(x) || !Number.isInteger(y) || !walkable(x, y)) ({ x, y } = SPAWN);
     player = { name: String(data.name || "Aventureiro").slice(0, 14), look: data.look, hero: HEROES.some((h) => h.id === data.hero) ? data.hero : HEROES[0].id,
       x, y, fx: x, fy: y, prog: 1, px: x, py: y, dir: "down", dist: 0, moveT: 0, turnT: 0, act: null, cast: null, flash: 0, hitT: 0, deadT: 0, eatT: 0,
@@ -1410,10 +1425,12 @@
     player.coll = data.coll && typeof data.coll === "object" ? JSON.parse(JSON.stringify(data.coll)) : {};
     player.made = data.made && typeof data.made === "object" ? { ...data.made } : seedMade();
     Object.assign(player, ValdoraMount.sanitize(data)); player.riding = false; player.rideAcc = 0; // rodada 156: cavalos comprados (começa a pé)
+    player.boat = ValdoraBoat.sanitize(data.boat); player.sailing = false; // rodada 162: barcos, melhorias, diário de pesca e isca
     player.pk = Math.max(0, +data.pk || 0); player.pkMobs = +data.pkMobs || 0; player.pvpMode = data.pvpMode === "hostile" ? "hostile" : "passive"; // rodada 148 // rodada 147: PK (segundos de jogo que faltam)
     deathBags = Array.isArray(data.deathBags) ? data.deathBags.filter((b) => b && b.until > Date.now() && Array.isArray(b.items) && b.items.length) : []; // rodada 146 // rodada 139: quantas vezes fez cada receita
     hudTab = null; buildSkillbar();
     for (const m of mobs) { const at = m.d.boss && player.bossNext[m.type]; if (at && at > Date.now()) { m.dead = true; m.respawnT = (at - Date.now()) / 1000; } }
+    SEA.resume(); // rodada 162: salvou navegando: volta a bordo no mesmo ponto
     homeSync(); resize(); running = true; last = performance.now(); requestAnimationFrame(loop); // rodada 100: casa conforme o save
     hudDirty = true; save();
   }
@@ -1599,7 +1616,7 @@
     return player.path.length > 0 || here; }
 
   // ---------- Entrada ----------
-  const INTERACT_TEXT = { harbor: "falar com o mestre do cais", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
+  const INTERACT_TEXT = { dwarf: "falar com o anão pescador (peixes)", harbor: "falar com o mestre do cais (barcos)", witch: "falar com Morgana (poções)", warden: "falar com o guardião da vila", auction: "falar com Celeste (leilão)", shop: "falar com Bento", guard: "falar com Ivo", bard: "falar com Tomé", bank: "abrir o cofre", furnace: "usar a fornalha",
     deathbag: "abrir o saco de morte", peace: "falar com o Pacificador", stable: "falar com o Teodoro (cavalos)", anvil: "usar a bigorna", craftdesk: "usar a mesa de artesanato", fire: "assar na fogueira", board: "ver o quadro de caçadas", crypt: "descer à cripta", crypt_exit: "voltar à superfície",
     chest: "abrir o baú", den: "entrar na Toca dos Lobos", sign: "ler a placa", dummy: "treinar no boneco",
     marker: "ver o marco", crack: "examinar a fenda", herb: "falar com Juna", rune: "copiar a inscrição", carto: "falar com Odília", miner: "falar com Brás", rift: "descer à Fenda Cintilante", seal: "ver o pedestal do selo", home: "ver a casa" }; // rodada 78/79
@@ -1612,7 +1629,8 @@
   }
   function updateFHint() { // "F: falar com Bento" no rodapé (só com teclado, fora de janelas)
     const el = $("fhint"); if (!el) return;
-    const b = !touchUi && running && !dlg && !SCENE.active() && player.deadT <= 0 && !player.path.length && findInteract(), label = b && interactLabel(b);
+    const ok = !touchUi && running && !dlg && !SCENE.active() && player.deadT <= 0 && !player.path.length, sa = ok && SEA.fAction(); // rodada 162: o mar primeiro
+    const b = ok && !sa && !player.sailing && findInteract(), label = sa ? sa.label : b && interactLabel(b);
     const html = label ? `${ASSETS.icon_key_f ? `<img src="${ASSETS.icon_key_f}" alt="F">` : "<b>F</b>"} ${label.startsWith("assar tudo") && ASSETS.icon_cook_all ? `<img src="${ASSETS.icon_cook_all}" alt="">` : ""}${esc(label)}` : ""; // rodada 45: ícone no "assar tudo"
     if (el.dataset.html !== html) { el.dataset.html = html; el.innerHTML = html; el.hidden = !html; }
   }
@@ -1631,6 +1649,8 @@
   }
   function interactNearest() {
     if (!running || player.deadT > 0) return;
+    const sa = SEA.fAction(); if (sa) { sa.run(); return; } // rodada 162: atracar, descer na praia, pescar no mar, embarcar
+    if (player.sailing) { log("A bordo: F atraca perto do cais ou da praia e lança a linha perto de um cardume.", "dim"); return; }
     const best = findInteract();
     if (!best) { log("Nada para usar aqui. Chegue ao lado de alguém ou de algo útil e aperte F.", "dim"); return; }
     if (best.kind === "sign") { log(`Placa: ${best.ref.label}`, "dim"); return; }
@@ -1638,15 +1658,16 @@
   }
   // teclado (js/input.js): ações de cada atalho
   const INPUT = ValdoraInput.create({
-    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; hudTab = null; hudDirty = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => useSkill(id),
+    running: () => running, escape: () => { closeDlg(); $("options").hidden = true; hudTab = null; hudDirty = true; toggleMap(false); AUCTION.close(); }, toggleMap: () => toggleMap(), interact: () => interactNearest(), skill: (id) => { if (!SEA.key(id)) useSkill(id); }, // rodada 162: a bordo, Q e E são os canhões
     toggleDlg: (kind) => { if (dlg && dlg.kind === kind) closeDlg(); else openDlg(kind, null); }, petStay: () => petStay(),
-    tab: (t) => openTab(t), hot: (i) => useHot(i), ride: () => toggleRide(), // rodada 156: H monta/desce
+    tab: (t) => openTab(t), hot: (i) => { if (!SEA.key(String(i + 1))) useHot(i); }, ride: () => toggleRide(), // rodada 156: H monta/desce; 162: 1 a 3 na luta da linha
     eatBest: () => { // come a comida que mais cura
       let best = -1; player.inv.forEach((s, i) => { if (s && ITEMS[s.name].heal && !s.name.startsWith("Poção") && (best < 0 || ITEMS[s.name].heal > ITEMS[player.inv[best].name].heal)) best = i; });
       if (best >= 0) eat(best); else log("Sem comida pronta na mochila.", "dim");
     },
     potion: (pot) => { const i = player.inv.findIndex((s) => s && s.name === pot); if (i >= 0) eat(i); else log(`Sem ${pot.toLowerCase()} na mochila.`, "dim"); },
     attackNearest: () => { // ataca o monstro mais perto PELO CAMINHO (não atrás de uma parede): robô da rodada 18
+      if (SEA.key("attack")) return; // rodada 162: a bordo, dispara o bordo virado para o monstro do mar mais perto
       const near = mobs.filter((m) => !m.dead && Math.abs(m.x - player.x) + Math.abs(m.y - player.y) <= 7)
         .sort((a, b) => (Math.abs(a.x - player.x) + Math.abs(a.y - player.y)) - (Math.abs(b.x - player.x) + Math.abs(b.y - player.y))).slice(0, 6);
       let best = null, bl = Infinity;
@@ -1690,8 +1711,8 @@
   applyUi();
   addEventListener("resize", resize);
 
-  const RIDE_TALK = new Set(["shop", "guard", "bank", "board", "bard", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable", "auction", "waystone"]);
-  const STATIONS = { stable: "stable", penhorse: "stable", harbor: "harbor", witch: "witch", warden: "warden", peace: "peace", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
+  const RIDE_TALK = new Set(["dwarf", "shop", "guard", "bank", "board", "bard", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable", "auction", "waystone"]);
+  const STATIONS = { dwarf: "dwarf", stable: "stable", penhorse: "stable", harbor: "harbor", witch: "witch", warden: "warden", peace: "peace", auction: "auction", waystone: "waystone", dungeon: "dungeon", merchant: "shop", stall: "shop", guard: "guard", bank: "bank", furnace: "furnace", anvil: "anvil", craftdesk: "craftdesk", fire: "fire", board: "board",
     bard: "bard", shrine: "shrine", crypt: "crypt", crypt_exit: "crypt_exit", crypt_chest: "chest", den: "den", dummy: "dummy", marker: "marker", herb: "herb", rune: "rune", carto: "carto", miner: "miner", rift: "rift", seal: "seal", home: "home", pedestal: "home" }; // rodada 100: casa
   // O que está sob o cursor (monstros pela área desenhada, para acertar alvos em movimento)
   // rodada 105: monstro vivo mais perto do ponto da tela (até 4 tiles), para o Ctrl + clique
@@ -1733,6 +1754,7 @@
   }
   function pick(px, py) {
     const fx = (px + cam.x) / TILE, fy = (py + cam.y) / TILE;
+    { const sp = SEA.pick(fx, fy); if (sp) return sp; } // rodada 162: monstro do mar, cardume e barcos
     let best = null;
     for (const m of mobs) {
       if (m.dead) continue;
@@ -1849,14 +1871,14 @@
     }
     if (!goTo(goal)) { log("Não dá para chegar lá.", "dim"); player.target = null; }
   }
-  if (/[?&]debug\b/.test(location.search)) window.__vd = { player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
+  if (/[?&]debug\b/.test(location.search)) window.__vd = { sea: () => SEA, map: () => map, frame: () => { draw(performance.now() / 1000); updateHud(); SEA.hud(); }, player: () => player, occAt: (x, y) => occ[y * W + x], tick: () => tickN, mtn: () => MTN, terrain: () => ground, rain: (k) => AMBIENT.setRain(k), walkable: (x, y) => walkable(x, y), mobs: () => mobs, setTarget, shots: () => shots,
     advance: (sec) => { for (let t = 0; t < sec; t += 0.05) { if (SCENE.active()) SCENE.update(0.05); else update(0.05); } updateHud(); }, emit: (e) => emit(e), objs: () => objects,
     tile: (x, y) => map[y] && map[y][x], tp: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, halfStop: false, path: [], goal: null, target: null, job: null }); CAMERA.reset(); }, give: (n, q = 1) => addItem(n, q), anims: () => Object.keys(ANIMS),
     drop: (n, q, x, y) => dropItem(n, q, x, y), ground: () => groundItems, equip: (n) => { const i = player.inv.findIndex((s) => s && s.name === n); if (i >= 0) equip(i); hudDirty = true; }, screen: (x, y) => [((x + 0.5) * TILE - cam.x) * ZOOM, ((y + 0.5) * TILE - cam.y) * ZOOM],
     spawn: (type, x, y) => spawnMob(type, regionAt(x, y), { x, y, r: 0 }, null, { at: { x, y } }), // rodada 135: teste de comportamento de cada espécie
     shotsN: () => MSKILL.warnTiles().length, pvpHere: (x, y) => pvpHere(x, y), pvpAttack: () => pvpAttack(), pvpKill: (n) => pvpKill(n), canHitPlayer: () => canHitPlayer() }; // rodada 104: inspeção pelo console (só com ?debug)
   // mouse, toque e minimapa (js/pointer.js)
-  const POINTER = ValdoraPointer.create({ fineTo: (fx, fy, tx, ty) => fineTo(fx, fy, tx, ty), blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
+  const POINTER = ValdoraPointer.create({ seaClick: (p) => SEA.click(p), seaSteer: (x, y) => SEA.steerTo(x, y), fineTo: (fx, fy, tx, ty) => fineTo(fx, fy, tx, ty), blockAt: (x, y) => blockAt(x, y), miniView: () => OVERLAY.miniView(), canvas, cam, TILE, W, H, zoom: () => ZOOM, running: () => running, player: () => player, map: () => map,
     closeDlg: () => closeDlg(), pick: (x, y) => pick(x, y), log: (m, c) => log(m, c), goTo: (g) => goTo(g), adjRect: (x, y, o) => adjRect(x, y, o),
     clickFx: (...a) => clickFx(...a), setTarget: (p) => setTarget(p), nearestMob: (x, y) => nearestMob(x, y), walkable: (x, y) => walkable(x, y), inside: (x, y) => inside(x, y) });
   const PST = POINTER.st, updateTouch = POINTER.updateTouch;
@@ -1913,7 +1935,7 @@
     if (!onPlant) faceRect(r);
     if (player.riding && !RIDE_TALK.has(t.kind)) dismount("Você desceu do cavalo."); // rodada 156: coletar, forjar, abrir... a pé; falar dá montado
     if (t.kind === "auction") { player.target = null; react(r); return AUCTION.open(); } // rodada 116: mercado em tela cheia
-    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
+    if (["shop", "guard", "bank", "furnace", "anvil", "board", "bard", "shrine", "marker", "herb", "carto", "miner", "home", "warden", "witch", "harbor", "peace", "stable", "dwarf"].includes(t.kind)) { player.target = null; openDlg(t.kind, r); return; }
     if (t.kind === "craftdesk") { player.target = null; openDlg("craft", r); return; } // rodada 139: mesa de artesanato
     if (t.kind === "crack") { player.target = null; return CAMPAIGN_RT.inspectCrack(r); } // rodada 78
     if (t.kind === "rune") { player.target = null; return CAMPAIGN_RT.inspectRune(r); } // rodada 80
@@ -2452,6 +2474,7 @@
         fx.shock(cx + 0.5, cy + 0.85, 2.2, "#ff7a2a", 0.8); burst(cx + 0.5, cy + 0.5, ["#ff7a2a", "#ffd23a", "#5a3a2a"], 30, 5); SND.play("slam"); hitStop = 0.12; if (SND.opts.shake) shake = 0.3; }, { prep: 0.9, strike: 0.08, rec: 0.25 }); },
   };
   function useSkill(id) {
+    if (player.sailing) { SEA.key("skill"); return; } // rodada 162
     if (player.riding) { if (id === "run") { log("Montado, quem corre é o cavalo.", "dim"); return; } dismount("Você desceu do cavalo."); } // rodada 156
     const S = ACTIVE[id];
     if (!running || player.deadT > 0 || player.dash) return;
@@ -2646,6 +2669,7 @@
   }
   function playerDied() { // toca a animação de morte e só então volta à vila
     if (player.deadT > 0) return;
+    SEA.leave(); // rodada 162: o barco fica ancorado onde estava
     player.riding = false; // rodada 156
     player.deadT = ANIMS[player.hero] ? 1.6 : 0.01; player.hp = 0; player.path = []; player.target = null; player.job = null; player.act = null; player.cast = null;
     for (const m of mobs) { m.aggro = false; m.pending = null; }
@@ -3023,6 +3047,7 @@
     const ds = b.dataset; SND.play("ui");
     if (DLG_VIEW.uiClick(b, dlg)) return;
     if (dlg.kind === "stable" && (ds.buymount || ds.usemount)) { stableAct(ds); renderDlg(); save(); return; } // rodada 156
+    if ((dlg.kind === "dwarf" || dlg.kind === "harbor") && SEA.dlgAct(dlg, ds)) { hudDirty = true; if (dlg) renderDlg(); save(); return; } // rodada 162: peixaria e estaleiro
     if (dlg.kind === "peace" && ds.peace) { if (PVP.peace(player)) { log("☮ Trato de paz feito: o PK sumiu e seu nome voltou ao normal.", "gold"); SND.play("coin"); burst(player.px + 0.5, player.py + 0.2, ["#ffffff", "#bfe8ff", "#f1c40f"], 18, 2.5); hudDirty = true; } renderDlg(); save(); return; } // rodada 147
     if (dlg.kind === "deathbag" && (ds.bagall || ds.bagi != null)) { takeFromBag(dlg.obj.bag, ds.bagall ? null : +ds.bagi); if (dlg) renderDlg(); save(); return; } // rodada 146 // rodada 55: fechar e trocar de aba (js/dialogs.js); daqui para baixo, só o que mexe no jogo
     if (DLG_ACT.run(ds) === "stop") return; // o eco desperta e fecha a janela: sem redesenhar
@@ -3031,6 +3056,7 @@
   // ---------- rodada 156: montaria ----------
   function toggleRide() {
     if (player.riding) return dismount("Você desceu do cavalo.", true);
+    if (player.sailing) { log("No barco não dá para montar.", "dim"); return; } // rodada 162
     const m = ValdoraMount.cur(player);
     if (!m) { log("Você ainda não tem cavalo. O Teodoro vende no Celeiro, logo ao sul de Lumeira.", "dim"); return; }
     if (inCrypt) { log("Aqui dentro não dá para cavalgar.", "warn"); return; }
@@ -3257,7 +3283,17 @@
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
   const CRAFTING = ValdoraCrafting.create({ player: () => player, lv, count, hasMats, matsText, gearEffect, atDesk: () => atDesk(), atAnvil: () => atAnvil(), prereqText: (k) => prereqText(k),
     cookTime: (n) => cookTime(n), startCook: (i, n, o) => startCook(i, n, o), stopCook: () => stopCook() });
-  const DLG_VIEW = ValdoraDialogs.create({ stableHtml: () => stableHtml(), peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+  // rodada 162: o mar (js/sea.js) e o que ele precisa do jogo
+  const SEA = ValdoraSea.create({ TILE, get fx() { return fx; }, SND, cam, player: () => player, map: () => map, W: () => W, H: () => H, G: () => WORLD_G, ctx: () => ctx, SPR, VW: () => VW, VH: () => VH,
+    inside: (x, y) => inside(x, y), walkable: (x, y) => walkable(x, y), log: (m, c, i) => log(m, c, i), lv: (k) => lv(k), gainXp: (k, n) => gainXp(k, n), addItem: (n, q) => addItem(n, q), removeItem: (n, q) => removeItem(n, q),
+    canAdd: (n) => canAdd(n), count: (n) => count(n), emit: (e) => emit(e), checkAch: () => checkAch(), rand: () => rand(), tickN: () => tickN, keyVec: () => INPUT.keyVec(), drawPlayer: (t) => drawPlayer(t),
+    hud: () => { hudDirty = true; }, save: () => save(), toast: (a, b, c) => showToast(a, b, c), shake: (v) => { if (SND.opts.shake) shake = Math.max(shake, v); }, react: (o) => o && react(o), closeDlg: () => closeDlg(),
+    tag: (text, x, y, c, small) => tags.push([text, x, y, c, small]), rodTier: () => tier("vara").bonus || 0, dismount: () => dismount(), dropAggro: () => { for (const m of mobs) if (m.aggro) { m.aggro = false; m.windup = 0; m.returning = true; } },
+    stopAll: () => { if (player.job && player.job.kind === "cook") stopCook(); player.job = null; player.target = null; player.path = []; player.act = null; player.cast = null; closeDlg(); },
+    placeHero: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, fineG: null }); player.gx = null; syncG(); if (pet && player.pet && !pet.down) petPlace(); CAMERA.reset(); },
+    goNear: (x, y, r) => goTo((tx, ty) => Math.hypot(tx + 0.5 - x, ty + 0.5 - y) <= r),
+    npcNear: () => [...Object.values(npc.dwarves || {}), ...Object.values(npc.docks || {})].some((o) => o && Math.max(Math.abs(o.x - player.x), Math.abs(o.y - player.y)) <= 1) });
+  const DLG_VIEW = ValdoraDialogs.create({ dwarfHtml: (tab, o) => SEA.dwarfHtml(tab, o), harborHtml: (o, tab) => SEA.harborHtml(o, tab), stableHtml: () => stableHtml(), peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 
@@ -3481,7 +3517,7 @@
     safe("draw", () => draw(now / 1000));
     safe("hud", () => { if (hudDirty) updateHud(); });
     if ((miniT -= dt) <= 0) { miniT = 0.2; safe("minimap", () => { drawMinimap(); updateFHint(); drawMap(); }); }
-    if ((skillT -= dt) <= 0) { skillT = 0.08; safe("skillbar", updateSkillbar); }
+    if ((skillT -= dt) <= 0) { skillT = 0.08; safe("skillbar", updateSkillbar); safe("seahud", () => SEA.hud()); } // rodada 162: painel do barco
   }
 
   // rodada 130: o herói anda numa grade de MEIO tile (player.gx, gy = 2 × a posição; par = no meio do tile, ímpar = entre dois
@@ -3582,20 +3618,22 @@
     AMBIENT.update(dt, cam, VW, VH, player.region, LIGHT.darkness(player.dayT), inCrypt); // rodada 66: vento e vagalumes
     CAMPAIGN_RT.update(dt); // rodada 78: onda no marco, Capataz e viagem
     SHRINE_RT.update(dt); // santuário: velas, moedas, chama votiva e faíscas da Lenda (js/shrine.js)
+    SEA.update(dt); // rodada 162: barco, monstros do mar e a luta da linha (a bordo, o barco leva o herói)
     // movimento contínuo do jogador (tile a tile, com sobra de tempo aproveitada)
     // velocidade constante entre tiles, com arrancada e frenagem suaves; passos encadeados sem parar
-    if (player.dash) updateDash(dt);
-    const held = INPUT.keyVec(); // rodada 114: toque = 1 tile (ver nextStep)
+    const sailing = !!player.sailing; // rodada 162: a bordo, quem anda é o barco (js/sea.js)
+    if (player.dash && !sailing) updateDash(dt);
+    const held = sailing ? null : INPUT.keyVec(); // rodada 114: toque = 1 tile (ver nextStep)
     if (held && lastVec && (held[0] !== lastVec[0] || held[1] !== lastVec[1])) keySteps = 0; // trocou de tecla sem soltar: conta como toque novo (correndo, segue sem pausa)
     if (held) { keyHoldT += dt; lastVec = held; } else { if (lastVec && keySteps === 0 && taps.length < 4) taps.push(lastVec); lastVec = null; keyHoldT = 0; keySteps = 0; }
-    const wasMoving = !player.dash && player.prog < 1;
+    const wasMoving = !sailing && !player.dash && player.prog < 1;
     if (player.turnT > 0) player.turnT -= dt;
     let rate = 1;
     // rodada 125: sem meio passo (cada toque anda 1 tile inteiro e para no centro dele) e troca de direção sem esperar o tile
     // acabar: a tecla oposta volta na hora para o tile de onde o herói saiu; outra direção logo no começo do passo (até 20%)
     // já sai do tile de origem para o lado novo. Depois disso a troca entra no fim do tile, sem pausa. Toques na fila (3× A e
     // 1× W) não desviam o passo: andam um tile cada, na ordem
-    if (!player.dash) syncG(); // rodada 130
+    if (!player.dash && !sailing) syncG(); // rodada 130
     if (wasMoving && player.kstep && Number.isInteger(player.fgx) && Number.isInteger(player.fgy)) { // rodada 130: em meios tiles
       const hk = INPUT.keyVec(), kv = hk && keySteps === 0 && !taps.length ? hk : null, k0 = player.kdir; // só a tecla apertada agora (toques na fila seguem em ordem)
       if (kv && k0 && (kv[0] !== k0[0] || kv[1] !== k0[1])) {
@@ -3619,7 +3657,7 @@
       player.prog += rate * dt / STEP / (player.stepLen || 1); player.dist += rate * dt / STEP;
       if (player.riding) { const n = ValdoraMount.rideXp(player, rate * dt / STEP); if (n) gainXp("equitacao", n); }
     } else if (!wasMoving && player.turnT <= 0) player.prog = 1;
-    if (player.prog >= 1 && player.turnT <= 0 && !player.dash) { // sem andar durante a investida
+    if (player.prog >= 1 && player.turnT <= 0 && !player.dash && !sailing) { // sem andar durante a investida
       const over = wasMoving ? player.prog - 1 : 0;
       const nd = !wasMoving && nextDir();
       if (nd && nd !== player.dir && !keyDir()) { player.dir = nd; player.turnT = 0.07; dustAtFeet(2); player.prog = 1; } // vira antes de andar (rodada 125: pelo teclado vira e anda junto)
@@ -3629,7 +3667,7 @@
         player.prog = Math.min(over, 0.99); if ((player.hstep = (player.hstep || 0) + 1) % 2) SND.play("step"); // rodada 130: 1 som por tile
       } else { player.prog = 1; player.moveT = 0; }
     }
-    if (!player.dash) { player.px = (player.fgx + (player.gx - player.fgx) * player.prog) / 2; player.py = (player.fgy + (player.gy - player.fgy) * player.prog) / 2; } // rodada 130
+    if (!player.dash && !sailing) { player.px = (player.fgx + (player.gx - player.fgx) * player.prog) / 2; player.py = (player.fgy + (player.gy - player.fgy) * player.prog) / 2; } // rodada 130
     const moving = player.prog < 1 && !player.dash;
     // rodada 105: pega o que estiver no chão ao passar por cima (no meio do passo), não só ao parar no tile
     const tileKey = player.x + "," + player.y;
@@ -3640,7 +3678,7 @@
     for (const k in player.cd) player.cd[k] = Math.max(0, player.cd[k] - dt);
     { const K = player.sk || (player.sk = {}); for (const k of ["furyT", "wallT", "hawkT", "shieldT"]) if (K[k] > 0) K[k] = Math.max(0, K[k] - dt); if (!(K.shieldT > 0)) K.shield = 0; } // rodada 153
     if (player.pk > 0 && PVP.tick(player, dt)) { log("A marca de PK sumiu: seu nome voltou ao normal.", "gold"); hudDirty = true; } // rodada 147
-    if (!player.dash && player.prog >= 1 && !(player.deadT > 0) && blockAt(player.x, player.y)) unstick(true); // rodada 158
+    if (!player.dash && !sailing && player.prog >= 1 && !(player.deadT > 0) && blockAt(player.x, player.y)) unstick(true); // rodada 158
     // rodada 159: em combate. Cada golpe recebido trava a montaria por 5 s (o botão fica com a borda vermelha); outro golpe volta aos 5 s
     if (player.hurtSeen === undefined) player.hurtSeen = player.lastHurt;
     if (player.lastHurt !== player.hurtSeen) { player.hurtSeen = player.lastHurt; player.combatT = COMBAT_LOCK; }
@@ -3668,12 +3706,12 @@
       player.cast.t += dt;
       const o = player.cast.spot;
       if (!player.cast.landed && player.cast.t >= 0.42) { player.cast.landed = true; SND.play("splash"); clickFx(o.x + 0.5, o.y + 0.55, "#e8f6ff"); burst(o.x + 0.5, o.y + 0.5, ["#e8f6ff", "#8fc1ee"], 6, 1.4); }
-      if (!player.target || player.target.ref !== o) player.cast = null;
+      if (!player.cast.sea && (!player.target || player.target.ref !== o)) player.cast = null; // rodada 162: a linha do mar não tem alvo
     }
     shake = Math.max(0, shake - dt);
     updateCamera(dt); updateTouch();
 
-    const reg = regionAt(player.x, player.y);
+    const reg = sailing ? "sea" : regionAt(player.x, player.y); // rodada 162: a bordo, alto-mar
     const vil = !inCrypt && reg === "town" && WORLD_G.villageAt(player.x, player.y); // rodada 105: chegou numa vila: a Pedra fica salva
     if (vil && !(player.stones || []).includes(vil.key)) unlockStone(vil.key, true);
     if (vil && vil.key !== player.village) { player.village = vil.key; if (reg === player.region && !vil.main) { $("banner").innerHTML = `${UI.titleHTML(vil.name)}<small>zona segura</small>`; $("banner").classList.remove("show"); void $("banner").offsetWidth; $("banner").classList.add("show"); } }
@@ -3764,7 +3802,7 @@
       if (tickN % 2 === 0) hudDirty = true;
     }
     for (const m of mobs) if (!m.dead && activeMob(m)) { mobTick(m); MSKILL.tick(m); } // rodada 134: regeneração
-    petTick(); // rodada 95
+    if (!player.sailing) petTick(); // rodada 95; rodada 162: o filhote espera em terra
     CAMPAIGN_RT.tick(tickN); // rodada 78: bênção do marco
     if (tickN % 20 === 0) homeVisit(); // rodada 102: visita ao quintal
     if (tickN % 10 === 0) AUCTION.tick(); // rodada 114/116: lotes que terminaram (e o relógio da janela do mercado)
@@ -3856,6 +3894,7 @@
     fx.drawGround(ctx, cam); // rodada 67: ondas de choque e marcas de impacto por baixo dos personagens
     AMBIENT.drawGround(ctx, cam, VW, VH, t, inCrypt); // rodada 75: poças depois da chuva
     CAMPAIGN_RT.drawGround(t); // rodada 78: fendas dos Campos
+    SEA.drawUnder(t); // rodada 162: cardumes do mar, espuma do barco e caixotes boiando
     for (const m of mobs) if (m.dead && m.respawnAt && m.d.marker && ANIMS[m.d.marker.fx]) { // um monstro vai voltar aqui
       const A = ANIMS[m.d.marker.fx], R = A.rows.loop, w = m.respawnAt; // em loop (fogo-fátuo) ou toca uma vez e segura o último quadro (pedras)
       const f = R.loop ? Math.floor(t * R.fps + hash(w.x, w.y, 7) * R.frames) : Math.min(R.frames - 1, Math.floor((m.markT || 0) * R.fps));
@@ -3902,15 +3941,17 @@
       if (interactive && (!player.target || player.target.ref !== hover.ref)) outlineTarget(hover, am ? "#ff5a4acc" : "#ffffff88", t);
     }
     for (const m of mobs) if (!m.dead && m.px > x0 - 3 && m.px < x1 + 2 && m.py > y0 - 2 && m.py < y1 + 3) ents.push({ y: m.py, m });
-    if (pet && player.pet && !(pet.down && inCrypt)) ents.push({ y: (pet.down || pet.napping ? pet.y : pet.py) + 0.01, m: pet }); // rodada 100: por cima da cama // rodada 95; rodada 96: descansando na vila
+    if (pet && player.pet && !player.sailing && !(pet.down && inCrypt)) ents.push({ y: (pet.down || pet.napping ? pet.y : pet.py) + 0.01, m: pet }); // rodada 100: por cima da cama // rodada 95; rodada 96: descansando na vila
     for (const c of corpses) ents.push({ y: c.y, c });
-    ents.push({ y: player.py, me: true });
+    if (!player.sailing) ents.push({ y: player.py, me: true });
+    SEA.ents(ents, x0, y0, x1, y1); // rodada 162: o barco (com o herói no convés), monstros do mar e os barcos amarrados
     ents.sort((a, b) => a.y - b.y);
     tags.length = 0;
-    for (const e of ents) e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t)) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
+    for (const e of ents) e.sea ? SEA.drawEnt(e, t) : e.me ? (drawPlayer(t), SHRINE_RT.drawVotive(t)) : e.m ? drawMob(e.m, t) : e.c ? drawCorpse(e.c) : drawObject(e.o, t);
     RENDER.drawOnce(); // folhas caindo do toco
     drawStores(Math.min(0.1, t - (drawStores.lt ?? t))); drawStores.lt = t; // rodada 42: item entrando no baú
     drawShots(); // rodada 104: flechas do arqueiro
+    SEA.drawOver(t); // rodada 162: balas de canhão, círculos do polvo e gaivotas
     auras(0.35); // a frente do anel passa por cima do chefe
     AMBIENT.draw(ctx, cam, VW, VH, t, inCrypt ? 0.86 : LIGHT.darkness(player.dayT), inCrypt); // rodada 66: sombras de nuvens e partículas de vento
     SHRINE_RT.titleTags(); // cor do nome e título do santuário (js/shrine.js)
@@ -4027,6 +4068,7 @@
     ctx.globalAlpha = 1;
   }
   function describe(p) {
+    if (p.kind && p.kind.startsWith("sea")) return SEA.describe(p); // rodada 162
     const r = p.ref;
     if (p.kind === "mob") return [`${r.d.name} (nv ${r.d.lvl})`, r.d.lvl > lv("combate") + 6 ? "#ff6b5a" : r.d.lvl > lv("combate") ? "#f5c060" : "#9fe08a",
       `Atacar · ${Math.round(hitChance(combatStats().acc, r.d.def, lv("combate") - (r.d.lvl || 1)) * 100)}% de acerto${r.d.aggro ? " · agressivo" : ""}`];
@@ -4040,7 +4082,7 @@
     return {
       shop: ["Bento, o mercador", "#f5e27a", "Comprar, vender e encomendas"], guard: ["Guarda Ivo", "#9fd0ff", TUTORIAL[player.tut.step] ? "Tutorial e dicas" : "Dicas"],
       bank: ["Cofre da vila", "#f5e27a", "Guardar itens"], dummy: ["Boneco de treino", "#e8d9b0", "Golpeie e saia da área vermelha"], furnace: ["Fornalha", "#f5c060", "Fundir minério em barras"],
-      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], stable: ["Teodoro · Celeiro", "#f0c878", "Cavalos e montaria"], penhorse: ["Cavalo à venda", "#f0c878", "Fale com o Teodoro"], peace: ["Pacificador", "#ffffff", "Trato de paz: tira o PK por 1000 moedas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
+      anvil: ["Bigorna", "#d0d6e0", "Forjar equipamentos"], craftdesk: ["Mesa de artesanato", "#e8c890", "Mochilas, roupas, joias e flechas"], stable: ["Teodoro · Celeiro", "#f0c878", "Cavalos e montaria"], dwarf: [`${r.name} · Peixaria`, "#8fd8ff", "Compra peixe 50% mais caro · iscas · diário"], harbor: [`${r.name} · ${r.label}`, "#8fd8ff", "Barcos: comprar, melhorar, consertar e zarpar"], penhorse: ["Cavalo à venda", "#f0c878", "Fale com o Teodoro"], peace: ["Pacificador", "#ffffff", "Trato de paz: tira o PK por 1000 moedas"], shrine: ["Santuário de Lumeira", "#ffd84a", "Oferendas · títulos de prestígio"], bard: ["Tomé, o bardo", "#f5c060", "Canções e dicas"],
       crypt: ["Escada da cripta", "#c79bff", "Masmorra · Combate 18+"], crypt_exit: ["Saída", "#e8d9b0", "Voltar à superfície"],
       den: ["Toca dos Lobos", "#b8d8ff", player.quests.balada && player.quests.balada.done ? "Masmorra · Combate 14+" : "Bloqueada · missão do Tomé"],
       chest: [dungeon === "den" ? "Baú da toca" : "Baú da cripta", "#f1c40f", r.opened ? "Vazio" : mobs.some((m) => !m.dead) ? "Selado: derrote todos os inimigos" : "Abrir!"], board: ["Quadro de caçadas", "#f5e27a", "Recompensas por monstros"], fire: ["Fogueira", "#f5c060", "Assar peixe e carne"], sign: ["Placa", "#e8d9b0", r.label],
@@ -4067,11 +4109,11 @@
   function save(urgent) {
     if (!player) return;
     try {
-      const pos = inCrypt ? overworld.ret : player; // dentro da cripta, salva a entrada
-      const data = ({ v: 3, wv: 4, t: Date.now(), name: player.name, hero: player.hero, look: player.look, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
+      const pos = inCrypt ? overworld.ret : player.sailing ? SEA.landPos() || player : player; // dentro da cripta, salva a entrada; a bordo, o último cais
+      const data = ({ v: 3, wv: 5, t: Date.now(), name: player.name, hero: player.hero, look: player.look, x: pos.x, y: pos.y, stones: player.stones, spawnStone: player.spawnStone, dayT: player.dayT, master: player.master,
         hp: player.hp, playT: Math.round(player.playT), xp: player.xp, inv: player.inv, bank: player.bank, coins: player.coins, style: player.style,
         orders: player.orders, tut: player.tut, kills: player.kills, seen: player.seen, bounties: player.bounties, daily: player.daily, bestiary: player.bestiary, itemized: 1, echo: player.echo, pet: player.pet, home: player.home, buffs: player.buffs,
-        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", mounts: player.mounts || [], mount: player.mount || null, auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
+        bags: player.bags, bossNext: player.bossNext || {}, hotbar: player.hotbar, coll: player.coll || {}, made: player.made || {}, deathBags: deathBags.filter((b) => b.until > Date.now()), pk: Math.ceil(player.pk || 0), pkMobs: player.pkMobs || 0, pvpMode: player.pvpMode || "passive", mounts: player.mounts || [], mount: player.mount || null, boat: SEA.saveData(), auction: player.auction, bankUps: player.bankUps, equip: player.equip, stats: player.stats, ach: player.ach, quests: player.quests, offered: player.offered || 0, votiveT: Math.round(player.votiveT || 0), votives: player.votives || 0, tutV: 2 });
       if (SINK) SINK(data, totalLevel(), urgent === true); // rodada 152: nível da conta (sem as classes)
       else localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     } catch (e) { /* armazenamento indisponível (aba privada etc.) */ }

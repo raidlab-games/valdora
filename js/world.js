@@ -107,8 +107,11 @@ window.ValdoraWorld = (() => {
   // rodada 120: biomas 50% maiores (o desenho de 520 x 400 cresce 22% em cada lado: IW x IH) e mar nos 4 lados. O desenho fica
   // no "miolo" (u, v de 0 a 1); em volta, a margem de mar (mais larga a oeste e ao sul, onde antes a terra saía do mapa).
   // rodada 137: o continente 50% mais extenso (1,22 -> 1,83): os biomas crescem proporcionalmente; as vilas ficam do mesmo tamanho
-  const SC = 1.83, IW = Math.round(520 * SC), IH = Math.round(400 * SC), MW = 46, MN = 14, ME = 20, MS = 46;
-  const CW = IW + MW + ME, CH = IH + MN + MS, OX = MW + Math.round(34 * SC), OY = MN + Math.round(236 * SC);
+  // rodada 162: mais oceano em volta (PAD tiles de cada lado) para as ilhas novas e para o mapa M mostrar o mar. O continente
+  // continua igual: o desenho dele é calculado nas coordenadas de antes (xo = x - PAD, yo = y - PAD, com as margens antigas)
+  const PAD = 150, MW0 = 46, MN0 = 14, ME0 = 20, MS0 = 46;
+  const SC = 1.83, IW = Math.round(520 * SC), IH = Math.round(400 * SC), MW = MW0 + PAD, MN = MN0 + PAD, ME = ME0 + PAD, MS = MS0 + PAD;
+  const CW0 = IW + MW0 + ME0, CH0 = IH + MN0 + MS0, CW = CW0 + 2 * PAD, CH = CH0 + 2 * PAD, OX = MW + Math.round(34 * SC), OY = MN + Math.round(236 * SC);
   // n = ordem de nível (1 a 5); a posição segue o desenho: 1 oeste, 2 centro-sul, 3 faixa norte, 4 leste/sudeste, 5 nordeste
   const BIOMES = [
     { n: 1, key: "campo", name: "Campo", lv: [5, 30], at: [0.13, 0.62] },
@@ -144,28 +147,49 @@ window.ValdoraWorld = (() => {
     [0.965, 0.58, 0.06, 0.035], [0.985, 0.585, 0.035, 0.016], [0.95, 0.26, 0.05, 0.03], [0.62, 0.975, 0.045, 0.028]];
   const ISLES_M = [[0.025, 0.47, 0.016, 0.03], [0.035, 0.88, 0.022, 0.018], [0.40, 0.985, 0.03, 0.01], [0.84, 0.975, 0.03, 0.012]];
   const BIOME = new Uint8Array(CW * CH);
-  for (let y = 0; y < CH; y++) for (let x = 0; x < CW; x++) {
+  const EXT = 70; // as pontas de terra e as costas oeste e sul agora terminam no mar novo (antes eram cortadas pela borda do mapa)
+  for (let y = Math.max(2, PAD - EXT); y < Math.min(CH - 2, CH - PAD + EXT); y++) for (let x = Math.max(2, PAD - EXT); x < Math.min(CW - 2, CW - PAD + EXT); x++) {
     if (inOld(x, y)) { BIOME[y * CW + x] = 1; continue; }
+    const xo = x - PAD, yo = y - PAD; // rodada 162: coordenadas do mapa de antes (o desenho do continente não muda)
     const u = UX(x), v = VY(y), uc = Math.max(0, u), vc = Math.min(1, v); // a oeste e ao sul do miolo, a terra segue a borda dele até o litoral
     let val = 9, isl = 9;
     for (const [cx, cy, rx, ry] of LANDS) val = Math.min(val, Math.hypot((uc - cx) / rx, (vc - cy) / ry));
     for (const [cx, cy, rx, ry] of ISLES) isl = Math.min(isl, Math.hypot((u - cx) / rx, (v - cy) / ry));
-    const n = (fbm(x / 26, y / 26, 3) - 0.5) * 0.6 + (fbm(x / 9, y / 9, 4) - 0.5) * 0.32 + (fbm(x / 3.5, y / 3.5, 5) - 0.5) * 0.12;
+    const n = (fbm(xo / 26, yo / 26, 3) - 0.5) * 0.6 + (fbm(xo / 9, yo / 9, 4) - 0.5) * 0.32 + (fbm(xo / 3.5, yo / 3.5, 5) - 0.5) * 0.12;
     // mar no norte e no leste do miolo (como antes) e litoral nos 4 lados do mapa (oeste e sul com recortes largos)
-    const seaIn = Math.max(0, (16 - (y - MN)) / 16, (16 - (MW + IW - 1 - x)) / 16) * 0.9;
-    const dW = x / (MW * 0.95), dS = (CH - 1 - y) / (MS * 0.95), dE = (CW - 1 - x) / ME, dN = y / MN;
-    const seaOut = Math.max(0, 1.75 - Math.min(dW, dS) * (0.8 + fbm(x / 34, y / 34, 14) * 0.75)) * 1.6 + Math.max(0, 1 - Math.min(dE, dN)) * 2;
-    let cape = 9; for (const [cx, cy, rx, ry] of CAPES) cape = Math.min(cape, Math.hypot((x / CW - cx) / rx, (y / CH - cy) / ry));
-    for (const [cx, cy, rx, ry] of ISLES_M) isl = Math.min(isl, Math.hypot((x / CW - cx) / rx, (y / CH - cy) / ry));
-    const rim = Math.max(0, 1 - Math.min(x, y, CW - 1 - x, CH - 1 - y) / 5) * 2; // sempre mar nos 5 tiles da borda
+    const wobN = Math.min(4, (fbm(xo / 52, 7.7, 79) - 0.5) * 120); // rodada 162: a costa norte (a reta do miolo) ganha baías
+    const seaIn = Math.max(0, (16 - (y - MN + wobN)) / 16, (16 - (MW + IW - 1 - x)) / 16) * 0.9;
+    const wobW = (fbm(yo / 64, 3.3, 77) - 0.5) * 110, wobS = (fbm(xo / 64, 5.1, 78) - 0.5) * 110; // rodada 162: baías e pontas nas costas oeste e sul
+    const dW = (xo + wobW) / (MW0 * 0.95), dS = (CH0 - 1 - yo + wobS) / (MS0 * 0.95), dE = (CW0 - 1 - xo) / ME0, dN = yo / MN0;
+    const seaOut = Math.max(0, 1.75 - Math.min(dW, dS) * (0.8 + fbm(xo / 34, yo / 34, 14) * 0.75)) * 1.6 + Math.max(0, 1 - Math.min(dE, dN)) * 2;
+    let cape = 9; for (const [cx, cy, rx, ry] of CAPES) cape = Math.min(cape, Math.hypot((xo / CW0 - cx) / rx, (yo / CH0 - cy) / ry));
+    for (const [cx, cy, rx, ry] of ISLES_M) isl = Math.min(isl, Math.hypot((xo / CW0 - cx) / rx, (yo / CH0 - cy) / ry));
+    const rim = Math.max(0, 1 - Math.min(x, y, CW - 1 - x, CH - 1 - y) / 5) * 2 + Math.max(0, (Math.max(-xo, -yo, xo - CW0, yo - CH0) - 18) / 30); // pontas que saem do mapa de antes afinam no mar novo
     if (!(val + n + seaIn + seaOut < 1 || isl + n * 1.3 + seaIn + rim < 1 || cape + n * 0.9 + rim < 1)) continue;
-    BIOME[y * CW + x] = biomeOf(u + (fbm(x / 34, y / 34, 1) - 0.5) * 0.11, v + (fbm(x / 34, y / 34, 2) - 0.5) * 0.11);
+    BIOME[y * CW + x] = biomeOf(u + (fbm(xo / 34, yo / 34, 1) - 0.5) * 0.11, v + (fbm(xo / 34, yo / 34, 2) - 0.5) * 0.11);
     // rodada 109: o Campo transborda do quadro antigo numa faixa ondulada, para a borda dele não virar uma reta entre biomas
     const dOld = Math.max(OX - x, x - (OX + W - 1), OY - y, y - (OY + H - 1));
-    if (dOld < 3 + fbm(x / 8, y / 8, 8) * 9 + fbm(x / 3, y / 3, 9) * 3) BIOME[y * CW + x] = 1;
+    if (dOld < 3 + fbm(xo / 8, yo / 8, 8) * 9 + fbm(xo / 3, yo / 3, 9) * 3) BIOME[y * CW + x] = 1;
   }
+  // rodada 162: ilhas do mar novo, em volta do continente: [x, y em frações do mapa de antes (fora de 0..1), raio x, raio y em tiles].
+  // Cada uma é do bioma da costa mais perto (recursos, plantas e monstros do bioma; longe de Lumeira = o fundo da faixa de nível)
+  const FAR_ISLES = [[-0.085, 0.24, 34, 26], [-0.095, 0.6, 42, 30], [-0.075, 0.9, 26, 22], [0.18, 1.085, 36, 22], [0.48, 1.1, 46, 26], [0.8, 1.08, 30, 20],
+    [1.08, 0.18, 26, 30], [1.09, 0.52, 44, 34], [1.075, 0.84, 28, 24], [0.24, -0.09, 38, 22], [0.55, -0.1, 30, 20], [0.86, -0.085, 34, 22]];
+  const ISLE_NAMES = ["Ilha do Farol", "Ilha das Gaivotas", "Ilha da Tartaruga", "Ilha dos Corais", "Ilha Longa", "Ilha do Náufrago", "Ilha da Bruma", "Ilha Grande do Leste",
+    "Ilha das Conchas", "Ilha do Vento Norte", "Ilha da Baleia", "Ilha do Gelo Partido"];
+  const ISLANDS = [], FAR = new Uint8Array(CW * CH); // FAR: tiles das ilhas novas (ficam fora do centro, do raio e da profundidade dos biomas)
+  FAR_ISLES.forEach(([fx, fy, rx, ry], i) => {
+    const cx = PAD + fx * CW0, cy = PAD + fy * CH0, mx = PAD + CW0 / 2, my = PAD + CH0 / 2; let b = 1;
+    for (let k = 0; k <= 1; k += 0.01) { const X = Math.round(cx + (mx - cx) * k), Y = Math.round(cy + (my - cy) * k), v2 = BIOME[Y * CW + X]; if (v2) { b = v2; break; } } // a costa na direção do centro
+    let n = 0;
+    for (let y = Math.max(2, Math.floor(cy - ry * 1.5)); y <= Math.min(CH - 3, Math.ceil(cy + ry * 1.5)); y++) for (let x = Math.max(2, Math.floor(cx - rx * 1.5)); x <= Math.min(CW - 3, Math.ceil(cx + rx * 1.5)); x++) {
+      const d = Math.hypot((x - cx) / rx, (y - cy) / ry) + (fbm(x / 14, y / 14, 31 + i) - 0.5) * 0.7 + (fbm(x / 5, y / 5, 47 + i) - 0.5) * 0.25;
+      if (d < 1 && !BIOME[y * CW + x]) { BIOME[y * CW + x] = b; FAR[y * CW + x] = 1; n++; }
+    }
+    ISLANDS.push({ x: Math.round(cx), y: Math.round(cy), biome: b, area: n, name: ISLE_NAMES[i] });
+  });
   // centro (média dos tiles) e "raio" (da área) de cada bioma: rótulos do mapa e sorteio dos bandos
-  for (const B of BIOMES) { let sx = 0, sy = 0, k = 0; for (let y = 0; y < CH; y += 2) for (let x = 0; x < CW; x += 2) if (BIOME[y * CW + x] === B.n) { sx += x; sy += y; k++; }
+  for (const B of BIOMES) { let sx = 0, sy = 0, k = 0; for (let y = 0; y < CH; y += 2) for (let x = 0; x < CW; x += 2) if (BIOME[y * CW + x] === B.n && !FAR[y * CW + x]) { sx += x; sy += y; k++; }
     B.c = [Math.round(sx / k), Math.round(sy / k), Math.round(Math.sqrt(k * 4 / Math.PI))]; B.area = k * 4; }
   const biomeAt = (x, y) => (x < 0 || y < 0 || x >= CW || y >= CH ? 0 : BIOME[y * CW + x]);
   const BKEY = [null, "campo", "darkwood", "mountains", "desert", "snow"];
@@ -208,7 +232,7 @@ window.ValdoraWorld = (() => {
     VILLAGES.push({ key: V.key, biome: V.biome, name: V.name, x0: p.x0, y0: p.y0, x1: p.x0 + VSIZE.w - 1, y1: p.y0 + VSIZE.h - 1 });
   }
   const TCX = (TOWN_G.x0 + TOWN_G.x1) >> 1, TCY = (TOWN_G.y0 + TOWN_G.y1) >> 1; // centro da praça de Lumeira
-  const DEPTH = BIOMES.map((B) => { let lo = 1e9, hi = 0; for (let y = 0; y < CH; y += 3) for (let x = 0; x < CW; x += 3) if (BIOME[y * CW + x] === B.n) { const d = Math.hypot(x - TCX, y - TCY); lo = Math.min(lo, d); hi = Math.max(hi, d); } return [lo, hi]; });
+  const DEPTH = BIOMES.map((B) => { let lo = 1e9, hi = 0; for (let y = 0; y < CH; y += 3) for (let x = 0; x < CW; x += 3) if (BIOME[y * CW + x] === B.n && !FAR[y * CW + x]) { const d = Math.hypot(x - TCX, y - TCY); lo = Math.min(lo, d); hi = Math.max(hi, d); } return [lo, hi]; });
   const depthAt = (x, y) => { const b = biomeAt(x, y); if (!b) return 0; const [lo, hi] = DEPTH[b - 1]; return Math.max(0, Math.min(1, (Math.hypot(x - TCX, y - TCY) - lo) / Math.max(1, hi - lo))); };
   const villageAt = (x, y) => VILLAGES.find((v) => x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1) || null;
   // ---------- masmorra de cada bioma novo: entrada do lado oposto à vila; chefe no fundo, com a guarda em volta ----------
@@ -250,7 +274,7 @@ window.ValdoraWorld = (() => {
   // rodada 121: no litoral sul, Breu, Névoa e Dunas ficavam colados; o segundo cais da Mata Sombria vai para o meio da costa dela
   // e o do deserto para a ponta leste da costa sul (o ponto válido mais perto do alvo, varrendo tile a tile)
   // rodada 142: o alvo do Cais da Névoa estava nas coordenadas de antes do mapa crescer e caía em cima do Cais do Breu
-  const DOCK_AT = { 2: [440, 760], 4: [516, 464] };
+  const DOCK_AT = { 2: [440 + PAD, 760 + PAD], 4: [516 + PAD, 464 + PAD] }; // rodada 162: + o mar novo
   const DOCKS = [], SPOTS = {};
   for (const B of BIOMES) {
     const c = SPOTS[B.n] = dockSpots(B.n); if (!c.length) continue;
@@ -269,7 +293,7 @@ window.ValdoraWorld = (() => {
     if (!best) break; DOCKS.push({ ...best, key: "dock_x" + e, name: EXTRA_DOCK[e][0], keeper: EXTRA_DOCK[e][1], len: DOCK_LEN });
   }
   // rodada 142: Porto da Tumba, na ponta sul do deserto (embaixo da Tumba do Faraó); a estrada dele vem só do Cais da Névoa
-  { const T = [665, 792], c = dockSpots(4, 1).filter((q) => q.dy > 0 && Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))) > 40);
+  { const T = [665 + PAD, 792 + PAD], c = dockSpots(4, 1).filter((q) => q.dy > 0 && Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))) > 40);
     if (c.length) { const z = c.reduce((p, q) => (Math.hypot(q.x - T[0], q.y - T[1]) < Math.hypot(p.x - T[0], p.y - T[1]) ? q : p));
       DOCKS.push({ ...z, biome: 4, key: "dock_tumba", name: "Porto da Tumba", keeper: "Barqueiro Amon", len: DOCK_LEN, roadTo: "dock_darkwood1" }); } }
   // ---------- lagos novos (fora do quadro antigo): [cx, cy, raio, cardume, quantos] ----------
@@ -341,7 +365,7 @@ window.ValdoraWorld = (() => {
         [T.boss, 1, { x: 60, y: 11, r: 1 }], [m3, 2, { x: 58, y: 9, r: 2 }], [m2, 2, { x: 61, y: 14, r: 2 }]], // chefe com a guarda em volta
       enter: T.enter, leave: T.leave, toast: [G.name, "O chefe guarda o fundo, cercado pela guarda. Derrote todos para abrir o baú.", T.color], foes: T.foes };
   });
-  const G = { W: CW, H: CH, OX, OY, L, BIOME, BIOMES, BKEY, biomeAt, depthAt, inOld, VILLAGES, villageAt, DG_ENTRIES, ROADS, BIOME_SPAWNS, CAMPO_EXTRA, fbm, DOCKS,
+  const G = { PAD, ISLANDS, W: CW, H: CH, OX, OY, L, BIOME, BIOMES, BKEY, biomeAt, depthAt, inOld, VILLAGES, villageAt, DG_ENTRIES, ROADS, BIOME_SPAWNS, CAMPO_EXTRA, fbm, DOCKS,
     TOWN: TOWN_G, SPAWN: sh(SPAWN), regionShape: regionShapeG, LAKES: LAKES_G, SIGNS: SIGNS.map(([x, y, l]) => [x + OX, y + OY, l]), CAMP: CAMP_G,
     MOB_SPAWNS: MOB_SPAWNS_G, SPAWN_EDGE, SPAWN_AWAY: { boar: { from: CAMP_G, dist: SPAWN_AWAY.boar.dist } }, CRYPT_ENTRY: sh(CRYPT_ENTRY), DEN_ENTRY: sh(DEN_ENTRY),
     ENTRY_SPR, DUNGEONS, MARKERS: sh(MARKERS), CRACKS: sh(CRACKS), HUT: sh(HUT), TENT: sh(TENT), RUNES: sh(RUNES), MINE: sh(MINE), RIFT_ENTRY: sh(RIFT_ENTRY) };

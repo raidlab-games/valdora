@@ -14,7 +14,8 @@ window.ValdoraDialogs = (() => {
     anvil: { title: "Bigorna", talk: "Forje armas, ferramentas e peitorais a partir de barras (as primeiras ferramentas, de cobre, saem direto do minério). A peça pronta vai para a mochila: clique nela para vestir." },
     witch: { title: "Feiticeira Morgana", talk: "\"Ervas certas, fogo baixo e paciência. Traga os ingredientes e eu ensino o resto.\"" }, // rodada 117
     warden: { title: "Guardião", talk: "" },
-    harbor: { title: "Cais", talk: "" }, // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
+    harbor: { title: "Cais", talk: "", tabs: [["boats", "Barcos"], ["up", "Melhorias"], ["fix", "Conserto"]] }, // rodada 162: estaleiro
+    dwarf: { title: "Peixaria", talk: "", tabs: [["sell", "Vender peixe"], ["bait", "Iscas"], ["log", "Diário de pesca"]] }, // rodada 162: o anão pescador do píer // rodada 120: mestre do cais (título = nome do cais) // rodada 114: guardiões das vilas novas (título = nome do NPC)
     deathbag: { title: "Saco de morte", talk: "" }, // rodada 146
     stable: { title: "Celeiro de Lumeira", talk: "\"Cavalo bom é cavalo bem tratado. Escolha o seu: quanto mais você cavalga, mais cavalo você aguenta.\" — Teodoro" }, // rodada 156
     peace: { title: "Pacificador", talk: "\"Sangue não lava sangue, viajante. Mas ouro compra o perdão dos homens.\"" }, // rodada 147
@@ -85,7 +86,7 @@ window.ValdoraDialogs = (() => {
       const player = api.player();
       const D = DLG[dlg.kind];
       const mv = dlg.kind === "marker" && api.markerView ? api.markerView(dlg.obj) : null; // rodada 78
-      const vt = dlg.obj && dlg.obj.village && dlg.obj.name && dlg.kind === "shop" ? `Banca de ${dlg.obj.name}` : dlg.kind === "warden" && dlg.obj ? dlg.obj.name : dlg.kind === "harbor" && dlg.obj ? dlg.obj.label : null; // rodada 105: mercadores das vilas novas; 114: guardiões
+      const vt = dlg.obj && dlg.obj.village && dlg.obj.name && dlg.kind === "shop" ? `Banca de ${dlg.obj.name}` : dlg.kind === "warden" && dlg.obj ? dlg.obj.name : dlg.kind === "harbor" && dlg.obj ? dlg.obj.label : dlg.kind === "dwarf" && dlg.obj ? `Peixaria ${dlg.obj.art || "do"} ${dlg.obj.name}` : null; // rodada 105: mercadores das vilas novas; 114: guardiões
       $("dlg-title").innerHTML = ValdoraUI.titleHTML(vt || (mv ? mv.title : D.title), "#ffd84a", 1); // rodada 68: fonte de títulos
       $("dlg-coins").innerHTML = `<img src="${ASSETS.coin}" alt=""> ${player.coins}`;
       $("dlg-tabs").innerHTML = (D.tabs || []).map(([k, n]) => `<button data-tab="${k}" class="${dlg.tab === k ? "on" : ""}">${n}</button>`).join("");
@@ -173,11 +174,16 @@ window.ValdoraDialogs = (() => {
         html = api.potionHtml();
       } else if (dlg.kind === "warden" && dlg.obj) { // rodada 114: guardião da vila (missões do bioma até o chefe)
         talk = `"${dlg.obj.hello}"`; html = questHtml(dlg.obj.giver) || `<p class="empty">Você já fez tudo o que havia por aqui. O bioma inteiro lhe deve um favor.</p>`;
-      } else if (dlg.kind === "harbor" && dlg.obj) { // rodada 120: cais (o sistema de barcos vem depois)
-        const HT = ["O mar está calmo hoje. Bom dia para remendar redes.", "Os estaleiros estão trabalhando dia e noite. Logo teremos barcos saindo daqui.",
-          "Dizem que há ilhas no horizonte que nenhum mapa desenhou ainda.", "Cuidado com a maré: ela sobe mais rápido do que parece."];
-        talk = `"${dlg.say0 || (dlg.say0 = HT[Math.floor(rand() * HT.length)])}"`;
-        html = `<p class="empty">${dlg.obj.name}, mestre do ${dlg.obj.label}. Quando os barcos ficarem prontos, é aqui que você embarca para as outras costas e ilhas de Valdora.</p>`;
+      } else if (dlg.kind === "harbor" && dlg.obj) { // rodada 120: cais; rodada 162: estaleiro (barcos, melhorias e conserto)
+        const HT = ["Vento de popa é meio caminho andado. Contra o vento, o barco se arrasta.", "Canhão de bombordo é o Q, de estibordo é o E. Encoste de lado no inimigo!",
+          "Dizem que há ilhas no horizonte que nenhum mapa desenhou ainda.", "Longe da costa o mar fica bravo: tubarões, serpentes e corsários.", "No ponto mais fundo de cada mar mora um polvo do tamanho de uma casa."];
+        talk = `"${dlg.say0 || (dlg.say0 = HT[Math.floor(rand() * HT.length)])}" — ${dlg.obj.name}`;
+        html = api.harborHtml ? api.harborHtml(dlg.obj, dlg.tab) : "";
+      } else if (dlg.kind === "dwarf" && dlg.obj) { // rodada 162: o anão pescador
+        const DT = ["Peixe bom é peixe fresco! Traga que eu pago mais que o Bento.", "Cardume fundo, longe da costa, é onde mora peixe graúdo. Siga as gaivotas!",
+          "Peixe bravo puxa a linha sozinho: dê linha e espere ele cansar.", "Isca de lula brilhante... dizem que o Rei-das-marés não resiste.", "Meu avô pescou um atum maior que este píer. Juro pela minha barba!"];
+        talk = `"${dlg.say0 || (dlg.say0 = DT[Math.floor(rand() * DT.length)])}" — ${dlg.obj.name}`;
+        html = api.dwarfHtml ? api.dwarfHtml(dlg.tab, dlg.obj) : "";
       } else if (dlg.kind === "home" && api.homeDlg) { // rodada 100
         const H = api.homeDlg(); talk = H.talk; html = H.html;
       } else if (dlg.kind === "pet" && api.petDlg) { // rodada 96

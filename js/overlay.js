@@ -173,6 +173,9 @@ window.ValdoraOverlay = (() => {
           label(v.name + (p.spawnStone === v.key || (!p.spawnStone && v.main) ? " ✦" : ""), cx, cy + 16, Math.max(11, Math.round(k * 5)), on ? "#ffffff" : "#bbbbbb"); }
         for (const E of Wd.DG_ENTRIES) { const x = X(E.x + 0.5), y = Y(E.y + 0.5); g.fillStyle = "#c0392b"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 5, 0, 6.29); g.fill(); g.stroke();
           label(E.name, x, y - 13, Math.max(10, Math.round(k * 4.2)), "#ff9a8a"); }
+        for (const I of Wd.ISLANDS || []) if (I.area > 30) { const B = Wd.BIOMES[I.biome - 1]; label(I.name, X(I.x), Y(I.y), Math.max(10, Math.round(k * 4.4)), "#c8f0ff", B ? `${B.name} · ilha` : ""); } // rodada 162: ilhas do mar novo
+        for (const Lr of Wd.SEA_LAIRS || []) { const x = X(Lr.x), y = Y(Lr.y); g.fillStyle = "#7a4aa0"; g.strokeStyle = "#000"; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 6, 0, 6.29); g.fill(); g.stroke();
+          g.fillStyle = "#ffd23a"; g.fillRect(Math.round(x) - 3, Math.round(y) - 2, 2, 2); g.fillRect(Math.round(x) + 1, Math.round(y) - 2, 2, 2); label("Polvo Abissal", x, y - 14, Math.max(10, Math.round(k * 4)), "#d8a8ff"); } // covis do chefe do mar
         for (const D of Wd.DOCKS || []) { const x = X(D.x + 0.5 + D.dx * 3), y = Y(D.y + 0.5 + D.dy * 3); // rodada 120: cais (âncora)
           g.strokeStyle = "#000"; g.lineWidth = 4; g.beginPath(); g.moveTo(x, y - 6); g.lineTo(x, y + 6); g.moveTo(x - 5, y + 2); g.quadraticCurveTo(x, y + 9, x + 5, y + 2); g.moveTo(x - 3, y - 3); g.lineTo(x + 3, y - 3); g.stroke();
           g.strokeStyle = "#8fd8ff"; g.lineWidth = 2; g.stroke(); label(D.name, x, y - 14, Math.max(10, Math.round(k * 4)), "#8fd8ff"); }

@@ -20,6 +20,13 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.45", "Ao mar! Barcos, pesca em alto-mar e o anão pescador", ["Em cada cais, um anão pescador no píer (o de Lumeira é o Gaspar) compra qualquer peixe 50% mais caro que o Bento, vende iscas e guarda o diário de pesca com o recorde de peso de cada espécie",
+      "O mestre do cais vende 4 barcos (bote, chalupa, bergantim e galeão), melhora velas, leme, casco e canhões e conserta o casco; a skill nova Navegação sobe navegando e vencendo no mar",
+      "Navegar tem inércia e vento (de popa rende mais): WASD ou clique na água; Q e E disparam os canhões de bombordo e estibordo; F atraca no cais ou desce na praia",
+      "Pesca de alto-mar: pare perto de um cardume (siga as gaivotas), lance a linha e lute com o peixe — Recolher, Puxão forte e Dar linha, de olho no fôlego, na tensão e no humor dele",
+      "16 peixes do mar (comuns, raros, épicos e o lendário Rei-das-marés), com peso sorteado; também dá para pescar a pé na ponta do píer",
+      "Monstros do mar: tubarão, medusa, serpente, corsários e um Polvo Abissal no fundo de cada mar; o que cai fica boiando num caixote",
+      "O cais ganhou varal de peixes, rede com boias, armadilhas de caranguejo, barril de peixe e âncora"]],
     ["v1.44", "Nível e raridade em toda peça", ["Todo equipamento tem nível: joias, secundárias, roupas e mochilas que não pediam nada agora pedem o nível do mapa e do material",
       "Mochila e boneco mostram o nível no canto de cada peça (vermelho = ainda não dá para vestir)",
       "Loja, mesa, bigorna e leilão mostram nível e raridade; a dica ao passar o mouse sempre traz nível, raridade, o que a peça pede e tudo o que ela faz"]],

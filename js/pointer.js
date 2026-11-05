@@ -38,7 +38,7 @@ window.ValdoraPointer = (() => {
     });
     window.addEventListener("pointermove", (e) => { if (touch && (e.pointerType === "touch") !== touch.mouse) Object.assign(touch, at(e)); });
     const tileAt = (p) => [Math.floor((p.x + cam.x) / TILE), Math.floor((p.y + cam.y) / TILE)];
-    const walkTo = (tx, ty) => inside(tx, ty) && !(tx === api.player().x && ty === api.player().y) && goTo((x, y) => Math.abs(x - tx) + Math.abs(y - ty) <= (walkable(tx, ty) ? 0 : 1));
+    const walkTo = (tx, ty) => (api.seaSteer && api.seaSteer(tx + 0.5, ty + 0.5)) || inside(tx, ty) && !(tx === api.player().x && ty === api.player().y) && goTo((x, y) => Math.abs(x - tx) + Math.abs(y - ty) <= (walkable(tx, ty) ? 0 : 1));
     const endTouch = (e) => {
       if (touch && touch.hold) { // soltou depois de segurar: anda até onde soltou e engole o clique
         suppressClick = true; if (e && e.clientX != null) Object.assign(touch, at(e));
@@ -60,7 +60,9 @@ window.ValdoraPointer = (() => {
       if (suppressClick) { suppressClick = false; return; }
       if (api.player().deadT > 0) return;
       closeDlg(); api.player().job = null;
-      const p = pick(e.clientX / api.zoom(), e.clientY / api.zoom()); if (!p) return;
+      const p = pick(e.clientX / api.zoom(), e.clientY / api.zoom());
+      if (api.seaClick && api.seaClick(p)) return; // rodada 162: a bordo (ou barco, cardume e monstro do mar)
+      if (!p) return;
       if (p.kind === "sign") { log(`Placa: ${p.ref.label}`, "dim"); return; }
       if (p.kind === "tile") {
         api.player().target = null;
@@ -78,6 +80,7 @@ window.ValdoraPointer = (() => {
       if (!api.running()) return;
       const b = e.currentTarget.getBoundingClientRect();
       const V = api.miniView(), tx = Math.floor(V.x0 + (e.clientX - b.left) / b.width * V.w), ty = Math.floor(V.y0 + (e.clientY - b.top) / b.height * V.h); // rodada 105: minimapa que segue o herói
+      if (api.seaSteer && api.seaSteer(tx + 0.5, ty + 0.5)) return; // rodada 162: a bordo, o minimapa dá o rumo
       let best = null; // tile andável mais próximo do ponto clicado
       for (let r = 0; r < 6 && !best; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) if (!best && walkable(x, y)) best = [x, y];
       if (best) { closeDlg(); api.player().target = null; api.player().job = null; if (!goTo((x, y) => x === best[0] && y === best[1])) log("Não dá para chegar lá.", "dim"); }
