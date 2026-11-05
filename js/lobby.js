@@ -20,6 +20,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.47", "Pesca espalhada pelo oceano", ["As áreas de pesca do mar agora aparecem com a mesma chance em qualquer parte do oceano, bem separadas umas das outras (antes ficavam amontoadas perto dos cais e das ilhas)",
+      "Cada área tem 30 peixes; pescados os 30, ela some e renasce num ponto sorteado do oceano inteiro",
+      "As áreas de pesca aparecem no minimapa com o anzol",
+      "Monstros do mar desistem de seguir o barco quando se afastam 82 tiles de onde nasceram (5x a distância dos monstros de terra) e voltam nadando, recuperando a vida"]],
     ["v1.46", "Áreas de pesca e mais monstros do mar", ["Áreas de pesca como no RavenQuest: um trecho de água marcado pelo anzol (com quantos peixes faltam); lance em qualquer ponto dele",
       "As áreas do mar só se pescam navegando: perto da costa, áreas de 3 x 3 com poucos peixes; no mar aberto, áreas grandes de 5 x 5 com muito mais peixe. Quando os peixes acabam, outra área aparece por perto",
       "Navegando, o barco é o personagem: o herói não aparece em cima dele; o nome fica sobre as velas e a linha de pesca sai da borda do barco",

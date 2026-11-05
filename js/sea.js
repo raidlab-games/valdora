@@ -14,7 +14,8 @@ window.ValdoraSea = (() => {
   function create(api) {
     const B = window.ValdoraBoat, { ITEMS, SKILLS, SEA_MOBS, SEA_FISH, BAITS, RARITY } = VD, TILE = api.TILE, SND = api.SND, esc = ValdoraUI.esc;
     const rand = () => api.rand(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), TAU = Math.PI * 2;
-    const BASE_SPEED = 4.6, BALL_V = 14, RANGE = 7.5, ELEV_Y = 0.56; // velocidade do bote (tiles/s), bala, alcance; encurtamento vertical da vista
+    const BASE_SPEED = 4.6, BALL_V = 14, RANGE = 7.5, ELEV_Y = 0.56;
+    const LEASH_HOME = 16.5 * 5, LEASH_SHIP = 21 * 5; // rodada 164: 5x a distância em que os monstros de terra desistem // velocidade do bote (tiles/s), bala, alcance; encurtamento vertical da vista
     let W = 0, H = 0, dist = null, ocean = null, zone = null;
     let ship = null, fish = null, autopilot = null, ready = false;
     const mobs = [], balls = [], crates = [], rings = [], warns = [], wake = [];
@@ -47,22 +48,13 @@ window.ValdoraSea = (() => {
       for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
       while (qh < qt) { const i = q[qh++], x = i % W; if (x > 0) push(i - 1); if (x < W - 1) push(i + 1); if (i >= W) push(i - W); if (i < n - W) push(i + W); }
       // rodada 163: áreas de pesca (como no RavenQuest: um trecho de água marcado pelo anzol; lança-se em qualquer tile dele).
-      // Perto da costa, áreas de 3 x 3 com poucos peixes; no mar aberto, áreas de 5 x 5 com muitos peixes. Todas só navegando. Quando acabam os peixes, a área some e outra aparece por perto
-      spots = [];
-      const areaOk = (cx, cy, r) => { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const j = idx(x, y); if (j < 0 || !ocean[j]) return false; } return true; };
-      const addArea = (cx, cy, r, extra) => { const i = cy * W + cx, h = hash(cx, cy, 31);
-        spots.push({ cx, cy, x: cx + 0.5, y: cy + 0.5, r, zone: zone[i] || 1, deep: dist[i] >= 14, big: r >= 2, max: 0, charges: 0, id: spots.length, ph: h * 10, ...extra });
-        const s = spots[spots.length - 1]; s.max = s.charges = s.big ? 14 + Math.floor(h * 9) : 6 + Math.floor(h * 5); };
-      for (let y = 8; y < H - 8; y += 8) for (let x = 8; x < W - 8; x += 8) { // costa: 3 x 3
-        const h = hash(x, y, 162), jx = x + Math.floor(hash(x, y, 7) * 7) - 3, jy = y + Math.floor(hash(x, y, 8) * 7) - 3, i = jy * W + jx;
-        if (h > 0.6 || !ocean[i] || dist[i] < 2 || dist[i] > 5 || nearDock(jx, jy, 10) || !areaOk(jx, jy, 1)) continue;
-        addArea(jx, jy, 1, { coast: true });
-      }
-      for (let y = 10; y < H - 10; y += 17) for (let x = 10; x < W - 10; x += 17) { // mar aberto: 5 x 5
-        const h = hash(x, y, 163), jx = x + Math.floor(hash(x, y, 9) * 11) - 5, jy = y + Math.floor(hash(x, y, 10) * 11) - 5, i = jy * W + jx;
-        if (h > 0.3 || !ocean[i] || dist[i] < 8 || dist[i] > 45 || nearDock(jx, jy, 14) || !areaOk(jx, jy, 2)) continue;
-        addArea(jx, jy, 2, {});
-      }
+      // rodada 164: sorteadas com a mesma chance em qualquer parte do oceano (a pelo menos 3 tiles da terra e longe dos cais), com
+      // uma distância mínima entre elas para não ficarem amontoadas; cada uma tem 30 peixes e, quando acaba, renasce num ponto
+      // sorteado do oceano inteiro. 3 x 3 ou 5 x 5 (5 x 5 com gaivotas em cima). Todas só navegando
+      spots = []; seaTiles = [];
+      for (let k = 0; k < n; k++) if (ocean[k] && dist[k] >= 3) seaTiles.push(k);
+      const want = Math.max(20, Math.round(seaTiles.length / SPOT_AREA));
+      for (let k = 0; k < want; k++) { const s0 = { id: k, r: rand() < 0.4 ? 1 : 2, ph: rand() * 10, max: SPOT_FISH, charges: SPOT_FISH }; if (placeSpot(s0)) spots.push(s0); }
       // rodada 163: as áreas de pesca do mar são só para quem está navegando (nem da praia nem do píer)
       moored = [];
       for (const D of G.DOCKS || []) {
@@ -78,8 +70,20 @@ window.ValdoraSea = (() => {
         for (let y = 8; y < H - 8; y += 4) for (let x = 8; x < W - 8; x += 4) { const i = y * W + x; if (ocean[i] && zone[i] === z && dist[i] > bd && dist[i] <= 55 && !nearDock(x, y, 40)) { bd = dist[i]; best = i; } }
         if (best >= 0 && bd >= 10) lairs.push({ x: best % W + 0.5, y: ((best / W) | 0) + 0.5, zone: z, respawnAt: 0, mob: null });
       }
-      G.SEA_LAIRS = lairs; // o mapa M marca os covis
+      G.SEA_LAIRS = lairs; G.SEA_SPOTS = spots; // o mapa M marca os covis; o minimapa, as áreas de pesca
       wind.a = wind.to = rand() * TAU; wind.t = 40; ready = true;
+    }
+    const SPOT_FISH = 30, SPOT_GAP = 34, SPOT_AREA = 8000; // peixes por área, distância mínima entre áreas, tiles de mar por área
+    let seaTiles = [];
+    function areaFree(cx, cy, r) { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const j = idx(x, y); if (j < 0 || !ocean[j] || dist[j] < 2) return false; } return true; }
+    function placeSpot(s0) { // um ponto sorteado do oceano inteiro (mesma chance em qualquer lugar)
+      for (let k = 0; k < 80; k++) {
+        const i = seaTiles[Math.floor(rand() * seaTiles.length)], cx = i % W, cy = (i / W) | 0;
+        if (nearDock(cx, cy, 12) || !areaFree(cx, cy, s0.r)) continue;
+        if (spots.some((o) => o !== s0 && Math.abs(o.cx - cx) < SPOT_GAP && Math.abs(o.cy - cy) < SPOT_GAP)) continue;
+        Object.assign(s0, { cx, cy, x: cx + 0.5, y: cy + 0.5, zone: zone[i] || 1, deep: dist[i] >= 14, big: s0.r >= 2 }); return true;
+      }
+      return false;
     }
     const hash = (x, y, s) => { const v = Math.sin(x * 127.1 + y * 311.7 + s * 74.7) * 43758.5453; return v - Math.floor(v); };
     const idx = (x, y) => { const X = Math.floor(x), Y = Math.floor(y); return X < 0 || Y < 0 || X >= W || Y >= H ? -1 : Y * W + X; };
@@ -231,9 +235,16 @@ window.ValdoraSea = (() => {
       const d = m.d; m.t += dt; m.flash = Math.max(0, m.flash - dt);
       if (m.dead) { m.deadT += dt; return; }
       const sd = ship ? Math.hypot(ship.x - m.x, ship.y - m.y) : 1e9;
-      if (ship && !m.aggro && sd < d.aggro) { m.aggro = true; if (d.boss) api.toast(d.name, "Saiu das profundezas! Fuja dos círculos na água.", "#c47aff"); }
-      if (m.aggro && (!ship || sd > d.aggro * 3)) m.aggro = false;
+      if (ship && !m.aggro && !m.returning && sd < d.aggro) { m.aggro = true; if (d.boss) api.toast(d.name, "Saiu das profundezas! Fuja dos círculos na água.", "#c47aff"); }
+      const fromHome = Math.hypot(m.x - m.home.x, m.y - m.home.y);
+      if (m.aggro && !d.boss && (!ship || sd > LEASH_SHIP || fromHome > LEASH_HOME)) { // desiste e volta nadando para onde nasceu
+        m.aggro = false; m.returning = true; m.lunge = m.puffT = m.grabT = m.dashT = m.aim = m.zapT = 0; m.hidden = false; if (ship && ship.heldT) ship.heldT = 0; m.wander = null;
+        if (sd < 30) api.log(`${d.name} desistiu de seguir o barco.`, "dim"); }
+      if (m.aggro && d.boss && (!ship || sd > d.aggro * 3)) m.aggro = false;
       m.cd -= dt;
+      if (m.returning) { // voltando: não persegue ninguém e recupera a vida
+        m.hp = Math.min(m.max, m.hp + m.max * 0.08 * dt);
+        if (fromHome < 2) m.returning = false; else { steer(m, m.home.x, m.home.y, d.speed * 1.2, 2.5, dt); return; } }
       if (!m.aggro) { // passeia perto de onde nasceu
         if (d.speed <= 0) return;
         if (!m.wander || Math.hypot(m.wander.x - m.x, m.wander.y - m.y) < 1) m.wander = { x: m.home.x + (rand() - 0.5) * 12, y: m.home.y + (rand() - 0.5) * 12 };
@@ -474,25 +485,16 @@ window.ValdoraSea = (() => {
       api.log(`Pescou ${f.item.toLowerCase()} (${R.name.toLowerCase()}) de ${fmtKg(kg)}${rec && !first ? ` — recorde! (antes ${fmtKg(prev)})` : ""}${first ? " · espécie nova no diário de pesca (XP em dobro)" : ""}.`, f.rar === "comum" ? "dim" : "gold");
       if (rec && !first) api.toast("Recorde de peso!", `${f.item}: ${fmtKg(kg)}`, R.color);
       fish = null; p.cast = null; panel(false);
-      if (--spot.charges <= 0) relocate(spot); else if (spot.charges <= 2) api.log(`A área de pesca está acabando: ${spot.charges} peixe${spot.charges > 1 ? "s" : ""}.`, "dim");
+      if (--spot.charges <= 0) relocate(spot); else if (spot.charges <= 3) api.log(`A área de pesca está acabando: ${spot.charges} peixe${spot.charges > 1 ? "s" : ""}.`, "dim");
     }
     const fmtKg = (kg) => `${kg < 2 ? kg.toFixed(2) : kg.toFixed(1)} kg`.replace(".", ",");
-    function relocate(s) { // a área se esgotou: some e reaparece por perto (a do píer volta no mesmo lugar)
+    function relocate(s) { // rodada 164: 30 peixes pescados: a área some e renasce num ponto sorteado do oceano inteiro
       api.fx.burst(s.x, s.y, ["#e8f6ff", "#8fc1ee"], 14, 2.4);
-      s.charges = s.max; s.gone = s.pier ? 25 : 40;
-      if (!s.pier) for (let k = 0; k < 40; k++) {
-        const a = rand() * TAU, rr = 8 + rand() * 14, cx = Math.floor(s.cx + Math.cos(a) * rr), cy = Math.floor(s.cy + Math.sin(a) * rr), i = idx(cx, cy); if (i < 0 || !ocean[i]) continue;
-        if (s.coast ? dist[i] < 2 || dist[i] > 5 : dist[i] < 8 || dist[i] > 45) continue;
-        let ok = true; for (let y = cy - s.r; y <= cy + s.r && ok; y++) for (let x = cx - s.r; x <= cx + s.r && ok; x++) { const j = idx(x, y); if (j < 0 || !ocean[j]) ok = false; }
-        if (ok) { Object.assign(s, { cx, cy, x: cx + 0.5, y: cy + 0.5, deep: dist[i] >= 14, zone: zone[i] || s.zone }); break; }
-      }
-      api.log("Os peixes desta área acabaram. Outra área de pesca vai aparecer por perto: procure o anzol na água.", "dim");
+      s.charges = s.max; s.r = rand() < 0.4 ? 1 : 2; s.ph = rand() * 10; placeSpot(s); s.gone = 3;
+      api.log("Os 30 peixes desta área acabaram: ela sumiu e renasceu em outro ponto do oceano. Procure o anzol na água.", "dim");
     }
-    let pendingCast = null; // clicou numa área da costa longe: lança assim que chegar na beira
     function updateFish(dt) {
       const p = P();
-      if (pendingCast && !fish) { const s = pendingCast, q = s.pending; if (!q || p.target) pendingCast = null;
-        else if (!p.path.length && p.prog >= 1) { pendingCast = null; fishStart(s, q.tx, q.ty); } }
       if (!fish) return;
       if (fish.onFoot && (p.path.length || p.prog < 1 || p.target)) { fishStop(false, "Você recolheu a linha."); return; }
       if (fish.phase === "wait") { fish.t += dt; if (fish.t >= fish.bite) fishBite(); return; }
@@ -532,7 +534,7 @@ window.ValdoraSea = (() => {
       wind.a += clamp(B.angDiff(wind.to, wind.a), -0.03 * dt, 0.03 * dt);
       for (const s of spots) if (s.gone > 0) s.gone -= dt;
       if (ship) sail(dt);
-      if (fish || pendingCast) updateFish(dt);
+      if (fish) updateFish(dt);
       if (ship || mobs.length) {
         if ((spawnT -= dt) <= 0) { spawnT = 1.5; populate(); }
         for (const m of mobs) if (!ship || Math.hypot(m.x - ship.x, m.y - ship.y) < 60) updateMob(m, dt);

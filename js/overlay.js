@@ -69,6 +69,9 @@ window.ValdoraOverlay = (() => {
         const per = new Map(); for (const o of objects) if (o.type === "res" && o.lake) per.set(o.lake, (per.get(o.lake) || 0) + 1);
         for (const o of objects) if (o.type === "res" && o.lake) { const z = per.get(o.lake) > 1 ? 7 : 10; g.drawImage(fishIcon, (o.x + 0.5) * sx - z / 2, (o.y + 0.5) * sy - z / 2, z, z); }
       }
+      if (!inCrypt && fishIcon.complete && fishIcon.naturalWidth) for (const s of (window.ValdoraWorld && ValdoraWorld.SEA_SPOTS) || []) { // rodada 164: áreas de pesca do mar (o anzol)
+        if (s.gone > 0 || s.x < V.x0 - 2 || s.y < V.y0 - 2 || s.x > V.x0 + V.w + 2 || s.y > V.y0 + V.h + 2) continue; const z = s.big ? 10 : 8;
+        g.drawImage(fishIcon, s.x * sx - z / 2, s.y * sy - z / 2, z, z); }
       for (const o of [npc.merchant, npc.guard, npc.bank, npc.furnace, npc.board, npc.bard, npc.crypt, npc.chest, npc.exit].filter(Boolean)) dot((o.x + 0.5) * sx, (o.y + 0.5) * sy, 1.8, "#f1c40f");
       const goals = api.state().goals || []; // rodada 78: objetivos da campanha (losango ciano pulsando)
       if (goals.length) { const k = 3.2 + Math.sin(performance.now() / 220) * 0.8; for (const o of goals) { const x = (o.x + 0.5) * sx, y = (o.y + 0.5) * sy;

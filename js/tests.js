@@ -898,14 +898,15 @@
     r.push(S.harborHtml({ dock: "d1" }, "boats").includes("Zarpar"), S.harborHtml({ dock: "d1" }, "up").includes("Reforço do casco"), S.harborHtml({ dock: "d1" }, "fix").includes("inteiro"));
     return r.every(Boolean) || "falhou no item " + r.indexOf(false);
   });
-  test("rodada 163: áreas de pesca 3x3 na costa e 5x5 no mar aberto, só em água; cada mar com as suas espécies", () => {
+  test("rodada 164: áreas de pesca 3x3 ou 5x5 espalhadas por todo o oceano, 30 peixes cada, separadas; cada mar com as suas espécies", () => {
     const Wd = 140, Hd = 140, map = Array.from({ length: Hd }, (_, y) => Array.from({ length: Wd }, (_, x) => (Math.hypot(x - 70, y - 70) < 22 ? "grass" : "water")));
     const G = { biomeAt: (x, y) => (map[y] && map[y][x] && map[y][x] !== "water" ? 1 : 0), DOCKS: [], BIOMES: [{ lv: [5, 30] }, { lv: [31, 65] }, { lv: [66, 101] }, { lv: [102, 140] }, { lv: [141, 180] }] };
     const S = ValdoraSea.create({ TILE: 48, fx: {}, SND: { play() {} }, cam: { x: 0, y: 0 }, player: () => ({ boat: ValdoraBoat.sanitize({}), seen: {}, stats: {} }), map: () => map, W: () => Wd, H: () => Hd, G: () => G, rand: () => 0.5 });
     S.init(); const sp = S.spots(), r = [];
-    r.push(sp.length > 0, sp.some((s) => s.r === 1 && s.coast), sp.some((s) => s.r === 2 && s.big));
+    r.push(sp.length > 0, sp.every((s) => (s.r === 1 || s.r === 2) && s.big === (s.r === 2)));
+    r.push(sp.every((a, i) => sp.every((o, j) => i === j || Math.abs(a.cx - o.cx) >= 34 || Math.abs(a.cy - o.cy) >= 34))); // nenhuma colada na outra
     r.push(sp.every((s) => { for (let y = s.cy - s.r; y <= s.cy + s.r; y++) for (let x = s.cx - s.r; x <= s.cx + s.r; x++) if (map[y][x] !== "water") return false; return true; }));
-    r.push(sp.every((s) => s.charges === s.max && s.max >= (s.big ? 14 : 6)));
+    r.push(sp.every((s) => s.charges === 30 && s.max === 30));
     const M = Object.values(VD.SEA_MOBS).filter((d) => d.w > 0);
     r.push(M.every((d) => Array.isArray(d.zones) && d.skill), [1, 2, 3, 4, 5].every((z) => M.filter((d) => d.zones.includes(z)).length >= 5));
     r.push(new Set(M.map((d) => d.kind)).size >= 11);
