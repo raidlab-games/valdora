@@ -70,17 +70,34 @@ window.ValdoraSea = (() => {
         for (let y = 8; y < H - 8; y += 4) for (let x = 8; x < W - 8; x += 4) { const i = y * W + x; if (ocean[i] && zone[i] === z && dist[i] > bd && dist[i] <= 55 && !nearDock(x, y, 40)) { bd = dist[i]; best = i; } }
         if (best >= 0 && bd >= 10) lairs.push({ x: best % W + 0.5, y: ((best / W) | 0) + 0.5, zone: z, respawnAt: 0, mob: null });
       }
+      for (const sp of spots) if (lairs.some((L) => Math.hypot(L.x - sp.x, L.y - sp.y) < SAFE_SPOT + 6)) placeSpot(sp);
+      // rodada 165: monstros do mar com casa fixa, espalhados por todo o oceano (a mesma chance em qualquer lugar, separados uns dos
+      // outros), longe da saída dos cais e das áreas de pesca (a pesca não é atrapalhada). Morto, volta 3 minutos depois na casa dele
+      mobs.length = 0; homes = [];
+      const wantM = Math.round(seaTiles.length / MOB_AREA);
+      for (let k = 0, tries = 0; homes.length < wantM && tries < wantM * 40; tries++) {
+        const i = seaTiles[Math.floor(rand() * seaTiles.length)], x = i % W + 0.5, y = ((i / W) | 0) + 0.5;
+        if (dist[i] < 4 || nearDock(x, y, DOCK_FREE) || spots.some((sp) => Math.hypot(sp.x - x, sp.y - y) < SAFE_SPOT) || lairs.some((L) => Math.hypot(L.x - x, L.y - y) < 20)) continue;
+        if (homes.some((h) => Math.abs(h.x - x) < HOME_GAP && Math.abs(h.y - y) < HOME_GAP && Math.hypot(h.x - x, h.y - y) < HOME_GAP)) continue;
+        const L = levelAt(x, y); let t = pickType(zoneAt(x, y)); if (t === "pirata" && L < 8) t = "tubarao";
+        const H0 = { x, y, type: t, L }; homes.push(H0);
+        const nP = SEA_MOBS[t].pack || 1; for (let j = 0; j < nP; j++) { const m = spawnMob(t, x + (j ? (rand() - 0.5) * 2.5 : 0), y + (j ? (rand() - 0.5) * 2.5 : 0), L); m.home = { x, y }; m.orbit += j * TAU / nP; m.cd += j * 0.8; }
+      }
       G.SEA_LAIRS = lairs; G.SEA_SPOTS = spots; // o mapa M marca os covis; o minimapa, as áreas de pesca
       wind.a = wind.to = rand() * TAU; wind.t = 40; ready = true;
     }
     const SPOT_FISH = 30, SPOT_GAP = 34, SPOT_AREA = 8000; // peixes por área, distância mínima entre áreas, tiles de mar por área
-    let seaTiles = [];
+    // monstros: um a cada MOB_AREA tiles de mar, casas a pelo menos HOME_GAP uma da outra, nenhuma a menos de SAFE_SPOT de uma área de
+    // pesca (passeando 6 tiles e com aggro de até 12, ninguém chega no barco que pesca) nem a menos de DOCK_FREE de um cais
+    const MOB_AREA = 2400, HOME_GAP = 24, SAFE_SPOT = 26, DOCK_FREE = 32, RESPAWN_MS = 3 * 60 * 1000;
+    let seaTiles = [], homes = [];
     function areaFree(cx, cy, r) { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const j = idx(x, y); if (j < 0 || !ocean[j] || dist[j] < 2) return false; } return true; }
     function placeSpot(s0) { // um ponto sorteado do oceano inteiro (mesma chance em qualquer lugar)
       for (let k = 0; k < 80; k++) {
         const i = seaTiles[Math.floor(rand() * seaTiles.length)], cx = i % W, cy = (i / W) | 0;
         if (nearDock(cx, cy, 12) || !areaFree(cx, cy, s0.r)) continue;
         if (spots.some((o) => o !== s0 && Math.abs(o.cx - cx) < SPOT_GAP && Math.abs(o.cy - cy) < SPOT_GAP)) continue;
+        if (homes.some((h) => Math.hypot(h.x - cx - 0.5, h.y - cy - 0.5) < SAFE_SPOT) || lairs.some((L) => Math.hypot(L.x - cx - 0.5, L.y - cy - 0.5) < SAFE_SPOT + 6)) continue;
         Object.assign(s0, { cx, cy, x: cx + 0.5, y: cy + 0.5, zone: zone[i] || 1, deep: dist[i] >= 14, big: s0.r >= 2 }); return true;
       }
       return false;
@@ -206,17 +223,14 @@ window.ValdoraSea = (() => {
       const list = Object.entries(SEA_MOBS).filter(([, d]) => d.w > 0 && (!d.zones || d.zones.includes(z))), tot = list.reduce((a, [, d]) => a + d.w, 0); let r = rand() * tot;
       for (const [k, d] of list) if ((r -= d.w) <= 0) return k; return list[0][0];
     }
-    function populate() {
+    function populate() { // rodada 165: cada monstro tem casa fixa; morto, volta 3 minutos depois (o polvo, no covil)
+      const now = Date.now();
+      for (let i = mobs.length - 1; i >= 0; i--) { const m = mobs[i]; if (!m.dead || m.deadT < 1.5) continue;
+        if (m.lair) { m.lair.mob = null; mobs.splice(i, 1); continue; }
+        if (now >= m.respawnAt && !(ship && Math.hypot(ship.x - m.home.x, ship.y - m.home.y) < 14)) { // renasce na casa (nunca na cara do barco)
+          Object.assign(m, { dead: false, deadT: 0, hp: m.max, x: m.home.x + (rand() - 0.5) * 2, y: m.home.y + (rand() - 0.5) * 2, aggro: false, returning: false, hidden: false, v: 0, cd: 2 + rand() * 2,
+            lunge: 0, puffT: 0, grabT: 0, dashT: 0, aim: 0, zapT: 0, charge: 0, flee: 0, wander: null }); } }
       if (!ship) return;
-      for (let i = mobs.length - 1; i >= 0; i--) { const m = mobs[i]; if ((m.dead && m.deadT > 1.5) || (!m.lair && Math.hypot(m.x - ship.x, m.y - ship.y) > 70)) { if (m.lair) m.lair.mob = null; mobs.splice(i, 1); } }
-      const near = mobs.filter((m) => !m.lair && !m.dead && Math.hypot(m.x - ship.x, m.y - ship.y) < 48).length;
-      if (near < 7) for (let k = 0; k < 10; k++) {
-        const a = rand() * TAU, r = 20 + rand() * 14, x = ship.x + Math.cos(a) * r, y = ship.y + Math.sin(a) * r;
-        if (!isSea(x, y) || distAt(x, y) < 3 || nearDock(x, y, 18)) continue;
-        const L = levelAt(x, y); let t = pickType(zoneAt(x, y)); if (t === "pirata" && L < 8) t = "tubarao";
-        const n = SEA_MOBS[t].pack || 1; for (let j = 0; j < n; j++) { const m = spawnMob(t, x + (j ? (rand() - 0.5) * 2.5 : 0), y + (j ? (rand() - 0.5) * 2.5 : 0), L); m.orbit += j * TAU / n; m.cd += j * 0.8; }
-        break;
-      }
       for (const Lr of lairs) if (!Lr.mob && Date.now() >= Lr.respawnAt && Math.hypot(Lr.x - ship.x, Lr.y - ship.y) < 45) {
         const G = api.G(), Bm = G.BIOMES[Lr.zone - 1]; Lr.mob = spawnMob("polvo", Lr.x, Lr.y, Bm.lv[1], Lr);
       }
@@ -355,7 +369,7 @@ window.ValdoraSea = (() => {
       api.fx.addFloat(m.x, m.y - 1, `+${xp} xp`, "#8fd3ff", 1.1, 12); api.fx.burst(m.x, m.y, ["#e8f6ff", "#8fc1ee", "#ffffff"], 22, 3.4); SND.play(d.boss ? "rare" : "splash");
       const items = []; for (const [n, ch, a, b] of d.drops || []) if (rand() < ch) items.push([n, a ? a + Math.floor(rand() * ((b || a) - a + 1)) : 1]);
       crates.push({ x: m.x, y: m.y, coins: Math.round(m.L * (1.5 + rand() * 1.5) * (d.coins || 1)), items, t: 0, big: !!d.boss });
-      p.stats.seaKills = (p.stats.seaKills || 0) + 1; api.emit("seakill:" + m.type);
+      p.stats.seaKills = (p.stats.seaKills || 0) + 1; api.emit("seakill:" + m.type); m.respawnAt = Date.now() + RESPAWN_MS; // rodada 165: volta em 3 minutos
       if (d.boss) { if (m.lair) { m.lair.respawnAt = Date.now() + 15 * 60 * 1000; m.lair.mob = null; } api.toast(`${d.name} derrotado!`, "O baú dele ficou boiando. Passe por cima para pegar.", "#c47aff"); warns.length = 0; }
       api.log(`${d.name} (nv ${m.L}) afundou. +${xp} xp de ${SKILLS.navegacao}.`, "gold");
     }
@@ -535,9 +549,10 @@ window.ValdoraSea = (() => {
       for (const s of spots) if (s.gone > 0) s.gone -= dt;
       if (ship) sail(dt);
       if (fish) updateFish(dt);
-      if (ship || mobs.length) {
-        if ((spawnT -= dt) <= 0) { spawnT = 1.5; populate(); }
-        for (const m of mobs) if (!ship || Math.hypot(m.x - ship.x, m.y - ship.y) < 60) updateMob(m, dt);
+      if (mobs.length) {
+        if ((spawnT -= dt) <= 0) { spawnT = 1; populate(); }
+        const cx = ship ? ship.x : p.px + 0.5, cy = ship ? ship.y : p.py + 1;
+        for (const m of mobs) if (m.dead ? m.deadT < 1.5 : Math.abs(m.x - cx) < 60 && Math.abs(m.y - cy) < 60) updateMob(m, dt);
         updateBalls(dt);
       }
       if (!ship && !p.sailing) { balls.length = 0; warns.length = 0; }
@@ -823,7 +838,7 @@ window.ValdoraSea = (() => {
     function ents(list, x0, y0, x1, y1) {
       if (!ready) return; const p = P(), inView = (x, y, m = 4) => x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m;
       if (ship) list.push({ y: ship.y + 0.05, sea: "ship" });
-      for (const m of mobs) if (inView(m.x, m.y)) list.push({ y: m.y + (m.d.boss ? -0.5 : 0), sea: "mob", ref: m });
+      for (const m of mobs) if (!(m.dead && m.deadT >= 1.5) && inView(m.x, m.y)) list.push({ y: m.y + (m.d.boss ? -0.5 : 0), sea: "mob", ref: m });
       for (const M of moored) if (inView(M.x, M.y) && !(p.sailing && p.boat.dock === M.D.key)) list.push({ y: M.y, sea: "moored", ref: M }); // o barco saiu deste cais: a vaga fica vazia
       const an = !p.sailing && p.boat.anchor; if (an && inView(an.x, an.y)) list.push({ y: an.y, sea: "anchor", ref: an });
     }
@@ -1005,7 +1020,7 @@ window.ValdoraSea = (() => {
       return false;
     }
     return { init, update, ents, drawEnt, drawUnder, drawOver, pick, describe, click, steerTo, fAction, key, hud, saveData, landPos, resume, leave, dwarfHtml, harborHtml, dlgAct, isFish, fishPrice,
-      sailing: () => !!ship, ship: () => ship, fishing: () => fish, spots: () => spots, mobs: () => mobs, moored: () => moored, lairs: () => lairs, isSea, levelAt, zoneAt, embarkDock, embarkAt, disembark, fire, fishStart, fishAct, spawnMob, tip, wind };
+      sailing: () => !!ship, ship: () => ship, fishing: () => fish, spots: () => spots, mobs: () => mobs, homes: () => homes, moored: () => moored, lairs: () => lairs, isSea, levelAt, zoneAt, embarkDock, embarkAt, disembark, fire, fishStart, fishAct, spawnMob, tip, wind };
   }
   return { create };
 })();

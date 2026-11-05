@@ -907,6 +907,7 @@
     r.push(sp.every((a, i) => sp.every((o, j) => i === j || Math.abs(a.cx - o.cx) >= 34 || Math.abs(a.cy - o.cy) >= 34))); // nenhuma colada na outra
     r.push(sp.every((s) => { for (let y = s.cy - s.r; y <= s.cy + s.r; y++) for (let x = s.cx - s.r; x <= s.cx + s.r; x++) if (map[y][x] !== "water") return false; return true; }));
     r.push(sp.every((s) => s.charges === 30 && s.max === 30));
+    r.push(S.homes().every((h) => sp.every((s) => Math.hypot(s.x - h.x, s.y - h.y) >= 26)), S.mobs().every((m) => m.home && m.d)); // rodada 165: nenhum monstro colado numa área de pesca
     const M = Object.values(VD.SEA_MOBS).filter((d) => d.w > 0);
     r.push(M.every((d) => Array.isArray(d.zones) && d.skill), [1, 2, 3, 4, 5].every((z) => M.filter((d) => d.zones.includes(z)).length >= 5));
     r.push(new Set(M.map((d) => d.kind)).size >= 11);

@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.48", "Monstros do mar por todo o oceano", ["Os monstros do mar agora moram espalhados pelo oceano inteiro (sem trechos vazios), em vez de nascer em volta do barco: perto da saída dos cais não se acumulam mais",
+      "Nenhum monstro mora perto das áreas de pesca: dá para pescar sem ser atrapalhado (a não ser que você traga algum atrás do barco)",
+      "Monstro do mar derrotado volta 3 minutos depois, no lugar onde mora"]],
     ["v1.47", "Pesca espalhada pelo oceano", ["As áreas de pesca do mar agora aparecem com a mesma chance em qualquer parte do oceano, bem separadas umas das outras (antes ficavam amontoadas perto dos cais e das ilhas)",
       "Cada área tem 30 peixes; pescados os 30, ela some e renasce num ponto sorteado do oceano inteiro",
       "As áreas de pesca aparecem no minimapa com o anzol",
