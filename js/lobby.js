@@ -20,6 +20,11 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.49", "Mais vida no mar e a bolsa do naufrágio", ["20% mais monstros espalhados pelo oceano",
+      "O nível dos monstros do mar segue a costa mais perto: perto dos biomas difíceis, do fundo de cada bioma e das ilhas distantes eles são mais fortes; cada um ainda varia um pouco para cima ou para baixo",
+      "7 espécies novas, cada uma com a sua skill: cardume de peixes-voadores que saltam no barco, gaivota-de-tempestade que mergulha, marinheiro afogado com arpão que puxa o barco, sereia que encanta e leva o barco até ela, caranguejo-de-ferro com garrada e defesa, golem-de-coral que atira pedras e orcas-espectrais que saltam por baixo do barco",
+      "Agora cada mar tem de 7 a 13 espécies diferentes",
+      "Naufrágio: metade dos seus peixes fica numa bolsa boiando no lugar por 30 minutos; quem passar de barco por cima pega"]],
     ["v1.48", "Monstros do mar por todo o oceano", ["Os monstros do mar agora moram espalhados pelo oceano inteiro (sem trechos vazios), em vez de nascer em volta do barco: perto da saída dos cais não se acumulam mais",
       "Nenhum monstro mora perto das áreas de pesca: dá para pescar sem ser atrapalhado (a não ser que você traga algum atrás do barco)",
       "Monstro do mar derrotado volta 3 minutos depois, no lugar onde mora"]],

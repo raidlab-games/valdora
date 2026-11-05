@@ -18,7 +18,9 @@ window.ValdoraBoat = (() => {
     const journal = {};
     if (b.journal && typeof b.journal === "object") for (const [n, j] of Object.entries(b.journal)) if (VD.ITEMS[n] && j) journal[n] = { n: Math.max(0, j.n | 0), kg: Math.max(0, num(j.kg, 0)) };
     return { owned, hull: owned.includes(b.hull) ? b.hull : owned[0] || null, parts, hp: b.hp == null ? null : Math.max(0, num(b.hp, 0)),
-      anchor: pos(b.anchor), sea: pos(b.sea), dock: typeof b.dock === "string" ? b.dock : null, journal, bait: VD.BAITS[b.bait] ? b.bait : null };
+      anchor: pos(b.anchor), sea: pos(b.sea), dock: typeof b.dock === "string" ? b.dock : null, journal, bait: VD.BAITS[b.bait] ? b.bait : null,
+      wrecks: (Array.isArray(b.wrecks) ? b.wrecks : []).filter((w) => w && Number.isFinite(w.x) && Number.isFinite(w.y) && w.until > Date.now() && Array.isArray(w.items))
+        .map((w) => ({ x: +w.x, y: +w.y, until: +w.until, items: w.items.filter((it) => Array.isArray(it) && VD.ITEMS[it[0]] && it[1] > 0).map(([n, q]) => [n, q | 0]) })).filter((w) => w.items.length) }; // rodada 166: bolsas do naufrágio
   }
   // atributos do barco em uso (casco + melhorias)
   function stats(b) {

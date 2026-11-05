@@ -252,7 +252,7 @@ ASSETS.npc_stable = "assets/flow/npc_stable.png"; ASSETS.npc_stable_sheet = "ass
 ASSETS.npc_dwarf = "assets/flow/npc_dwarf.png"; ASSETS.npc_dwarf_sheet = "assets/flow/npc_dwarf_sheet.png"; // rodada 162: Gaspar, o anão pescador do cais
 // rodada 162: ícones do mar (tools/b3d/sea_icons.py): peixes, assados, iscas e espólios
 for (const k of ["sardinha", "robalo", "dourado", "cavala", "moreia", "lanterna", "arenque", "bacalhau", "esturjao", "papagaio", "garoupa", "espada", "peixe_gelo", "halibute", "atum", "rei_mares",
-  "sardinha_assado", "cavala_assado", "arenque_assado", "papagaio_assado", "peixe_gelo_assado", "isca_minhoca", "isca_camarao", "isca_lula", "barbatana", "escama", "tinta", "perola", "espinho", "casco", "chifre"]) ASSETS["item_" + k] = `assets/flow/sea/item_${k}.png`;
+  "sardinha_assado", "cavala_assado", "arenque_assado", "papagaio_assado", "peixe_gelo_assado", "isca_minhoca", "isca_camarao", "isca_lula", "barbatana", "escama", "tinta", "perola", "espinho", "casco", "chifre", "coral", "concha"]) ASSETS["item_" + k] = `assets/flow/sea/item_${k}.png`;
 for (const s of ["s", "n", "e", "w"]) { ASSETS["pier_" + s] = `assets/flow/pier_${s}.png`; SPRITE_SIZE["pier_" + s] = s === "s" || s === "n" ? [2, 6] : [6, 2]; }
 window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 }, craft_desk: { ax: 0.3659, ay: 0.7643, nx: 0, ny: 0 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";

@@ -16,7 +16,7 @@ window.ValdoraSea = (() => {
     const rand = () => api.rand(), clamp = (v, a, b) => Math.max(a, Math.min(b, v)), TAU = Math.PI * 2;
     const BASE_SPEED = 4.6, BALL_V = 14, RANGE = 7.5, ELEV_Y = 0.56;
     const LEASH_HOME = 16.5 * 5, LEASH_SHIP = 21 * 5; // rodada 164: 5x a distância em que os monstros de terra desistem // velocidade do bote (tiles/s), bala, alcance; encurtamento vertical da vista
-    let W = 0, H = 0, dist = null, ocean = null, zone = null;
+    let W = 0, H = 0, dist = null, ocean = null, zone = null, src = null; // src: o tile de terra mais perto de cada tile de mar
     let ship = null, fish = null, autopilot = null, ready = false;
     const mobs = [], balls = [], crates = [], rings = [], warns = [], wake = [];
     let spots = [], lairs = [], moored = [], spawnT = 0, cdMsgT = 0, hudT = 0;
@@ -32,15 +32,15 @@ window.ValdoraSea = (() => {
     // ---------------- mapa do mar: distância até a terra, oceano (água ligada à borda) e o mar de cada bioma ----------------
     function init() {
       const map = api.map(), G = api.G(); W = api.W(); H = api.H(); const n = W * H;
-      dist = new Uint16Array(n).fill(65535); zone = new Uint8Array(n); ocean = new Uint8Array(n);
+      dist = new Uint16Array(n).fill(65535); zone = new Uint8Array(n); ocean = new Uint8Array(n); src = new Int32Array(n).fill(-1);
       const q = new Int32Array(n); let qh = 0, qt = 0;
-      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] !== "water") { const i = y * W + x; dist[i] = 0; zone[i] = G.biomeAt(x, y) || 1; q[qt++] = i; }
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] !== "water") { const i = y * W + x; dist[i] = 0; zone[i] = G.biomeAt(x, y) || 1; src[i] = i; q[qt++] = i; }
       while (qh < qt) {
         const i = q[qh++], x = i % W, y = (i / W) | 0, d = dist[i] + 1;
-        if (x > 0 && dist[i - 1] > d) { dist[i - 1] = d; zone[i - 1] = zone[i]; q[qt++] = i - 1; }
-        if (x < W - 1 && dist[i + 1] > d) { dist[i + 1] = d; zone[i + 1] = zone[i]; q[qt++] = i + 1; }
-        if (y > 0 && dist[i - W] > d) { dist[i - W] = d; zone[i - W] = zone[i]; q[qt++] = i - W; }
-        if (y < H - 1 && dist[i + W] > d) { dist[i + W] = d; zone[i + W] = zone[i]; q[qt++] = i + W; }
+        if (x > 0 && dist[i - 1] > d) { dist[i - 1] = d; zone[i - 1] = zone[i]; src[i - 1] = src[i]; q[qt++] = i - 1; }
+        if (x < W - 1 && dist[i + 1] > d) { dist[i + 1] = d; zone[i + 1] = zone[i]; src[i + 1] = src[i]; q[qt++] = i + 1; }
+        if (y > 0 && dist[i - W] > d) { dist[i - W] = d; zone[i - W] = zone[i]; src[i - W] = src[i]; q[qt++] = i - W; }
+        if (y < H - 1 && dist[i + W] > d) { dist[i + W] = d; zone[i + W] = zone[i]; src[i + W] = src[i]; q[qt++] = i + W; }
       }
       qh = qt = 0; // oceano: a água que encosta na borda do mapa e tudo o que se liga a ela
       const push = (i) => { if (!ocean[i] && dist[i] > 0) { ocean[i] = 1; q[qt++] = i; } };
@@ -79,7 +79,7 @@ window.ValdoraSea = (() => {
         const i = seaTiles[Math.floor(rand() * seaTiles.length)], x = i % W + 0.5, y = ((i / W) | 0) + 0.5;
         if (dist[i] < 4 || nearDock(x, y, DOCK_FREE) || spots.some((sp) => Math.hypot(sp.x - x, sp.y - y) < SAFE_SPOT) || lairs.some((L) => Math.hypot(L.x - x, L.y - y) < 20)) continue;
         if (homes.some((h) => Math.abs(h.x - x) < HOME_GAP && Math.abs(h.y - y) < HOME_GAP && Math.hypot(h.x - x, h.y - y) < HOME_GAP)) continue;
-        const L = levelAt(x, y); let t = pickType(zoneAt(x, y)); if (t === "pirata" && L < 8) t = "tubarao";
+        const Bz = api.G().BIOMES[zoneAt(x, y) - 1] || api.G().BIOMES[0], L = Math.max(1, Math.min(Math.round(Bz.lv[1] * 1.1), Math.round(levelAt(x, y) * (0.9 + rand() * 0.2)))); let t = pickType(zoneAt(x, y)); if (t === "pirata" && L < 8) t = "tubarao"; // nível com variação de 10% para cada lado
         const H0 = { x, y, type: t, L }; homes.push(H0);
         const nP = SEA_MOBS[t].pack || 1; for (let j = 0; j < nP; j++) { const m = spawnMob(t, x + (j ? (rand() - 0.5) * 2.5 : 0), y + (j ? (rand() - 0.5) * 2.5 : 0), L); m.home = { x, y }; m.orbit += j * TAU / nP; m.cd += j * 0.8; }
       }
@@ -89,7 +89,7 @@ window.ValdoraSea = (() => {
     const SPOT_FISH = 30, SPOT_GAP = 34, SPOT_AREA = 8000; // peixes por área, distância mínima entre áreas, tiles de mar por área
     // monstros: um a cada MOB_AREA tiles de mar, casas a pelo menos HOME_GAP uma da outra, nenhuma a menos de SAFE_SPOT de uma área de
     // pesca (passeando 6 tiles e com aggro de até 12, ninguém chega no barco que pesca) nem a menos de DOCK_FREE de um cais
-    const MOB_AREA = 2400, HOME_GAP = 24, SAFE_SPOT = 26, DOCK_FREE = 32, RESPAWN_MS = 3 * 60 * 1000;
+    const MOB_AREA = 2000, HOME_GAP = 21, SAFE_SPOT = 26, DOCK_FREE = 32, RESPAWN_MS = 3 * 60 * 1000;
     let seaTiles = [], homes = [];
     function areaFree(cx, cy, r) { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const j = idx(x, y); if (j < 0 || !ocean[j] || dist[j] < 2) return false; } return true; }
     function placeSpot(s0) { // um ponto sorteado do oceano inteiro (mesma chance em qualquer lugar)
@@ -108,7 +108,14 @@ window.ValdoraSea = (() => {
     const distAt = (x, y) => { const i = idx(x, y); return i < 0 ? 0 : dist[i]; };
     const zoneAt = (x, y) => { const i = idx(x, y); return (i >= 0 && zone[i]) || 1; };
     // nível do mar: perto da costa, o começo da faixa do bioma; cresce devagar até uns 48 tiles da terra
-    function levelAt(x, y) { const G = api.G(), Bm = G.BIOMES[zoneAt(x, y) - 1] || G.BIOMES[0], k = clamp((distAt(x, y) - 3) / 45, 0, 1); return Math.max(1, Math.round(Bm.lv[0] + (Bm.lv[1] - Bm.lv[0]) * Math.pow(k, 1.5) * 0.9)); }
+    // rodada 166: o nível segue a dificuldade da terra mais perto (o fundo de um bioma e as ilhas distantes são mais fortes) e cresce
+    // um pouco longe da costa, até passar 8% do máximo do bioma em mar aberto
+    function levelAt(x, y) {
+      const G = api.G(), Bm = G.BIOMES[zoneAt(x, y) - 1] || G.BIOMES[0], i = idx(x, y), s0 = i >= 0 && src ? src[i] : -1;
+      const dep = s0 >= 0 && G.depthAt ? G.depthAt(s0 % W, (s0 / W) | 0) : 0.5, land = Bm.lv[0] + (Bm.lv[1] - Bm.lv[0]) * dep;
+      const k = clamp((distAt(x, y) - 3) / 70, 0, 1), top = Bm.lv[1] * 1.08;
+      return Math.max(1, Math.round(land + (top - land) * Math.pow(k, 1.4) * 0.75));
+    }
     function nearDock(x, y, r) { return (api.G().DOCKS || []).some((D) => Math.hypot(D.x - x, D.y - y) < r); }
     function tip(D) { // centro da ponta do píer (coordenadas contínuas)
       const px = D.dy ? 1 : 0, py = D.dx ? 1 : 0;
@@ -164,14 +171,44 @@ window.ValdoraSea = (() => {
     function dockOfTile(x, y) { return (api.G().DOCKS || []).find((D) => Math.max(Math.abs(D.x - x), Math.abs(D.y - y)) <= D.len + 2) || null; }
     function nearestDock(x, y) { let best = null, bd = 1e9; for (const D of api.G().DOCKS || []) { const d = Math.hypot(D.x - x, D.y - y); if (d < bd) { bd = d; best = D; } } return best; }
     // naufrágio: o herói é resgatado no cais de onde zarpou (ou no mais perto) e o casco volta com 25% da vida
+    // rodada 166: no naufrágio, metade dos peixes (de cada pilha; pilha de 1, 50% de chance) fica numa bolsa boiando no lugar por
+    // 30 minutos; quem passar de barco por cima pega (o que couber na mochila; o resto continua na bolsa)
+    const WRECK_LIFE = 30 * 60 * 1000;
+    function dropFish(x, y) {
+      const p = P(), items = [];
+      for (const st of [...p.inv]) { if (!st || !isFish(st.name)) continue; const q = Math.floor(st.n / 2) + (st.n % 2 && rand() < 0.5 ? 1 : 0); if (q > 0) { api.removeItem(st.name, q); items.push([st.name, q]); } }
+      if (!items.length) return 0;
+      (p.boat.wrecks = p.boat.wrecks || []).push({ x, y, items, until: Date.now() + WRECK_LIFE }); return items.reduce((a, [, q]) => a + q, 0);
+    }
+    function takeWreck(w) {
+      const left = [], got = [];
+      for (const [n, q] of w.items) { if (api.canAdd(n, q)) { api.addItem(n, q); got.push(`${q} ${n.toLowerCase()}`); } else left.push([n, q]); }
+      if (got.length) { SND.play("pickup"); api.fx.addFloat(w.x, w.y - 0.8, "Peixes recuperados!", "#8fd8ff", 1.4, 13); api.log(`Bolsa do naufrágio: ${got.join(", ")}.`, "gold"); api.hud(); }
+      if (left.length) { w.items = left; if (!w.full) { w.full = 1; api.log("Mochila cheia: o resto dos peixes continua na bolsa.", "warn"); } return false; }
+      return true;
+    }
+    function drawWrecks(t) {
+      const ctx = api.ctx(), p = P(), img = api.SPR.death_bag;
+      for (const w of p.boat.wrecks || []) {
+        const x = X(w.x), y = Y(w.y) + Math.sin(t * 2 + w.x) * 2, pulse = 0.5 + 0.5 * Math.sin(t * 3 + w.y);
+        if (x < -60 || y < -60 || x > api.VW() + 60 || y > api.VH() + 60) continue;
+        ctx.fillStyle = `rgba(140,220,255,${0.18 + pulse * 0.18})`; ctx.beginPath(); ctx.ellipse(x, y + 4, 22, 8, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = "rgba(240,250,255,0.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 4, 26, 9, 0, 0, Math.PI); ctx.stroke();
+        if (img) ctx.drawImage(img, Math.round(x - img.width / 2), Math.round(y - img.height + 4));
+        else { ctx.fillStyle = "#8a6a3a"; ctx.strokeStyle = "#2a1a10"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y - 8, 12, 12, 0, 0, TAU); ctx.fill(); ctx.stroke(); }
+        const ic = w.items[0] && api.SPR[ITEMS[w.items[0][0]].icon]; if (ic) ctx.drawImage(ic, Math.round(x - 12), Math.round(y - 52), 24, 24);
+        api.tag("Peixes do naufrágio", w.x, w.y - 1.25, "#8fd8ff", true);
+      }
+    }
     function sink() {
       const p = P(), s = ship.s; fishStop(true);
+      const lost = dropFish(ship.x, ship.y);
       api.fx.burst(ship.x, ship.y, ["#8a5a2a", "#c9955a", "#e8f6ff"], 30, 4); SND.play("slam"); api.shake(0.35);
       const D = (api.G().DOCKS || []).find((d) => d.key === p.boat.dock) || nearestDock(ship.x, ship.y);
       p.boat.hp = Math.round(s.maxHp * 0.25); p.boat.anchor = null; if (D) p.boat.dock = D.key;
       ship = null; autopilot = null; p.sailing = false; balls.length = 0; warns.length = 0; for (const m of mobs) m.aggro = false;
       if (D) { const T = tip(D); api.placeHero(T.tx, T.ty); }
-      api.toast("Naufrágio!", `O ${s.name} afundou. Pescadores trouxeram você ao cais; o casco voltou com 25% da vida (o mestre do cais conserta).`, "#ff8a6a");
+      api.toast("Naufrágio!", `O ${s.name} afundou. Pescadores trouxeram você ao cais; o casco voltou com 25% da vida (o mestre do cais conserta).${lost ? ` ${lost} peixes ficaram boiando numa bolsa no lugar do naufrágio.` : ""}`, "#ff8a6a");
       api.log("Seu barco afundou! O mestre do cais conserta o casco por algumas moedas.", "warn"); api.hud(); api.save();
     }
     // ---------------- o herói no convés ----------------
@@ -229,7 +266,7 @@ window.ValdoraSea = (() => {
         if (m.lair) { m.lair.mob = null; mobs.splice(i, 1); continue; }
         if (now >= m.respawnAt && !(ship && Math.hypot(ship.x - m.home.x, ship.y - m.home.y) < 14)) { // renasce na casa (nunca na cara do barco)
           Object.assign(m, { dead: false, deadT: 0, hp: m.max, x: m.home.x + (rand() - 0.5) * 2, y: m.home.y + (rand() - 0.5) * 2, aggro: false, returning: false, hidden: false, v: 0, cd: 2 + rand() * 2,
-            lunge: 0, puffT: 0, grabT: 0, dashT: 0, aim: 0, zapT: 0, charge: 0, flee: 0, wander: null }); } }
+            lunge: 0, puffT: 0, grabT: 0, dashT: 0, aim: 0, zapT: 0, charge: 0, flee: 0, jumpT: 0, diveT: 0, singT: 0, clawT: 0, breachT: 0, z: 0, wander: null }); } }
       if (!ship) return;
       for (const Lr of lairs) if (!Lr.mob && Date.now() >= Lr.respawnAt && Math.hypot(Lr.x - ship.x, Lr.y - ship.y) < 45) {
         const G = api.G(), Bm = G.BIOMES[Lr.zone - 1]; Lr.mob = spawnMob("polvo", Lr.x, Lr.y, Bm.lv[1], Lr);
@@ -252,7 +289,8 @@ window.ValdoraSea = (() => {
       if (ship && !m.aggro && !m.returning && sd < d.aggro) { m.aggro = true; if (d.boss) api.toast(d.name, "Saiu das profundezas! Fuja dos círculos na água.", "#c47aff"); }
       const fromHome = Math.hypot(m.x - m.home.x, m.y - m.home.y);
       if (m.aggro && !d.boss && (!ship || sd > LEASH_SHIP || fromHome > LEASH_HOME)) { // desiste e volta nadando para onde nasceu
-        m.aggro = false; m.returning = true; m.lunge = m.puffT = m.grabT = m.dashT = m.aim = m.zapT = 0; m.hidden = false; if (ship && ship.heldT) ship.heldT = 0; m.wander = null;
+        m.aggro = false; m.returning = true; m.lunge = m.puffT = m.grabT = m.dashT = m.aim = m.zapT = m.jumpT = m.diveT = m.singT = m.clawT = m.breachT = m.z = 0; m.hidden = false; m.cd = 2;
+        if (ship && ship.heldT) ship.heldT = 0; if (ship && ship.charmBy === m) ship.charmT = 0; m.wander = null;
         if (sd < 30) api.log(`${d.name} desistiu de seguir o barco.`, "dim"); }
       if (m.aggro && d.boss && (!ship || sd > d.aggro * 3)) m.aggro = false;
       m.cd -= dt;
@@ -346,6 +384,46 @@ window.ValdoraSea = (() => {
           steer(m, want > 0 ? ship.x : want < 0 ? m.x * 2 - ship.x : ship.x + Math.cos(m.orbit) * 6, want > 0 ? ship.y : want < 0 ? m.y * 2 - ship.y : ship.y + Math.sin(m.orbit) * 5, d.speed, 2, dt);
           if (m.cd <= 0 && sd < 8.5) { m.zapT = 1.0; m.a = Math.atan2(ship.y + Math.sin(ship.a) * ship.v - m.y, ship.x + Math.cos(ship.a) * ship.v - m.x);
             lines.push({ m, t: 1.0, life: 1.0, len: 9, w: 0.7, c: "#8fe0ff", fixed: true }); SND.play("warn"); } }
+      } else if (d.kind === "leap") { // peixe-voador: salta por cima do barco (a sombra marca onde cai)
+        if (m.jumpT > 0) { m.jumpT -= dt; const k = 1 - m.jumpT / 0.8; m.x = m.jx0 + (m.jx1 - m.jx0) * k; m.y = m.jy0 + (m.jy1 - m.jy0) * k; m.z = Math.sin(Math.PI * k) * 1.4;
+          if (m.jumpT <= 0) { m.z = 0; api.fx.burst(m.x, m.y, ["#e8f6ff", "#8fc1ee"], 8, 2); SND.play("splash"); if (ship && Math.hypot(ship.x - m.x, ship.y - m.y) < R + 0.5) hurt(dmg, m); m.cd = 3 + rand() * 1.5; } }
+        else { m.orbit += dt * 1.0; const r = 4.5; steer(m, ship.x + Math.cos(m.orbit) * r, ship.y + Math.sin(m.orbit) * r * 0.8, d.speed * 0.8, 3, dt);
+          if (m.cd <= 0 && sd < 7) { const tx = ship.x + Math.cos(ship.a) * ship.v * 0.8, ty = ship.y + Math.sin(ship.a) * ship.v * 0.8; Object.assign(m, { jumpT: 0.8, jx0: m.x, jy0: m.y, jx1: tx, jy1: ty, a: Math.atan2(ty - m.y, tx - m.x) });
+            warns.push({ x: tx, y: ty, t: 0.8, life: 0.8, r: 0.7, dmg: 0, m, kind: "shadow" }); m.cd = 99; } }
+      } else if (d.kind === "dive") { // gaivota: voa em círculos e mergulha no barco
+        if (m.diveT > 0) { m.diveT -= dt; steer(m, m.dx0, m.dy0, d.speed * 3, 6, dt);
+          if (m.diveT <= 0) { if (ship && Math.hypot(ship.x - m.dx0, ship.y - m.dy0) < R + 0.8) hurt(dmg, m); api.fx.burst(m.dx0, m.dy0, ["#ffffff", "#bfe8ff"], 8, 2); m.cd = 3.2 + rand(); m.orbit += Math.PI; } }
+        else { m.orbit += dt * 0.9; steer(m, ship.x + Math.cos(m.orbit) * 4.5, ship.y + Math.sin(m.orbit) * 3.6, d.speed, 3, dt);
+          if (m.cd <= 0 && sd < 9) { m.diveT = 0.9; m.dx0 = ship.x + Math.cos(ship.a) * ship.v * 0.9; m.dy0 = ship.y + Math.sin(ship.a) * ship.v * 0.9; warns.push({ x: m.dx0, y: m.dy0, t: 0.9, life: 0.9, r: 1.1, dmg: 0, m, kind: "dive" }); SND.play("whoosh"); } }
+      } else if (d.kind === "harpoon") { // afogado: arpão com corda que puxa o barco
+        const want = sd > 7 ? 1 : sd < 4.5 ? -1 : 0; m.orbit += dt * 0.4;
+        steer(m, want > 0 ? ship.x : want < 0 ? m.x * 2 - ship.x : ship.x + Math.cos(m.orbit) * 6, want > 0 ? ship.y : want < 0 ? m.y * 2 - ship.y : ship.y + Math.sin(m.orbit) * 5, d.speed, 2, dt);
+        m.throwT = Math.max(0, (m.throwT || 0) - dt);
+        if (m.cd <= 0 && sd < 9) { m.cd = 4; m.throwT = 0.45; mobBall(m, ship.x, ship.y, 9, dmg, "harpoon"); balls[balls.length - 1].src = m; SND.play("whoosh"); }
+      } else if (d.kind === "charm") { // sereia: canta; quem ficar perto fica encantado e navega até ela
+        if (m.singT > 0) { m.singT -= dt; if (m.singT <= 0) { m.cd = 6; if (ship && Math.hypot(ship.x - m.x, ship.y - m.y) < 8) { ship.charmT = 2.6; ship.charmBy = m; hurt(Math.round(dmg * 0.5), m); api.log("A canção da sereia encantou a tripulação: o barco vai até ela!", "warn"); } } }
+        else { const want = sd > 8 ? 1 : sd < 5 ? -1 : 0; m.orbit += dt * 0.5;
+          steer(m, want > 0 ? ship.x : want < 0 ? m.x * 2 - ship.x : ship.x + Math.cos(m.orbit) * 7, want > 0 ? ship.y : want < 0 ? m.y * 2 - ship.y : ship.y + Math.sin(m.orbit) * 6, d.speed, 2, dt);
+          if (m.cd <= 0 && sd < 8) { m.singT = 1.4; warns.push({ x: m.x, y: m.y, t: 1.4, life: 1.4, r: 8, dmg: 0, m, kind: "song" }); SND.play("lute"); } }
+      } else if (d.kind === "claw") { // caranguejo: garrada na frente; depois se fecha atrás das garras
+        m.guardT = Math.max(0, (m.guardT || 0) - dt);
+        if (m.clawT > 0) { m.clawT -= dt; m.v *= 0.8;
+          if (m.clawT <= 0) { m.guardT = 1.6; m.cd = 3.5; SND.play("slam"); api.shake(0.15); const cx = m.x + Math.cos(m.a) * 1.4, cy = m.y + Math.sin(m.a) * 1.4; api.fx.burst(cx, cy, ["#e8f6ff", "#8fc1ee"], 12, 2.6);
+            if (Math.hypot(ship.x - cx, (ship.y - cy) / 0.8) < 1.5 + ship.s.beam * 0.5) hurt(Math.round(dmg * 1.3), m); } }
+        else { steer(m, ship.x, ship.y, sd > 2 ? d.speed : 0.2, 2, dt);
+          if (m.cd <= 0 && sd < 3.2) { m.a = Math.atan2(ship.y - m.y, ship.x - m.x); m.clawT = 0.9; warns.push({ x: m.x + Math.cos(m.a) * 1.4, y: m.y + Math.sin(m.a) * 1.4, t: 0.9, life: 0.9, r: 1.5, dmg: 0, m, kind: "claw" }); SND.play("warn"); } }
+      } else if (d.kind === "boulder") { // golem de coral: atira pedras de coral (o círculo laranja marca onde caem)
+        const want = sd > 9 ? 1 : sd < 6 ? -1 : 0; steer(m, want > 0 ? ship.x : want < 0 ? m.x * 2 - ship.x : m.x, want > 0 ? ship.y : want < 0 ? m.y * 2 - ship.y : m.y, want ? d.speed : 0.2, 1.5, dt);
+        m.throwT = Math.max(0, (m.throwT || 0) - dt);
+        if (m.cd <= 0 && sd < 11) { m.cd = 4.2; m.throwT = 0.6; const tx = ship.x + Math.cos(ship.a) * ship.v * 1.3, ty = ship.y + Math.sin(ship.a) * ship.v * 1.3;
+          warns.push({ x: tx, y: ty, t: 1.4, life: 1.4, r: 1.4, dmg: Math.round(dmg * 1.2), m, kind: "boulder", fx0: m.x, fy0: m.y }); SND.play("slam"); }
+      } else if (d.kind === "breach") { // orcas: mergulham e saltam por baixo do barco
+        if (m.breachT > 0) { m.breachT -= dt; if (m.breachT <= 0.6 && m.hidden) { m.hidden = false; m.x = m.bx0; m.y = m.by0; SND.play("slam"); api.fx.burst(m.x, m.y, ["#ffffff", "#bfe8ff", "#8fc1ee"], 22, 3.6); api.shake(0.2);
+            if (ship && Math.hypot(ship.x - m.x, ship.y - m.y) < R + 1.2) { hurt(Math.round(dmg * 1.4), m); ship.tilt = 1; } } }
+        else if (m.hidden) { steer(m, m.bx0, m.by0, d.speed * 1.6, 5, dt); }
+        else { m.orbit += dt * 0.8; steer(m, ship.x + Math.cos(m.orbit) * 5.5, ship.y + Math.sin(m.orbit) * 4.4, d.speed * 0.8, 2.4, dt);
+          if (m.cd <= 0 && sd < 8) { m.cd = 5 + rand() * 2; m.hidden = true; m.bx0 = ship.x + Math.cos(ship.a) * ship.v * 1.4; m.by0 = ship.y + Math.sin(ship.a) * ship.v * 1.4; m.breachT = 1.6;
+            warns.push({ x: m.bx0, y: m.by0, t: 1.0, life: 1.0, r: 1.6, dmg: 0, m, kind: "breach" }); api.fx.burst(m.x, m.y, ["#2a3a4a", "#8fc1ee"], 8, 1.8); } }
       } else if (d.kind === "boss") { // polvo: tentáculos batem onde o barco vai estar; jato de tinta deixa o barco lento
         const angry = m.hp < m.max * 0.4; m.a += clamp(B.angDiff(Math.atan2(ship.y - m.y, ship.x - m.x), m.a), -0.8 * dt, 0.8 * dt);
         if (m.cd <= 0) {
@@ -376,6 +454,7 @@ window.ValdoraSea = (() => {
     function hitMob(m, dmg, b) {
       if (m.d.kind === "ram" && b && (b.vx * Math.cos(m.a) + b.vy * Math.sin(m.a)) / (Math.hypot(b.vx, b.vy) || 1) < -0.5) { // tiro de frente no casco de ferro
         dmg = Math.max(1, Math.round(dmg * 0.3)); api.fx.addFloat(m.x, m.y - 1.1, "casco!", "#c8c8d0", 0.8, 11); SND.play("clang"); }
+      if (m.d.kind === "claw" && m.guardT > 0) { dmg = Math.max(1, Math.round(dmg * 0.3)); api.fx.addFloat(m.x, m.y - 1.1, "garras!", "#c8c8d0", 0.8, 11); SND.play("clang"); } // rodada 166
       if (m.grabT > 0) m.grabDmg = (m.grabDmg || 0) + dmg;
       m.hp -= dmg; m.flash = 0.15; m.aggro = true;
       api.fx.hitSplat(m.x, m.y - 0.7 - (m.d.boss ? 1 : 0), dmg, "#ffd23a"); api.fx.burst(m.x, m.y - 0.2, ["#e8f6ff", "#8fc1ee"], 6, 2);
@@ -387,7 +466,10 @@ window.ValdoraSea = (() => {
         const b = balls[i]; b.t += dt; b.x += b.vx * dt; b.y += b.vy * dt; let hit = false;
         if (b.fx) { /* espinhos do baiacu: só o efeito (o dano é na explosão) */ }
         else if (b.mine) { for (const m of mobs) if (!m.dead && !m.hidden && Math.hypot(m.x - b.x, (m.y - b.y) / (m.d.boss ? 0.8 : 1)) < m.d.radius + 0.55) { hitMob(m, b.dmg, b); hit = true; break; } }
-        else if (ship && segDist(b.x, b.y) < ship.s.beam + 0.3) { hurt(b.dmg, null); if (b.kind === "ink") { ship.inkT = 4; api.log("Tinta de polvo no casco: o barco ficou lento!", "warn"); } hit = true; }
+        else if (ship && segDist(b.x, b.y) < ship.s.beam + 0.3) { hurt(b.dmg, null); if (b.kind === "ink") { ship.inkT = 4; api.log("Tinta de polvo no casco: o barco ficou lento!", "warn"); }
+          if (b.kind === "harpoon" && b.src && !b.src.dead) { const a = Math.atan2(b.src.y - ship.y, b.src.x - ship.x), nx = ship.x + Math.cos(a) * 1.6, ny = ship.y + Math.sin(a) * 1.6; // rodada 166: o arpão puxa
+            if (hullFree(nx, ny, ship.a, ship.s)) { ship.x = nx; ship.y = ny; } ship.heldT = Math.max(ship.heldT || 0, 0.6); api.log("O arpão do afogado fisgou o casco e puxou o barco!", "warn"); }
+          hit = true; }
         if (hit || b.t >= b.life || (!isSea(b.x, b.y) && distAt(b.x, b.y) === 0)) {
           if (b.fx) { /* nada */ } else if (!hit) { rings.push({ x: b.x, y: b.y, t: 0, life: 0.5, r: 0.7, c: "#e8f6ff", w: 2 }); api.fx.burst(b.x, b.y, ["#e8f6ff", "#8fc1ee"], 5, 1.6); }
           else if (b.kind === "ink") api.fx.burst(b.x, b.y, ["#2a2238", "#4a3a60"], 14, 2.2);
@@ -398,7 +480,9 @@ window.ValdoraSea = (() => {
       for (let i = warns.length - 1; i >= 0; i--) {
         const w = warns[i]; w.t -= dt;
         if (w.t <= 0) { warns.splice(i, 1);
-          if (w.kind === "bubbles") continue;
+          if (w.kind === "bubbles" || w.kind === "shadow" || w.kind === "dive" || w.kind === "song" || w.kind === "claw" || w.kind === "breach") continue; // o dano vem do próprio monstro
+          if (w.kind === "boulder") { rings.push({ x: w.x, y: w.y, t: 0, life: 0.5, r: w.r + 0.3, c: "#ffb070", w: 4 }); api.fx.burst(w.x, w.y, ["#f0a080", "#e8f6ff", "#8a7a70"], 16, 3); SND.play("slam");
+            if (ship && Math.hypot(ship.x - w.x, (ship.y - w.y) / 0.8) < w.r + ship.s.beam * 0.5) hurt(w.dmg, w.m); continue; }
           if (w.kind === "ice") { rings.push({ x: w.x, y: w.y, t: 0, life: 0.5, r: w.r + 0.3, c: "#e8faff", w: 4 }); api.fx.burst(w.x, w.y, ["#ffffff", "#bfefff", "#8fd8ff"], 16, 3.2); SND.play("clang"); icicles.push({ x: w.x, y: w.y, t: 0 });
             if (ship && Math.hypot(ship.x - w.x, (ship.y - w.y) / 0.8) < w.r + ship.s.beam * 0.5) { hurt(w.dmg, w.m); ship.inkT = Math.max(ship.inkT, 2.5); } continue; }
           rings.push({ x: w.x, y: w.y, t: 0, life: 0.6, r: w.r + 0.4, c: "#c47aff", w: 5 }); api.fx.burst(w.x, w.y, ["#e8f6ff", "#8a6ab0", "#ffffff"], 16, 3.2); SND.play("slam");
@@ -410,6 +494,9 @@ window.ValdoraSea = (() => {
       for (let i = icicles.length - 1; i >= 0; i--) if ((icicles[i].t += dt) >= 1.1) icicles.splice(i, 1);
       for (let i = lines.length - 1; i >= 0; i--) if ((lines[i].t -= dt) <= 0 || lines[i].m.dead) lines.splice(i, 1);
       for (let i = bolts.length - 1; i >= 0; i--) if ((bolts[i].t += dt) >= bolts[i].life) bolts.splice(i, 1);
+      { const W0 = P().boat.wrecks || []; for (let i = W0.length - 1; i >= 0; i--) { const w = W0[i];
+          if (Date.now() > w.until) { W0.splice(i, 1); continue; }
+          if (ship && Math.hypot(w.x - ship.x, w.y - ship.y) < hullR() + 0.9) { if (takeWreck(w)) W0.splice(i, 1); } else w.full = 0; } }
       for (let i = crates.length - 1; i >= 0; i--) {
         const c = crates[i]; c.t += dt;
         if (ship && Math.hypot(c.x - ship.x, c.y - ship.y) < hullR() + 0.9) { takeCrate(c); crates.splice(i, 1); continue; }
@@ -560,7 +647,9 @@ window.ValdoraSea = (() => {
     function sail(dt) {
       const p = P(), s = ship.s, kv = api.keyVec();
       let want = null;
-      if (fish && !fish.onFoot) want = null;
+      ship.charmT = Math.max(0, (ship.charmT || 0) - dt); // rodada 166: encantado pela sereia
+      if (ship.charmT > 0 && ship.charmBy && !ship.charmBy.dead) { want = Math.atan2(ship.charmBy.y - ship.y, ship.charmBy.x - ship.x); autopilot = null; }
+      else if (fish && !fish.onFoot) want = null;
       else if (kv) { want = Math.atan2(kv[1], kv[0]); autopilot = null; }
       else if (autopilot) { const dx = autopilot.x - ship.x, dy = autopilot.y - ship.y, d = Math.hypot(dx, dy); if (d < 0.8) autopilot = null; else want = Math.atan2(dy, dx); }
       const turn = s.turn * (0.45 + 0.55 * Math.min(1, Math.abs(ship.v) / 2.5));
@@ -683,7 +772,7 @@ window.ValdoraSea = (() => {
       return SIMG[k].complete && SIMG[k].naturalWidth ? { A, img: SIMG[k] } : null;
     }
     const FOOT = { bite: [1.1, 0.28], pulse: [0.55, 0.55], spit: [1.6, 0.24], boss: [2.1, 1.7], puff: [0.5, 0.45], pack: [0.8, 0.16], blink: [1.4, 0.2], grab: [1.4, 0.45],
-      ram: [0.9, 0.7], zap: [0.9, 0.9], charge: [1.4, 0.3], ice: [1.6, 0.45] };
+      ram: [0.9, 0.7], zap: [0.9, 0.9], charge: [1.4, 0.3], ice: [1.6, 0.45], leap: [0.4, 0.15], dive: [0.5, 0.35], harpoon: [0.45, 0.4], charm: [0.6, 0.35], claw: [0.9, 1.0], boulder: [0.9, 0.8], breach: [1.4, 0.4] };
     function drawSeaSprite(ctx, m, t, al0) {
       let al = al0;
       const G = seaArt(m.d.art); if (!G) return false;
@@ -699,10 +788,16 @@ window.ValdoraSea = (() => {
       else if (d.kind === "grab" && m.grabT > 0) row = 4 + Math.floor(m.t * 5) % 3;
       else if ((d.kind === "ram" || d.kind === "ice" || d.kind === "charge") && (m.dashT > 0 || m.aim > 0)) row = 4 + (m.dashT > 0 ? 2 : Math.min(1, Math.floor(m.t * 4) % 2));
       else if (d.kind === "zap" && m.zapT > 0) row = 4 + Math.min(2, Math.floor((1 - m.zapT) / 0.34));
+      else if (d.kind === "leap" && m.jumpT > 0) row = 4 + Math.min(2, Math.floor((0.8 - m.jumpT) / 0.27));
+      else if (d.kind === "dive" && m.diveT > 0) row = 4 + Math.min(2, Math.floor((0.9 - m.diveT) / 0.3));
+      else if ((d.kind === "harpoon" || d.kind === "boulder") && m.throwT > 0) row = 4 + Math.min(2, Math.floor((0.6 - m.throwT) / 0.2));
+      else if (d.kind === "charm" && m.singT > 0) row = 4 + Math.floor(m.t * 4) % 3;
+      else if (d.kind === "claw" && (m.clawT > 0 || m.guardT > 0)) row = 4 + (m.clawT > 0 ? Math.min(2, Math.floor((0.9 - m.clawT) / 0.3)) : 2);
+      else if (d.kind === "breach" && m.breachT > 0 && !m.hidden) row = 4 + Math.min(2, Math.floor((0.6 - m.breachT) / 0.2));
       const F = FOOT[d.kind] || [0.8, 0.4], sink = m.dead ? Math.min(1, m.deadT / 1.2) : 0;
       if (m.hidden) { al *= 0.22; if (rand() < 0.3) api.fx.burst(m.x + (rand() - 0.5), m.y + (rand() - 0.5) * 0.5, ["#2a1a3a", "#8fc1ee"], 1, 0.6, 0.2); } // mergulhada
       waterShadow(m.x, m.y, m.a, F[0], F[1], 0.22 * al);
-      const sc = TILE / A.pxTile, x = X(m.x), y = Y(m.y) + sink * 14 + Math.sin(m.t * 1.8) * 1.2;
+      const sc = TILE / A.pxTile, x = X(m.x), y = Y(m.y) + sink * 14 + Math.sin(m.t * 1.8) * 1.2 - (m.z || 0) * TILE; // m.z: altura do salto
       ctx.globalAlpha = al; ctx.drawImage(img, k * A.cw, row * A.ch, A.cw, A.ch, Math.round(x - A.ox * sc), Math.round(y - A.oy * sc), Math.round(A.cw * sc), Math.round(A.ch * sc));
       if (d.kind === "pulse" && m.charge > 0) { const ch = 1 - m.charge / 0.9; ctx.strokeStyle = `rgba(190,232,255,${0.3 + ch * 0.6})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y, 2.9 * TILE * ch, 2.9 * TILE * ch * 0.55, 0, 0, TAU); ctx.stroke(); }
       ctx.globalAlpha = 1; return true;
@@ -811,6 +906,15 @@ window.ValdoraSea = (() => {
     function drawBallsAndWarns(t) {
       const ctx = api.ctx();
       for (const w of warns) { const k = 1 - w.t / w.life, x = X(w.x), y = Y(w.y), r = w.r * TILE;
+        if (w.kind === "shadow" || w.kind === "dive" || w.kind === "breach" || w.kind === "claw" || w.kind === "boulder") { // círculo que fecha até a hora do golpe
+          const c = { shadow: "20,40,60", dive: "255,255,255", breach: "120,200,255", claw: "255,90,70", boulder: "255,160,90" }[w.kind];
+          ctx.fillStyle = `rgba(${c},${w.kind === "shadow" ? 0.35 : 0.14 + k * 0.22})`; ctx.beginPath(); ctx.ellipse(x, y, r * (w.kind === "shadow" ? 0.4 + 0.6 * k : 1), r * 0.55 * (w.kind === "shadow" ? 0.4 + 0.6 * k : 1), 0, 0, TAU); ctx.fill();
+          if (w.kind !== "shadow") { ctx.strokeStyle = `rgb(${c})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y, r * k, r * k * 0.55, 0, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.55, 0, 0, TAU); ctx.stroke(); }
+          if (w.kind === "boulder" && w.fx0 != null) { const fx0 = X(w.fx0), fy0 = Y(w.fy0), px = fx0 + (x - fx0) * k, py = fy0 + (y - fy0) * k - Math.sin(Math.PI * k) * TILE * 3.2;
+            ctx.fillStyle = "#e88a6a"; ctx.strokeStyle = "#3a2018"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 9, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#f6c0a0"; ctx.fillRect(px - 4, py - 5, 3, 3); }
+          continue; }
+        if (w.kind === "song") { const rr = r * k; ctx.strokeStyle = `rgba(220,170,255,${0.8 - k * 0.4})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y, rr, rr * 0.55, 0, 0, TAU); ctx.stroke();
+          ctx.fillStyle = "#e8c8ff"; for (let i = 0; i < 4; i++) { const a = t * 1.5 + i * 1.57; ctx.fillText("♪", x + Math.cos(a) * rr * 0.9, y + Math.sin(a) * rr * 0.5); } continue; }
         if (w.kind === "bubbles") { ctx.fillStyle = "#1a102acc"; for (let i = 0; i < 6; i++) { const a = i + t * 3, rr = (0.3 + 0.5 * ((i * 0.37 + t) % 1)) * r; ctx.beginPath(); ctx.arc(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.5, 3 + (i % 3), 0, TAU); ctx.fill(); } continue; }
         if (w.kind === "ice") { ctx.fillStyle = `rgba(220,246,255,${0.15 + k * 0.25})`; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.55, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y, r * k, r * k * 0.55, 0, 0, TAU); ctx.stroke(); ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.55, 0, 0, TAU); ctx.stroke(); continue; }
         ctx.fillStyle = `rgba(150,60,200,${0.15 + k * 0.25})`; ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.55, 0, 0, TAU); ctx.fill();
@@ -829,7 +933,9 @@ window.ValdoraSea = (() => {
       for (const r of rings) { const k = r.t / r.life; ctx.strokeStyle = r.c; ctx.globalAlpha = 1 - k; ctx.lineWidth = r.w; ctx.beginPath(); ctx.ellipse(X(r.x), Y(r.y), r.r * TILE * (0.3 + k * 0.7), r.r * TILE * (0.3 + k * 0.7) * 0.55, 0, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
       for (const b of balls) { const k = b.t / b.life, h = Math.sin(Math.PI * Math.min(1, k)) * b.h * TILE + 6, x = X(b.x), y = Y(b.y);
         ctx.fillStyle = "rgba(10,30,50,0.35)"; ctx.beginPath(); ctx.ellipse(x, y + 6, 5, 2, 0, 0, TAU); ctx.fill();
-        if (b.kind === "spike") { ctx.fillStyle = "#f0dc96"; ctx.strokeStyle = "#5a4020"; ctx.lineWidth = 1; ctx.save(); ctx.translate(x, y - h); ctx.rotate(Math.atan2(b.vy, b.vx)); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -2); ctx.lineTo(-4, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }
+        if (b.kind === "harpoon") { if (b.src) { ctx.strokeStyle = "#c8b080"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(X(b.src.x), Y(b.src.y) - 20); ctx.quadraticCurveTo((X(b.src.x) + x) / 2, (Y(b.src.y) + y) / 2 - h, x, y - h); ctx.stroke(); }
+          ctx.save(); ctx.translate(x, y - h); ctx.rotate(Math.atan2(b.vy, b.vx)); ctx.fillStyle = "#6a4a2a"; ctx.fillRect(-12, -1.5, 14, 3); ctx.fillStyle = "#b0b4bc"; ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(1, -4); ctx.lineTo(1, 4); ctx.closePath(); ctx.fill(); ctx.restore(); }
+        else if (b.kind === "spike") { ctx.fillStyle = "#f0dc96"; ctx.strokeStyle = "#5a4020"; ctx.lineWidth = 1; ctx.save(); ctx.translate(x, y - h); ctx.rotate(Math.atan2(b.vy, b.vx)); ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(-4, -2); ctx.lineTo(-4, 2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }
         else if (b.kind === "spit") { ctx.fillStyle = "#bfe8ff"; ctx.beginPath(); ctx.arc(x, y - h, 6, 0, TAU); ctx.fill(); ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 2, y - h - 3, 3, 3); }
         else if (b.kind === "ink") { ctx.fillStyle = "#2a2238"; ctx.beginPath(); ctx.arc(x, y - h, 9, 0, TAU); ctx.fill(); ctx.fillStyle = "#6a5a8a"; ctx.fillRect(x - 3, y - h - 4, 3, 3); }
         else { ctx.fillStyle = "#1e1c22"; ctx.beginPath(); ctx.arc(x, y - h, 4.5, 0, TAU); ctx.fill(); ctx.fillStyle = "#8a8890"; ctx.fillRect(Math.round(x - 2), Math.round(y - h - 3), 2, 2); } }
@@ -855,7 +961,7 @@ window.ValdoraSea = (() => {
         else drawFallbackBoat(mx, my, M.a, s);
       }
     }
-    function drawUnder(t) { if (!ready) return; drawSpots(t); drawWake(); const ctx = api.ctx(); for (const c of crates) drawCrate(ctx, c, t); }
+    function drawUnder(t) { if (!ready) return; drawSpots(t); drawWake(); const ctx = api.ctx(); for (const c of crates) drawCrate(ctx, c, t); drawWrecks(t); }
     function drawOver(t) { if (!ready) return; drawBallsAndWarns(t); drawGulls(t); }
     // ---------------- interação (clique e F) ----------------
     function pick(fx0, fy0) {
@@ -934,7 +1040,7 @@ window.ValdoraSea = (() => {
       const bar = (k) => { const v = ship[k] / s.reload; return `<i class="gun${v > 0 ? "" : " ok"}" style="--p:${v.toFixed(2)}"></i>`; };
       const html = `<b>${esc(s.name)}</b><span class="hp"><i style="width:${Math.round(100 * ship.hp / s.maxHp)}%"></i><em>${Math.ceil(ship.hp)}/${s.maxHp}</em></span>
         <span class="wind" title="Vento (de onde ele vem, em relação à tela)"><i style="transform:rotate(${(wind.a * 180 / Math.PI).toFixed(0)}deg)">➤</i>${wf > 1 ? "de popa" : wf > 0.8 ? "de través" : "de proa"}</span>
-        <span>${knots} nós${ship.heldT > 0 ? " · <b style='color:#ff8a6a'>preso!</b>" : ""}${ship.stunT > 0 ? " · <b style='color:#8fe0ff'>choque!</b>" : ""}${ship.inkT > 0 ? " · <b style='color:#c47aff'>lento!</b>" : ""}</span><span class="guns">Q ${bar("cdL")} ${bar("cdR")} E</span>`;
+        <span>${knots} nós${ship.charmT > 0 ? " · <b style='color:#e8a8ff'>encantado!</b>" : ""}${ship.heldT > 0 ? " · <b style='color:#ff8a6a'>preso!</b>" : ""}${ship.stunT > 0 ? " · <b style='color:#8fe0ff'>choque!</b>" : ""}${ship.inkT > 0 ? " · <b style='color:#c47aff'>lento!</b>" : ""}</span><span class="guns">Q ${bar("cdL")} ${bar("cdR")} E</span>`;
       if (el.dataset.h !== html) { el.dataset.h = html; el.innerHTML = html; }
     }
     // ---------------- salvar ----------------

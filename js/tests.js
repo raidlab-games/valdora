@@ -909,9 +909,13 @@
     r.push(sp.every((s) => s.charges === 30 && s.max === 30));
     r.push(S.homes().every((h) => sp.every((s) => Math.hypot(s.x - h.x, s.y - h.y) >= 26)), S.mobs().every((m) => m.home && m.d)); // rodada 165: nenhum monstro colado numa área de pesca
     const M = Object.values(VD.SEA_MOBS).filter((d) => d.w > 0);
-    r.push(M.every((d) => Array.isArray(d.zones) && d.skill), [1, 2, 3, 4, 5].every((z) => M.filter((d) => d.zones.includes(z)).length >= 5));
-    r.push(new Set(M.map((d) => d.kind)).size >= 11);
+    r.push(M.every((d) => Array.isArray(d.zones) && d.skill), [1, 2, 3, 4, 5].every((z) => M.filter((d) => d.zones.includes(z)).length >= 7)); // rodada 166: 7+ espécies por mar
+    r.push(new Set(M.map((d) => d.kind)).size >= 18);
     return r.every(Boolean) || "falhou no item " + r.indexOf(false);
+  });
+  test("rodada 166: a bolsa do naufrágio volta do save só com peixes que existem e dentro dos 30 minutos", () => {
+    const now = Date.now(), b = ValdoraBoat.sanitize({ wrecks: [{ x: 10, y: 20, until: now + 60000, items: [["Robalo", 3], ["Nada", 2]] }, { x: 1, y: 1, until: now - 1, items: [["Robalo", 1]] }, { x: 5, y: 5, until: now + 9, items: [["Nada", 1]] }, null] });
+    return (b.wrecks.length === 1 && b.wrecks[0].items.length === 1 && b.wrecks[0].items[0][0] === "Robalo" && b.wrecks[0].items[0][1] === 3) || JSON.stringify(b.wrecks);
   });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];

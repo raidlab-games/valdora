@@ -1725,9 +1725,25 @@ window.VD = (() => {
       skill: "Aponta o bico, marca a linha e atravessa o mar a toda velocidade: saia da frente." },
     narval: { name: "Narval-de-gelo", hp: 2.2, dmg: 1.4, speed: 2.4, radius: 1.1, aggro: 11, xp: 2.0, kind: "ice", art: "sea_narwhal", w: 18, zones: [5], drops: [["Chifre de narval", 0.4]],
       skill: "Investe com o chifre e chama pontas de gelo do fundo em volta do barco (os círculos brancos); o gelo deixa o barco lento." },
+    // rodada 166: mais espécies (mais variedade em cada mar)
+    peixevoador: { name: "Peixe-voador", hp: 0.35, dmg: 0.5, speed: 4.0, radius: 0.45, aggro: 9, xp: 0.45, kind: "leap", art: "sea_flyfish", w: 20, pack: 4, zones: [1, 2, 4], drops: [["Sardinha", 0.3]],
+      skill: "Cardume de quatro: saltam por cima do barco; a sombra na água mostra onde cada um vai cair." },
+    gaivota: { name: "Gaivota-de-tempestade", hp: 0.7, dmg: 0.9, speed: 3.6, radius: 0.6, aggro: 11, xp: 0.9, kind: "dive", art: "sea_gull", w: 18, fly: true, zones: [1, 3, 5], drops: [["Espinho de baiacu", 0.2]],
+      skill: "Voa em círculos e mergulha no barco: o círculo branco na água mostra onde ela vai bater." },
+    afogado: { name: "Marinheiro afogado", hp: 1.4, dmg: 1.1, speed: 1.8, radius: 0.6, aggro: 11, xp: 1.4, kind: "harpoon", art: "sea_drowned", w: 18, zones: [2, 3, 5], drops: [["Barra de ferro", 0.3, 1, 2], ["Pérola", 0.02]],
+      skill: "Atira o arpão com corda: se acertar, puxa o barco para perto dele." },
+    sereia: { name: "Sereia-das-brumas", hp: 1.2, dmg: 0.8, speed: 2.4, radius: 0.6, aggro: 12, xp: 1.6, kind: "charm", art: "sea_siren", w: 14, zones: [2, 4], drops: [["Concha cantante", 0.25]],
+      skill: "Canta (o anel lilás cresce): se o barco ainda estiver perto quando a canção acabar, fica encantado e navega até ela por uns segundos." },
+    caranguejo: { name: "Caranguejo-de-ferro", hp: 2.3, dmg: 1.5, speed: 1.6, radius: 1.0, aggro: 8, xp: 1.7, kind: "claw", art: "sea_ironcrab", w: 16, zones: [3, 4], drops: [["Barra de ferro", 0.5, 1, 3]],
+      skill: "Ergue a garra gigante e bate na frente dele (o círculo vermelho); depois se fecha atrás das garras e leva bem menos dano." },
+    golem: { name: "Golem-de-coral", hp: 2.8, dmg: 1.3, speed: 1.0, radius: 1.1, aggro: 11, xp: 2.0, kind: "boulder", art: "sea_coralgolem", w: 14, zones: [4], drops: [["Coral vermelho", 0.6]],
+      skill: "Arranca pedras de coral e atira longe: saia do círculo laranja antes de a pedra cair." },
+    orca: { name: "Orca-espectral", hp: 1.6, dmg: 1.5, speed: 4.0, radius: 1.0, aggro: 12, xp: 1.9, kind: "breach", art: "sea_orca", w: 16, pack: 2, zones: [3, 5], drops: [["Barbatana de tubarão", 0.6]],
+      skill: "Caçam em dupla: mergulham e saltam por baixo do barco (o círculo azul) com um baque forte." },
     polvo: { name: "Polvo Abissal", boss: true, hp: 16, dmg: 1.5, speed: 0, radius: 2.2, aggro: 13, xp: 14, kind: "boss", art: "sea_octopus", w: 0, coins: 25, drops: [["Tinta de polvo", 1, 2, 4], ["Pérola", 0.7, 1, 2]] } };
   const SEA_LOOT = { "Barbatana de tubarão": { icon: "item_barbatana", price: 30 }, "Geleia de medusa": { icon: "item_gel", price: 22, filter: "hue-rotate(250deg) saturate(1.6)" },
     "Escama de serpente": { icon: "item_escama", price: 45 }, "Tinta de polvo": { icon: "item_tinta", price: 120, rare: true }, "Pérola": { icon: "item_perola", price: 400, rare: true },
+    "Coral vermelho": { icon: "item_coral", price: 90 }, "Concha cantante": { icon: "item_concha", price: 320, rare: true }, // rodada 166
     "Espinho de baiacu": { icon: "item_espinho", price: 26 }, "Casco de tartaruga": { icon: "item_casco", price: 70 }, "Chifre de narval": { icon: "item_chifre", price: 260, rare: true } }; // rodada 163
   for (const f of SEA_FISH) {
     ITEMS[f.item] = { icon: "item_" + f.ico, price: f.price, sea: f.rar, ...(f.rar === "epico" || f.rar === "lendario" ? { rare: true } : {}),
