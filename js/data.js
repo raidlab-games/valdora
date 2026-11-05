@@ -1704,13 +1704,31 @@ window.VD = (() => {
     "Isca de lula brilhante": { icon: "item_isca_lula", buy: 70, price: 15, bite: 0.8, rare: 1.3, epic: 2.6, leg: 5, desc: "atrai os épicos e o Rei-das-marés" } };
   // monstros do mar: multiplicadores sobre a base do nível (vida 30 + 7 por nível, golpe 4 + 0,9 por nível); w = peso no sorteio
   const SEA_MOBS = {
-    tubarao: { name: "Tubarão-de-cicatriz", hp: 1.0, dmg: 1.0, speed: 3.6, radius: 0.75, aggro: 9, xp: 1.0, kind: "bite", art: "sea_shark", w: 36, drops: [["Barbatana de tubarão", 0.55]] },
-    medusa: { name: "Medusa-lanterna", hp: 0.8, dmg: 0.8, speed: 1.2, radius: 0.8, aggro: 6, xp: 0.8, kind: "pulse", art: "sea_jelly", w: 30, drops: [["Geleia de medusa", 0.7]] },
-    serpente: { name: "Serpente das marés", hp: 1.5, dmg: 1.1, speed: 2.8, radius: 0.95, aggro: 11, xp: 1.4, kind: "spit", art: "sea_serpent", w: 22, drops: [["Escama de serpente", 0.6], ["Pérola", 0.03]] },
-    pirata: { name: "Corsário", hp: 2.4, dmg: 1.0, speed: 2.7, radius: 1.3, aggro: 12, xp: 2.0, kind: "ship", art: "chalupa_pirata", w: 12, coins: 3, drops: [["Pérola", 0.06], ["Barra de ferro", 0.4, 1, 3]] },
+    tubarao: { name: "Tubarão-de-cicatriz", hp: 1.0, dmg: 1.0, speed: 3.6, radius: 0.75, aggro: 9, xp: 1.0, kind: "bite", art: "sea_shark", w: 30, zones: [1, 2, 3, 4], drops: [["Barbatana de tubarão", 0.55]], skill: "Rodeia o barco e, no ponto de exclamação, dá o bote com a bocarra aberta." },
+    medusa: { name: "Medusa-lanterna", hp: 0.8, dmg: 0.8, speed: 1.2, radius: 0.8, aggro: 6, xp: 0.8, kind: "pulse", art: "sea_jelly", w: 24, zones: [1, 2, 4], drops: [["Geleia de medusa", 0.7]], skill: "Acende e solta um choque em volta: afaste o barco quando ela brilhar." },
+    serpente: { name: "Serpente das marés", hp: 1.5, dmg: 1.1, speed: 2.8, radius: 0.95, aggro: 11, xp: 1.4, kind: "spit", art: "sea_serpent", w: 20, zones: [2, 3, 4, 5], drops: [["Escama de serpente", 0.6], ["Pérola", 0.03]], skill: "Fica longe e cospe jatos d'água no barco." },
+    pirata: { name: "Corsário", hp: 2.4, dmg: 1.0, speed: 2.7, radius: 1.3, aggro: 12, xp: 2.0, kind: "ship", art: "chalupa_pirata", w: 10, zones: [1, 2, 3, 4, 5], coins: 3, drops: [["Pérola", 0.06], ["Barra de ferro", 0.4, 1, 3]], skill: "Emparelha de lado e dispara o costado: não deixe ele ficar de través." },
+    // rodada 163: espécies novas (cada mar tem as suas; zones = mares onde aparece). pack = quantos nascem juntos
+    baiacu: { name: "Baiacu-de-espinhos", hp: 0.9, dmg: 1.25, speed: 1.6, radius: 0.6, aggro: 7, xp: 1.0, kind: "puff", art: "sea_puffer", w: 26, zones: [1, 2, 4], drops: [["Espinho de baiacu", 0.6]],
+      skill: "Incha até virar uma bola de espinhos e explode em volta: fique longe quando ele começar a crescer." },
+    barracuda: { name: "Barracuda", hp: 0.45, dmg: 0.55, speed: 4.4, radius: 0.55, aggro: 10, xp: 0.5, kind: "pack", art: "sea_barracuda", w: 22, pack: 3, zones: [1, 3, 4], drops: [["Barbatana de tubarão", 0.25]],
+      skill: "Caça em cardume de três: rodeia o barco e dá botes rápidos, uma depois da outra." },
+    enguia: { name: "Enguia-sombria do abismo", hp: 1.1, dmg: 1.2, speed: 3.2, radius: 0.6, aggro: 10, xp: 1.3, kind: "blink", art: "sea_eel", w: 24, zones: [2, 5], drops: [["Escama de serpente", 0.4]],
+      skill: "Mergulha e some (os tiros passam direto), depois surge colada no barco e morde. As bolhas escuras mostram onde ela vai sair." },
+    lula: { name: "Lula-gigante", hp: 1.7, dmg: 0.9, speed: 2.2, radius: 1.0, aggro: 10, xp: 1.6, kind: "grab", art: "sea_squid", w: 18, zones: [2, 3, 5], drops: [["Tinta de polvo", 0.25], ["Pérola", 0.03]],
+      skill: "De longe cospe tinta (o barco fica lento); de perto agarra o casco e não deixa navegar até levar uns tiros." },
+    tartaruga: { name: "Tartaruga-couraçada", hp: 2.6, dmg: 1.4, speed: 1.4, radius: 1.0, aggro: 8, xp: 1.8, kind: "ram", art: "sea_turtle", w: 16, zones: [3, 4], drops: [["Casco de tartaruga", 0.55]],
+      skill: "O casco de ferro segura 70% do tiro que vem de frente: acerte de lado ou por trás. Marca a linha e dá uma investida que empurra o barco." },
+    arraia: { name: "Arraia-trovão", hp: 1.2, dmg: 1.3, speed: 2.6, radius: 0.85, aggro: 11, xp: 1.4, kind: "zap", art: "sea_ray", w: 20, zones: [3, 4, 5], drops: [["Geleia de medusa", 0.3]],
+      skill: "Carrega um raio em linha reta (a linha azul): quem fica nela leva o choque, os canhões travam e o barco anda devagar." },
+    espadarte: { name: "Espadarte furioso", hp: 1.3, dmg: 1.6, speed: 3.4, radius: 0.8, aggro: 12, xp: 1.6, kind: "charge", art: "sea_swordfish", w: 16, zones: [4, 5], drops: [["Barbatana de tubarão", 0.5]],
+      skill: "Aponta o bico, marca a linha e atravessa o mar a toda velocidade: saia da frente." },
+    narval: { name: "Narval-de-gelo", hp: 2.2, dmg: 1.4, speed: 2.4, radius: 1.1, aggro: 11, xp: 2.0, kind: "ice", art: "sea_narwhal", w: 18, zones: [5], drops: [["Chifre de narval", 0.4]],
+      skill: "Investe com o chifre e chama pontas de gelo do fundo em volta do barco (os círculos brancos); o gelo deixa o barco lento." },
     polvo: { name: "Polvo Abissal", boss: true, hp: 16, dmg: 1.5, speed: 0, radius: 2.2, aggro: 13, xp: 14, kind: "boss", art: "sea_octopus", w: 0, coins: 25, drops: [["Tinta de polvo", 1, 2, 4], ["Pérola", 0.7, 1, 2]] } };
   const SEA_LOOT = { "Barbatana de tubarão": { icon: "item_barbatana", price: 30 }, "Geleia de medusa": { icon: "item_gel", price: 22, filter: "hue-rotate(250deg) saturate(1.6)" },
-    "Escama de serpente": { icon: "item_escama", price: 45 }, "Tinta de polvo": { icon: "item_tinta", price: 120, rare: true }, "Pérola": { icon: "item_perola", price: 400, rare: true } };
+    "Escama de serpente": { icon: "item_escama", price: 45 }, "Tinta de polvo": { icon: "item_tinta", price: 120, rare: true }, "Pérola": { icon: "item_perola", price: 400, rare: true },
+    "Espinho de baiacu": { icon: "item_espinho", price: 26 }, "Casco de tartaruga": { icon: "item_casco", price: 70 }, "Chifre de narval": { icon: "item_chifre", price: 260, rare: true } }; // rodada 163
   for (const f of SEA_FISH) {
     ITEMS[f.item] = { icon: "item_" + f.ico, price: f.price, sea: f.rar, ...(f.rar === "epico" || f.rar === "lendario" ? { rare: true } : {}),
       ...(f.cook ? { cook: f.cook, cookLvl: f.cookLvl, cookXp: Math.round(f.xp * 0.9), cookT: Math.max(1, f.zone) } : {}) };

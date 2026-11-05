@@ -20,6 +20,11 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.46", "Áreas de pesca e mais monstros do mar", ["Áreas de pesca como no RavenQuest: um trecho de água marcado pelo anzol (com quantos peixes faltam); lance em qualquer ponto dele",
+      "As áreas do mar só se pescam navegando: perto da costa, áreas de 3 x 3 com poucos peixes; no mar aberto, áreas grandes de 5 x 5 com muito mais peixe. Quando os peixes acabam, outra área aparece por perto",
+      "Navegando, o barco é o personagem: o herói não aparece em cima dele; o nome fica sobre as velas e a linha de pesca sai da borda do barco",
+      "8 espécies novas espalhadas pelos 5 mares, cada uma com a sua skill: baiacu que explode em espinhos, cardume de barracudas, enguia que some e surge colada no barco, lula-gigante que agarra o casco, tartaruga de casco de ferro que aguenta tiro de frente e dá investida, arraia que trava os canhões com um raio, espadarte que atravessa em linha reta e narval que levanta pontas de gelo",
+      "Cada mar tem a sua mistura de monstros; passe o mouse num monstro do mar para ver o que ele faz"]],
     ["v1.45", "Ao mar! Barcos, pesca em alto-mar e o anão pescador", ["Em cada cais, um anão pescador no píer (o de Lumeira é o Gaspar) compra qualquer peixe 50% mais caro que o Bento, vende iscas e guarda o diário de pesca com o recorde de peso de cada espécie",
       "O mestre do cais vende 4 barcos (bote, chalupa, bergantim e galeão), melhora velas, leme, casco e canhões e conserta o casco; a skill nova Navegação sobe navegando e vencendo no mar",
       "Navegar tem inércia e vento (de popa rende mais): WASD ou clique na água; Q e E disparam os canhões de bombordo e estibordo; F atraca no cais ou desce na praia",
