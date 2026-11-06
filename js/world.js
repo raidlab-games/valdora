@@ -257,14 +257,15 @@ window.ValdoraWorld = (() => {
   const DOCK_NAMES = { 1: [["Porto de Lumeira", "Mestre Anselmo"], ["Cais da Ponta Oeste", "Marujo Faustino"]], 2: [["Cais do Breu", "Barqueira Iolanda"], ["Cais da Névoa", "Velho Teodoro"]],
     3: [["Porto da Escarpa", "Contramestre Bruno"], ["Cais do Norte", "Pescadora Rute"]], 4: [["Porto do Sal", "Capitã Yara"], ["Cais das Dunas", "Marujo Kadu"]],
     5: [["Porto do Degelo", "Mestre Haldor"], ["Cais da Aurora", "Pescadora Sigrid"]] };
-  function dockSpots(b, st = 2) {
+  function dockSpots(b, st = 2, tight = false) { // rodada 171: tight = enseada (água livre um pouco mais curta e estreita)
     const out = [], sea = (x, y) => x >= 0 && y >= 0 && x < CW && y < CH && !BIOME[y * CW + x];
     for (let y = 8; y < CH - 8; y += st) for (let x = 8; x < CW - 8; x += st) {
       if (BIOME[y * CW + x] !== b || !MAIN[y * CW + x] || inOld(x, y) || VILLAGES.some((v) => x > v.x0 - 14 && x < v.x1 + 14 && y > v.y0 - 14 && y < v.y1 + 14)) continue;
       for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
         if (!sea(x + dx, y + dy)) continue;
         const px = dy ? 1 : 0, py = dx ? 1 : 0; let ok = true; // largura do píer: (x, y) e (x + px, y + py)
-        for (let k = 1; k <= DOCK_LEN + 3 && ok; k++) for (let s = -2; s <= 3 && ok; s++) if (!sea(x + dx * k + px * s, y + dy * k + py * s)) ok = false;
+        const kk = tight ? DOCK_LEN + 2 : DOCK_LEN + 3, s0 = tight ? -1 : -2, s1 = tight ? 2 : 3;
+        for (let k = 1; k <= kk && ok; k++) for (let s = s0; s <= s1 && ok; s++) if (!sea(x + dx * k + px * s, y + dy * k + py * s)) ok = false;
         for (let k = 0; k <= 3 && ok; k++) for (let s = -1; s <= 2 && ok; s++) if (BIOME[(y - dy * k + py * s) * CW + x - dx * k + px * s] !== b) ok = false;
         if (ok) { out.push({ x, y, dx, dy }); break; }
       }
@@ -292,10 +293,20 @@ window.ValdoraWorld = (() => {
     for (const B of BIOMES) for (const q of SPOTS[B.n] || []) { const d = Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))); if (d > bd) { bd = d; best = { ...q, biome: B.n }; } }
     if (!best) break; DOCKS.push({ ...best, key: "dock_x" + e, name: EXTRA_DOCK[e][0], keeper: EXTRA_DOCK[e][1], len: DOCK_LEN });
   }
-  // rodada 142: Porto da Tumba, na ponta sul do deserto (embaixo da Tumba do Faraó); a estrada dele vem só do Cais da Névoa
+  // rodada 171: saíram o Cais da Névoa (colado no Cais do Breu) e o Cais do Norte (colado no Porto do Degelo)
+  for (let i = DOCKS.length - 1; i >= 0; i--) if (DOCKS[i].name === "Cais da Névoa" || DOCKS[i].name === "Cais do Norte") DOCKS.splice(i, 1);
+  // rodada 142: Porto da Tumba, na ponta sul do deserto (embaixo da Tumba do Faraó); rodada 171: a estrada dele vem do Cais do Breu
   { const T = [665 + PAD, 792 + PAD], c = dockSpots(4, 1).filter((q) => q.dy > 0 && Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))) > 40);
     if (c.length) { const z = c.reduce((p, q) => (Math.hypot(q.x - T[0], q.y - T[1]) < Math.hypot(p.x - T[0], p.y - T[1]) ? q : p));
-      DOCKS.push({ ...z, biome: 4, key: "dock_tumba", name: "Porto da Tumba", keeper: "Barqueiro Amon", len: DOCK_LEN, roadTo: "dock_darkwood1" }); } }
+      DOCKS.push({ ...z, biome: 4, key: "dock_tumba", name: "Porto da Tumba", keeper: "Barqueiro Amon", len: DOCK_LEN, roadTo: "dock_darkwood0" }); } }
+  // rodada 171: Porto dos Corais, na enseada da costa sul do Campo (de frente para a Ilha dos Corais), com estrada vinda de Lumeira
+  // O píer sai da margem leste da enseada (a margem é diagonal: a busca comum não acha 6 tiles livres dos lados); se o litoral
+  // mudar e o ponto não servir mais, vale o ponto de enseada mais perto (dockSpots com tight).
+  { const T = [230 + PAD, 732 + PAD], H0 = { x: 233 + PAD, y: 733 + PAD, dx: -1, dy: 0 }, sea = (x, y) => !BIOME[y * CW + x];
+    const handOk = BIOME[H0.y * CW + H0.x] === 1 && [...Array(DOCK_LEN + 2)].every((_, k) => sea(H0.x - k - 1, H0.y) && sea(H0.x - k - 1, H0.y + 1));
+    const c = handOk ? [H0] : dockSpots(1, 1, true).filter((q) => Math.min(...DOCKS.map((D) => Math.hypot(D.x - q.x, D.y - q.y))) > 40);
+    if (c.length) { const z = c.reduce((p, q) => (Math.hypot(q.x - T[0], q.y - T[1]) < Math.hypot(p.x - T[0], p.y - T[1]) ? q : p));
+      DOCKS.push({ ...z, biome: 1, key: "dock_corais", name: "Porto dos Corais", keeper: "Barqueiro Elias", len: DOCK_LEN, roadVillage: "Vila de Lumeira" }); } }
   // ---------- lagos novos (fora do quadro antigo): [cx, cy, raio, cardume, quantos] ----------
   const LAKES_G = [...sh(LAKES.map(([cx, cy, ...r]) => ({ x: cx, y: cy, r }))).map((o) => [o.x, o.y, ...o.r])];
   for (let [b, u, v, r] of [[1, 0.06, 0.48, 5], [1, 0.16, 0.90, 6], [1, 0.20, 0.45, 4.5], [2, 0.30, 0.80, 6], [2, 0.40, 0.55, 5], [3, 0.18, 0.30, 4.5], [3, 0.42, 0.36, 5],

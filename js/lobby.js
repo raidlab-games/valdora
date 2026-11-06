@@ -20,6 +20,9 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.55", "Porto dos Corais", ["Novo Porto dos Corais na enseada da costa sul do Campo (de frente para a Ilha dos Corais), com o Barqueiro Elias, o anão do píer e uma estradinha vinda de Lumeira",
+      "Saíram o Cais da Névoa (colado no Cais do Breu) e o Cais do Norte (colado no Porto do Degelo); a estrada do Porto da Tumba agora vem do Cais do Breu",
+      "Quem tinha o barco num cais que saiu volta pelo cais mais perto"]],
     ["v1.54", "Pomba menor", ["A pomba branca sobre o barco (área segura) ficou com a metade do tamanho, redesenhada em 16 px"]],
     ["v1.53", "Cais, área segura e PvP no mar", ["Nada de barco parado ao lado do píer: vá até a ponta do píer (encostado na água) e aperte F para navegar; o barco surge na água",
       "Só dá para descer do barco nos cais de madeira (fora deles o jogo diz qual é o cais mais perto e em que direção)",

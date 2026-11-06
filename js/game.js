@@ -609,9 +609,19 @@
       // estradinha até a estrada (ou vila) mais perto
       const [sx, sy] = land(3, 0);
       const to = D.roadTo && G.DOCKS.find((o) => o.key === D.roadTo), tx = to && to.x - to.dx * 3, ty = to && to.y - to.dy * 3; // rodada 142: estrada só até aquele cais
-      const pts = meander(routeRoad(sx, sy, to ? (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2 : (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; }, D.x + D.y), D.x, 3);
+      const net = D.roadVillage && villageRoads(G.VILLAGES.find((v) => v.name === D.roadVillage)); // rodada 171: só uma estrada que chegue àquela vila
+      const goal = to ? (i) => Math.hypot(i % W - tx, ((i / W) | 0) - ty) < 2 : net ? (i) => net[i] === 1 : (i) => { const X = i % W, Y = (i / W) | 0; return map[Y][X] === "path" && Math.hypot(X - x, Y - y) > 8; };
+      const pts = meander(routeRoad(sx, sy, goal, D.x + D.y), D.x, 3);
       if (pts.length) paint(pts.filter(([X, Y]) => Math.hypot(X - x, Y - y) > 2.5));
     }
+  }
+  // rodada 171: todas as estradas ligadas a uma vila (a partir dos tiles de estrada e da praça dentro dela)
+  function villageRoads(v) {
+    if (!v) return null; const seen = new Uint8Array(W * H), q = [], road = (X, Y) => inside(X, Y) && (map[Y][X] === "path" || map[Y][X] === "stone");
+    for (let y = v.y0; y <= v.y1; y++) for (let x = v.x0; x <= v.x1; x++) if (road(x, y)) { seen[y * W + x] = 1; q.push(y * W + x); }
+    while (q.length) { const i = q.pop(), x = i % W, y = (i / W) | 0;
+      for (const [dx, dy] of DIRS8V) { const X = x + dx, Y = y + dy, k = Y * W + X; if (road(X, Y) && !seen[k]) { seen[k] = 1; q.push(k); } } }
+    return seen;
   }
   // rodada 123: postes com lamparina ao longo das trilhas (acendem à noite), um a cada ~16 tiles, no capim ao lado da estrada;
   // no pé de alguns, um barril ou um pote de barro (enfeite: não quebra). Fora das vilas, da praça e dos cais (que já têm poste)
