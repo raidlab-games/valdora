@@ -2,7 +2,7 @@
 // - Barco: física com inércia (acelera e freia aos poucos), vento (de popa rende mais) e curva que depende da velocidade.
 //   WASD/setas dão o rumo; clicar (ou segurar o botão) na água leva o barco até lá. Q dispara os canhões de bombordo
 //   (esquerda), E os de estibordo (direita); Espaço ou clicar num monstro dispara o bordo que estiver virado para ele.
-//   F atraca no cais (ou desce na praia, deixando o barco ancorado) e lança a linha perto de um cardume.
+//   F atraca no cais (rodada 169: só nos cais de madeira) e lança a linha perto de um cardume; na ponta do píer, F embarca.
 // - Pesca do mar: o peixe morde (a isca apressa) e começa a luta: Recolher (1), Puxão forte (2) e Dar linha (3). O fôlego do
 //   peixe tem que zerar antes do tempo, sem a tensão da linha passar de 100. Cansado (azul), cada puxada rende o dobro; bravo
 //   (vermelho), a linha estica sozinha e puxar estica em dobro: dê linha. Cada peixe sai com um peso; o diário guarda o recorde.
@@ -19,7 +19,7 @@ window.ValdoraSea = (() => {
     let W = 0, H = 0, dist = null, ocean = null, zone = null, src = null; // src: o tile de terra mais perto de cada tile de mar
     let ship = null, fish = null, autopilot = null, ready = false;
     const mobs = [], balls = [], crates = [], rings = [], warns = [], wake = [];
-    let spots = [], lairs = [], moored = [], spawnT = 0, cdMsgT = 0, hudT = 0;
+    let spots = [], lairs = [], spawnT = 0, cdMsgT = 0, hudT = 0;
     const wind = { a: 0, to: 0, t: 0 };
     const P = () => api.player();
     // ---------------- arte dos barcos (carregada só quando aparece) ----------------
@@ -56,13 +56,6 @@ window.ValdoraSea = (() => {
       const want = Math.max(20, Math.round(seaTiles.length / SPOT_AREA));
       for (let k = 0; k < want; k++) { const s0 = { id: k, r: rand() < 0.4 ? 1 : 2, ph: rand() * 10, max: SPOT_FISH, charges: SPOT_FISH }; if (placeSpot(s0)) spots.push(s0); }
       // rodada 163: as áreas de pesca do mar são só para quem está navegando (nem da praia nem do píer)
-      moored = [];
-      for (const D of G.DOCKS || []) {
-        // bote amarrado ao lado do píer (o barco do jogador aparece aqui quando fica no cais): do lado de fora da faixa 1 ou da 0
-        const px = D.dy ? 1 : 0, py = D.dx ? 1 : 0, ax = D.x + D.dx * (D.len - 1.5) + 0.5, ay = D.y + D.dy * (D.len - 1.5) + 0.5;
-        for (const side of [1, -1]) { const off = side > 0 ? 2.7 : -1.7, bx = ax + px * off, by = ay + py * off;
-          if (isSea(bx, by) && isSea(bx + px * side * 0.6, by + py * side * 0.6)) { moored.push({ D, x: bx, y: by, a: Math.atan2(D.dy, D.dx), px: px * side, py: py * side }); break; } }
-      }
       // covil do Polvo Abissal: o ponto mais fundo do mar de cada bioma, a até 55 tiles da terra (não no canto do mapa)
       lairs = [];
       for (let z = 1; z <= 5; z++) {
@@ -90,6 +83,10 @@ window.ValdoraSea = (() => {
     // monstros: um a cada MOB_AREA tiles de mar, casas a pelo menos HOME_GAP uma da outra, nenhuma a menos de SAFE_SPOT de uma área de
     // pesca (passeando 6 tiles e com aggro de até 12, ninguém chega no barco que pesca) nem a menos de DOCK_FREE de um cais
     const MOB_AREA = 2000, HOME_GAP = 21, SAFE_SPOT = 26, DOCK_FREE = 32, RESPAWN_MS = 3 * 60 * 1000;
+    // rodada 169: área segura em volta da ponta de cada píer (como a zona pacífica do RavenQuest): ninguém toma dano, monstro
+    // desiste e os canhões ficam travados. Fora dela o PvP no mar vale sempre (sem o modo Passivo). A pomba branca fica sobre o barco.
+    const SAFE_R = 20;
+    function safeAt(x, y) { for (const D of api.G().DOCKS || []) { const T = tip(D); if (Math.hypot(T.x - x, T.y - y) <= SAFE_R) return D; } return null; }
     let seaTiles = [], homes = [];
     function areaFree(cx, cy, r) { for (let y = cy - r; y <= cy + r; y++) for (let x = cx - r; x <= cx + r; x++) { const j = idx(x, y); if (j < 0 || !ocean[j] || dist[j] < 2) return false; } return true; }
     function placeSpot(s0) { // um ponto sorteado do oceano inteiro (mesma chance em qualquer lugar)
@@ -136,7 +133,7 @@ window.ValdoraSea = (() => {
       p.sailing = true; p.boat.anchor = null; p.boat.sea = null; if (dockKey) p.boat.dock = dockKey; autopilot = null;
       api.dropAggro(); art(s.art); SND.play("bell"); sync(0);
       api.log(`A bordo do ${s.name}. WASD ou clique na água para navegar; Q e E disparam os canhões; F atraca ou lança a linha num cardume.`, "dim");
-      if (!p.seen.seaTip) { p.seen.seaTip = 1; api.toast("Ao mar!", "Vento de popa rende mais. Q e E: canhões. F perto de um cardume: pescar. F perto do cais ou da praia: descer.", "#8fd8ff"); }
+      if (!p.seen.seaTip) { p.seen.seaTip = 1; api.toast("Ao mar!", "Vento de popa rende mais. Q e E: canhões. F perto de um cardume: pescar. F perto de um cais de madeira: descer (só nos cais). Perto dos cais fica a área segura (a pomba branca); no mar aberto o PvP vale sempre.", "#8fd8ff"); }
       api.hud(); return true;
     }
     function freeSea(x, y, s, a = 0) {
@@ -145,28 +142,39 @@ window.ValdoraSea = (() => {
     }
     function embarkDock(D) {
       if (!owns()) { api.log(`Você ainda não tem barco. ${D.keeper}, o mestre do ${D.name}, vende e conserta barcos.`, "dim"); return false; }
-      const M = moored.find((m) => m.D === D), T = tip(D), ex = M ? mooredExtra(M) : 0;
-      return embarkAt(M ? M.x + M.px * ex : T.x + D.dx * 2.2, M ? M.y + M.py * ex : T.y + D.dy * 2.2, Math.atan2(D.dy, D.dx), D.key);
+      const T = tip(D); // rodada 169: o barco surge na água logo depois da ponta do píer, de proa para o mar
+      return embarkAt(T.x + D.dx * 2.2, T.y + D.dy * 2.2, Math.atan2(D.dy, D.dx), D.key);
     }
-    const mooredExtra = (M) => { const s = B.stats(P().boat); return s ? Math.max(0, s.beam - 0.4) : 0; }; // casco largo fica mais longe do píer
-    function landing() { // onde o herói pode pisar: píer perto (até 2,8 tiles) ou praia encostada no casco
+    function landing() { // rodada 169: só se desce do barco num cais (píer de madeira a até 2,6 tiles do casco)
       if (!ship) return null; const map = api.map(); let best = null, bd = 9;
       for (let y = Math.floor(ship.y) - 4; y <= Math.floor(ship.y) + 4; y++) for (let x = Math.floor(ship.x) - 4; x <= Math.floor(ship.x) + 4; x++) {
-        if (!api.inside(x, y) || !api.walkable(x, y)) continue;
-        const pier = map[y][x] === "pier", d = Math.hypot(x + 0.5 - ship.x, y + 0.5 - ship.y) - (pier ? 0.6 : 0);
-        if (d <= (pier ? 2.6 : 1.7 + ship.s.beam) && d < bd) { bd = d; best = { x, y, pier }; }
+        if (!api.inside(x, y) || !api.walkable(x, y) || map[y][x] !== "pier") continue;
+        const d = Math.hypot(x + 0.5 - ship.x, y + 0.5 - ship.y) - 0.6;
+        if (d <= 2.6 && d < bd) { bd = d; best = { x, y, pier: true }; }
       }
       return best;
     }
+    let landMsgT = -1e9;
+    function whereDock() { // "o mais perto: Cais X, a N tiles ao norte"
+      const D = nearestDock(ship.x, ship.y); if (!D) return ""; const T = tip(D), dx = T.x - ship.x, dy = T.y - ship.y;
+      const dir = Math.abs(dx) > Math.abs(dy) * 2 ? (dx > 0 ? "leste" : "oeste") : Math.abs(dy) > Math.abs(dx) * 2 ? (dy > 0 ? "sul" : "norte") : `${dy > 0 ? "sud" : "nord"}${dx > 0 ? "este" : "oeste"}`;
+      return ` O mais perto: ${D.name}, a ${Math.round(Math.hypot(dx, dy))} tiles para o ${dir}.`;
+    }
     function disembark() {
-      const L = landing(); if (!L) { api.log("Chegue mais perto do cais ou da praia para descer.", "dim"); return false; }
+      const L = landing();
+      if (!L) { if (performance.now() - landMsgT > 2500) { landMsgT = performance.now(); api.log(`Só dá para descer do barco nos cais de madeira.${whereDock()}`, "dim"); } return false; }
       const p = P(); fishStop(true);
-      p.boat.hp = Math.round(ship.hp); p.boat.anchor = L.pier ? null : { x: ship.x, y: ship.y, a: ship.a };
-      if (L.pier) { const D = dockOfTile(L.x, L.y); if (D) p.boat.dock = D.key; }
+      p.boat.hp = Math.round(ship.hp); p.boat.anchor = null;
+      const D = dockOfTile(L.x, L.y); if (D) p.boat.dock = D.key;
       ship = null; autopilot = null; p.sailing = false; p.cast = null;
       api.placeHero(L.x, L.y); SND.play("step");
-      api.log(L.pier ? "Barco amarrado no cais. Para zarpar de novo, clique no barco ou fale com o mestre do cais." : "Você desceu na praia; o barco ficou ancorado aqui (clique nele para embarcar).", "dim");
+      api.log("Barco amarrado no cais. Para navegar de novo, vá até a ponta do píer e aperte F.", "dim");
       api.hud(); api.save(); return true;
+    }
+    // ponta do píer encostada na água (onde o F vira "navegar"): o tile de píer com mar logo à frente
+    function pierEnd(x, y) {
+      const map = api.map(); if (!map[y] || map[y][x] !== "pier") return null; const D = dockOfTile(x, y);
+      return D && isSea(x + D.dx + 0.5, y + D.dy + 0.5) ? D : null;
     }
     function dockOfTile(x, y) { return (api.G().DOCKS || []).find((D) => Math.max(Math.abs(D.x - x), Math.abs(D.y - y)) <= D.len + 2) || null; }
     function nearestDock(x, y) { let best = null, bd = 1e9; for (const D of api.G().DOCKS || []) { const d = Math.hypot(D.x - x, D.y - y); if (d < bd) { bd = d; best = D; } } return best; }
@@ -227,6 +235,7 @@ window.ValdoraSea = (() => {
     // ---------------- canhões ----------------
     function fire(side, quiet) {
       if (!ship) return false;
+      if (ship.safe) { if (!quiet && performance.now() - cdMsgT > 1500) { cdMsgT = performance.now(); api.log("Área segura do cais: aqui os canhões ficam travados.", "dim"); } return false; } // rodada 169
       const key = side < 0 ? "cdL" : "cdR";
       if (ship.stunT > 0) { if (!quiet) api.log("Canhões travados pelo choque!", "warn"); return false; }
       if (ship[key] > 0) { if (!quiet && performance.now() - cdMsgT > 900) { cdMsgT = performance.now(); api.log(`Canhões de ${side < 0 ? "bombordo" : "estibordo"} recarregando (${ship[key].toFixed(1)} s).`, "dim"); } return false; }
@@ -286,13 +295,13 @@ window.ValdoraSea = (() => {
       const d = m.d; m.t += dt; m.flash = Math.max(0, m.flash - dt);
       if (m.dead) { m.deadT += dt; return; }
       const sd = ship ? Math.hypot(ship.x - m.x, ship.y - m.y) : 1e9;
-      if (ship && !m.aggro && !m.returning && sd < d.aggro) { m.aggro = true; if (d.boss) api.toast(d.name, "Saiu das profundezas! Fuja dos círculos na água.", "#c47aff"); }
+      if (ship && !ship.safe && !m.aggro && !m.returning && sd < d.aggro) { m.aggro = true; if (d.boss) api.toast(d.name, "Saiu das profundezas! Fuja dos círculos na água.", "#c47aff"); }
       const fromHome = Math.hypot(m.x - m.home.x, m.y - m.home.y);
-      if (m.aggro && !d.boss && (!ship || sd > LEASH_SHIP || fromHome > LEASH_HOME)) { // desiste e volta nadando para onde nasceu
+      if (m.aggro && !d.boss && (!ship || ship.safe || sd > LEASH_SHIP || fromHome > LEASH_HOME)) { // desiste e volta nadando para onde nasceu (rodada 169: e na área segura)
         m.aggro = false; m.returning = true; m.lunge = m.puffT = m.grabT = m.dashT = m.aim = m.zapT = m.jumpT = m.diveT = m.singT = m.clawT = m.breachT = m.z = 0; m.hidden = false; m.cd = 2;
         if (ship && ship.heldT) ship.heldT = 0; if (ship && ship.charmBy === m) ship.charmT = 0; m.wander = null;
         if (sd < 30) api.log(`${d.name} desistiu de seguir o barco.`, "dim"); }
-      if (m.aggro && d.boss && (!ship || sd > d.aggro * 3)) m.aggro = false;
+      if (m.aggro && d.boss && (!ship || ship.safe || sd > d.aggro * 3)) m.aggro = false;
       m.cd -= dt;
       if (m.returning) { // voltando: não persegue ninguém e recupera a vida
         m.hp = Math.min(m.max, m.hp + m.max * 0.08 * dt);
@@ -436,7 +445,7 @@ window.ValdoraSea = (() => {
     }
     const hullR = () => (ship ? ship.s.beam + 0.35 : 1);
     function hurt(dmg, src) {
-      if (!ship) return; const p = P(); dmg = Math.max(1, Math.round(dmg * (1 - ship.s.armor)));
+      if (!ship || ship.safe) return; const p = P(); dmg = Math.max(1, Math.round(dmg * (1 - ship.s.armor))); // rodada 169: área segura
       ship.hp -= dmg; ship.hurtT = 0; p.flash = 0.14; p.lastHurt = api.tickN(); api.shake(0.12); SND.play("hurt");
       api.fx.hitSplat(ship.x, ship.y - 0.8, dmg, "#ff5a4a"); api.fx.burst(ship.x, ship.y - 0.3, ["#8a5a2a", "#c9955a"], 6, 2.4);
       api.hud(); // rodada 168: afunda no fim do quadro (update), não no meio dos laços de monstros e balas
@@ -631,12 +640,23 @@ window.ValdoraSea = (() => {
     }
     document.addEventListener("click", (e) => { const b = e.target.closest && e.target.closest("[data-sfx]"); if (!b) return; e.stopPropagation(); if (b.dataset.sfx === "x") fishStop(false, "Você recolheu a linha."); else fishAct(+b.dataset.sfx); });
     // ---------------- passo do mundo ----------------
+    function safeCheck() { // rodada 169: avisa ao entrar e ao sair da área segura
+      const D = safeAt(ship.x, ship.y), was = ship.safe; ship.safe = D;
+      if (was === undefined) return; // acabou de embarcar: sem aviso
+      if (D && !was) { ship.heldT = 0; ship.charmT = 0; api.fx.addFloat(ship.x, ship.y - 2.4, "Área segura", "#f4f8ff", 1.6, 14); SND.play("bell");
+        api.log(`Área segura do ${D.name}: aqui ninguém toma dano, nem de monstros nem de jogadores.`, "dim"); api.hud(); }
+      else if (!D && was) { api.fx.addFloat(ship.x, ship.y - 2.4, "PvP no mar!", "#ff6a5a", 1.6, 14); SND.play("warn");
+        api.log("Você saiu da área segura: no mar aberto o PvP vale sempre e os monstros atacam.", "warn");
+        const p = P(); if (!p.seen.seaPvp) { p.seen.seaPvp = 1; api.toast("Mar aberto: PvP ativo", "Longe dos cais, qualquer barco pode atacar o seu (o modo Passivo não vale no mar). Perto dos cais fica a área segura: a pomba branca sobre o barco mostra que você está nela.", "#ff8a6a"); }
+        api.hud(); }
+    }
     function update(dt) {
       if (!ready) return; const p = P();
       wind.t -= dt; if (wind.t <= 0) { wind.to = wind.a + (rand() - 0.5) * 2.4; wind.t = 45 + rand() * 50; }
       wind.a += clamp(B.angDiff(wind.to, wind.a), -0.03 * dt, 0.03 * dt);
       for (const s of spots) if (s.gone > 0) s.gone -= dt;
       if (ship) sail(dt);
+      if (ship) safeCheck();
       if (fish) updateFish(dt);
       if (mobs.length) {
         if ((spawnT -= dt) <= 0) { spawnT = 1; populate(); }
@@ -707,6 +727,21 @@ window.ValdoraSea = (() => {
       if (fish && !fish.onFoot) drawBoatLine(ctx, t, bob);
       const top = G ? G.A.oy / G.A.pxTile * 0.92 : 1.4;
       api.tag(p.name, ship.x, ship.y - top + 0.1, p.pk > 0 ? "#ff3b30" : "#f1c40f");
+      const dv = api.SPR.icon_dove; // rodada 169: pomba branca = área segura
+      if (ship.safe && dv) ctx.drawImage(dv, Math.round(X(ship.x) - dv.width / 2), Math.round(Y(ship.y - top + 0.1) - 22 - dv.height + Math.sin(t * 2.2) * 2));
+    }
+    function drawSafeRings(t) { // rodada 169: contorno pontilhado da área segura de cada cais (só por cima do mar)
+      const ctx = api.ctx(), cx = api.cam.x / TILE + api.VW() / TILE / 2, cy = api.cam.y / TILE + api.VH() / TILE / 2, N = 160;
+      ctx.save(); ctx.setLineDash([10, 8]); ctx.lineDashOffset = -t * 6;
+      for (const D of api.G().DOCKS || []) {
+        const T = tip(D); if (Math.abs(T.x - cx) > SAFE_R + 30 || Math.abs(T.y - cy) > SAFE_R + 24) continue;
+        ctx.beginPath(); let on = false;
+        for (let k = 0; k <= N; k++) { const a = k * TAU / N, x = T.x + Math.cos(a) * SAFE_R, y = T.y + Math.sin(a) * SAFE_R;
+          if (isSea(x, y)) { if (on) ctx.lineTo(X(x), Y(y)); else ctx.moveTo(X(x), Y(y)); on = true; } else on = false; }
+        ctx.lineWidth = 5; ctx.strokeStyle = "rgba(8,36,64,0.35)"; ctx.stroke(); // sombra por baixo: o tracejado aparece na água clara
+        ctx.lineWidth = 2.5; ctx.strokeStyle = `rgba(250,252,255,${0.7 + 0.15 * Math.sin(t * 1.4)})`; ctx.stroke();
+      }
+      ctx.restore();
     }
     function drawBoatLine(ctx, t, bob) { // vara presa na borda do lado da área e a linha até a boia
       const f = deckFeet(), b = fish.bob, ang = Math.atan2(b.y - f.y, b.x - f.x), side = { x: f.x + Math.cos(ang) * ship.s.beam * 0.8, y: f.y + Math.sin(ang) * ship.s.beam * 0.5 };
@@ -947,38 +982,27 @@ window.ValdoraSea = (() => {
       if (!ready) return; const p = P(), inView = (x, y, m = 4) => x > x0 - m && x < x1 + m && y > y0 - m && y < y1 + m;
       if (ship) list.push({ y: ship.y + 0.05, sea: "ship" });
       for (const m of mobs) if (!(m.dead && m.deadT >= 1.5) && inView(m.x, m.y)) list.push({ y: m.y + (m.d.boss ? -0.5 : 0), sea: "mob", ref: m });
-      for (const M of moored) if (inView(M.x, M.y) && !(p.sailing && p.boat.dock === M.D.key)) list.push({ y: M.y, sea: "moored", ref: M }); // o barco saiu deste cais: a vaga fica vazia
-      const an = !p.sailing && p.boat.anchor; if (an && inView(an.x, an.y)) list.push({ y: an.y, sea: "anchor", ref: an });
+      // rodada 169: nada de barco parado ao lado do píer: ele só aparece na água quando o herói embarca na ponta do píer (F)
     }
     function drawEnt(e, t) {
       const ctx = api.ctx();
       if (e.sea === "ship") return drawShipEnt(t);
       if (e.sea === "mob") return drawMob(e.ref, t);
-      if (e.sea === "moored" || e.sea === "anchor") {
-        const p = P(), M = e.ref, mine = e.sea === "anchor" || (!p.sailing && !p.boat.anchor && p.boat.dock === M.D.key && owns());
-        const key = mine ? B.stats(p.boat).art : "bote", G = art(key), s = mine ? B.stats(p.boat) : VD.HULLS.bote, bob = Math.sin(t * 1.5 + M.x) * 1.2;
-        const ex = e.sea === "moored" && mine ? mooredExtra(M) : 0, mx = M.x + (M.px || 0) * ex, my = M.y + (M.py || 0) * ex;
-        waterShadow(mx, my, M.a, s.len, s.beam, 0.22);
-        if (G) { ctx.save(); ctx.translate(0, bob); drawBoat(B.dir16(M.a), G.A, G.img, mx, my, false); drawBoat(B.dir16(M.a), G.A, G.img, mx, my, true); ctx.restore(); }
-        else drawFallbackBoat(mx, my, M.a, s);
-      }
     }
-    function drawUnder(t) { if (!ready) return; drawSpots(t); drawWake(); const ctx = api.ctx(); for (const c of crates) drawCrate(ctx, c, t); drawWrecks(t); }
+    function drawUnder(t) { if (!ready) return; drawSafeRings(t); drawSpots(t); drawWake(); const ctx = api.ctx(); for (const c of crates) drawCrate(ctx, c, t); drawWrecks(t); }
     function drawOver(t) { if (!ready) return; drawBallsAndWarns(t); drawGulls(t); }
     // ---------------- interação (clique e F) ----------------
     function pick(fx0, fy0) {
       if (!ready) return null; const p = P();
       for (const m of mobs) if (!m.dead && !m.hidden && Math.hypot(m.x - fx0, (m.y - 0.4 - fy0) / (m.d.boss ? 1.4 : 1)) < m.d.radius + (m.d.boss ? 1 : 0.5)) return { kind: "seamob", ref: m };
       for (const s of spots) if (!(s.gone > 0) && inArea(s, fx0, fy0)) return { kind: "seaspot", ref: s, tx: Math.floor(fx0), ty: Math.floor(fy0) }; // qualquer tile da área
-      const an = !p.sailing && p.boat.anchor; if (an && Math.hypot(an.x - fx0, an.y - 0.6 - fy0) < 1.3) return { kind: "seaboat", ref: { anchor: an } };
-      if (!p.sailing) for (const M of moored) if (Math.hypot(M.x - fx0, M.y - 0.6 - fy0) < 1.3) return { kind: "seaboat", ref: { M } };
       return null;
     }
     function describe(k) {
       if (k.kind === "seamob") { const m = k.ref, sk = m.d.skill ? m.d.skill.split(/[.:]/)[0] : ""; return [`${m.d.name} · nv ${m.L}`, m.d.boss ? "#c47aff" : "#ff8a7a", sk || (ship ? "clique: dispara o bordo virado para ele" : "monstro do mar (só de barco)")]; }
       if (k.kind === "seaspot") { const s = k.ref;
         return [s.big ? `Área de pesca grande${s.deep ? " (mar fundo)" : ""}` : "Área de pesca da costa", "#8fd8ff", "só navegando: pare o barco perto e clique num ponto dela"]; }
-      if (k.kind === "seaboat") return k.ref.anchor ? ["Seu barco (ancorado)", "#f0c878", "clique perto dele para embarcar"] : owns() ? ["Seu barco", "#f0c878", "clique para zarpar deste cais"] : ["Bote do cais", "#f0c878", "o mestre do cais vende barcos"];
+      if (k.kind === "seaboat") return owns() ? ["Seu barco", "#f0c878", "na ponta do píer, aperte F para navegar"] : ["Bote do cais", "#f0c878", "o mestre do cais vende barcos"];
       return null;
     }
     // clique no mundo: true = o mar cuidou do clique
@@ -992,17 +1016,10 @@ window.ValdoraSea = (() => {
           return true; }
         if (p0 && (p0.kind === "tile" || p0.tx != null)) {
           const tx = p0.tx, ty = p0.ty;
-          if (api.walkable(tx, ty) && Math.hypot(tx + 0.5 - ship.x, ty + 0.5 - ship.y) < 3) { disembark(); return true; }
+          if (api.walkable(tx, ty) && Math.hypot(tx + 0.5 - ship.x, ty + 0.5 - ship.y) < 3) { disembark(); return true; } // só desce se for o píer
           steerTo(tx + 0.5, ty + 0.5); return true;
         }
         return true; // a bordo, nada em terra responde ao clique
-      }
-      if (p0 && p0.kind === "seaboat") {
-        if (p0.ref.anchor) { const a = p0.ref.anchor; if (Math.hypot(a.x - (p.x + 0.5), a.y - (p.y + 0.5)) < 3.2) embarkAt(a.x, a.y, a.a); else { api.goNear(a.x, a.y, 2.2); api.log("Chegue perto do barco para embarcar.", "dim"); } return true; }
-        const M = p0.ref.M, T = tip(M.D);
-        if (Math.hypot(T.x - (p.x + 0.5), T.y - (p.y + 0.5)) < 4 || Math.hypot(M.x - (p.x + 0.5), M.y - (p.y + 0.5)) < 3.2) embarkDock(M.D);
-        else { api.goNear(T.tx + 0.5, T.ty + 0.5, 1.2); if (!owns()) api.log(`Este é o bote do cais. ${M.D.keeper} vende barcos.`, "dim"); }
-        return true;
       }
       if (p0 && p0.kind === "seamob") { api.log("Monstro do mar: só dá para enfrentar de barco.", "dim"); return true; }
       if (p0 && p0.kind === "seaspot") { api.log("Área de pesca do mar: só navegando. O mestre do cais vende barcos.", "dim"); return true; } // a pé não pesca no mar
@@ -1016,12 +1033,11 @@ window.ValdoraSea = (() => {
       if (fish) return { label: "recolher a linha", run: () => fishStop(false, "Você recolheu a linha.") };
       if (ship) {
         const s = spotNear(); if (s && Math.abs(ship.v) < 1.6) return { label: "lançar a linha na área de pesca", run: () => fishStart(s) };
-        const L = landing(); if (L) return { label: L.pier ? "atracar no cais" : "descer na praia", run: () => disembark() };
+        const L = landing(); if (L) return { label: "atracar no cais", run: () => disembark() };
         return null;
       }
       if (api.npcNear && api.npcNear()) return null; // encostado no anão ou no mestre do cais, o F fala com eles
-      const an = p.boat.anchor; if (an && Math.hypot(an.x - (p.x + 0.5), an.y - (p.y + 0.5)) < 3.2) return { label: "embarcar no seu barco", run: () => embarkAt(an.x, an.y, an.a) };
-      if (owns() && api.map()[p.y] && api.map()[p.y][p.x] === "pier") { const D = dockOfTile(p.x, p.y); if (D) return { label: "zarpar no seu barco", run: () => embarkDock(D) }; }
+      { const D = pierEnd(p.x, p.y); if (D) return { label: owns() ? "navegar" : "navegar (sem barco)", run: () => embarkDock(D) }; } // rodada 169: só na ponta do píer
       return null;
     }
     // teclas: 1 a 3 na luta da linha; Q/E (giro/investida) viram canhões a bordo; Espaço mira o mais perto
@@ -1050,8 +1066,10 @@ window.ValdoraSea = (() => {
     function landPos() { // onde o herói fica salvo enquanto navega (um tile de terra): a ponta do píer do último cais
       const p = P(), D = (api.G().DOCKS || []).find((d) => d.key === p.boat.dock) || nearestDock(p.x, p.y); if (!D) return null; const T = tip(D); return { x: T.tx, y: T.ty };
     }
-    function resume() { const p = P(), s = p.boat.sea; if (s && ready && isSea(s.x, s.y) && owns()) { p.boat.sea = null; embarkAt(s.x, s.y, s.a); } }
-    function leave() { if (ship) { const p = P(); fishStop(true); p.boat.anchor = { x: ship.x, y: ship.y, a: ship.a }; p.boat.hp = Math.round(ship.hp); ship = null; autopilot = null; p.sailing = false; } }
+    function resume() { const p = P(), s = p.boat.sea;
+      if (p.boat.anchor) { const D = nearestDock(p.boat.anchor.x, p.boat.anchor.y); if (D) p.boat.dock = D.key; p.boat.anchor = null; } // rodada 169: barco que ficou ancorado na praia voltou ao cais mais perto
+      if (s && ready && isSea(s.x, s.y) && owns()) { p.boat.sea = null; embarkAt(s.x, s.y, s.a); } }
+    function leave() { if (ship) { const p = P(); fishStop(true); p.boat.anchor = null; p.boat.hp = Math.round(ship.hp); ship = null; autopilot = null; p.sailing = false; } } // rodada 169: o barco volta ao cais
     // ---------------- janelas: Peixaria do Gaspar e Estaleiro (mestre do cais) ----------------
     const isFish = (n) => !!(ITEMS[n] && (ITEMS[n].sea || /cru$|crua$/.test(n) || n === "Peixe dourado"));
     const DWARF_BONUS = 1.5;
@@ -1128,7 +1146,7 @@ window.ValdoraSea = (() => {
       return false;
     }
     return { init, update, ents, drawEnt, drawUnder, drawOver, pick, describe, click, steerTo, fAction, key, hud, saveData, landPos, resume, leave, dwarfHtml, harborHtml, dlgAct, isFish, fishPrice,
-      sailing: () => !!ship, ship: () => ship, fishing: () => fish, spots: () => spots, mobs: () => mobs, homes: () => homes, moored: () => moored, lairs: () => lairs, isSea, levelAt, zoneAt, embarkDock, embarkAt, disembark, fire, fishStart, fishAct, spawnMob, tip, wind };
+      sailing: () => !!ship, ship: () => ship, fishing: () => fish, spots: () => spots, mobs: () => mobs, homes: () => homes, lairs: () => lairs, safeAt, safeNow: () => !!(ship && ship.safe), pierEnd, SAFE_R, isSea, levelAt, zoneAt, embarkDock, embarkAt, disembark, fire, fishStart, fishAct, spawnMob, tip, wind };
   }
   return { create };
 })();

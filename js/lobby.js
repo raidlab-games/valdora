@@ -20,6 +20,12 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.53", "Cais, área segura e PvP no mar", ["Nada de barco parado ao lado do píer: vá até a ponta do píer (encostado na água) e aperte F para navegar; o barco surge na água",
+      "Só dá para descer do barco nos cais de madeira (fora deles o jogo diz qual é o cais mais perto e em que direção)",
+      "Área segura em volta de cada cais (20 tiles da ponta do píer, com o contorno pontilhado na água): ninguém toma dano, nem de monstros nem de jogadores; os monstros desistem e os canhões ficam travados",
+      "Uma pomba branca aparece sobre o barco enquanto ele está na área segura, e o painel do lugar mostra \"área segura do cais\"",
+      "No mar aberto o PvP vale sempre, mesmo no modo Passivo (o combate entre jogadores chega com o servidor online)",
+      "Corrigido: as linhas claras retas também sumiram da água perto das praias"]],
     ["v1.52", "Mar aberto sem riscos e aviso da vara mais curto", ["Corrigido: linhas claras retas (em L e em cruz) apareciam no meio do oceano; a espuma e as ondas agora só aparecem perto das margens",
       "Sem vara, o aviso diz só que você precisa de uma vara para pescar (a receita fica na mesa de artesanato)"]],
     ["v1.51", "Varas de cada mapa e a escada da pesca", ["5 varas de pesca, uma por mapa, criadas na mesa de artesanato com a madeira, o fio e o couro daquele mapa: madeira (Campo, Artesanato 1), ébano (Floresta Sombria, 30), pinho (Montanhas, 65), palmeira (Deserto, 100) e glacial (Geleira, 140); cada uma pede o mesmo nível de Pesca para usar",

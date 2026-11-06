@@ -571,6 +571,13 @@
     }
     return erros === 0 || `${erros} tiles trocaram de lado`;
   });
+  test("rodada 169: água a 2 tiles ou mais da margem fica lisa (sem espuma, água funda ou ondas nas quinas dos tiles)", () => {
+    const T = ValdoraTerrain.makeField, W = 40, H = 30, lake = (x, y) => Math.hypot(x - 20, y - 15) < 13, F = T(W, H, lake, 31);
+    const far = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (!lake(x + dx, y + dy)) return false; return true; };
+    let low = 1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (far(x, y)) for (let i = 0; i < 6; i++) for (let j = 0; j < 6; j++) low = Math.min(low, F.at(x + (i + 0.5) / 6, y + (j + 0.5) / 6));
+    return low >= 0.74 || `menor valor ${low.toFixed(3)} (abaixo de 0,74 desenha onda falsa)`;
+  });
   test("rodada 67: golpe de frente e de costas tem 4 quadros no Blender; props e números registrados", () => {
     const miss = [];
     for (const n of [1, 2, 3]) { const A = (window.ANIM_SHEETS || {})[`hero_${n}_strike4`]; if (!A || !["strike_down", "strike_up"].every((r) => A.rows[r] && A.rows[r].frames === 4)) miss.push(`hero_${n}_strike4`); if (!SPRITE_SIZE[`hero_${n}_strike4`]) miss.push(`tamanho hero_${n}_strike4`); }

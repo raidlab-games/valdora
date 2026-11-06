@@ -1650,8 +1650,8 @@
   }
   function interactNearest() {
     if (!running || player.deadT > 0) return;
-    const sa = SEA.fAction(); if (sa) { sa.run(); return; } // rodada 162: atracar, descer na praia, pescar no mar, embarcar
-    if (player.sailing) { log("A bordo: F atraca perto do cais ou da praia e lança a linha perto de um cardume.", "dim"); return; }
+    const sa = SEA.fAction(); if (sa) { sa.run(); return; } // rodada 162: atracar no cais, pescar no mar, embarcar na ponta do píer
+    if (player.sailing) { log("A bordo: F atraca perto de um cais de madeira e lança a linha perto de um cardume.", "dim"); return; }
     const best = findInteract();
     if (!best) { log("Nada para usar aqui. Chegue ao lado de alguém ou de algo útil e aperte F.", "dim"); return; }
     if (best.kind === "sign") { log(`Placa: ${best.ref.label}`, "dim"); return; }
@@ -2688,9 +2688,14 @@
   const BAG_LIFE = 30 * 60 * 1000, BAG_LOCK = 30 * 1000;
   // rodada 147: PvP (js/pvp.js). pvpHere: o tile vale PvP? pvpAttack/pvpKill: chamados quando houver jogadores online
   const PVP = window.ValdoraPvP;
-  const pvpHere = (x = player.x, y = player.y) => PVP.zoneOk({ biome: inCrypt ? 0 : WORLD_G.biomeAt(x, y) || 1, town: inTown(x, y), dungeon: inCrypt ? dungeon : null });
+  // rodada 169: no mar, PvP em todo lugar menos na área segura em volta dos cais (pvpHere() sem posição, navegando: onde o barco está)
+  const pvpHere = (x, y) => {
+    if (x == null && !inCrypt && SEA.sailing()) return !SEA.safeNow();
+    x = x == null ? player.x : x; y = y == null ? player.y : y;
+    if (!inCrypt && SEA.isSea(x + 0.5, y + 0.5)) return !SEA.safeAt(x + 0.5, y + 0.5);
+    return PVP.zoneOk({ biome: inCrypt ? 0 : WORLD_G.biomeAt(x, y) || 1, town: inTown(x, y), dungeon: inCrypt ? dungeon : null }); };
   // rodada 148: só bate em jogador no modo Hostil e numa zona PvP (o online chama canHitPlayer antes de mandar o golpe)
-  const canHitPlayer = () => PVP.hostile(player) && pvpHere();
+  const canHitPlayer = () => (!inCrypt && SEA.sailing() ? pvpHere() : PVP.hostile(player) && pvpHere()); // rodada 169: no mar aberto o PvP vale sempre (sem o Passivo)
   function pvpAttack() {
     if (!canHitPlayer()) { log(pvpHere() ? "Modo Passivo: ligue as espadas (Hostil) para atacar jogadores." : "Aqui não tem PvP.", "dim"); return false; }
     PVP.onAttackPlayer(player); hudDirty = true; return true;
@@ -3355,7 +3360,7 @@
     hotPick = hotPick === c.dataset.skillcard ? null : c.dataset.skillcard; hudDirty = true; SND.play("ui"); });
   $("tab-coll").addEventListener("click", (e) => { const b = e.target.closest("[data-coll]"); if (b) collRegister(b.dataset.coll, b.dataset.item); });
   // painel lateral (js/hud.js)
-  const HUD = ValdoraHud.create({ pvpHere: () => !!player && pvpHere(), QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
+  const HUD = ValdoraHud.create({ pvpHere: () => !!player && pvpHere(), seaZone: () => (!player || inCrypt || !SEA.sailing() ? null : SEA.safeNow() ? "safe" : "pvp"), QUEST, TICK, load: () => loadNow(), echo: () => awakeEcho(), combatStats: () => combatStats(), gearName: (k) => gearName(k), masterBadge: (k) => masterBadge(k), maxHp: () => maxHp(),
     tier: (k) => tier(k), totalLevel: () => totalLevel(), player: () => player, tab: () => hudTab, hotActions: () => HOT_ACTIONS(), mobThumb: (s) => mobThumb(s), hotUnlocked: (a) => hotUnlocked(a), hotPick: () => hotPick, dirty: () => { hudDirty = true; }, inCrypt: () => inCrypt, rank: () => ValdoraShrine.rankOf(player.offered || 0),
     foodCount: () => foodCount(), foodLow: () => foodLow(), petView: () => petView() });
   $("player-info").addEventListener("click", (e) => { if (e.target.closest(".petline")) { SND.play("ui"); openDlg("pet"); } }); // rodada 96

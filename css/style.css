@@ -893,6 +893,7 @@ button.link:hover { color: #cfe3ff; }
 /* rodada 147: zona PvP e marca de PK embaixo do minimapa */
 .loc-z { display: flex; justify-content: center; gap: 6px; font-size: 10px; margin-top: 1px; }
 .loc-z .pvp { color: #ff6b5a; } .loc-z .safe { color: #9fe08a; opacity: .8; }
+.loc-z .dove { width: 16px; height: 16px; vertical-align: -4px; margin-right: 3px; image-rendering: pixelated; } /* rodada 169: área segura do mar */
 .loc-z .pk { color: #ff3b30; font-weight: bold; display: inline-flex; align-items: center; gap: 2px; } .loc-z .pk img { width: 12px; height: 12px; }
 /* rodada 148: botão das espadas (Passivo branco / Hostil vermelho; travado com PK) */
 #roundbar .pvp-btn { position: relative; background: #f2efe6; border-color: #6a5a48; }

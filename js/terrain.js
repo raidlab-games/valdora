@@ -357,12 +357,12 @@ window.ValdoraTerrain = (() => {
       const u = fx - 0.5, v = fy - 0.5, i = Math.floor(u), j = Math.floor(v), a = u - i, c = v - j, s = a * a * (3 - 2 * a), q = c * c * (3 - 2 * c);
       const top = f(i, j) + (f(i + 1, j) - f(i, j)) * s, bot = f(i, j + 1) + (f(i + 1, j + 1) - f(i, j + 1)) * s;
       // ruído fraco no centro do tile (o lado de cada tile não muda) e forte perto da borda dele, onde o contorno passa
-      const base = top + (bot - top) * q;
-      // rodada 168: longe de qualquer borda (mar aberto, meio do campo) fica sem ruído: nas quinas dos tiles ele caía abaixo do
-      // limite da margem e desenhava faixas de água funda e ondas piscando em linhas retas no meio do oceano
-      if (base >= 0.999 || base <= 0.001) return base;
+      // rodada 168/169: o ruído só vale perto do contorno (base perto de 0,5). Longe dele (mar aberto, a 1 ou 2 tiles da praia,
+      // meio do campo) ele caía abaixo do limite da margem nas quinas dos tiles e desenhava espuma, água funda e ondas em linhas retas
+      const base = top + (bot - top) * q, near = Math.max(0, 1 - Math.abs(base - 0.5) / 0.45);
+      if (!near) return base;
       const w = Math.max(Math.abs(fx - Math.floor(fx) - 0.5), Math.abs(fy - Math.floor(fy) - 0.5)) * 2;
-      return base + (noise1(fx, fy, 1.6, seed) - 0.5) * (0.18 + 0.62 * w * w);
+      return base + (noise1(fx, fy, 1.6, seed) - 0.5) * (0.18 + 0.62 * w * w) * near;
     }
     return { at, inside: (x, y) => B[y * W + x] === 1 };
   }
