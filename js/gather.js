@@ -3,23 +3,18 @@
 window.ValdoraGather = (() => {
   "use strict";
   function create(api) {
-    const { RES, ITEMS, SKILLS } = VD, RULES = ValdoraRules;
+    const { RES, ITEMS, SKILLS } = VD, RULES = ValdoraRules, BOAT = window.ValdoraBoat;
     const { lv, log, canAdd, useTool, accBonus, tier, SND, burst, fx, clickFx, addItem, removeItem, gainXp, emit, checkAch, SPR, addFloat, relocateSpot, ri, rand, clamp, RENDER } = api;
     let spotMsgT = -1e9; // última vez que o aviso do cardume apareceu
     let burntMsgT = -1e9, cookHint = ""; // aviso de queima (no máximo a cada 20 s) e dica da chance (uma vez por item e nível)
     function gather(o) {
       const player = api.player(), event = api.event(), R = RES[o.kind], lvl = lv(R.skill);
-      let item = R.item, xp = R.xp, need = R.need || 0;
+      let item = R.item, xp = R.xp, need = R.need || 0, fish = null;
       const toolT = tier(R.tool).bonus, needName = (n) => (VD.GEAR[R.tool].tiers[n] || {}).name; // rodada 154: nível da ferramenta = índice (0 pedra, 1 cobre...)
       if (lvl < R.req) { log(`${R.name} pede ${SKILLS[R.skill]} ${R.req}.`, "warn"); player.target = null; return; }
       if (toolT < need) { log(`${R.name} pede ${needName(need)} ou melhor (a ferramenta feita com o minério do mapa anterior).`, "warn"); player.target = null; return; }
-      if (R.fish) { // rodada 154: cada mapa tem o seu peixe (no mapa 1 o cardume fundo dá tucunaré); só os que o nível e a vara já pescam
-        const W = window.ValdoraWorld, b = W && W.biomeAt ? Math.max(1, W.biomeAt(o.x, o.y) || 1) : 1;
-        const all = b <= 1 ? R.fish : [VD.FISH_BY_BIOME[Math.min(b, VD.FISH_BY_BIOME.length) - 1]], list = all.filter((f) => lvl >= f.req && toolT >= (f.need || 0));
-        if (!list.length) { const f = all[all.length - 1]; log(lvl < f.req ? `${f.item.replace(/ crua?$/, "")} pede ${SKILLS.pesca} ${f.req}.` : `Aqui só se pesca com ${needName(f.need)} ou melhor.`, "warn"); player.target = null; player.cast = null; return; }
-        const w = list.map((_, i) => Math.pow(2, list.length - 1 - i)), tot = w.reduce((a, c) => a + c, 0);
-        let r = rand() * tot, k = 0; while (k < list.length - 1 && (r -= w[k]) > 0) k++;
-        item = list[k].item; xp = list[k].xp; need = list[k].need || 0; }
+      if (R.fish) { // rodada 168: a escada da pesca (o nível de Pesca libera peixes melhores; o cardume fundo puxa para os melhores)
+        fish = BOAT.rollFish(BOAT.catchTable(lvl, null, R.deep, false), rand()); item = fish.item; xp = fish.xp; need = 0; }
       if (o.golden > 0 && event && event.left > 0 && rand() < 0.25) { item = "Peixe dourado"; xp = 30; event.left--; } // evento: cardume dourado (6 por evento)
       if (!canAdd(item)) { log("Sua mochila está cheia. Guarde itens no cofre ou venda ao Bento.", "warn"); player.target = null; return; }
       const key = R.tool === "machado" ? "tool_axe" : R.tool === "picareta" ? "tool_pick" : R.tool === "foice" ? "tool_sickle" : "rod";
@@ -27,7 +22,8 @@ window.ValdoraGather = (() => {
         player.cast = { t: 0, spot: o, landed: false }; SND.play("whoosh"); useTool("rod", null, { prep: 0.1, strike: 0.08, rec: 0.25 }); return;
       }
       const gatherBonus = Object.values(player.equip).reduce((t, e) => t + (e ? accBonus(e).gather : 0), 0) / 100;
-      const chance = RULES.gatherChance(lvl, R.req, Math.max(0, toolT - need), gatherBonus + (player.equip.arma && player.equip.arma.master ? 0.05 : 0), R.skill === "corte"); // rodada 104: obra-prima da ferramenta vestida
+      const extra = gatherBonus + (player.equip.arma && player.equip.arma.master ? 0.05 : 0); // rodada 104: obra-prima da ferramenta vestida
+      const chance = fish ? BOAT.fishChance(toolT, lvl, fish.lvl, extra) : RULES.gatherChance(lvl, R.req, Math.max(0, toolT - need), extra, R.skill === "corte"); // rodada 168: a vara manda na pesca
       const success = rand() < chance;
       useTool(key, () => { // tudo acontece no quadro de impacto
         const dx = Math.sign(o.x - player.x) * 0.3, dy = Math.sign(o.y - player.y) * 0.3;
@@ -43,13 +39,15 @@ window.ValdoraGather = (() => {
         } else {
           SND.play("splash"); burst(o.x + 0.5, o.y + 0.5, ["#e8f6ff", "#8fc1ee"], success ? 10 : 4, success ? 2 : 1.2); clickFx(o.x + 0.5, o.y + 0.55, "#e8f6ff");
         }
-        if (!success) return;
+        if (!success) { if (fish && rand() < 0.5) addFloat(o.x + 0.5, o.y, "escapou", "#9fb4c8", 0.8, 11); return; }
+        let note = null;
+        if (fish && item === fish.item) { note = BOAT.logCatch(player, fish, rand()); if (note.first) { xp *= 2; log(`${fish.item} · espécie nova no diário de pesca (XP em dobro).`, "gold"); } } // rodada 168: o diário é o mesmo do mar
         addItem(item); gainXp(R.skill, xp); emit("gather:" + item);
         if (R.skill === "mineracao" && rand() < 0.3 && canAdd("Pedra")) { addItem("Pedra"); addFloat(o.x + 0.5, o.y - 0.3, "+1 Pedra", "#d8d0c4"); } // rodada 155: lascas para as ferramentas de pedra
         const sk = { corte: "logs", mineracao: "ores", pesca: "fish", herbalismo: "herbs" }[R.skill]; player.stats[sk] = (player.stats[sk] || 0) + 1; checkAch();
         if (R.skill === "pesca") fx.arc(SPR[ITEMS[item].icon], o.x + 0.5, o.y + 0.4, player.px + 0.5, player.py + 0.2, 0.5, 1.3, 26); // o peixe salta até o herói
         if (item === "Peixe dourado") { SND.play("coin"); burst(o.x + 0.5, o.y + 0.5, ["#ffd84a", "#fff6c0"], 16, 3); }
-        addFloat(o.x + 0.5, o.y, `+1 ${item}`, "#ffffff");
+        addFloat(o.x + 0.5, o.y, note ? `+1 ${item} · ${String(note.kg).replace(".", ",")} kg` : `+1 ${item}`, note ? (VD.RARITY[fish.rar] || VD.RARITY.comum).color : "#ffffff");
         addFloat(player.px + 0.5, player.py - 0.4, `+${xp} xp`, "#8fd3ff", 1, 11);
         if (--o.charges <= 0) {
           if (o.lake) { // rodada 27: peixe salta no ponto antigo e no novo (fx_fish_jump); o aviso aparece no máximo a cada 30 s

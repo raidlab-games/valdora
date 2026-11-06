@@ -1500,7 +1500,7 @@
     if ((skill !== "vitalidade" && skill !== "equitacao") || now > before) xpToast(skill, n); // rodada 156: Equitação sobe aos poucos, sem aviso a cada tile
     if (now > before) {
       log(`★ ${SKILLS[skill]} subiu para o nível ${now}!`, "gold"); SND.play("level");
-      if (skill === "pesca" && now >= 10 && !player.seen.deepTip) { player.seen.deepTip = 1; log(`Dica do Ivo: Pesca 10! Os cardumes fundos, nos lagos maiores, rendem tucunarés (curam ${ITEMS["Tucunaré assado"].heal}).`, "tip", "icon_fish_spot"); } // rodada 56; rodada 89: cura lida do item
+      if (skill === "pesca" && now >= 10 && !player.seen.deepTip) { player.seen.deepTip = 1; log(`Dica do Ivo: Pesca 10! Agora o tucunaré também morde (assado cura ${ITEMS["Tucunaré assado"].heal}). A cada 10 níveis de Pesca um peixe novo, que vale mais; os cardumes fundos puxam para os melhores.`, "tip", "icon_fish_spot"); } // rodada 56; rodada 89: cura lida do item
       addFloat(player.px + 0.5, player.py - 1, `${SKILLS[skill]} nv ${now}!`, "#f1c40f", 1.8, 18);
       burst(player.px + 0.5, player.py + 0.4, ["#f1c40f", "#fff2a0"], 30, 4.5);
       if (skill === "vitalidade") player.hp = Math.min(maxHp(), player.hp + 2);
@@ -1520,8 +1520,8 @@
     const u = [];
     for (const R of Object.values(RES)) {
       if (R.skill === skill && R.req === l && !R.fish) u.push(`${R.verb} ${R.name.toLowerCase()}`);
-      if (R.fish && skill === "pesca") for (const f of R.fish) if (f.req === l) u.push(`Pescar ${f.item.replace(" cru", "").toLowerCase()}`);
     }
+    if (skill === "pesca") for (const f of VD.FISH_LADDER) if (f.lvl === l) u.push(`Pescar ${f.item.replace(/ crua?$/, "").toLowerCase()}`); // rodada 168: a escada da pesca
     for (const [n, it] of Object.entries(ITEMS)) if (skill === "culinaria" && it.cook && it.cookLvl === l) u.push(`Assar ${n.toLowerCase()}`);
     for (const [n, r] of Object.entries(SMELT)) if (skill === "ferraria" && r.lvl === l) u.push(`Fundir ${n.toLowerCase()}`);
     for (const g of Object.values(GEAR)) for (const t of g.tiers) {
@@ -1951,9 +1951,9 @@
     if (t.kind === "waystone") { player.target = null; unlockStone(r.village, true); return openDlg("waystone", r); } // rodada 105: Pedra da vila
     if (player.actT > 0) return;
     if (t.kind === "res" && !ensureTool(RES[r.kind].tool)) { // rodada 104: sem a ferramenta certa na mochila
-      const g = GEAR[RES[r.kind].tool]; log(`Você precisa de ${g.label === "Picareta" || g.label === "Vara" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
+      const g = GEAR[RES[r.kind].tool]; log(RES[r.kind].tool === "vara" ? noRodMsg() : `Você precisa de ${g.label === "Picareta" || g.label === "Foice" ? "uma" : "um"} ${g.label.toLowerCase()}. Compre com o Bento ou forje na bigorna.`, "warn"); player.target = null; return;
     }
-    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? FISH_TICKS * 2 : 2; /* rodada 137: pesca 2x mais lenta por varada */ if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
+    if (t.kind === "res") { gather(r); player.actT = RES[r.kind].skill === "pesca" ? ValdoraBoat.rod(tier("vara").bonus).tick : 2; /* rodada 168: a vara dá o ritmo (7 s na de madeira, 4,5 s na glacial) */ if (player.target) ambushRoll(); } // (sem golpe — nível baixo, mochila cheia — não conta) // rodada 112: pesca mais lenta; 113: emboscada
     else if (t.kind === "fire") { player.target = null; openDlg("fire", r); } // rodada 155: a fogueira abre a janela (escolhe o que assar)
   }
 
@@ -2028,6 +2028,11 @@
     player.inv.forEach((s, i) => { const it = s && ITEMS[s.name]; if (!it || !it.gear || !ok(it)) return;
       if (lv(weaponSkill(it)) >= (GEAR[it.gear].tiers[it.tier].req || 0) && it.tier > bt) { bt = it.tier; bi = i; } });
     return bi;
+  }
+  // rodada 168: sem vara que dê para usar: diz se é falta de vara ou de nível
+  function noRodMsg() {
+    const s = player.inv.find((x) => x && ITEMS[x.name].gear === "vara"), t = s && GEAR.vara.tiers[ITEMS[s.name].tier];
+    return t && t.req > lv("pesca") ? `A ${t.name.toLowerCase()} pede Pesca ${t.req} (você tem ${lv("pesca")}). Use uma vara do seu nível.` : "Você precisa de uma vara. Crie na mesa de artesanato (a Vara de madeira leva 3 madeiras e 1 fio de linho).";
   }
   function ensureTool(k) {
     const e = player.equip.arma; if (e && ITEMS[e.name].gear === k) return true;
@@ -3278,7 +3283,9 @@
   }
   const MASTER_TEXT = { espada: "+1 acerto e +1 dano", armadura: "+2 defesa" };
   const gearName = (k) => { const e = gearItem(k); return (e ? e.name : tier(k).name) + (e && e.master ? " ★" : ""); };
-  const gearEffect = (k, t) => k === "espada" ? `+${t.acc} acerto, +${t.dmg} dano` : k === "armadura" ? `+${t.def} defesa` : `ferramenta nível ${t.bonus + 1} (mais rápida, abre recursos melhores)`; // rodada 154
+  const gearEffect = (k, t) => k === "espada" ? `+${t.acc} acerto, +${t.dmg} dano` : k === "armadura" ? `+${t.def} defesa` : k === "vara" ? rodEffect(t.bonus) : `ferramenta nível ${t.bonus + 1} (mais rápida, abre recursos melhores)`; // rodada 154
+  // rodada 168: a vara diz o ritmo e a falha (no lago: uma varada a cada X s e a chance de fisgar; no mar: o peixe que fica no anzol)
+  const rodEffect = (b) => { const s = ValdoraBoat.rod(b); return `vara ${b + 1}: uma varada a cada ${String(s.tick / 2).replace(".", ",")} s, ${Math.round(s.base * 100)}% de fisgar no lago, ${Math.round(s.hook * 100)}% de o peixe do mar ficar no anzol`; };
   // telas da fornalha, da bigorna e do artesanato (js/crafting.js)
   const SHRINE = ValdoraShrine;
   const SHOP = ValdoraShop.create({ homeShop: () => homeShop(), player: () => player, count, lv, gearEffect, questHtml: (g) => questHtml(g), TICK });
@@ -3289,12 +3296,14 @@
     inside: (x, y) => inside(x, y), walkable: (x, y) => walkable(x, y), log: (m, c, i) => log(m, c, i), lv: (k) => lv(k), gainXp: (k, n) => gainXp(k, n), addItem: (n, q) => addItem(n, q), removeItem: (n, q) => removeItem(n, q),
     canAdd: (n) => canAdd(n), count: (n) => count(n), emit: (e) => emit(e), checkAch: () => checkAch(), rand: () => rand(), tickN: () => tickN, keyVec: () => INPUT.keyVec(), drawPlayer: (t) => drawPlayer(t),
     hud: () => { hudDirty = true; }, save: () => save(), toast: (a, b, c) => showToast(a, b, c), shake: (v) => { if (SND.opts.shake) shake = Math.max(shake, v); }, react: (o) => o && react(o), closeDlg: () => closeDlg(),
-    tag: (text, x, y, c, small) => tags.push([text, x, y, c, small]), rodTier: () => tier("vara").bonus || 0, dismount: () => dismount(), dropAggro: () => { for (const m of mobs) if (m.aggro) { m.aggro = false; m.windup = 0; m.returning = true; } },
+    tag: (text, x, y, c, small) => tags.push([text, x, y, c, small]), rodTier: () => tier("vara").bonus || 0, ensureRod: () => ensureTool("vara"), noRodMsg: () => noRodMsg(), dismount: () => dismount(), dropAggro: () => { for (const m of mobs) if (m.aggro) { m.aggro = false; m.windup = 0; m.returning = true; } },
     stopAll: () => { if (player.job && player.job.kind === "cook") stopCook(); player.job = null; player.target = null; player.path = []; player.act = null; player.cast = null; closeDlg(); },
     placeHero: (x, y) => { Object.assign(player, { x, y, fx: x, fy: y, px: x, py: y, prog: 1, path: [], goal: null, target: null, fineG: null }); player.gx = null; syncG(); if (pet && player.pet && !pet.down) petPlace(); CAMERA.reset(); },
     goNear: (x, y, r) => goTo((tx, ty) => Math.hypot(tx + 0.5 - x, ty + 0.5 - y) <= r),
     npcNear: () => [...Object.values(npc.dwarves || {}), ...Object.values(npc.docks || {})].some((o) => o && Math.max(Math.abs(o.x - player.x), Math.abs(o.y - player.y)) <= 1) });
-  const DLG_VIEW = ValdoraDialogs.create({ dwarfHtml: (tab, o) => SEA.dwarfHtml(tab, o), harborHtml: (o, tab) => SEA.harborHtml(o, tab), stableHtml: () => stableHtml(), peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
+  const DLG_VIEW = ValdoraDialogs.create({ fishChanceText: () => { const t = tier("vara"), best = VD.FISH_LADDER.filter((f) => lv("pesca") >= f.lvl).pop(); // rodada 168
+      return [`Fisgar ${best.item.replace(/ crua?$/, "").toLowerCase()} no lago (${t.name.toLowerCase()})`, Math.round(ValdoraBoat.fishChance(t.bonus, lv("pesca"), best.lvl, Object.values(player.equip).reduce((a, e) => a + (e ? accBonus(e).gather : 0), 0) / 100) * 100) + "%"]; },
+    dwarfHtml: (tab, o) => SEA.dwarfHtml(tab, o), harborHtml: (o, tab) => SEA.harborHtml(o, tab), stableHtml: () => stableHtml(), peaceHtml: () => peaceHtml(), deathBagHtml: (r) => deathBagHtml(r), potionHtml: () => potionHtml(), player: () => player, SHOP, CRAFTING, SHRINE: ValdoraShrine, questHtml: (g) => questHtml(g), echoHtml: () => echoHtml(), combatStats: () => combatStats(),
     tier, masterBadge, gearEffect, totalLevel, lv, rand, BANK_SLOTS, bankUpCost: () => bankUpCost(player.bankUps), bankMax: BANK.max, TICK, close: () => closeDlg(), dlg: () => dlg, // rodada 54/55
     dailyHtml: () => dailyHtml(), markerView: (o) => CAMPAIGN_RT.markerView(o), travelHtml: (k) => CAMPAIGN_RT.travelHtml(k), alchemyHtml: () => alchemyHtml(), petDlg: () => petDlg(), homeDlg: () => homeDlg(), stoneDlg: () => stoneDlg() }); // rodada 78/79; rodada 96: filhote
 

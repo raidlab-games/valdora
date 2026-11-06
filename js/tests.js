@@ -762,8 +762,7 @@
     for (const [k, b] of Object.entries(biome)) { const R = RES[k], n = R.need; if (n == null) { r.push(k + " sem need"); continue; }
       if (b >= 2 && !(oreOf(T[n]) || []).some((o) => MAP_ORE[b - 1].includes(o))) r.push(`${k}: ${T[n].name} não é do mapa ${b - 1}`);
       if (b >= 2 && T[n - 1] && (oreOf(T[n - 1]) || []).some((o) => (MAP_ORE[b - 1] || []).includes(o)) && b > 2) r.push(k + " aceita ferramenta pior"); }
-    for (const b of [2, 3, 4, 5]) if (VD.FISH_BY_BIOME[b - 1].need !== b + 1) r.push("peixe do mapa " + b);
-    const items = VD.FISH_BY_BIOME.map((f) => f.item); if (new Set(items).size !== 5 || items.includes("Tucunaré cru")) r.push("peixes repetidos");
+    if (RES.fishspot.fish !== VD.FISH_LADDER || RES.fishspot_deep.fish !== VD.FISH_LADDER) r.push("cardumes fora da escada da pesca"); // rodada 168
     if (!(RU.gatherChance(10, 10, 0, 0, true) < RU.gatherChance(10, 10, 0) && RU.gatherChance(10, 10, 3, 0, true) - RU.gatherChance(10, 10, 0, 0, true) > 0.25)) r.push("madeira");
     for (const t of T.slice(4)) if (!Object.keys(t.forge.mats).some((m) => /Madeira|Pinho/.test(m))) r.push(t.name + " sem madeira");
     return miss(r);
@@ -875,13 +874,13 @@
     const B = ValdoraBoat, r = [];
     r.push(Math.abs(B.windFactor(0, 0) - 1.1) < 1e-9, Math.abs(B.windFactor(Math.PI, 0) - 0.62) < 1e-9, B.windFactor(Math.PI / 2, 0) > 0.8);
     r.push(B.dir16(0) === 0, B.dir16(Math.PI / 2) === 4, B.dir16(-Math.PI / 2) === 12, B.dir16(Math.PI) === 8);
-    const t1 = B.catchTable(1, 1, null, false); r.push(t1.length === 1 && t1[0].f.item === "Sardinha");
-    const t2 = B.catchTable(1, 30, "Isca de lula brilhante", true), leg = t2.find((c) => c.f.rar === "lendario"), base = B.catchTable(1, 30, null, true).find((c) => c.f.rar === "lendario");
-    r.push(!!leg && leg.w > base.w * 4.9, t2.every((c) => c.f.zone === 1 || c.f.zone === 0));
-    r.push(B.catchTable(4, 1, null, false)[0].low === true); // sem nível para o mar 4: o comum de lá, com aviso
-    r.push(B.rollFish(t1, 0.5).item === "Sardinha");
+    const t1 = B.catchTable(1, null, false, true); r.push(t1.length === 3 && t1.every((c) => c.w === 1)); // rodada 168: as 3 básicas, iguais
+    const t2 = B.catchTable(70, "Isca de lula brilhante", false, true), leg = t2.find((c) => c.f === VD.FISH_LEGEND), base = B.catchTable(70, null, false, true).find((c) => c.f === VD.FISH_LEGEND);
+    r.push(!!leg && !!base && leg.w / t2.reduce((a, c) => a + c.w, 0) > 3 * base.w / B.catchTable(70, null, false, true).reduce((a, c) => a + c.w, 0), !B.catchTable(70, null, false, false).some((c) => c.f === VD.FISH_LEGEND));
+    r.push(!B.catchTable(59, "Isca de lula brilhante", true, true).some((c) => c.f === VD.FISH_LEGEND)); // o Rei-das-marés só a partir de Pesca 60
+    r.push(B.rollFish([{ f: { item: "Sardinha" }, w: 1 }], 0.5).item === "Sardinha");
     const f = VD.SEA_FISH.find((x) => x.item === "Atum-azul"), ws = [0, 0.3, 0.99].map((x) => B.weightRoll(f, x)); r.push(ws.every((w) => w >= f.kg[0] && w <= f.kg[1]) && ws[0] < ws[2]);
-    r.push(B.reelPower(1, 1, 0) >= 4 && B.reelPower(60, 1, 5) <= 22 && B.reelPower(20, 1, 2) > B.reelPower(1, 1, 0));
+    r.push(B.reelPower(1, 1, 0) >= 4 && B.reelPower(60, 1, 4) <= 22 && B.reelPower(20, 1, 2) > B.reelPower(1, 1, 0));
     r.push(B.mobHp(VD.SEA_MOBS.polvo, 30) > B.mobHp(VD.SEA_MOBS.tubarao, 30) * 10);
     return r.every(Boolean) || "falhou no item " + r.indexOf(false);
   });
@@ -916,6 +915,36 @@
   test("rodada 166: a bolsa do naufrágio volta do save só com peixes que existem e dentro dos 30 minutos", () => {
     const now = Date.now(), b = ValdoraBoat.sanitize({ wrecks: [{ x: 10, y: 20, until: now + 60000, items: [["Robalo", 3], ["Nada", 2]] }, { x: 1, y: 1, until: now - 1, items: [["Robalo", 1]] }, { x: 5, y: 5, until: now + 9, items: [["Nada", 1]] }, null] });
     return (b.wrecks.length === 1 && b.wrecks[0].items.length === 1 && b.wrecks[0].items[0][0] === "Robalo" && b.wrecks[0].items[0][1] === 3) || JSON.stringify(b.wrecks);
+  });
+  // rodada 168: a escada da pesca e as varas de cada mapa
+  test("rodada 168: escada da pesca: 3 desde o nível 1 e uma nova a cada 10 níveis até o 160, cada uma valendo mais", () => {
+    const L = VD.FISH_LADDER, r = [];
+    if (L.length !== 19 || L.filter((f) => f.lvl === 1).length !== 3) r.push("19 espécies, 3 básicas");
+    for (let k = 1; k <= 16; k++) if (L.filter((f) => f.lvl === k * 10).length !== 1) r.push("nível " + k * 10);
+    if (new Set(L.map((f) => f.item)).size !== 19) r.push("repetida");
+    for (let i = 3; i < L.length; i++) { if (!(L[i].price > L[i - 1].price)) r.push("preço " + L[i].item); if (!(L[i].xp > L[i - 1].xp)) r.push("xp " + L[i].item); }
+    for (const f of [...L, VD.FISH_LEGEND]) { const it = ITEMS[f.item]; if (!it || !ASSETS[it.icon]) r.push("ícone " + f.item); if (it && it.cook && !(ITEMS[it.cook] && ITEMS[it.cook].heal > 0 && ASSETS[ITEMS[it.cook].icon])) r.push("assado " + f.item);
+      if (!RARITY[f.rar] || !(f.kg[1] > f.kg[0]) || !(f.hp > 0)) r.push("dados " + f.item); if (it && it.price !== f.price && f !== VD.FISH_LEGEND) r.push("preço do item " + f.item); }
+    const t160 = ValdoraBoat.catchTable(160, null, false, false), best = t160.reduce((a, c) => (c.w > a.w ? c : a));
+    if (t160.length !== 19 || best.f.item !== "Carpa-celeste") r.push("Pesca 160 puxa para a carpa");
+    const deep = ValdoraBoat.catchTable(60, null, true, false), shallow = ValdoraBoat.catchTable(60, null, false, false), share = (t) => t[t.length - 1].w / t.reduce((a, c) => a + c.w, 0);
+    if (!(share(deep) > share(shallow))) r.push("o fundo puxa para o melhor");
+    return miss(r);
+  });
+  test("rodada 168: 5 varas (uma por mapa) na mesa de artesanato; a melhor pesca mais rápido e falha menos", () => {
+    const T = VD.GEAR.vara.tiers, S = VD.ROD_STATS, B = ValdoraBoat, r = [];
+    if (T.length !== 5 || S.length !== 5) r.push("5 varas");
+    T.forEach((t, i) => { const c = VD.CRAFT[t.name], it = ITEMS[t.name];
+      if (!c || VD.heavy(t.name) || !c.rod) r.push(t.name + " sem receita na mesa"); if (!it || it.buy || t.forge || !ASSETS[t.icon]) r.push(t.name + " (loja, bigorna ou ícone)");
+      if (c && i > 0) { const G = VD.CLASS_GEAR[i]; if (!c.mats[G.wood] || !c.mats[G.hide] || c.lvl !== t.req) r.push(t.name + " sem o material do mapa " + (i + 1)); }
+      if (c) for (const m of Object.keys(c.mats)) if (!ITEMS[m]) r.push(t.name + " → " + m); });
+    for (let i = 1; i < 5; i++) if (!(S[i].tick < S[i - 1].tick && S[i].base > S[i - 1].base && S[i].hook > S[i - 1].hook && S[i].line < S[i - 1].line && S[i].bite < S[i - 1].bite)) r.push("vara " + (i + 1) + " não melhora");
+    if (!(B.fishChance(0, 1, 1) <= 0.25 && B.fishChance(4, 160, 160) >= 0.55 && B.fishChance(4, 200, 1, 1) <= 0.85)) r.push("chance de fisgar");
+    if (!(B.hookChance(0, 1, 1) <= 0.65 && B.hookChance(4, 1, 1) > 0.9)) r.push("anzol no mar");
+    for (const [o, n] of [["Vara gasta", "Vara de madeira"], ["Vara de aço", "Vara de madeira"], ["Vara de obsidiana", "Vara de ébano"], ["Vara solar", "Vara de palmeira"]]) if (VD.RENAMED[o] !== n) r.push("save antigo: " + o);
+    const p = { boat: B.sanitize({}) }, a = B.logCatch(p, VD.FISH_LADDER[0], 0.1), b = B.logCatch(p, VD.FISH_LADDER[0], 0.9);
+    if (!(a.first && !b.first && b.rec && p.boat.journal["Lambari cru"].n === 2)) r.push("diário");
+    return miss(r);
   });
   test("caçada do dia: mesmo dia, mesmo pedido; sequência continua com ontem recebido e zera com um dia pulado", () => {
     const D = ValdoraDaily, a = D.today(null, "2026-10-31", 15, MOBS), b = D.today(null, "2026-10-31", 15, MOBS), r = [];

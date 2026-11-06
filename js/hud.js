@@ -33,7 +33,9 @@ window.ValdoraHud = (() => {
       } else if (it.buff) { const B = BUFFS[it.buff]; h += `<div>${esc(B.name)} por ${B.ticks * TICK} s</div>${B.desc ? `<small>${esc(B.desc)}</small>` : ""}`; }
       else if (it.cook) { const l = level(player.xp.culinaria); h += `<div>Cru: asse numa fogueira (Culinária ${it.cookLvl})</div><small>${l < it.cookLvl ? "seu nível ainda não deixa assar" : `${Math.round(RULES.burnChance(l, it.cookLvl) * 100)}% de queimar`}</small>`; }
       else if (it.quest) h += `<div>Item de missão</div>`;
-      else { const R = [...Object.values(VD.CRAFT), ...Object.values(VD.SMELT)], uses = R.filter((r) => r.mats && r.mats[s.name]).length; h += `<div>Material${it.region ? " da região" : ""}${uses ? ` · usado em ${uses} receita${uses > 1 ? "s" : ""}` : ""}</div>`; }
+      if (it.fishLvl && !it.cook) h += `<div>Peixe de Pesca ${it.fishLvl}: venda ao Bento ou ao anão do píer (paga mais)</div>`; // rodada 168
+      else if (it.fishLvl) h += `<small>Peixe de Pesca ${it.fishLvl}</small>`;
+      if (!(it.slot || it.fishLvl || it.cook || it.heal || it.buff || it.quest)) { const R = [...Object.values(VD.CRAFT), ...Object.values(VD.SMELT)], uses = R.filter((r) => r.mats && r.mats[s.name]).length; h += `<div>Material${it.region ? " da região" : ""}${uses ? ` · usado em ${uses} receita${uses > 1 ? "s" : ""}` : ""}</div>`; }
       for (const a of s.aff || []) h += `<div class="tip-aff">${esc(ValdoraUI.affLine(a))}</div>`;
       const w = VD.weightOf(s.name);
       h += `<small class="tip-hint">peso ${kg(w)} kg${s.n > 1 ? ` (total ${kg(w * s.n)} kg)` : ""} · vale ${it.price} moedas · clique para opções</small>`;

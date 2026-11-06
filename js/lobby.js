@@ -20,6 +20,14 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.51", "Varas de cada mapa e a escada da pesca", ["5 varas de pesca, uma por mapa, criadas na mesa de artesanato com a madeira, o fio e o couro daquele mapa: madeira (Campo, Artesanato 1), ébano (Floresta Sombria, 30), pinho (Montanhas, 65), palmeira (Deserto, 100) e glacial (Geleira, 140); cada uma pede o mesmo nível de Pesca para usar",
+      "A vara de madeira pesca devagar (uma varada a cada 7 s) e o peixe escapa muito; cada vara melhor pesca mais rápido (até 4,5 s) e perde menos peixe, no lago e no mar (no mar o peixe escapa menos do anzol e a linha arrebenta menos)",
+      "O nível de Pesca agora decide o peixe: 3 espécies desde o nível 1 (lambari, sardinha e tilápia) e uma nova a cada 10 níveis até o 160, cada uma valendo mais; o sorteio puxa para o melhor peixe que você já pesca",
+      "4 espécies novas: tilápia, pirarucu (nível 120), peixe-dragão (150) e carpa-celeste (160); o Rei-das-marés continua a lenda do mar (Pesca 60, raríssimo)",
+      "A Pesca ficou difícil de subir: é preciso pescar bastante, e o mar rende mais XP nos peixes grandes",
+      "O diário de pesca do Gaspar mostra as 19 espécies por nível (e o que falta liberar); o lago também anota peso e recorde, e cada espécie nova dá XP em dobro",
+      "As varas antigas de metal viraram a vara do mesmo mapa (as do mapa 1 viraram a vara de madeira)",
+      "Corrigido: o jogo travava por um instante quando o barco afundava no meio de um ataque"]],
     ["v1.50", "Áreas de pesca mais limpas", ["O anzol da área de pesca não mostra mais quantos peixes restam: o jogo conta sozinho e, quando os 30 acabam, a área some e renasce em outro ponto do oceano",
       "As áreas de pesca do mar não aparecem mais no minimapa: é preciso navegar e achar o anzol na água"]],
     ["v1.49", "Mais vida no mar e a bolsa do naufrágio", ["20% mais monstros espalhados pelo oceano",

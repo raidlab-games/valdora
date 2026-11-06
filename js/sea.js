@@ -439,7 +439,7 @@ window.ValdoraSea = (() => {
       if (!ship) return; const p = P(); dmg = Math.max(1, Math.round(dmg * (1 - ship.s.armor)));
       ship.hp -= dmg; ship.hurtT = 0; p.flash = 0.14; p.lastHurt = api.tickN(); api.shake(0.12); SND.play("hurt");
       api.fx.hitSplat(ship.x, ship.y - 0.8, dmg, "#ff5a4a"); api.fx.burst(ship.x, ship.y - 0.3, ["#8a5a2a", "#c9955a"], 6, 2.4);
-      if (ship.hp <= 0) sink(); else api.hud();
+      api.hud(); // rodada 168: afunda no fim do quadro (update), não no meio dos laços de monstros e balas
     }
     function killMob(m) {
       m.dead = true; m.deadT = 0; m.aggro = false; const d = m.d, p = P();
@@ -538,22 +538,25 @@ window.ValdoraSea = (() => {
       const p = P(); if (fish || !spot) return false;
       if (spot.sp) { tx = spot.tx; ty = spot.ty; spot = spot.sp; }
       if (!ship) { api.log("As áreas de pesca do mar só se pescam navegando: pegue o seu barco no cais.", "dim"); return false; }
+      if (api.ensureRod && !api.ensureRod()) { api.log(api.noRodMsg(), "warn"); return false; } // rodada 168
       if (ship && Math.abs(ship.v) > 1.6) { api.log("Devagar! Pare o barco perto da área de pesca para lançar a linha.", "dim"); return false; }
       const f = fromPt(), c = tx == null ? castPoint(spot, f.x, f.y) : { x: tx + 0.5, y: ty + 0.5 };
       if (Math.hypot(c.x - f.x, c.y - f.y) > CAST + (ship ? ship.s.beam : 0) + 0.3) { api.log("Longe demais: chegue mais perto da área de pesca.", "dim"); return false; }
       const bait = baitInUse(), Bt = BAITS[bait] || {};
-      fish = { phase: "wait", t: 0, bite: (2.2 + rand() * 3.2) * (Bt.bite || 1) * (spot.big ? 0.85 : 1), spot, bait, onFoot: !ship, bob: { x: c.x, y: c.y }, castT: 0 };
+      const rs = B.rod(api.rodTier()); // rodada 168: a vara de madeira espera mais e perde mais peixe; a glacial, bem menos
+      fish = { phase: "wait", t: 0, bite: (2.2 + rand() * 3.2) * (Bt.bite || 1) * (spot.big ? 0.85 : 1) * rs.bite, spot, bait, onFoot: !ship, bob: { x: c.x, y: c.y }, castT: 0, line: rs.line };
       if (!ship) { p.cast = { sea: true, t: 0, landed: false, spot: { x: c.x - 0.5, y: c.y - 0.5 } }; p.dir = dir8(Math.atan2(c.y - f.y, c.x - f.x)); } // a pé, a vara do herói; no barco, a linha sai do barco
       p.target = null; p.path = []; p.job = null;
       SND.play("whoosh"); panel(true); return true;
     }
     function fishStop(silent, msg) { if (!fish) return; fish = null; const p = P(); p.cast = null; panel(false); if (msg && !silent) api.log(msg, "dim"); }
     function fishBite() {
-      const p = P(), z = fish.spot.zone, pesca = api.lv("pesca");
+      const p = P(), pesca = api.lv("pesca"), rt = api.rodTier();
       if (fish.bait) { api.removeItem(fish.bait, 1); if (!api.count(fish.bait)) api.log(`Acabou a ${fish.bait.toLowerCase()}.`, "dim"); }
-      const f = B.rollFish(B.catchTable(z, pesca, fish.bait, fish.spot.deep), rand());
+      const f = B.rollFish(B.catchTable(pesca, fish.bait, fish.spot.deep, true), rand()); // rodada 168: a escada da pesca (o nível libera os melhores)
+      if (rand() > B.hookChance(rt, pesca, f.lvl)) { fishLose(`Beliscou a isca e escapou do anzol${rt < 2 ? " (uma vara melhor segura mais peixes)" : ""}.`); return; }
       const tm = { comum: 24, raro: 28, epico: 32, lendario: 38 }[f.rar];
-      Object.assign(fish, { phase: "fight", f, hp: f.hp * (fish.spot.deep ? 1.1 : 1), max: f.hp * (fish.spot.deep ? 1.1 : 1), T: 18, time: tm, timeMax: tm, mood: "calmo", moodT: 1.2, cd: [0, 0, 0, 0], power: B.reelPower(pesca, f.req, api.rodTier()) });
+      Object.assign(fish, { phase: "fight", f, hp: f.hp * (fish.spot.deep ? 1.1 : 1), max: f.hp * (fish.spot.deep ? 1.1 : 1), T: 18, time: tm, timeMax: tm, mood: "calmo", moodT: 1.2, cd: [0, 0, 0, 0], power: B.reelPower(pesca, f.lvl, rt) });
       if (p.cast) p.cast.tug = true; fish.tug = true; SND.play("splash"); api.fx.addFloat(fish.bob.x, fish.bob.y - 0.5, "Fisgou!", "#ffd84a", 0.9, 14);
       api.fx.burst(fish.bob.x, fish.bob.y, ["#e8f6ff", "#8fc1ee"], 10, 2);
       if (f.rar === "lendario") { SND.play("rare"); api.log("Algo ENORME mordeu a isca!", "gold"); }
@@ -565,7 +568,7 @@ window.ValdoraSea = (() => {
       if (k === 3) { fish.T = Math.max(0, fish.T - 36); fish.hp = Math.min(fish.max, fish.hp + fish.max * 0.035); SND.play("whoosh"); }
       else {
         const dmg = fish.power * (k === 2 ? 2.8 : 1) * (tired ? 2 : angry ? (k === 2 ? 0.6 : 0.5) : 1);
-        fish.T += (k === 2 ? 26 : 9) * (angry ? (k === 2 ? 1.7 : 2) : 1); fish.hp -= dmg; SND.play(k === 2 ? "hit" : "reel");
+        fish.T += (k === 2 ? 26 : 9) * (angry ? (k === 2 ? 1.7 : 2) : 1) * (fish.line || 1); fish.hp -= dmg; SND.play(k === 2 ? "hit" : "reel");
         api.fx.burst(fish.bob.x, fish.bob.y, ["#e8f6ff", "#8fc1ee"], k === 2 ? 8 : 3, k === 2 ? 2.2 : 1.2);
         if (fish.hp <= 0) { fishCaught(); return true; }
         if (fish.T >= 100) { fishLose("A linha arrebentou! O peixe levou a isca.", true); return true; }
@@ -574,11 +577,10 @@ window.ValdoraSea = (() => {
     }
     function fishLose(msg, snap) { const p = P(); SND.play(snap ? "snap" : "splash"); api.fx.burst(fish.bob.x, fish.bob.y, ["#e8f6ff", "#8fc1ee"], 12, 2.6); api.log(msg, "warn"); fish = null; p.cast = null; panel(false); }
     function fishCaught() {
-      const p = P(), f = fish.f, kg = B.weightRoll(f, rand()), R = RARITY[f.rar] || RARITY.comum, spot = fish.spot, bob = fish.bob;
-      const j = p.boat.journal[f.item] || (p.boat.journal[f.item] = { n: 0, kg: 0 }), first = j.n === 0, rec = kg > j.kg, prev = j.kg;
-      j.n++; if (rec) j.kg = kg;
+      const p = P(), f = fish.f, R = RARITY[f.rar] || RARITY.comum, spot = fish.spot, bob = fish.bob;
+      const { kg, first, rec, prev } = B.logCatch(p, f, rand()); // rodada 168: o diário é o mesmo do lago
       if (api.canAdd(f.item, 1)) api.addItem(f.item, 1); else api.log("Mochila cheia: você soltou o peixe de volta no mar.", "warn");
-      const xp = f.xp + (first ? f.xp : 0); api.gainXp("pesca", xp); api.emit("gather:" + f.item); p.stats.fish = (p.stats.fish || 0) + 1; api.checkAch();
+      const xp = Math.round(f.xp * (1 + Math.min(1, f.lvl / 160))) * (first ? 2 : 1); // o mar rende mais nos peixes grandes (a luta da linha demora mais) api.gainXp("pesca", xp); api.emit("gather:" + f.item); p.stats.fish = (p.stats.fish || 0) + 1; api.checkAch();
       const to = ship ? { x: ship.x, y: ship.y - 0.6 } : { x: p.px + 0.5, y: p.py + 0.2 };
       api.fx.arc(api.SPR[ITEMS[f.item].icon], bob.x, bob.y, to.x, to.y, 0.6, 1.6, 30);
       api.fx.addFloat(bob.x, bob.y - 0.8, `${f.item} · ${fmtKg(kg)}`, R.color, 1.8, 13); api.fx.addFloat(to.x, to.y - 0.6, `+${xp} xp`, "#8fd3ff", 1, 11);
@@ -603,7 +605,7 @@ window.ValdoraSea = (() => {
       fish.time -= dt; fish.moodT -= dt;
       if (fish.moodT <= 0) { const r = rand(); fish.mood = fish.mood !== "calmo" ? "calmo" : r < 0.5 ? "cansado" : "bravo"; fish.moodT = fish.mood === "calmo" ? 1.4 + rand() * 1.8 : 1.6 + rand() * 1.1;
         if (fish.mood === "bravo") { SND.play("warn"); api.fx.burst(fish.bob.x, fish.bob.y, ["#e8f6ff"], 8, 2.6); } }
-      fish.T = clamp(fish.T + MOODS[fish.mood].pull * dt * (fish.f.rar === "lendario" ? 1.3 : 1), 0, 100);
+      fish.T = clamp(fish.T + MOODS[fish.mood].pull * dt * (fish.f.rar === "lendario" ? 1.3 : 1) * (MOODS[fish.mood].pull > 0 ? fish.line || 1 : 1), 0, 100);
       if (fish.T >= 100) return fishLose("A linha arrebentou! O peixe levou a isca.", true);
       if (fish.time <= 0) return fishLose("O peixe se soltou e fugiu para o fundo.");
       if ((hudT += dt) > 0.1) { hudT = 0; panel(true); }
@@ -642,6 +644,7 @@ window.ValdoraSea = (() => {
         for (const m of mobs) if (m.dead ? m.deadT < 1.5 : Math.abs(m.x - cx) < 60 && Math.abs(m.y - cy) < 60) updateMob(m, dt);
         updateBalls(dt);
       }
+      if (ship && ship.hp <= 0) sink();
       if (!ship && !p.sailing) { balls.length = 0; warns.length = 0; }
     }
     function sail(dt) {
@@ -1064,19 +1067,19 @@ window.ValdoraSea = (() => {
           + `<button class="wide" data-buse="" ${!cur ? "disabled" : ""}>Pescar sem isca</button>`;
       }
       if (tab === "log") {
-        const J = p.boat.journal, zones = ["Qualquer mar", "Mar das Brisas (Campo)", "Mar do Breu (Floresta)", "Mar de Ferro (Montanhas)", "Mar Rubro (Deserto)", "Mar Gelado (Geleira)"];
-        const got = SEA_FISH.filter((f) => J[f.item] && J[f.item].n).length;
-        let h = `<p class="desc">Diário de pesca: ${got} de ${SEA_FISH.length} espécies do mar. Cada espécie nova dá XP em dobro; ${esc(who)} anota o peso do maior de cada uma (o diário é o mesmo em todos os cais).</p>`;
-        for (const z of [1, 2, 3, 4, 5, 0]) {
-          h += `<div class="cr-group">${zones[z]}</div>` + SEA_FISH.filter((f) => f.zone === z).map((f) => { const j = J[f.item], R = RARITY[f.rar];
-            return row(j ? ic(f.item) : `<span class="slot locked"></span>`, j ? `<span style="color:${R.color}">${esc(f.item)}</span>` : "<span style='color:#8a8070'>???</span>",
-              j ? `${R.name} · ${j.n} pescado${j.n > 1 ? "s" : ""} · recorde ${fmtKg(j.kg)}` : `${R.name} · Pesca ${f.req}`, null, ""); }).join("");
-        }
-        return h;
+        const J = p.boat.journal, L = VD.FISH_LADDER, all = [...L, VD.FISH_LEGEND], pesca = api.lv("pesca");
+        const got = all.filter((f) => J[f.item] && J[f.item].n).length;
+        let h = `<p class="desc">Diário de pesca: ${got} de ${all.length} espécies. Três mordem desde o nível 1 e a cada 10 níveis de Pesca chega um peixe novo, que vale mais (lago e mar). Cada espécie nova dá XP em dobro; ${esc(who)} anota o peso do maior de cada uma.</p>`;
+        const line = (f, legend) => { const j = J[f.item] && J[f.item].n ? J[f.item] : null, R = RARITY[f.rar], open = pesca >= f.lvl;
+          return row(j || open ? ic(f.item) : `<span class="slot locked"></span>`, j || open ? `<span style="color:${R.color}">${esc(f.item)}</span>` : "<span style='color:#8a8070'>???</span>",
+            `${legend ? "só no mar, raríssimo · " : ""}Pesca ${f.lvl}${open ? "" : " (ainda não)"} · vale ${ITEMS[f.item].price}${j ? ` · ${j.n} pescado${j.n > 1 ? "s" : ""} · recorde ${fmtKg(j.kg)}` : open ? " · ainda não pescou" : ""}`, null, ""); };
+        h += `<div class="cr-group">Desde o nível 1</div>` + L.filter((f) => f.lvl < 10).map((f) => line(f)).join("");
+        for (const [a, b] of [[10, 50], [60, 100], [110, 160]]) h += `<div class="cr-group">Pesca ${a} a ${b}</div>` + L.filter((f) => f.lvl >= a && f.lvl <= b).map((f) => line(f)).join("");
+        return h + `<div class="cr-group">Lenda</div>` + line(VD.FISH_LEGEND, true);
       }
       const rows = p.inv.filter((s) => s && isFish(s.name));
       return `<p class="desc">${esc(who)} paga ${Math.round((DWARF_BONUS - 1) * 100)}% a mais que o Bento por qualquer peixe cru, do lago ou do mar.</p>` + (rows.length ? rows.map((s) =>
-        row(ic(s.name), `${esc(s.name)} <small>x${s.n}</small>`, ITEMS[s.name].sea ? `${(RARITY[ITEMS[s.name].sea] || RARITY.comum).name} · do mar` : "do lago", fishPrice(s.name),
+        row(ic(s.name), `${esc(s.name)} <small>x${s.n}</small>`, ITEMS[s.name].sea ? `${(RARITY[ITEMS[s.name].sea] || RARITY.comum).name}${ITEMS[s.name].fishLvl ? ` · Pesca ${ITEMS[s.name].fishLvl}` : ""}` : "peixe", fishPrice(s.name),
           `<button data-fsell="${esc(s.name)}" data-n="1">1</button><button data-fsell="${esc(s.name)}" data-n="all">Tudo</button>`)).join("")
         + `<button class="wide" data-fsellall="1">Vender todos os peixes</button>` : `<p class="empty">Nenhum peixe na mochila. Pesque nos lagos ou saia de barco atrás das áreas de pesca do mar (o anzol na água).</p>`);
     }

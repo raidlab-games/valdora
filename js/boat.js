@@ -72,21 +72,30 @@ window.ValdoraBoat = (() => {
   const windFactor = (heading, wind) => 0.62 + 0.48 * (1 + Math.cos(angDiff(heading, wind))) / 2;
   // direção (0 a 15) mais perto do ângulo da proa (0 = direita, 4 = baixo)
   const dir16 = (a) => ((Math.round(a / (Math.PI / 8)) % 16) + 16) % 16;
-  // peixes que podem morder num cardume da zona z, com o peso de cada um (o nível de Pesca filtra; a isca e o fundo mudam a sorte)
-  const RAR_W = { comum: 70, raro: 24, epico: 6, lendario: 0.35 };
-  function catchTable(zone, pesca, bait, deep) {
-    const B = VD.BAITS[bait] || {}, out = [];
-    for (const f of VD.SEA_FISH) {
-      if (f.zone && f.zone !== zone) continue; if (pesca < f.req) continue;
-      let w = RAR_W[f.rar]; if (f.rar === "raro") w *= B.rare || 1; if (f.rar === "epico") w *= (B.epic || 1) * (deep ? 1.5 : 1); if (f.rar === "lendario") w *= (B.leg || 1) * (deep ? 2 : 1);
-      out.push({ f, w });
-    }
-    if (!out.length) { const f = VD.SEA_FISH.find((x) => x.zone === zone && x.rar === "comum"); if (f) out.push({ f, w: 1, low: true }); }
+  // rodada 168: a escada da pesca (VD.FISH_LADDER), a mesma no lago e no mar. Saem só os peixes que a Pesca já libera; cada degrau
+  // de 10 níveis pesa 1,8x o de baixo no sorteio (o mais novo é o mais comum). Fundo e isca boa puxam ainda mais para os melhores.
+  // No mar, o Rei-das-marés (VD.FISH_LEGEND) pode morder a partir de Pesca 60: raríssimo, mais com a isca de lula e no mar fundo.
+  function catchTable(pesca, bait, deep, sea) {
+    const B = VD.BAITS[bait] || {}, g = 1.8 + (deep ? 0.35 : 0) + (B.best || 0);
+    const out = VD.FISH_LADDER.filter((f) => pesca >= f.lvl).map((f) => ({ f, w: Math.pow(g, Math.floor(f.lvl / 10)) }));
+    if (!out.length) out.push({ f: VD.FISH_LADDER[0], w: 1 });
+    const L = VD.FISH_LEGEND;
+    if (sea && L && pesca >= L.lvl) out.push({ f: L, w: out.reduce((a, c) => a + c.w, 0) * 0.004 * (B.leg || 1) * (deep ? 2 : 1) });
     return out;
   }
   function rollFish(table, r) { const tot = table.reduce((a, c) => a + c.w, 0); let k = r * tot; for (const c of table) if ((k -= c.w) <= 0) return c.f; return table[table.length - 1].f; }
+  const rod = (t) => VD.ROD_STATS[Math.max(0, Math.min(VD.ROD_STATS.length - 1, t | 0))];
+  // lago: chance de cada varada fisgar (a vara manda; até +12 pontos com a Pesca acima do peixe; extra = bônus de coleta das peças)
+  const fishChance = (rodTier, pesca, lvl, extra) => Math.max(0.05, Math.min(0.85, rod(rodTier).base + Math.min(0.12, Math.max(0, pesca - lvl) * 0.004) + (extra || 0)));
+  // mar: chance de o peixe que mordeu ficar no anzol (senão belisca a isca e escapa)
+  const hookChance = (rodTier, pesca, lvl) => Math.min(0.97, rod(rodTier).hook + Math.min(0.1, Math.max(0, pesca - lvl) * 0.003));
   // força de cada puxada: cresce com a Pesca acima do pedido do peixe e com o nível da vara
-  const reelPower = (pesca, req, rodTier) => Math.max(4, Math.min(22, 6 * (1 + 0.035 * (pesca - req)) * (1 + 0.1 * (rodTier || 0))));
+  const reelPower = (pesca, req, rodTier) => Math.max(4, Math.min(22, 6 * (1 + 0.035 * (pesca - req)) * (1 + 0.15 * (rodTier || 0))));
+  // diário de pesca (lago e mar): sorteia o peso e anota; first = espécie nova (XP em dobro), rec = recorde de peso
+  function logCatch(p, f, r) {
+    const kg = weightRoll(f, r), J = p.boat.journal, j = J[f.item] || (J[f.item] = { n: 0, kg: 0 }), first = j.n === 0, rec = kg > j.kg, prev = j.kg;
+    j.n++; if (rec) j.kg = kg; return { kg, first, rec, prev };
+  }
   const weightRoll = (f, r) => Math.round((f.kg[0] + (f.kg[1] - f.kg[0]) * Math.pow(r, 1.7)) * (f.kg[1] < 2 ? 100 : 10)) / (f.kg[1] < 2 ? 100 : 10);
   function sailXp(b, tiles) { b.sailAcc = (b.sailAcc || 0) + tiles * VD.SAIL_XP; const n = Math.floor(b.sailAcc); b.sailAcc -= n; return n; }
   // monstros do mar: vida e golpe pelo nível
@@ -94,5 +103,5 @@ window.ValdoraBoat = (() => {
   // bala do jogador: Navegação e Combate somam; o casco e a melhoria de canhões multiplicam
   const ballDmg = (s, nav, combate) => Math.round((10 + 0.9 * nav + 0.4 * combate) * s.gun);
   return { WOOD, BAR, MAX_PART, sanitize, stats, hpOf, whyNotHull, buyHull, partCost, whyNotPart, upgrade, repairCost, angDiff, windFactor, dir16, catchTable, rollFish,
-    reelPower, weightRoll, sailXp, mobHp, mobDmg, ballDmg };
+    reelPower, weightRoll, sailXp, mobHp, mobDmg, ballDmg, rod, fishChance, hookChance, logCatch };
 })();

@@ -1006,7 +1006,9 @@ window.VD = (() => {
       { name: "Couraça estelar", icon: "item_star_armor", def: 22, cost: 16000, req: 22, rolls: true, forge: { mats: { "Barra estelar": 5 }, lvl: 32, xp: 480 } }] }, // rodada 82
     machado: { label: "Machado", icon: "tool_axe", skill: "corte", tiers: tool("Machado", "de pedra", { "Cobre": 3, "Madeira": 2 }, ["tool_axe_stone", "tool_axe_copper"]) },
     picareta: { label: "Picareta", icon: "tool_pick", skill: "mineracao", tiers: tool("Picareta", "de pedra", { "Cobre": 3, "Madeira": 2 }, ["tool_pick_stone", "tool_pick_copper"]) },
-    vara: { label: "Vara", icon: "tool_rod", skill: "pesca", tiers: tool("Vara", "gasta", { "Madeira": 3, "Barra de bronze": 1 }) },
+    // rodada 168: uma vara por mapa, criada na mesa de artesanato com a madeira, o fio e o couro daquele mapa (ROD_STATS: velocidade e falha)
+    vara: { label: "Vara", icon: "tool_rod", skill: "pesca", tiers: [{ name: "Vara de madeira", bonus: 0, icon: "tool_rod_1" }, { name: "Vara de ébano", bonus: 1, req: 30, icon: "tool_rod_2" },
+      { name: "Vara de pinho", bonus: 2, req: 65, icon: "tool_rod_3" }, { name: "Vara de palmeira", bonus: 3, req: 100, icon: "tool_rod_4" }, { name: "Vara glacial", bonus: 4, req: 140, icon: "tool_rod_5" }] },
     foice: { label: "Foice", icon: "tool_sickle", skill: "herbalismo", tiers: tool("Foice", "de pedra", { "Cobre": 2, "Madeira": 1 }, ["tool_sickle_stone", "tool_sickle_copper"]) }, // rodada 104
   };
 
@@ -1021,7 +1023,7 @@ window.VD = (() => {
     GEAR.espada.tiers.push({ name: sword, bow, two, filter, acc: [26, 34, 44, 56][k], dmg: [11, 15, 20, 26][k], cost, req, forge: { mats: { [bar]: 4 }, lvl, xp: [520, 760, 1050, 1400][k] } });
     GEAR.armadura.tiers.push({ name: armor, filter, icon: "item_armor_lumita", def: [28, 36, 46, 58][k], cost, req, forge: { mats: { [bar]: 5 }, lvl, xp: [600, 880, 1200, 1600][k] } });
     const wood = ["Madeira de ébano", "Madeira de pinho", "Madeira de palmeira", "Pinho nevado"][k]; // rodada 154: o cabo é da madeira do mapa
-    for (const t of ["machado", "picareta", "vara", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2, [wood]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
+    for (const t of ["machado", "picareta", "foice"]) { const g = GEAR[t]; g.tiers.push({ name: `${g.label} ${de}`, filter, bonus: 4 + k, cost: Math.round(cost / 4), req, forge: { mats: { [bar]: 2, [wood]: 2 }, lvl, xp: [180, 260, 360, 480][k] } }); }
   });
   // rodada 151: cajado do Mago em cada nível de arma (mesmos números da espada; treina e pede o nível de Mago)
   ["Cajado gasto", "Cajado de bronze", "Cajado de ferro", "Cajado de aço", "Cajado de lumita", "Cajado estelar", "Cajado de obsidiana", "Cajado de mitril", "Cajado solar", "Cajado glacial"]
@@ -1045,6 +1047,12 @@ window.VD = (() => {
       if (t.staff) ITEMS[t.staff].look = ["staff", ["#a08a70", "#d8a070", "#d0d4e0", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]];
       if (t.bow) ITEMS[t.bow].look = ["bow", [null, "#f0b878", "#d8dce8", "#f6f8ff", "#96ecf8", "#dcc4ff", "#6a5a8a", "#b8e0ff", "#ffd66a", "#f0fbff"][i]]; }
   });
+  // rodada 168: varas não se compram nem se forjam (só na mesa); preço de venda ao Bento
+  GEAR.vara.tiers.forEach((t, i) => { ITEMS[t.name].price = [4, 60, 160, 340, 620][i]; delete ITEMS[t.name].buy; });
+  // velocidade e falha de cada vara (índice = bonus): tick = meios-segundos entre varadas no lago; base = chance de fisgar no lago;
+  // bite = espera até morder no mar (x); hook = chance de o peixe do mar ficar no anzol; line = quanto a linha estica na luta (x)
+  const ROD_STATS = [{ tick: 14, base: 0.2, bite: 1.4, hook: 0.6, line: 1.25 }, { tick: 12, base: 0.3, bite: 1.2, hook: 0.7, line: 1.12 },
+    { tick: 11, base: 0.4, bite: 1.05, hook: 0.8, line: 1 }, { tick: 10, base: 0.5, bite: 0.92, hook: 0.88, line: 0.9 }, { tick: 9, base: 0.6, bite: 0.8, hook: 0.95, line: 0.8 }];
 
   // Fornalha: barras a partir de minério (aço usa carvão de carvalho; lumita usa brasa de cedro)
   const SMELT = {
@@ -1177,7 +1185,10 @@ window.VD = (() => {
   // Tutorial do Guarda Ivo. ev = evento que conta progresso (prefixo basta: "forge" conta qualquer forja).
   // rodada 154: nomes antigos das ferramentas (saves de antes viram o item novo)
   const RENAMED = { "Machado gasto": "Machado de pedra", "Picareta gasta": "Picareta de pedra", "Foice gasta": "Foice de pedra",
-    "Machado de bronze": "Machado de cobre", "Picareta de bronze": "Picareta de cobre", "Foice de bronze": "Foice de cobre" };
+    "Machado de bronze": "Machado de cobre", "Picareta de bronze": "Picareta de cobre", "Foice de bronze": "Foice de cobre",
+    // rodada 168: as varas forjadas viraram a vara do mesmo mapa
+    "Vara gasta": "Vara de madeira", "Vara de bronze": "Vara de madeira", "Vara de ferro": "Vara de madeira", "Vara de aço": "Vara de madeira",
+    "Vara de obsidiana": "Vara de ébano", "Vara de mitril": "Vara de pinho", "Vara solar": "Vara de palmeira" };
   const TUTORIAL = [
     { text: "Fale com o Guarda Ivo, na praça.", ev: "talk", n: 1, reward: { items: { "Machado de pedra": 1 } }, // rodada 104: nada vem preso ao herói; o Ivo empresta o kit
       say: "Bem-vindo a Lumeira! Vou te ensinar o básico: coletar, forjar, cozinhar e lutar. Siga as tarefas no painel, à direita. Cada região diz o nível recomendado ao entrar." },
@@ -1187,7 +1198,7 @@ window.VD = (() => {
       say: "Tome também esta picareta de pedra. Os veios de cobre são as pedras com manchas alaranjadas. Elas se esgotam e voltam depois de um tempo." },
     { text: "Funda 2 barras de bronze na fornalha.", ev: "smelt:Barra de bronze", n: 2, reward: { coins: 15 },
       say: "A fornalha fica no canto sudeste da praça. Cada barra de bronze usa 2 cobres." },
-    { text: "Forje uma Espada de bronze na bigorna.", ev: "forgeitem:Espada de bronze", n: 1, reward: { coins: 20, items: { "Vara gasta": 1 } }, // rodada 152: todos começam pela espada
+    { text: "Forje uma Espada de bronze na bigorna.", ev: "forgeitem:Espada de bronze", n: 1, reward: { coins: 20, items: { "Vara de madeira": 1 } }, // rodada 152: todos começam pela espada
       say: "Na bigorna, ao lado da fornalha, transforme as barras numa espada: toda aventura começa por ela. Depois, se quiser, forje um arco (Arqueiro) ou um cajado (Mago) e siga o seu caminho: Guerreiro, Arqueiro ou Mago." },
     { text: "Forje uma Picareta de cobre na bigorna.", ev: "forgeitem:Picareta de cobre", n: 1, reward: { coins: 15 }, // rodada 154: a primeira ferramenta de metal
       say: "Pedra quebra o galho, mas cobre rende mais. Minere mais 3 cobres e, com 2 madeiras, forje uma picareta de cobre (o machado de cobre é igual). Cada mapa novo tem um minério melhor para machados e picaretas mais fortes." },
@@ -1630,11 +1641,17 @@ window.VD = (() => {
     }
   });
   // ferramentas e armas de pedra e madeira: na mesa de artesanato (as de metal são forjadas na bigorna)
+  const rodDesc = (i, map) => { const s = ROD_STATS[i]; return `vara ${i + 1} (${map}) · uma varada a cada ${String(s.tick / 2).replace(".", ",")} s · ${Math.round(s.base * 100)}% de fisgar no lago · ${Math.round(s.hook * 100)}% de o peixe do mar não escapar`; };
   Object.assign(CRAFT, {
     "Machado de pedra": { mats: { "Pedra": 3, "Madeira": 2 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · cortar madeira" },
     "Picareta de pedra": { mats: { "Pedra": 3, "Madeira": 2 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · minerar" },
     "Foice de pedra": { mats: { "Pedra": 2, "Madeira": 1 }, lvl: 1, xp: 5, desc: "ferramenta nível 1 · colher plantas" },
-    "Vara gasta": { mats: { "Madeira": 3, "Fio de linho": 1 }, lvl: 1, xp: 6, desc: "ferramenta nível 1 · pescar" },
+    // rodada 168: as 5 varas (uma por mapa); rod = aparece na mesa mesmo bem acima do nível
+    "Vara de madeira": { mats: { "Madeira": 3, "Fio de linho": 1 }, lvl: 1, xp: 6, rod: true, desc: rodDesc(0, "Campo") },
+    "Vara de ébano": { mats: { "Madeira de ébano": 4, "Fio de seda sombria": 3, "Couro sombrio": 1 }, lvl: 30, xp: 150, rod: true, desc: rodDesc(1, "Floresta Sombria") },
+    "Vara de pinho": { mats: { "Madeira de pinho": 4, "Lã de carneiro": 3, "Couro de rocha": 1 }, lvl: 65, xp: 330, rod: true, desc: rodDesc(2, "Montanhas") },
+    "Vara de palmeira": { mats: { "Madeira de palmeira": 4, "Fio de algodão": 3, "Couro de duna": 1 }, lvl: 100, xp: 540, rod: true, desc: rodDesc(3, "Deserto") },
+    "Vara glacial": { mats: { "Pinho nevado": 4, "Lã de mamute": 3, "Pele polar": 1 }, lvl: 140, xp: 780, rod: true, desc: rodDesc(4, "Geleira") },
     "Arco gasto": { mats: { "Madeira": 4, "Fio de linho": 2 }, lvl: 2, xp: 10, desc: "arco de madeira · Arqueiro 1" },
     "Cajado gasto": { mats: { "Madeira": 5, "Erva-cidreira": 1 }, lvl: 2, xp: 10, desc: "cajado de madeira · Mago 1" },
   });
@@ -1700,8 +1717,8 @@ window.VD = (() => {
   // iscas (o Gaspar vende): bite = tempo até morder (x), rare/epic/leg = chance de peixe raro, épico e lendário (x)
   const BAITS = {
     "Isca de minhoca": { icon: "item_isca_minhoca", buy: 4, price: 1, bite: 0.6, desc: "o peixe morde bem mais rápido" },
-    "Isca de camarão": { icon: "item_isca_camarao", buy: 18, price: 4, bite: 0.9, rare: 1.7, epic: 2, desc: "mais peixes raros e épicos" },
-    "Isca de lula brilhante": { icon: "item_isca_lula", buy: 70, price: 15, bite: 0.8, rare: 1.3, epic: 2.6, leg: 5, desc: "atrai os épicos e o Rei-das-marés" } };
+    "Isca de camarão": { icon: "item_isca_camarao", buy: 18, price: 4, bite: 0.9, best: 0.5, desc: "puxa para os melhores peixes que o seu nível já pesca" },
+    "Isca de lula brilhante": { icon: "item_isca_lula", buy: 70, price: 15, bite: 0.8, best: 0.35, leg: 5, desc: "melhores peixes e atrai o Rei-das-marés (Pesca 60)" } };
   // monstros do mar: multiplicadores sobre a base do nível (vida 30 + 7 por nível, golpe 4 + 0,9 por nível); w = peso no sorteio
   const SEA_MOBS = {
     tubarao: { name: "Tubarão-de-cicatriz", hp: 1.0, dmg: 1.0, speed: 3.6, radius: 0.75, aggro: 9, xp: 1.0, kind: "bite", art: "sea_shark", w: 30, zones: [1, 2, 3, 4], drops: [["Barbatana de tubarão", 0.55]], skill: "Rodeia o barco e, no ponto de exclamação, dá o bote com a bocarra aberta." },
@@ -1752,6 +1769,26 @@ window.VD = (() => {
   }
   for (const [n, b] of Object.entries(BAITS)) ITEMS[n] = { icon: b.icon, price: b.price, bait: true, w: 0.05 };
   for (const [n, it] of Object.entries(SEA_LOOT)) ITEMS[n] = { ...it };
+  // ---------- rodada 168: a escada da pesca (lago e mar) ----------
+  // 3 espécies desde o nível 1 e uma nova a cada 10 níveis de Pesca até o 160. O nível libera peixes melhores (valem mais) e o
+  // sorteio puxa para os melhores já liberados; a vara só muda a velocidade e a falha (ROD_STATS). Peixe novo no diário: XP em dobro.
+  // [peixe, nível, preço, kg, ícone (espécies novas), [assado, cura, Culinária]]
+  const FISH_LADDER = [
+    ["Lambari cru", 1, 2, [0.04, 0.2]], ["Sardinha", 1, 3, [0.1, 0.35]], ["Tilápia crua", 1, 3, [0.3, 1.8], "tilapia", ["Tilápia assada", 7, 1]],
+    ["Tucunaré cru", 10, 5, [0.5, 5]], ["Robalo", 20, 8, [1, 7]], ["Cavala-negra", 30, 12, [0.4, 1.6]], ["Dourado-do-mar", 40, 16, [5, 22]],
+    ["Arenque-de-ferro", 50, 21, [0.2, 0.8]], ["Moreia-sombria", 60, 27, [2, 12]], ["Peixe-papagaio", 70, 33, [0.8, 3]], ["Bacalhau", 80, 40, [4, 20]],
+    ["Garoupa-coral", 90, 47, [5, 30]], ["Peixe-lanterna", 100, 55, [3, 15]], ["Peixe-espada", 110, 63, [40, 160]], ["Pirarucu", 120, 72, [30, 200], "pirarucu", ["Pirarucu assado", 90, 100]],
+    ["Esturjão-couraçado", 130, 82, [20, 90]], ["Atum-azul", 140, 93, [60, 250]], ["Peixe-dragão", 150, 105, [15, 70], "peixe_dragao"], ["Carpa-celeste", 160, 120, [8, 40], "carpa_celeste"],
+  ].map(([item, lvl, price, kg, ico, cook]) => ({ item, lvl, req: lvl, price, kg, ico, cook, xp: Math.round(10 + 0.9 * lvl), hp: Math.round(90 + 0.8 * lvl),
+    rar: lvl < 30 ? "comum" : lvl < 90 ? "raro" : lvl < 150 ? "epico" : "lendario" }));
+  for (const f of FISH_LADDER) {
+    if (f.ico) ITEMS[f.item] = { icon: "item_" + f.ico, price: f.price };
+    if (f.cook) { const [c, heal, cl] = f.cook; Object.assign(ITEMS[f.item], { cook: c, cookLvl: cl, cookXp: Math.round(f.xp * 0.9), cookT: Math.max(1, Math.round(f.lvl / 30)) });
+      ITEMS[c] = { icon: `item_${f.ico}_assado`, price: f.price * 2 + 2, heal }; }
+    Object.assign(ITEMS[f.item], { price: f.price, sea: f.rar, fishLvl: f.lvl, rare: f.rar === "epico" || f.rar === "lendario" }); RES_SKILL[f.item] = "pesca";
+  }
+  // o Rei-das-marés fica fora da escada: só no mar, a partir de Pesca 60, raríssimo (a isca de lula e o mar fundo ajudam)
+  const FISH_LEGEND = { ...SEA_FISH.find((f) => f.item === "Rei-das-marés"), lvl: 60, req: 60 };
 
   // ---------- rodada 139/144: ofícios com progressão lenta ----------
   // Mesa de artesanato (perto da bigorna) faz o que não é de metal forjado nem de alquimia; poções ficam com a Morgana.
@@ -1792,6 +1829,7 @@ window.VD = (() => {
   const cutRw = (o) => { if (!o || typeof o !== "object") return; if (o.reward && o.reward.xp && typeof o.reward.xp === "object") for (const k of Object.keys(o.reward.xp)) o.reward.xp[k] = cut(o.reward.xp[k]);
     for (const v of Object.values(o)) if (v && typeof v === "object" && v !== o.reward) cutRw(v); };
   cutRw(QUESTS); cutRw(TUTORIAL);
-  return { HULLS, SHIP_PARTS, SAIL_XP, SEA_FISH, BAITS, SEA_MOBS, SEA_LOOT, XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  RES.fishspot.fish = FISH_LADDER; RES.fishspot_deep.fish = FISH_LADDER; RES.fishspot_deep.deep = true; // rodada 168
+  return { FISH_LADDER, FISH_LEGEND, ROD_STATS, HULLS, SHIP_PARTS, SAIL_XP, SEA_FISH, BAITS, SEA_MOBS, SEA_LOOT, XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();

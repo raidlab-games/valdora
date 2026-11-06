@@ -252,7 +252,8 @@ ASSETS.npc_stable = "assets/flow/npc_stable.png"; ASSETS.npc_stable_sheet = "ass
 ASSETS.npc_dwarf = "assets/flow/npc_dwarf.png"; ASSETS.npc_dwarf_sheet = "assets/flow/npc_dwarf_sheet.png"; // rodada 162: Gaspar, o anão pescador do cais
 // rodada 162: ícones do mar (tools/b3d/sea_icons.py): peixes, assados, iscas e espólios
 for (const k of ["sardinha", "robalo", "dourado", "cavala", "moreia", "lanterna", "arenque", "bacalhau", "esturjao", "papagaio", "garoupa", "espada", "peixe_gelo", "halibute", "atum", "rei_mares",
-  "sardinha_assado", "cavala_assado", "arenque_assado", "papagaio_assado", "peixe_gelo_assado", "isca_minhoca", "isca_camarao", "isca_lula", "barbatana", "escama", "tinta", "perola", "espinho", "casco", "chifre", "coral", "concha"]) ASSETS["item_" + k] = `assets/flow/sea/item_${k}.png`;
+  "sardinha_assado", "cavala_assado", "arenque_assado", "papagaio_assado", "peixe_gelo_assado", "isca_minhoca", "isca_camarao", "isca_lula", "barbatana", "escama", "tinta", "perola", "espinho", "casco", "chifre", "coral", "concha",
+  "tilapia", "tilapia_assado", "pirarucu", "pirarucu_assado", "peixe_dragao", "carpa_celeste"]) ASSETS["item_" + k] = `assets/flow/sea/item_${k}.png`;
 for (const s of ["s", "n", "e", "w"]) { ASSETS["pier_" + s] = `assets/flow/pier_${s}.png`; SPRITE_SIZE["pier_" + s] = s === "s" || s === "n" ? [2, 6] : [6, 2]; }
 window.DESKS = { auction_desk: { ax: 0.6341, ay: 0.7643, nx: -0.38, ny: -0.17, flip: true }, witch_desk: { ax: 0.3659, ay: 0.7643, nx: 0.38, ny: -0.17 }, craft_desk: { ax: 0.3659, ay: 0.7643, nx: 0, ny: 0 } }; // flip: o NPC olha para o mesmo lado da frente do balcão
 ASSETS.npc_auctioneer = "assets/flow/npc_auctioneer.png"; ASSETS.npc_auctioneer_sheet = "assets/flow/npc_auctioneer_sheet.png";
@@ -336,6 +337,7 @@ for (const k of ["tool_bow", "item_arrows_wood", "item_arrows_iron", "item_arrow
 for (const k of ["res_herb", "res_flower", "res_moonlily", "res_crystalbloom", "herb_cut"]) { ASSETS[k] = `assets/flow/${k}.png`; SPRITE_SIZE[k] = [1.2, 1.2]; }
 for (const k of ["item_herb", "item_flower_honey", "item_moonlily", "item_crystal_bloom", "tool_sickle"]) ASSETS[k] = `assets/flow/${k}.png`;
 for (const t of ["axe", "pick", "sickle"]) for (const m of ["stone", "copper"]) ASSETS[`tool_${t}_${m}`] = `assets/flow/tool_${t}_${m}.png`; // rodada 154
+for (let i = 1; i <= 5; i++) ASSETS["tool_rod_" + i] = `assets/flow/tool_rod_${i}.png`; // rodada 168: as 5 varas (tools/b3d/rod_icons.py)
 for (const k of ["item_vest_leather", "item_robe", "item_hat_mage", "item_thread", "item_cloth", "item_stone"]) ASSETS[k] = `assets/flow/${k}.png`; // rodada 155
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_reap.png`; SPRITE_SIZE[`hero_${n}_reap`] = [3 * 1.45 * 1.5, 4 * 1.45 * 1.5]; }
 

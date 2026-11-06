@@ -12,13 +12,14 @@ window.ValdoraCrafting = (() => {
       return `<span class="${h >= n ? "have" : "miss"}">${n}x ${esc(k)} <i>(${h})</i></span>`; }).join("")}</div>`;
     // rodada 155: a mesa separa por grupo; o que leva minério ou barra vai para a bigorna (Ferraria)
     const GROUP = (n) => { const it = ITEMS[n] || {}, r = CRAFT[n];
+      if (it.gear === "vara") return "Varas de pesca"; // rodada 168: as 5 varas (uma por mapa) ficam sempre à vista
       if (it.gear && it.gear !== "espada" && it.gear !== "armadura") return "Ferramentas";
       if (it.gear === "espada" || it.sec || it.ammo) return "Armas e secundárias";
       if (it.cls === "arqueiro") return "Arqueiro (couro)"; if (it.cls === "mago") return "Mago (tecido)"; if (it.cls === "guerreiro") return "Guerreiro (placas)";
       if (["capacete", "calca", "botas", "capa", "armadura"].includes(it.slot)) return "Roupas";
       if (["anel", "amuleto", "bracelete"].includes(it.slot)) return "Joias";
       if (!it.slot && !r.bag && !it.heal) return "Materiais"; return "Mochilas e outros"; };
-    const ORDER_G = ["Ferramentas", "Materiais", "Arqueiro (couro)", "Mago (tecido)", "Guerreiro (placas)", "Armas e secundárias", "Roupas", "Joias", "Mochilas e outros"];
+    const ORDER_G = ["Varas de pesca", "Ferramentas", "Materiais", "Arqueiro (couro)", "Mago (tecido)", "Guerreiro (placas)", "Armas e secundárias", "Roupas", "Joias", "Mochilas e outros"];
     const craftRow = (icon, title, stats, mats, need, ok, xp, btn) => `<div class="row cr">${icon}<span class="grow"><b>${title}</b>`
       + `${stats ? `<div class="cr-stats">${stats}</div>` : ""}${matsHtml(mats)}<div class="cr-xp">+${xp} xp</div></span>`
       + `<span class="cr-btn"><b class="cr-lvl${ok ? "" : " no"}">LVL ${need}</b>${btn}</span></div>`;
@@ -34,7 +35,7 @@ window.ValdoraCrafting = (() => {
     }
     function craftList(heavy) { // heavy = receitas de metal (bigorna, Ferraria); senão as da mesa (Artesanato)
       const player = api.player(), sk = heavy ? "ferraria" : "artesanato", lvl = lv(sk), here = heavy ? (!api.atAnvil || api.atAnvil()) : (!api.atDesk || api.atDesk());
-      const list = Object.entries(CRAFT).filter(([n]) => !!VD.heavy(n) === heavy && CRAFT[n].lvl <= lvl + 12), by = {};
+      const list = Object.entries(CRAFT).filter(([n]) => !!VD.heavy(n) === heavy && (CRAFT[n].lvl <= lvl + 12 || CRAFT[n].rod)), by = {};
       for (const e of list) (by[GROUP(e[0])] = by[GROUP(e[0])] || []).push(e);
       return ORDER_G.filter((g) => by[g]).map((g) => `<div class="cr-group">${esc(g)}</div>` + by[g].sort((a, b) => a[1].lvl - b[1].lvl).map(([n, r]) => {
           const owned = r.bag && player.bags.includes(n), needBag = r.req && !player.bags.includes(r.req);
