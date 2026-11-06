@@ -20,6 +20,8 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.52", "Mar aberto sem riscos e aviso da vara mais curto", ["Corrigido: linhas claras retas (em L e em cruz) apareciam no meio do oceano; a espuma e as ondas agora só aparecem perto das margens",
+      "Sem vara, o aviso diz só que você precisa de uma vara para pescar (a receita fica na mesa de artesanato)"]],
     ["v1.51", "Varas de cada mapa e a escada da pesca", ["5 varas de pesca, uma por mapa, criadas na mesa de artesanato com a madeira, o fio e o couro daquele mapa: madeira (Campo, Artesanato 1), ébano (Floresta Sombria, 30), pinho (Montanhas, 65), palmeira (Deserto, 100) e glacial (Geleira, 140); cada uma pede o mesmo nível de Pesca para usar",
       "A vara de madeira pesca devagar (uma varada a cada 7 s) e o peixe escapa muito; cada vara melhor pesca mais rápido (até 4,5 s) e perde menos peixe, no lago e no mar (no mar o peixe escapa menos do anzol e a linha arrebenta menos)",
       "O nível de Pesca agora decide o peixe: 3 espécies desde o nível 1 (lambari, sardinha e tilápia) e uma nova a cada 10 níveis até o 160, cada uma valendo mais; o sorteio puxa para o melhor peixe que você já pesca",

@@ -2032,7 +2032,7 @@
   // rodada 168: sem vara que dê para usar: diz se é falta de vara ou de nível
   function noRodMsg() {
     const s = player.inv.find((x) => x && ITEMS[x.name].gear === "vara"), t = s && GEAR.vara.tiers[ITEMS[s.name].tier];
-    return t && t.req > lv("pesca") ? `A ${t.name.toLowerCase()} pede Pesca ${t.req} (você tem ${lv("pesca")}). Use uma vara do seu nível.` : "Você precisa de uma vara. Crie na mesa de artesanato (a Vara de madeira leva 3 madeiras e 1 fio de linho).";
+    return t && t.req > lv("pesca") ? `A ${t.name.toLowerCase()} pede Pesca ${t.req} (você tem ${lv("pesca")}). Use uma vara do seu nível.` : "Você precisa de uma vara para pescar.";
   }
   function ensureTool(k) {
     const e = player.equip.arma; if (e && ITEMS[e.name].gear === k) return true;
