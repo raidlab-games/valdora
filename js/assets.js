@@ -339,6 +339,7 @@ for (const k of ["item_herb", "item_flower_honey", "item_moonlily", "item_crysta
 for (const t of ["axe", "pick", "sickle"]) for (const m of ["stone", "copper"]) ASSETS[`tool_${t}_${m}`] = `assets/flow/tool_${t}_${m}.png`; // rodada 154
 for (let i = 1; i <= 5; i++) ASSETS["tool_rod_" + i] = `assets/flow/tool_rod_${i}.png`; // rodada 168: as 5 varas (tools/b3d/rod_icons.py)
 ASSETS.icon_dove = "assets/flow/icon_dove.png"; // rodada 169: pomba branca da área segura do mar (tools/b3d/dove_icon.py)
+ASSETS.icon_dove_16 = "assets/flow/icon_dove_16.png"; // rodada 170: a pomba sobre o barco, 16 px desenhada à mão (tools/dove16.py)
 for (const k of ["item_vest_leather", "item_robe", "item_hat_mage", "item_thread", "item_cloth", "item_stone"]) ASSETS[k] = `assets/flow/${k}.png`; // rodada 155
 for (const n of [1, 2, 3]) { ASSETS[`hero_${n}_reap`] = `assets/flow/hero_${n}_reap.png`; SPRITE_SIZE[`hero_${n}_reap`] = [3 * 1.45 * 1.5, 4 * 1.45 * 1.5]; }
 

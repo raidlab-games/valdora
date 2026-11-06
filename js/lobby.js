@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.54", "Pomba menor", ["A pomba branca sobre o barco (área segura) ficou com a metade do tamanho, redesenhada em 16 px"]],
     ["v1.53", "Cais, área segura e PvP no mar", ["Nada de barco parado ao lado do píer: vá até a ponta do píer (encostado na água) e aperte F para navegar; o barco surge na água",
       "Só dá para descer do barco nos cais de madeira (fora deles o jogo diz qual é o cais mais perto e em que direção)",
       "Área segura em volta de cada cais (20 tiles da ponta do píer, com o contorno pontilhado na água): ninguém toma dano, nem de monstros nem de jogadores; os monstros desistem e os canhões ficam travados",
