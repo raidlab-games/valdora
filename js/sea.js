@@ -729,10 +729,10 @@ window.ValdoraSea = (() => {
       if (fish && !fish.onFoot) drawBoatLine(ctx, t, bob);
       const top = G ? G.A.oy / G.A.pxTile * 0.92 : 1.4;
       api.tag(p.name, ship.x, ship.y - top + 0.1, p.pk > 0 ? "#ff3b30" : "#f1c40f");
-      const dv = api.SPR.icon_dove_16 || api.SPR.icon_dove; // rodada 169: pomba branca = área segura (rodada 170: 16 px, metade do tamanho)
-      if (ship.safe && dv) { // rodada 173: metade de novo (8 px do mundo; com a tela em pixel fino, SS = 2, os 16 px da arte aparecem inteiros)
-        const s = 8, sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = (window.VD_SS || 1) < 2;
-        ctx.drawImage(dv, Math.round(X(ship.x) - s / 2), Math.round(Y(ship.y - top + 0.1) - 13 - s + Math.sin(t * 2.2)), s, s); ctx.imageSmoothingEnabled = sm; }
+      const dv = api.SPR.icon_dove_24 || api.SPR.icon_dove_16 || api.SPR.icon_dove; // rodada 169: pomba branca = área segura (rodada 170: 16 px, metade do tamanho)
+      if (ship.safe && dv) { // rodada 173: 8 px do mundo; rodada 174: 50% maior, 12 px (arte de 24 px: com a tela em pixel fino, SS = 2, sai inteira)
+        const s = 12, sm = ctx.imageSmoothingEnabled; ctx.imageSmoothingEnabled = (window.VD_SS || 1) < 2;
+        ctx.drawImage(dv, Math.round(X(ship.x) - s / 2), Math.round(Y(ship.y - top + 0.1) - 13 - s + Math.sin(t * 2.2) * 1.2), s, s); ctx.imageSmoothingEnabled = sm; }
     }
     function drawSafeRings(t) { // rodada 169: contorno pontilhado da área segura de cada cais (só por cima do mar)
       const ctx = api.ctx(), cx = api.cam.x / TILE + api.VW() / TILE / 2, cy = api.cam.y / TILE + api.VH() / TILE / 2, N = 160;

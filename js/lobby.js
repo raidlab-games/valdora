@@ -20,6 +20,7 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.58", "Pomba no tamanho certo", ["A pomba da área segura, em cima do barco, ficou 50% maior e foi redesenhada em pixel (olho, bico, raminho e as penas da asa)"]],
     ["v1.57", "Pomba menor", ["A pomba branca da área segura, em cima do barco, ficou com metade do tamanho"]],
     ["v1.56", "Peças de barco do mar", ["A chalupa, o bergantim e o galeão agora são feitos com a madeira, a barra e o tecido do mapa deles (Floresta Sombria, Montanhas e Deserto)",
       "Cada um pede também uma peça rara que só cai de um bicho do mar: pele de enguia-sombria (chalupa), costela de orca (bergantim) e bico de espadarte (galeão)",
