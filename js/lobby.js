@@ -20,6 +20,10 @@
     hero_3: "Estuda as pedras de lumita e os segredos que dormem nas ruínas.",
   };
   const NEWS = [
+    ["v1.56", "Peças de barco do mar", ["A chalupa, o bergantim e o galeão agora são feitos com a madeira, a barra e o tecido do mapa deles (Floresta Sombria, Montanhas e Deserto)",
+      "Cada um pede também uma peça rara que só cai de um bicho do mar: pele de enguia-sombria (chalupa), costela de orca (bergantim) e bico de espadarte (galeão)",
+      "Quanto melhor o barco, mais forte o bicho e mais fundo o mar: a enguia vive do nível 31 para cima, a orca do 66 e o espadarte do 102 (a enguia agora nada também no mar das Montanhas)",
+      "O caixote de um bicho que deixou cair uma peça de barco boia roxo; o mestre do cais e a dica do item dizem de onde cada peça vem"]],
     ["v1.55", "Porto dos Corais", ["Novo Porto dos Corais na enseada da costa sul do Campo (de frente para a Ilha dos Corais), com o Barqueiro Elias, o anão do píer e uma estradinha vinda de Lumeira",
       "Saíram o Cais da Névoa (colado no Cais do Breu) e o Cais do Norte (colado no Porto do Degelo); a estrada do Porto da Tumba agora vem do Cais do Breu",
       "Quem tinha o barco num cais que saiu volta pelo cais mais perto"]],

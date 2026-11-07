@@ -35,7 +35,8 @@ window.ValdoraHud = (() => {
       else if (it.quest) h += `<div>Item de missão</div>`;
       if (it.fishLvl && !it.cook) h += `<div>Peixe de Pesca ${it.fishLvl}: venda ao Bento ou ao anão do píer (paga mais)</div>`; // rodada 168
       else if (it.fishLvl) h += `<small>Peixe de Pesca ${it.fishLvl}</small>`;
-      if (!(it.slot || it.fishLvl || it.cook || it.heal || it.buff || it.quest)) { const R = [...Object.values(VD.CRAFT), ...Object.values(VD.SMELT)], uses = R.filter((r) => r.mats && r.mats[s.name]).length; h += `<div>Material${it.region ? " da região" : ""}${uses ? ` · usado em ${uses} receita${uses > 1 ? "s" : ""}` : ""}</div>`; }
+      if (it.boatPart) { const b = VD.BOAT_DROPS[s.name], Hh = VD.HULLS[it.boatPart]; h += `<div>Peça de barco: vai ${Hh.fem ? "na" : "no"} ${esc(Hh.name.toLowerCase())}</div><small>Só cai ${b.de} ${esc(VD.SEA_MOBS[b.mob].name)}, ${esc(b.where)}. É rara.</small>`; } // rodada 172
+      else if (!(it.slot || it.fishLvl || it.cook || it.heal || it.buff || it.quest)) { const R = [...Object.values(VD.CRAFT), ...Object.values(VD.SMELT)], uses = R.filter((r) => r.mats && r.mats[s.name]).length; h += `<div>Material${it.region ? " da região" : ""}${uses ? ` · usado em ${uses} receita${uses > 1 ? "s" : ""}` : ""}</div>`; }
       for (const a of s.aff || []) h += `<div class="tip-aff">${esc(ValdoraUI.affLine(a))}</div>`;
       const w = VD.weightOf(s.name);
       h += `<small class="tip-hint">peso ${kg(w)} kg${s.n > 1 ? ` (total ${kg(w * s.n)} kg)` : ""} · vale ${it.price} moedas · clique para opções</small>`;

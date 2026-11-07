@@ -455,7 +455,7 @@ window.ValdoraSea = (() => {
       const xp = Math.max(2, Math.round(m.L * 2.2 * d.xp)); api.gainXp("navegacao", xp);
       api.fx.addFloat(m.x, m.y - 1, `+${xp} xp`, "#8fd3ff", 1.1, 12); api.fx.burst(m.x, m.y, ["#e8f6ff", "#8fc1ee", "#ffffff"], 22, 3.4); SND.play(d.boss ? "rare" : "splash");
       const items = []; for (const [n, ch, a, b] of d.drops || []) if (rand() < ch) items.push([n, a ? a + Math.floor(rand() * ((b || a) - a + 1)) : 1]);
-      crates.push({ x: m.x, y: m.y, coins: Math.round(m.L * (1.5 + rand() * 1.5) * (d.coins || 1)), items, t: 0, big: !!d.boss });
+      crates.push({ x: m.x, y: m.y, coins: Math.round(m.L * (1.5 + rand() * 1.5) * (d.coins || 1)), items, t: 0, big: !!d.boss || items.some(([n]) => ITEMS[n].boatPart) }); // rodada 172: peça de barco = caixote roxo
       p.stats.seaKills = (p.stats.seaKills || 0) + 1; api.emit("seakill:" + m.type); m.respawnAt = Date.now() + RESPAWN_MS; // rodada 165: volta em 3 minutos
       if (d.boss) { if (m.lair) { m.lair.respawnAt = Date.now() + 15 * 60 * 1000; m.lair.mob = null; } api.toast(`${d.name} derrotado!`, "O baú dele ficou boiando. Passe por cima para pegar.", "#c47aff"); warns.length = 0; }
       api.log(`${d.name} (nv ${m.L}) afundou. +${xp} xp de ${SKILLS.navegacao}.`, "gold");
@@ -522,7 +522,9 @@ window.ValdoraSea = (() => {
     function takeCrate(c) {
       const p = P(); p.coins += c.coins; SND.play("coin"); api.fx.addFloat(c.x, c.y - 0.6, `+${c.coins} moedas`, "#ffd84a", 1.2, 12);
       for (const [n, q] of c.items) { if (api.canAdd(n, q)) { api.addItem(n, q); api.fx.addFloat(c.x, c.y - 1.0, `+${q} ${n}`, ITEMS[n].rare ? "#c47aff" : "#ffffff", 1.4, 12); if (ITEMS[n].rare) SND.play("rare"); }
-        else api.log(`Mochila cheia: ${q} ${n} ficou no mar.`, "warn"); }
+        else api.log(`Mochila cheia: ${q} ${n} ficou no mar.`, "warn");
+        if (ITEMS[n].boatPart && api.count(n) > 0) { const Hh = VD.HULLS[ITEMS[n].boatPart], need = Hh.mats[n] || 0, got = api.count(n); // rodada 172
+          api.toast(`${n}!`, got >= need ? `Já dá para ${Hh.fem ? "a" : "o"} ${Hh.name.toLowerCase()} (${got}/${need}).` : `Peça rara ${Hh.fem ? "da" : "do"} ${Hh.name.toLowerCase()}: ${got}/${need}.`, "#c47aff"); } }
       api.hud();
     }
     // ---------------- a luta da linha ----------------
@@ -1101,6 +1103,11 @@ window.ValdoraSea = (() => {
           `<button data-fsell="${esc(s.name)}" data-n="1">1</button><button data-fsell="${esc(s.name)}" data-n="all">Tudo</button>`)).join("")
         + `<button class="wide" data-fsellall="1">Vender todos os peixes</button>` : `<p class="empty">Nenhum peixe na mochila. Pesque nos lagos ou saia de barco atrás das áreas de pesca do mar (o anzol na água).</p>`);
     }
+    // rodada 172: a peça do barco que só cai de bicho do mar (qual bicho e onde ele vive)
+    function seaPartHint(Hh) {
+      const e = Object.entries(VD.BOAT_DROPS).find(([n]) => Hh.mats[n]); if (!e) return "";
+      return `<br><small class="sea-part">${esc(e[0])}: só cai ${e[1].de} ${esc(SEA_MOBS[e[1].mob].name)}, ${esc(e[1].where)}. É rara.</small>`;
+    }
     function harborHtml(obj, tab) {
       const p = P(), row = ValdoraDialogs.row, ic = ValdoraUI.iconImg, L = api.lv("navegacao"), have = (n) => api.count(n), D = (api.G().DOCKS || []).find((d) => d.key === obj.dock);
       const mats = (m) => Object.entries(m).map(([n, q]) => `<span class="${have(n) >= q ? "" : "lock"}">${q} ${esc(n.toLowerCase())}</span>`).join(", ");
@@ -1120,7 +1127,7 @@ window.ValdoraSea = (() => {
       }
       return h + Object.entries(VD.HULLS).map(([k, Hh]) => { const own = p.boat.owned.includes(k), sel = own && p.boat.hull === k, why = own ? "" : B.whyNotHull(p, k, L, have);
         return `<div class="row boat${sel ? " on" : ""}"><span class="grow"><b>${esc(Hh.name)}</b> <small>${own ? "já é seu" : `Navegação ${Hh.lvl}`}</small><br><small>${esc(Hh.desc)}</small><br>
-          <small>casco ${Hh.hp} · velocidade ${Math.round(Hh.speed * 100)}% · ${Hh.guns} canhão${Hh.guns > 1 ? "es" : ""} por bordo${own ? "" : ` · ${mats(Hh.mats)}`}</small></span>${own ? "" : `<span class="price">${Hh.price}</span>`}
+          <small>casco ${Hh.hp} · velocidade ${Math.round(Hh.speed * 100)}% · ${Hh.guns} ${Hh.guns > 1 ? "canhões" : "canhão"} por bordo${own ? "" : ` · ${mats(Hh.mats)}`}</small>${own ? "" : seaPartHint(Hh)}</span>${own ? "" : `<span class="price">${Hh.price}</span>`}
           ${own ? `<button data-boatuse="${k}" ${sel ? "disabled" : ""}>${sel ? "Em uso" : "Usar"}</button>` : `<button data-boatbuy="${k}" ${why ? "disabled" : ""} title="${esc(why)}">Comprar</button>`}</div>`; }).join("");
     }
     // cliques das duas janelas (true = tratado)

@@ -877,6 +877,22 @@
     r.push([1, 2, 3, 4].every((L) => !L || B.partCost("canhoes", L).coins > (L > 1 ? B.partCost("canhoes", L - 1).coins : 0)) && B.partCost("canhoes", 5) === null);
     return r.every(Boolean) || "falhou no item " + r.indexOf(false);
   });
+  test("rodada 172: barcos acima do bote pedem o material do mapa deles e uma peça rara que só cai de um bicho do mar (mais forte a cada barco)", () => {
+    const r = [], BD = VD.BOAT_DROPS, keys = ["chalupa", "bergantim", "galeao"], WOOD = ["Madeira de ébano", "Madeira de pinho", "Madeira de palmeira"], BAR = ["Barra de obsidiana", "Barra de mitril", "Barra solar"];
+    const BI = ValdoraWorld.BIOMES, others = JSON.stringify(Object.entries(VD).filter(([k]) => !["SEA_MOBS", "HULLS", "ITEMS", "BOAT_DROPS"].includes(k)));
+    r.push(Object.keys(VD.HULLS.bote.mats).every((n) => !BD[n]));
+    let lastLv = 0, lastCh = 1;
+    keys.forEach((k, i) => {
+      const e = Object.entries(BD).find(([, b]) => b.hull === k); if (!e) { r.push(false); return; }
+      const [n, b] = e, d = VD.SEA_MOBS[b.mob], lv = Math.min(...d.zones.map((z) => BI[z - 1].lv[0]));
+      r.push(VD.HULLS[k].mats[n] > 0 && VD.HULLS[k].mats[WOOD[i]] > 0 && VD.HULLS[k].mats[BAR[i]] > 0);
+      r.push(!!ITEMS[n] && !!ASSETS[ITEMS[n].icon] && ITEMS[n].boatPart === k);
+      r.push(b.chance <= 0.08 && b.chance <= lastCh && lv > lastLv && d.w > 0); lastLv = lv; lastCh = b.chance;
+      r.push(Object.entries(VD.SEA_MOBS).every(([mk, md]) => (md.drops || []).some((x) => x[0] === n) === (mk === b.mob)));
+      r.push(!others.includes(JSON.stringify(n)) && !VD.CRAFT[n] && !Object.values(VD.MOBS).some((m) => JSON.stringify(m.drops || []).includes(n)));
+    });
+    return r.every(Boolean) || "falhou no item " + r.indexOf(false);
+  });
   test("rodada 162: vento, direções, peixes que mordem e peso", () => {
     const B = ValdoraBoat, r = [];
     r.push(Math.abs(B.windFactor(0, 0) - 1.1) < 1e-9, Math.abs(B.windFactor(Math.PI, 0) - 0.62) < 1e-9, B.windFactor(Math.PI / 2, 0) > 0.8);

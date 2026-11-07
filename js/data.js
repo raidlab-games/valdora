@@ -1684,11 +1684,13 @@ window.VD = (() => {
   const HULLS = {
     bote: { name: "Bote de pesca", lvl: 1, price: 400, mats: { "Madeira": 20 }, hp: 150, speed: 1.0, turn: 2.4, guns: 1, gun: 0.8, len: 1.0, beam: 0.4, art: "bote",
       desc: "Leve e ágil, com um falconete em cada borda. Bom para pescar e caçar perto da costa." },
-    chalupa: { name: "Chalupa", lvl: 12, price: 3000, mats: { "Madeira de carvalho": 30, "Barra de ferro": 6, "Fio de linho": 12 }, hp: 340, speed: 1.12, turn: 2.0, guns: 1, gun: 1, len: 1.45, beam: 0.55, art: "chalupa",
+    // rodada 172: cada barco acima do bote é feito com a madeira, a barra e o tecido do mapa dele (chalupa = Floresta Sombria,
+    // bergantim = Montanhas, galeão = Deserto) e mais uma peça que só cai de bicho do mar (VD.BOAT_DROPS, logo abaixo dos monstros)
+    chalupa: { name: "Chalupa", fem: true, lvl: 12, price: 3000, mats: { "Madeira de ébano": 30, "Barra de obsidiana": 6, "Fio de seda sombria": 12, "Pele de enguia-sombria": 3 }, hp: 340, speed: 1.12, turn: 2.0, guns: 1, gun: 1, len: 1.45, beam: 0.55, art: "chalupa",
       desc: "Um mastro com vela grande e bujarrona; um canhão de ferro em cada bordo." },
-    bergantim: { name: "Bergantim", lvl: 28, price: 12000, mats: { "Madeira de cedro": 40, "Barra de aço": 10, "Fio de linho": 24 }, hp: 650, speed: 1.22, turn: 1.7, guns: 2, gun: 1, len: 1.85, beam: 0.65, art: "bergantim",
+    bergantim: { name: "Bergantim", lvl: 28, price: 12000, mats: { "Madeira de pinho": 40, "Barra de mitril": 10, "Lã de carneiro": 24, "Costela de orca": 3 }, hp: 650, speed: 1.22, turn: 1.7, guns: 2, gun: 1, len: 1.85, beam: 0.65, art: "bergantim",
       desc: "Dois mastros, velas redondas e dois canhões por bordo." },
-    galeao: { name: "Galeão", lvl: 45, price: 40000, mats: { "Madeira de ébano": 40, "Barra de lumita": 12, "Fio de linho": 40 }, hp: 1150, speed: 1.18, turn: 1.35, guns: 3, gun: 1.15, len: 2.3, beam: 0.8, art: "galeao",
+    galeao: { name: "Galeão", lvl: 45, price: 40000, mats: { "Madeira de palmeira": 40, "Barra solar": 12, "Fio de algodão": 40, "Bico de espadarte": 3 }, hp: 1150, speed: 1.18, turn: 1.35, guns: 3, gun: 1.15, len: 2.3, beam: 0.8, art: "galeao",
       desc: "Três mastros, castelo de popa e três canhões por bordo. Lento na curva e duro de afundar." } };
   const SHIP_PARTS = {
     velas: { name: "Velas", desc: "+6% de velocidade por nível", icon: "item_thread" },
@@ -1730,7 +1732,7 @@ window.VD = (() => {
       skill: "Incha até virar uma bola de espinhos e explode em volta: fique longe quando ele começar a crescer." },
     barracuda: { name: "Barracuda", hp: 0.45, dmg: 0.55, speed: 4.4, radius: 0.55, aggro: 10, xp: 0.5, kind: "pack", art: "sea_barracuda", w: 22, pack: 3, zones: [1, 3, 4], drops: [["Barbatana de tubarão", 0.25]],
       skill: "Caça em cardume de três: rodeia o barco e dá botes rápidos, uma depois da outra." },
-    enguia: { name: "Enguia-sombria do abismo", hp: 1.1, dmg: 1.2, speed: 3.2, radius: 0.6, aggro: 10, xp: 1.3, kind: "blink", art: "sea_eel", w: 24, zones: [2, 5], drops: [["Escama de serpente", 0.4]],
+    enguia: { name: "Enguia-sombria do abismo", hp: 1.1, dmg: 1.2, speed: 3.2, radius: 0.6, aggro: 10, xp: 1.3, kind: "blink", art: "sea_eel", w: 24, zones: [2, 3, 5], drops: [["Escama de serpente", 0.4]],
       skill: "Mergulha e some (os tiros passam direto), depois surge colada no barco e morde. As bolhas escuras mostram onde ela vai sair." },
     lula: { name: "Lula-gigante", hp: 1.7, dmg: 0.9, speed: 2.2, radius: 1.0, aggro: 10, xp: 1.6, kind: "grab", art: "sea_squid", w: 18, zones: [2, 3, 5], drops: [["Tinta de polvo", 0.25], ["Pérola", 0.03]],
       skill: "De longe cospe tinta (o barco fica lento); de perto agarra o casco e não deixa navegar até levar uns tiros." },
@@ -1769,6 +1771,15 @@ window.VD = (() => {
   }
   for (const [n, b] of Object.entries(BAITS)) ITEMS[n] = { icon: b.icon, price: b.price, bait: true, w: 0.05 };
   for (const [n, it] of Object.entries(SEA_LOOT)) ITEMS[n] = { ...it };
+  // rodada 172: peças de barco que só caem de um bicho do mar, com chance baixa. Quanto melhor o barco, mais forte o bicho: a enguia
+  // só vive do mar da Floresta Sombria para cima (nível 31+), a orca do das Montanhas (66+) e o espadarte do do Deserto (102+).
+  // O mar da Floresta Sombria é pequeno (só umas 2 enguias): a enguia vive também no das Montanhas, senão a chalupa demoraria demais.
+  // Nenhuma loja, baú, receita ou monstro de terra dá essas peças. de = artigo do bicho; where = onde ele vive (dica do item e do mestre do cais)
+  const BOAT_DROPS = {
+    "Pele de enguia-sombria": { mob: "enguia", chance: 0.06, hull: "chalupa", icon: "item_pele_enguia", price: 240, de: "da", where: "no mar da Floresta Sombria, no das Montanhas e no da Geleira (nível 31+)" },
+    "Costela de orca": { mob: "orca", chance: 0.04, hull: "bergantim", icon: "item_costela_orca", price: 650, de: "da", where: "no mar das Montanhas e no da Geleira (nível 66+)" },
+    "Bico de espadarte": { mob: "espadarte", chance: 0.03, hull: "galeao", icon: "item_bico_espadarte", price: 1500, de: "do", where: "no mar do Deserto e no da Geleira (nível 102+)" } };
+  for (const [n, b] of Object.entries(BOAT_DROPS)) { SEA_MOBS[b.mob].drops.push([n, b.chance]); ITEMS[n] = { icon: b.icon, price: b.price, rare: true, boatPart: b.hull }; }
   // ---------- rodada 168: a escada da pesca (lago e mar) ----------
   // 3 espécies desde o nível 1 e uma nova a cada 10 níveis de Pesca até o 160. O nível libera peixes melhores (valem mais) e o
   // sorteio puxa para os melhores já liberados; a vara só muda a velocidade e a falha (ROD_STATS). Peixe novo no diário: XP em dobro.
@@ -1830,6 +1841,6 @@ window.VD = (() => {
     for (const v of Object.values(o)) if (v && typeof v === "object" && v !== o.reward) cutRw(v); };
   cutRw(QUESTS); cutRw(TUTORIAL);
   RES.fishspot.fish = FISH_LADDER; RES.fishspot_deep.fish = FISH_LADDER; RES.fishspot_deep.deep = true; // rodada 168
-  return { FISH_LADDER, FISH_LEGEND, ROD_STATS, HULLS, SHIP_PARTS, SAIL_XP, SEA_FISH, BAITS, SEA_MOBS, SEA_LOOT, XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
+  return { BOAT_DROPS, FISH_LADDER, FISH_LEGEND, ROD_STATS, HULLS, SHIP_PARTS, SAIL_XP, SEA_FISH, BAITS, SEA_MOBS, SEA_LOOT, XP_CUT, MOUNT_TIERS, MOUNTS, RIDE_XP, CLASS_GEAR, heavy, ORE_ITEMS, RENAMED, PREREQ, MAP_GEAR, MAP_LOOT, mapLoot, FISH_BY_BIOME, COLLECTIONS, HOTBAR_DEFAULT, POTIONS, mobStats, REGION_ITEM, REGION_DROP, LADDER, TIER_LVL, SETS, PACKS, FAMILY, familyOf, weightOf, CARRY, EQUIP_SLOTS, SEC, SKILLS, RARITY, ITEMS, RES, MOBS, GEAR, SMELT, CRAFT, ORDER_POOL, STYLES, REGIONS, TUTORIAL, TIPS, BUFFS, SHOP_ITEMS, ACHIEVEMENTS,
     CRYPT_CHEST, DEN_CHEST, RIFT_CHEST, BIOME_CHEST_2, BIOME_CHEST_3, BIOME_CHEST_4, BIOME_CHEST_5, CHATTER, BARD_SONGS, ACTIVE, QUESTS, SHRINE, TIP_MIN, CAMPAIGN, SCENES, ALCHEMY };
 })();
